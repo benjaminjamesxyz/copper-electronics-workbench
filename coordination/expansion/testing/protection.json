@@ -1,0 +1,890 @@
+{
+  "lane": "protection",
+  "base": "4c46fa1",
+  "file": "backend/tests/protection.rs",
+  "authored_tests": 29,
+  "behaviors_covered": {
+    "protection.fuse_pulse_coordination": [
+      "All six outputs with asymmetric pulse",
+      "Rectangle, triangle, zero peak, zero arcing, unity allowance",
+      "Negative pulse and clearing margins",
+      "Tiny integral and large-current scaling",
+      "Strict 10 ms upper boundary and nonfinite/invalid recovery",
+      "Subnormal ramp regression"
+    ],
+    "protection.tvs_surge_load_line": [
+      "All five outputs, KVL and source energy balance",
+      "Both characterized current endpoints and zero dynamic resistance",
+      "Signed failed-rating margins",
+      "Off-avalanche, fit ordering, positive parameters, nonfinite recovery",
+      "Large-resistance denominator regression"
+    ],
+    "protection.mov_power_law_pulse": [
+      "All six outputs from fourth-root law and geometric midpoint",
+      "Both calibration endpoints, duration scaling, negative energy margin",
+      "Close binary-exact calibration and tiny nonzero energy",
+      "Beta>=1 and extrapolation rejected; all positive and nonfinite domains",
+      "Finite energy with overflowing intermediate power regression"
+    ],
+    "protection.scr_crowbar_trigger_latch": [
+      "All five outputs from binary-exact source/gate KCL",
+      "Exact trigger, IH=IL, zero on drop",
+      "Negative latch margin and shunt-loading effect",
+      "Below-trigger, IH>IL, Von>=Vz, resistance/current positivity and nonfinite recovery"
+    ],
+    "protection.copper_adiabatic_fault_limit": [
+      "All five outputs from doubled copper resistivity offset",
+      "Time scaling, zero fault, initial zero, final 250 C, time 5 s",
+      "Tiny temperature headroom and negative area margin",
+      "Invalid thermal/time/area/current and nonfinite recovery",
+      "Finite required area with overflowing current-time product regression"
+    ],
+    "protection.foldback_fault_envelope": [
+      "All nine outputs from completed-square power curve",
+      "Short and knee load boundaries",
+      "Interior, lower-endpoint and upper-endpoint maxima",
+      "Tiny short current at knee",
+      "Invalid rail/current/load and nonfinite recovery",
+      "Underflowing Isc/Ik knee regression"
+    ]
+  },
+  "verification": "NOT EXECUTED: no build, test, lint, formatter, Rust process or native launch. Independent scalar arithmetic only. Main must execute all Rust tests and ordered JSON-lines scenarios after integration.",
+  "untested_gaps": [
+    "Worker did not run authored tests or process scenarios.",
+    "Native UI and pixels belong to Main and V2ProtectionRun; tester makes no native acceptance claim.",
+    "Real-device calibration, waveform matching, SOA, thermal/electrodynamic validation and certification remain outside these mathematical tests.",
+    "Primary-source retrieval is inherited from research; no fresh source-access claim."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "protection.fuse_pulse_coordination",
+      "location": "backend/catalog/protection.json:89",
+      "inputs": {
+        "peak_current": 1e+162,
+        "rise_time": 5e-324,
+        "hold_time": 0,
+        "fall_time": 0,
+        "pre_arcing_i2t": 1,
+        "arcing_i2t": 0.25,
+        "pulse_allowance_fraction": 0.5,
+        "device_withstand_i2t": 1
+      },
+      "expected_outputs": {
+        "pulse_i2t": 1.6468854861374884,
+        "pulse_margin": -1.1468854861374884,
+        "clearing_i2t": 1.25,
+        "clearing_margin": -0.25,
+        "pulse_utilization": 3.293770972274977,
+        "clearing_utilization": 1.25
+      },
+      "analysis": "rise_time/3 underflows before large current restores a representable integral.",
+      "minimal_correction": "Scale edge contributions before dividing subnormal time; retain the waveform integral.",
+      "status": "Suspected from source and independent arithmetic; failing regression authored, not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "protection.tvs_surge_load_line",
+      "location": "backend/catalog/protection.json:247,282,288",
+      "inputs": {
+        "surge_voltage": 100,
+        "source_resistance": 1e+308,
+        "breakdown_intercept": 30,
+        "dynamic_resistance": 1e+308,
+        "fit_current_min": 1e-308,
+        "fit_current_max": 1e-306,
+        "rated_pulse_current": 1e-306,
+        "protected_voltage_limit": 100
+      },
+      "expected_outputs": {
+        "surge_current": 3.5e-307,
+        "clamp_voltage": 65,
+        "peak_power": 2.275e-305,
+        "voltage_margin": 35,
+        "current_margin": 6.5e-307
+      },
+      "analysis": "Rs+rd overflows although equal resistance drops give finite 3.5e-307 A.",
+      "minimal_correction": "Normalize the load-line denominator in both constraints and output.",
+      "status": "Suspected from source and independent arithmetic; failing regression authored, not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "protection.mov_power_law_pulse",
+      "location": "backend/catalog/protection.json:422",
+      "inputs": {
+        "current_one": 1e+200,
+        "voltage_one": 1e+120,
+        "current_two": 1e+202,
+        "voltage_two": 1e+121,
+        "pulse_current": 1e+201,
+        "pulse_duration": 1e-300,
+        "energy_allowance": 1e+23
+      },
+      "expected_outputs": {
+        "voltage_exponent": 0.5,
+        "current_exponent": 2,
+        "clamp_voltage": 3.1622776601683794e+120,
+        "differential_resistance": 1.5811388300841898e-81,
+        "absorbed_energy": 3.1622776601683794e+21,
+        "energy_margin": 9.68377223398316e+22
+      },
+      "analysis": "V*I overflows before short duration restores finite requested energy.",
+      "minimal_correction": "Use scaled multiplication for the three-factor energy, without narrowing the documented domain.",
+      "status": "Suspected from source and independent arithmetic; failing regression authored, not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "protection.copper_adiabatic_fault_limit",
+      "location": "backend/catalog/protection.json:748",
+      "inputs": {
+        "area_mm2": 2,
+        "initial_temperature": 0,
+        "limit_temperature": 234,
+        "clearing_time": 4,
+        "fault_current": 1e+308
+      },
+      "expected_outputs": {
+        "material_k": 188.1573421216397,
+        "allowable_fault_current": 188.1573421216397,
+        "allowable_i2t": 141612.74157711904,
+        "minimum_area_mm2": 1.0629401847667698e+306,
+        "area_margin_mm2": -1.0629401847667698e+306
+      },
+      "analysis": "Ifault*sqrt(t) overflows before dividing by k, although required area is finite.",
+      "minimal_correction": "Reorder or scale current/time/material combination to preserve finite area.",
+      "status": "Suspected from source and independent arithmetic; failing regression authored, not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "protection.foldback_fault_envelope",
+      "location": "backend/catalog/protection.json:861",
+      "inputs": {
+        "input_voltage": 9,
+        "knee_voltage": 5,
+        "knee_current": 1e+200,
+        "short_current": 1e-200,
+        "fault_resistance": 5e-200
+      },
+      "expected_outputs": {
+        "foldback_slope": 2e+199,
+        "knee_load_resistance": 5e-200,
+        "fault_output_voltage": 5,
+        "fault_output_current": 1e+200,
+        "fault_pass_power": 4e+200,
+        "short_pass_power": 9e-200,
+        "peak_stress_voltage": 4.5,
+        "peak_stress_current": 9e+199,
+        "maximum_pass_power": 4.05e+200
+      },
+      "analysis": "Isc/Ik underflows at exact knee; zero denominator loses finite characterized endpoint.",
+      "minimal_correction": "Use ratio-safe equilibrium algebra retaining the exact knee without arbitrary current floors.",
+      "status": "Suspected from source and independent arithmetic; failing regression authored, not executed."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "protection.fuse_pulse_coordination",
+      "inputs": {
+        "peak_current": 30,
+        "rise_time": 0.0003,
+        "hold_time": 0.0005,
+        "fall_time": 0.0006,
+        "pre_arcing_i2t": 1,
+        "arcing_i2t": 0.25,
+        "pulse_allowance_fraction": 0.5,
+        "device_withstand_i2t": 1
+      },
+      "expected_outputs": {
+        "pulse_i2t": 0.72,
+        "pulse_margin": -0.22,
+        "clearing_i2t": 1.25,
+        "clearing_margin": -0.25,
+        "pulse_utilization": 1.44,
+        "clearing_utilization": 1.25
+      },
+      "instructions": "Select exact ID; enter every input; calculate and inspect all output quantities. Then show a coupled invalid input and restore this vector without restarting."
+    },
+    {
+      "id": "protection.tvs_surge_load_line",
+      "inputs": {
+        "surge_voltage": 72,
+        "source_resistance": 3,
+        "breakdown_intercept": 24,
+        "dynamic_resistance": 1,
+        "fit_current_min": 2,
+        "fit_current_max": 16,
+        "rated_pulse_current": 10,
+        "protected_voltage_limit": 32
+      },
+      "expected_outputs": {
+        "surge_current": 12,
+        "clamp_voltage": 36,
+        "peak_power": 432,
+        "voltage_margin": -4,
+        "current_margin": -2
+      },
+      "instructions": "Select exact ID; enter every input; calculate and inspect all output quantities. Then show a coupled invalid input and restore this vector without restarting."
+    },
+    {
+      "id": "protection.mov_power_law_pulse",
+      "inputs": {
+        "current_one": 2,
+        "voltage_one": 100,
+        "current_two": 32,
+        "voltage_two": 200,
+        "pulse_current": 8,
+        "pulse_duration": 0.0005,
+        "energy_allowance": 0.5
+      },
+      "expected_outputs": {
+        "voltage_exponent": 0.25,
+        "current_exponent": 4,
+        "clamp_voltage": 141.4213562373095,
+        "differential_resistance": 4.419417382415922,
+        "absorbed_energy": 0.565685424949238,
+        "energy_margin": -0.06568542494923801
+      },
+      "instructions": "Select exact ID; enter every input; calculate and inspect all output quantities. Then show a coupled invalid input and restore this vector without restarting."
+    },
+    {
+      "id": "protection.scr_crowbar_trigger_latch",
+      "inputs": {
+        "zener_voltage": 8,
+        "gate_voltage": 1,
+        "gate_trigger_current": 0.03125,
+        "gate_resistance": 12,
+        "gate_shunt_resistance": 32,
+        "fault_voltage": 13,
+        "source_resistance": 4,
+        "on_voltage": 1,
+        "latching_current": 4,
+        "holding_current": 0.25
+      },
+      "expected_outputs": {
+        "trigger_source_voltage": 10,
+        "available_gate_current": 0.21875,
+        "available_anode_current": 3,
+        "latch_margin": -1,
+        "holding_release_voltage": 2
+      },
+      "instructions": "Select exact ID; enter every input; calculate and inspect all output quantities. Then show a coupled invalid input and restore this vector without restarting."
+    },
+    {
+      "id": "protection.copper_adiabatic_fault_limit",
+      "inputs": {
+        "area_mm2": 2,
+        "initial_temperature": 0,
+        "limit_temperature": 234,
+        "clearing_time": 4,
+        "fault_current": 300
+      },
+      "expected_outputs": {
+        "material_k": 188.1573421216397,
+        "allowable_fault_current": 188.1573421216397,
+        "allowable_i2t": 141612.74157711904,
+        "minimum_area_mm2": 3.1888205543003094,
+        "area_margin_mm2": -1.1888205543003094
+      },
+      "instructions": "Select exact ID; enter every input; calculate and inspect all output quantities. Then show a coupled invalid input and restore this vector without restarting."
+    },
+    {
+      "id": "protection.foldback_fault_envelope",
+      "inputs": {
+        "input_voltage": 10,
+        "knee_voltage": 6,
+        "knee_current": 2,
+        "short_current": 0.5,
+        "fault_resistance": 2
+      },
+      "expected_outputs": {
+        "foldback_slope": 0.25,
+        "knee_load_resistance": 3,
+        "fault_output_voltage": 2,
+        "fault_output_current": 1,
+        "fault_pass_power": 8,
+        "short_pass_power": 5,
+        "peak_stress_voltage": 4,
+        "peak_stress_current": 1.5,
+        "maximum_pass_power": 9
+      },
+      "instructions": "Select exact ID; enter every input; calculate and inspect all output quantities. Then show a coupled invalid input and restore this vector without restarting."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "protection.fuse_pulse_coordination: invalid coupled domain",
+      "request": {
+        "command": "calculate",
+        "id": "protection.fuse_pulse_coordination",
+        "inputs": {
+          "peak_current": 30,
+          "rise_time": 0,
+          "hold_time": 0.01,
+          "fall_time": 0,
+          "pre_arcing_i2t": 1,
+          "arcing_i2t": 0.25,
+          "pulse_allowance_fraction": 0.5,
+          "device_withstand_i2t": 1
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject domain violation; next request must recover in the same process."
+    },
+    {
+      "name": "protection.fuse_pulse_coordination: independent recovery",
+      "request": {
+        "command": "calculate",
+        "id": "protection.fuse_pulse_coordination",
+        "inputs": {
+          "peak_current": 30,
+          "rise_time": 0.0003,
+          "hold_time": 0.0005,
+          "fall_time": 0.0006,
+          "pre_arcing_i2t": 1,
+          "arcing_i2t": 0.25,
+          "pulse_allowance_fraction": 0.5,
+          "device_withstand_i2t": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Asymmetric ramps integrate to 0.27 A²s, plateau to 0.45 A²s; both design margins are negative.",
+      "expected_outputs": {
+        "pulse_i2t": 0.72,
+        "pulse_margin": -0.22,
+        "clearing_i2t": 1.25,
+        "clearing_margin": -0.25,
+        "pulse_utilization": 1.44,
+        "clearing_utilization": 1.25
+      }
+    },
+    {
+      "name": "protection.tvs_surge_load_line: invalid coupled domain",
+      "request": {
+        "command": "calculate",
+        "id": "protection.tvs_surge_load_line",
+        "inputs": {
+          "surge_voltage": 31.999,
+          "source_resistance": 3,
+          "breakdown_intercept": 24,
+          "dynamic_resistance": 1,
+          "fit_current_min": 2,
+          "fit_current_max": 16,
+          "rated_pulse_current": 10,
+          "protected_voltage_limit": 32
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject domain violation; next request must recover in the same process."
+    },
+    {
+      "name": "protection.tvs_surge_load_line: independent recovery",
+      "request": {
+        "command": "calculate",
+        "id": "protection.tvs_surge_load_line",
+        "inputs": {
+          "surge_voltage": 72,
+          "source_resistance": 3,
+          "breakdown_intercept": 24,
+          "dynamic_resistance": 1,
+          "fit_current_min": 2,
+          "fit_current_max": 16,
+          "rated_pulse_current": 10,
+          "protected_voltage_limit": 32
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "KVL gives 12 A with 36 V clamp; source power 864 W divides equally between TVS and resistance.",
+      "expected_outputs": {
+        "surge_current": 12,
+        "clamp_voltage": 36,
+        "peak_power": 432,
+        "voltage_margin": -4,
+        "current_margin": -2
+      }
+    },
+    {
+      "name": "protection.mov_power_law_pulse: invalid coupled domain",
+      "request": {
+        "command": "calculate",
+        "id": "protection.mov_power_law_pulse",
+        "inputs": {
+          "current_one": 2,
+          "voltage_one": 100,
+          "current_two": 32,
+          "voltage_two": 1600,
+          "pulse_current": 8,
+          "pulse_duration": 0.0005,
+          "energy_allowance": 0.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject domain violation; next request must recover in the same process."
+    },
+    {
+      "name": "protection.mov_power_law_pulse: independent recovery",
+      "request": {
+        "command": "calculate",
+        "id": "protection.mov_power_law_pulse",
+        "inputs": {
+          "current_one": 2,
+          "voltage_one": 100,
+          "current_two": 32,
+          "voltage_two": 200,
+          "pulse_current": 8,
+          "pulse_duration": 0.0005,
+          "energy_allowance": 0.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Fourth-root law and geometric-mean current give sqrt(20000) V; incremental resistance is one quarter of static V/I.",
+      "expected_outputs": {
+        "voltage_exponent": 0.25,
+        "current_exponent": 4,
+        "clamp_voltage": 141.4213562373095,
+        "differential_resistance": 4.419417382415922,
+        "absorbed_energy": 0.565685424949238,
+        "energy_margin": -0.06568542494923801
+      }
+    },
+    {
+      "name": "protection.scr_crowbar_trigger_latch: invalid coupled domain",
+      "request": {
+        "command": "calculate",
+        "id": "protection.scr_crowbar_trigger_latch",
+        "inputs": {
+          "zener_voltage": 8,
+          "gate_voltage": 1,
+          "gate_trigger_current": 0.03125,
+          "gate_resistance": 12,
+          "gate_shunt_resistance": 32,
+          "fault_voltage": 9.999,
+          "source_resistance": 4,
+          "on_voltage": 1,
+          "latching_current": 4,
+          "holding_current": 0.25
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject domain violation; next request must recover in the same process."
+    },
+    {
+      "name": "protection.scr_crowbar_trigger_latch: independent recovery",
+      "request": {
+        "command": "calculate",
+        "id": "protection.scr_crowbar_trigger_latch",
+        "inputs": {
+          "zener_voltage": 8,
+          "gate_voltage": 1,
+          "gate_trigger_current": 0.03125,
+          "gate_resistance": 12,
+          "gate_shunt_resistance": 32,
+          "fault_voltage": 13,
+          "source_resistance": 4,
+          "on_voltage": 1,
+          "latching_current": 4,
+          "holding_current": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Gate shunt takes 1/32 A; both series resistors carry gate plus shunt current. Trigger succeeds but anode cannot latch.",
+      "expected_outputs": {
+        "trigger_source_voltage": 10,
+        "available_gate_current": 0.21875,
+        "available_anode_current": 3,
+        "latch_margin": -1,
+        "holding_release_voltage": 2
+      }
+    },
+    {
+      "name": "protection.copper_adiabatic_fault_limit: invalid coupled domain",
+      "request": {
+        "command": "calculate",
+        "id": "protection.copper_adiabatic_fault_limit",
+        "inputs": {
+          "area_mm2": 2,
+          "initial_temperature": 0,
+          "limit_temperature": 0,
+          "clearing_time": 4,
+          "fault_current": 300
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject domain violation; next request must recover in the same process."
+    },
+    {
+      "name": "protection.copper_adiabatic_fault_limit: independent recovery",
+      "request": {
+        "command": "calculate",
+        "id": "protection.copper_adiabatic_fault_limit",
+        "inputs": {
+          "area_mm2": 2,
+          "initial_temperature": 0,
+          "limit_temperature": 234,
+          "clearing_time": 4,
+          "fault_current": 300
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Temperature-offset ratio is exactly two, giving k=226 sqrt(ln 2); installed area is inadequate.",
+      "expected_outputs": {
+        "material_k": 188.1573421216397,
+        "allowable_fault_current": 188.1573421216397,
+        "allowable_i2t": 141612.74157711904,
+        "minimum_area_mm2": 3.1888205543003094,
+        "area_margin_mm2": -1.1888205543003094
+      }
+    },
+    {
+      "name": "protection.foldback_fault_envelope: invalid coupled domain",
+      "request": {
+        "command": "calculate",
+        "id": "protection.foldback_fault_envelope",
+        "inputs": {
+          "input_voltage": 10,
+          "knee_voltage": 6,
+          "knee_current": 2,
+          "short_current": 0.5,
+          "fault_resistance": 3.001
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject domain violation; next request must recover in the same process."
+    },
+    {
+      "name": "protection.foldback_fault_envelope: independent recovery",
+      "request": {
+        "command": "calculate",
+        "id": "protection.foldback_fault_envelope",
+        "inputs": {
+          "input_voltage": 10,
+          "knee_voltage": 6,
+          "knee_current": 2,
+          "short_current": 0.5,
+          "fault_resistance": 2
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "I=1/2+V/4 intersects R=2 at (2,1); completing square gives P=9-(V-4)^2/4.",
+      "expected_outputs": {
+        "foldback_slope": 0.25,
+        "knee_load_resistance": 3,
+        "fault_output_voltage": 2,
+        "fault_output_current": 1,
+        "fault_pass_power": 8,
+        "short_pass_power": 5,
+        "peak_stress_voltage": 4,
+        "peak_stress_current": 1.5,
+        "maximum_pass_power": 9
+      }
+    },
+    {
+      "name": "fuse zero current and zero arcing",
+      "request": {
+        "command": "calculate",
+        "id": "protection.fuse_pulse_coordination",
+        "inputs": {
+          "peak_current": 0,
+          "rise_time": 0.0003,
+          "hold_time": 0.0005,
+          "fall_time": 0.0006,
+          "pre_arcing_i2t": 1,
+          "arcing_i2t": 0,
+          "pulse_allowance_fraction": 1,
+          "device_withstand_i2t": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Inclusive zero pulse/arcing and unity allowance; fault coordination remains independent.",
+      "expected_outputs": {
+        "pulse_i2t": 0,
+        "pulse_margin": 1,
+        "clearing_i2t": 1,
+        "clearing_margin": 0,
+        "pulse_utilization": 0,
+        "clearing_utilization": 1
+      }
+    },
+    {
+      "name": "TVS upper fit endpoint",
+      "request": {
+        "command": "calculate",
+        "id": "protection.tvs_surge_load_line",
+        "inputs": {
+          "surge_voltage": 88,
+          "source_resistance": 3,
+          "breakdown_intercept": 24,
+          "dynamic_resistance": 1,
+          "fit_current_min": 2,
+          "fit_current_max": 16,
+          "rated_pulse_current": 10,
+          "protected_voltage_limit": 32
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Characterized upper endpoint is inclusive despite failed voltage and current ratings.",
+      "expected_outputs": {
+        "surge_current": 16,
+        "clamp_voltage": 40,
+        "peak_power": 640,
+        "voltage_margin": -8,
+        "current_margin": -6
+      }
+    },
+    {
+      "name": "MOV high calibration endpoint",
+      "request": {
+        "command": "calculate",
+        "id": "protection.mov_power_law_pulse",
+        "inputs": {
+          "current_one": 2,
+          "voltage_one": 100,
+          "current_two": 32,
+          "voltage_two": 200,
+          "pulse_current": 32,
+          "pulse_duration": 0.0005,
+          "energy_allowance": 0.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Calibration endpoint must reproduce 200 V and negative energy margin.",
+      "expected_outputs": {
+        "voltage_exponent": 0.25,
+        "current_exponent": 4,
+        "clamp_voltage": 200,
+        "differential_resistance": 1.5625,
+        "absorbed_energy": 3.2,
+        "energy_margin": -2.7
+      }
+    },
+    {
+      "name": "SCR exact trigger and equal latch hold",
+      "request": {
+        "command": "calculate",
+        "id": "protection.scr_crowbar_trigger_latch",
+        "inputs": {
+          "zener_voltage": 8,
+          "gate_voltage": 1,
+          "gate_trigger_current": 0.03125,
+          "gate_resistance": 12,
+          "gate_shunt_resistance": 32,
+          "fault_voltage": 10,
+          "source_resistance": 4,
+          "on_voltage": 0,
+          "latching_current": 0.25,
+          "holding_current": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Binary-exact equality exercises source trigger boundary, zero on drop and IH=IL.",
+      "expected_outputs": {
+        "trigger_source_voltage": 10,
+        "available_gate_current": 0.03125,
+        "available_anode_current": 2.5,
+        "latch_margin": 2.25,
+        "holding_release_voltage": 1
+      }
+    },
+    {
+      "name": "copper maximum time zero fault",
+      "request": {
+        "command": "calculate",
+        "id": "protection.copper_adiabatic_fault_limit",
+        "inputs": {
+          "area_mm2": 2,
+          "initial_temperature": 0,
+          "limit_temperature": 234,
+          "clearing_time": 5,
+          "fault_current": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Five-second boundary and zero fault remain valid; integral capacity does not depend on duration.",
+      "expected_outputs": {
+        "material_k": 188.1573421216397,
+        "allowable_fault_current": 168.29304297986832,
+        "allowable_i2t": 141612.74157711904,
+        "minimum_area_mm2": 0,
+        "area_margin_mm2": 2
+      }
+    },
+    {
+      "name": "foldback tiny short at knee",
+      "request": {
+        "command": "calculate",
+        "id": "protection.foldback_fault_envelope",
+        "inputs": {
+          "input_voltage": 10,
+          "knee_voltage": 6,
+          "knee_current": 2,
+          "short_current": 1e-20,
+          "fault_resistance": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Knee endpoint is determined by characterization even with negligible short current.",
+      "expected_outputs": {
+        "foldback_slope": 0.3333333333333333,
+        "knee_load_resistance": 3,
+        "fault_output_voltage": 6,
+        "fault_output_current": 2,
+        "fault_pass_power": 8,
+        "short_pass_power": 1e-19,
+        "peak_stress_voltage": 5,
+        "peak_stress_current": 1.6666666666666667,
+        "maximum_pass_power": 8.333333333333334
+      }
+    },
+    {
+      "name": "protection.fuse_pulse_coordination: admitted-range regression",
+      "request": {
+        "command": "calculate",
+        "id": "protection.fuse_pulse_coordination",
+        "inputs": {
+          "peak_current": 1e+162,
+          "rise_time": 5e-324,
+          "hold_time": 0,
+          "fall_time": 0,
+          "pre_arcing_i2t": 1,
+          "arcing_i2t": 0.25,
+          "pulse_allowance_fraction": 0.5,
+          "device_withstand_i2t": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent algebra/IEEE-754 analysis, not executed: rise_time/3 underflows before large current restores a representable integral.",
+      "expected_outputs": {
+        "pulse_i2t": 1.6468854861374884,
+        "pulse_margin": -1.1468854861374884,
+        "clearing_i2t": 1.25,
+        "clearing_margin": -0.25,
+        "pulse_utilization": 3.293770972274977,
+        "clearing_utilization": 1.25
+      }
+    },
+    {
+      "name": "protection.tvs_surge_load_line: admitted-range regression",
+      "request": {
+        "command": "calculate",
+        "id": "protection.tvs_surge_load_line",
+        "inputs": {
+          "surge_voltage": 100,
+          "source_resistance": 1e+308,
+          "breakdown_intercept": 30,
+          "dynamic_resistance": 1e+308,
+          "fit_current_min": 1e-308,
+          "fit_current_max": 1e-306,
+          "rated_pulse_current": 1e-306,
+          "protected_voltage_limit": 100
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent algebra/IEEE-754 analysis, not executed: Rs+rd overflows although equal resistance drops give finite 3.5e-307 A.",
+      "expected_outputs": {
+        "surge_current": 3.5e-307,
+        "clamp_voltage": 65,
+        "peak_power": 2.275e-305,
+        "voltage_margin": 35,
+        "current_margin": 6.5e-307
+      }
+    },
+    {
+      "name": "protection.mov_power_law_pulse: admitted-range regression",
+      "request": {
+        "command": "calculate",
+        "id": "protection.mov_power_law_pulse",
+        "inputs": {
+          "current_one": 1e+200,
+          "voltage_one": 1e+120,
+          "current_two": 1e+202,
+          "voltage_two": 1e+121,
+          "pulse_current": 1e+201,
+          "pulse_duration": 1e-300,
+          "energy_allowance": 1e+23
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent algebra/IEEE-754 analysis, not executed: V*I overflows before short duration restores finite requested energy.",
+      "expected_outputs": {
+        "voltage_exponent": 0.5,
+        "current_exponent": 2,
+        "clamp_voltage": 3.1622776601683794e+120,
+        "differential_resistance": 1.5811388300841898e-81,
+        "absorbed_energy": 3.1622776601683794e+21,
+        "energy_margin": 9.68377223398316e+22
+      }
+    },
+    {
+      "name": "protection.copper_adiabatic_fault_limit: admitted-range regression",
+      "request": {
+        "command": "calculate",
+        "id": "protection.copper_adiabatic_fault_limit",
+        "inputs": {
+          "area_mm2": 2,
+          "initial_temperature": 0,
+          "limit_temperature": 234,
+          "clearing_time": 4,
+          "fault_current": 1e+308
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent algebra/IEEE-754 analysis, not executed: Ifault*sqrt(t) overflows before dividing by k, although required area is finite.",
+      "expected_outputs": {
+        "material_k": 188.1573421216397,
+        "allowable_fault_current": 188.1573421216397,
+        "allowable_i2t": 141612.74157711904,
+        "minimum_area_mm2": 1.0629401847667698e+306,
+        "area_margin_mm2": -1.0629401847667698e+306
+      }
+    },
+    {
+      "name": "protection.foldback_fault_envelope: admitted-range regression",
+      "request": {
+        "command": "calculate",
+        "id": "protection.foldback_fault_envelope",
+        "inputs": {
+          "input_voltage": 9,
+          "knee_voltage": 5,
+          "knee_current": 1e+200,
+          "short_current": 1e-200,
+          "fault_resistance": 5e-200
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent algebra/IEEE-754 analysis, not executed: Isc/Ik underflows at exact knee; zero denominator loses finite characterized endpoint.",
+      "expected_outputs": {
+        "foldback_slope": 2e+199,
+        "knee_load_resistance": 5e-200,
+        "fault_output_voltage": 5,
+        "fault_output_current": 1e+200,
+        "fault_pass_power": 4e+200,
+        "short_pass_power": 9e-200,
+        "peak_stress_voltage": 4.5,
+        "peak_stress_current": 9e+199,
+        "maximum_pass_power": 4.05e+200
+      }
+    }
+  ]
+}
