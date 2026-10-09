@@ -1,0 +1,124 @@
+[
+  {
+    "id": "sensors.ntc_steinhart_hart",
+    "title": "Steinhart–Hart NTC thermistor temperature",
+    "category": "Sensor transduction",
+    "level": "intermediate",
+    "description": "Convert a calibrated nonlinear thermistor resistance to temperature and local resistance-to-temperature sensitivity.",
+    "formula": "1/T = A+B ln(R/1 ohm)+C ln(R/1 ohm)^3; dT/dR = -T^2(B+3C ln(R/1 ohm)^2)/R",
+    "assumptions": [
+      "Coefficients use the numerical resistance in ohms and temperature in kelvin; do not reuse coefficients fitted with kilohms.",
+      "Monotonic NTC coefficient family B>0 and C>=0; coefficients and fit interval must come from calibration of the actual sensor.",
+      "Negligible measurement self-heating, lead resistance and leakage; static thermal equilibrium. This is not a constant-TCR model."
+    ],
+    "references": [
+      {
+        "title": "ILX Lightwave TNSTEIN-1, equation (1), 2005",
+        "url": "https://api.p1.mks.com/medias/sys_master/images/images/hdb/hac/8797291479070/TN-STEIN-1-Thermistor-Constant-Conversions-Beta-to-Steinhart-Hart.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "resistance",
+        "label": "Measured thermistor resistance",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "coefficient_a",
+        "label": "Steinhart–Hart A",
+        "unit": "1/K",
+        "default": 0.001129148
+      },
+      {
+        "key": "coefficient_b",
+        "label": "Steinhart–Hart B",
+        "unit": "1/K",
+        "default": 0.000234125,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "coefficient_c",
+        "label": "Steinhart–Hart C",
+        "unit": "1/K",
+        "default": 8.76741e-08,
+        "min": 0
+      },
+      {
+        "key": "fit_temperature_min",
+        "label": "Calibrated minimum temperature",
+        "unit": "K",
+        "default": 233.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_temperature_max",
+        "label": "Calibrated maximum temperature",
+        "unit": "K",
+        "default": 398.15,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "temperature_kelvin",
+        "label": "Thermistor temperature",
+        "unit": "K",
+        "expression": "1/(coefficient_a+coefficient_b*ln(resistance)+coefficient_c*ln(resistance)^3)"
+      },
+      {
+        "key": "temperature_celsius",
+        "label": "Thermistor temperature",
+        "unit": "degC",
+        "expression": "temperature_kelvin-273.15"
+      },
+      {
+        "key": "temperature_sensitivity",
+        "label": "Local temperature sensitivity",
+        "unit": "K/ohm",
+        "expression": "-temperature_kelvin*(temperature_kelvin/resistance)*(coefficient_b+3*coefficient_c*ln(resistance)^2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_temperature_max",
+        "op": ">",
+        "right": "fit_temperature_min",
+        "message": "Calibration temperature interval must be ordered"
+      },
+      {
+        "left": "coefficient_a+coefficient_b*ln(resistance)+coefficient_c*ln(resistance)^3",
+        "op": ">=",
+        "right": "1/fit_temperature_max",
+        "message": "Resistance implies temperature above the calibrated interval or nonpositive inverse temperature"
+      },
+      {
+        "left": "coefficient_a+coefficient_b*ln(resistance)+coefficient_c*ln(resistance)^3",
+        "op": "<=",
+        "right": "1/fit_temperature_min",
+        "message": "Resistance implies temperature below the calibrated interval"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "resistance": 10000,
+        "coefficient_a": 0.001129148,
+        "coefficient_b": 0.000234125,
+        "coefficient_c": 8.76741e-08,
+        "fit_temperature_min": 233.15,
+        "fit_temperature_max": 398.15
+      },
+      "expected": {
+        "temperature_kelvin": 298.1496681766963,
+        "temperature_celsius": 24.999668176696318,
+        "temperature_sensitivity": -0.002279553664363643
+      },
+      "relative_tolerance": 1e-09
+    }
+  }
+]
