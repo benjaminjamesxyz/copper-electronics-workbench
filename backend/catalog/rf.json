@@ -648,5 +648,138 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "rf.monostatic_radar_return",
+    "title": "Monostatic point-target radar return",
+    "category": "RF networks, antennas and links",
+    "level": "expert",
+    "description": "Predict the echo power of a far-field point target from its radar cross section, shared transmit/receive antenna gain and two-way system losses.",
+    "formula": "Pr=Pt G^2 (c/f)^2 sigma/((4 pi)^3 R^4 L); echo_margin=Pr_dBm-Srx_dBm",
+    "assumptions": [
+      "Monostatic radar with one reciprocal antenna, the same gain on transmit and receive, and a target in the antenna look direction.",
+      "Transmit power is the in-pulse power for pulsed radar or carrier power for CW; receiver threshold must use the same waveform/time reference.",
+      "Positive RCS is the target's monostatic radar cross section at this frequency, aspect and polarization, not its geometric surface area.",
+      "Point-target far-field free-space scattering. Range must exceed max(10 wavelengths, 2 Dant^2/wavelength, 2 Dtarget^2/wavelength); the 10-wavelength term is a conservative engineering screen.",
+      "Loss input is total two-way/receiver-system loss, applied once. Do not enter a one-way loss without first converting it to the full budget.",
+      "No clutter, multipath, fluctuating RCS, radar equation search/integration gain, noise-figure cascade, detection probability or false-alarm calculation. Zero RCS has negative-infinite dBm and is outside this finite-logarithmic model."
+    ],
+    "references": [
+      {
+        "title": "MIT Lincoln Laboratory, Introduction to Radar Systems: The Radar Equation, slides 5-10 and 13",
+        "url": "https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf"
+      },
+      {
+        "title": "Amrita Virtual Lab, Antenna Gain Measurement, procedure 1 (far-field aperture condition)",
+        "url": "https://vlab.amrita.edu/?brch=180&cnt=1&sim=307&sub=3"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Radar carrier frequency",
+        "unit": "Hz",
+        "default": 10000000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "range",
+        "label": "One-way target range",
+        "unit": "m",
+        "default": 1000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "antenna_max_dimension",
+        "label": "Largest antenna dimension",
+        "unit": "m",
+        "default": 0.3,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "target_max_dimension",
+        "label": "Largest target dimension",
+        "unit": "m",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "transmit_power_dbm",
+        "label": "In-pulse or CW transmit power",
+        "unit": "dBm",
+        "default": 30.0
+      },
+      {
+        "key": "antenna_gain_dbi",
+        "label": "One-way antenna gain toward target",
+        "unit": "dBi",
+        "default": 30.0
+      },
+      {
+        "key": "radar_cross_section",
+        "label": "Monostatic radar cross section",
+        "unit": "m^2",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "total_loss_db",
+        "label": "Total two-way and system loss",
+        "unit": "dB",
+        "default": 3.0,
+        "min": 0.0
+      },
+      {
+        "key": "receiver_threshold_dbm",
+        "label": "Receiver echo-power threshold",
+        "unit": "dBm",
+        "default": -100.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "received_power_dbm",
+        "label": "Received target echo power",
+        "unit": "dBm",
+        "expression": "transmit_power_dbm+2*antenna_gain_dbi+20*(log10(299792458)-log10(frequency))+10*log10(radar_cross_section)-30*log10(4*pi)-40*log10(range)-total_loss_db"
+      },
+      {
+        "key": "echo_margin_db",
+        "label": "Echo margin above threshold",
+        "unit": "dB",
+        "expression": "received_power_dbm-receiver_threshold_dbm"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "range",
+        "op": ">=",
+        "right": "max(10*299792458/frequency,2*max(antenna_max_dimension,target_max_dimension)*(max(antenna_max_dimension,target_max_dimension)*frequency/299792458))",
+        "message": "Range must meet the documented far-field screen for both antenna and target dimensions."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 10000000000.0,
+        "range": 1000.0,
+        "antenna_max_dimension": 0.3,
+        "target_max_dimension": 1.0,
+        "transmit_power_dbm": 30.0,
+        "antenna_gain_dbi": 30.0,
+        "radar_cross_section": 1.0,
+        "total_loss_db": 3.0,
+        "receiver_threshold_dbm": -100.0
+      },
+      "expected": {
+        "received_power_dbm": -96.43988186210434,
+        "echo_margin_db": 3.560118137895657
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

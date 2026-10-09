@@ -425,3 +425,83 @@ Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outpu
 
 The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
 
+## 7. `rf.monostatic_radar_return`
+
+### Purpose, novelty and evidence
+
+The nearest new neighbor is `rf.free_space_link_budget`. A one-way communications link has an active transmitter and a receiving antenna at the opposite endpoint, giving inverse-square range loss. This model instead has a **passive scattering target** described by RCS and the same antenna on transmit and receive. Outbound and return spreading create inverse-fourth-power range dependence. It is not the communications equation inverted or given extra outputs. No baseline model includes target scattering. S7 slides 5–10 explicitly derive these stages.
+
+### Equations and physical limits
+
+Linear SI derivation:
+
+`incident_density = Pt G/(4 pi R^2)` W/m²;
+`return_density = incident_density * sigma/(4 pi R^2)` W/m²;
+`Ae = G lambda^2/(4 pi)` m²;
+`Pr = return_density * Ae/L = Pt G^2 lambda^2 sigma/((4 pi)^3 R^4 L)` W.
+
+Consequently:
+
+`received_power_dbm = transmit_power_dbm + 2*antenna_gain_dbi + 20 log10(c/f) + 10 log10(radar_cross_section) - 30 log10(4pi) - 40 log10(range) - total_loss_db`;
+`echo_margin_db = received_power_dbm - receiver_threshold_dbm`.
+
+Logs take the numerical SI values. The catalog expands logarithms to avoid explicitly forming R^4, large linear gains or tiny returned power. Range is one-way. RCS has square-meter units but is not geometric area: it is frequency-, aspect- and polarization-specific scattering strength. Positive RCS is required for finite dBm. Total loss includes the full two-way/system budget and is subtracted once; it must not accidentally be doubled twice.
+
+Use the largest dimensions of both antenna and target in `R >= max(10 lambda, 2 max(Dant,Dtarget)^2/lambda)`. The aperture phase criterion is extended to the target to keep incident-wave/RCS use in a far-field regime; the ten-wavelength minimum is an explicit conservative screen, not a statement that all RCS models become accurate exactly there. The target must be sufficiently isolated and accurately characterized. Pulsed Pt is in-pulse power, not average duty-cycle power, unless the receiver threshold is formulated for the same averaging. No range resolution, clutter, coherent integration, detection probability or false-alarm probability is inferred.
+
+### Complete independent example
+
+Inputs: `frequency=10000000000 Hz`, `range=1000 m`, `antenna_max_dimension=0.3 m`, `target_max_dimension=1 m`, `transmit_power_dbm=30`, `antenna_gain_dbi=30`, `radar_cross_section=1 m^2`, `total_loss_db=3`, `receiver_threshold_dbm=-100`.
+
+Independent linear values are `Pt=1 W`, `G=1000`, `lambda=0.0299792458 m`, `L=10^0.3=1.9952623149688795`. The target-dimension screen is `66.7128190396304 m`, so 1000 m is admissible.
+
+`Pr = [1 * 1000^2 * 0.0299792458^2 * 1] / [(4pi)^3 * 1000^4 * 1.9952623149688795] = 2.2699265981678502e-13 W`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `received_power_dbm` | `10 log10(2.2699265981678502e-13 / 1e-3)` | `-96.43988186210434 dBm` |
+| `echo_margin_db` | `-96.43988186210434 - (-100)` | `3.560118137895657 dB` |
+
+### Nominal, limiting and invalid cases
+
+- Double range: echo power divides by 16, received=`-108.4810816886636 dBm`, margin=`-8.481081688663592 dB`. The negative margin is a valid result.
+- Double RCS: echo rises `3.010299956639812 dB`. Increase the common antenna gain 1 dB: echo rises 2 dB because gain acts on both paths.
+- Add 1 dB to total loss: echo and margin each fall 1 dB, not 2 dB.
+- Zero total loss is accepted. Threshold equal to computed echo gives zero margin. Arbitrarily small positive RCS remains logarithmically meaningful without pretending zero RCS has finite dBm.
+- Accept exact far-field-screen equality; reject smaller range. Increasing the target dimension can invalidate a previously accepted range without changing nominal radar gain or RCS.
+- Reject zero/negative RCS, frequency, range or dimensions; reject negative total loss and nonfinite values. Poorly characterized RCS cannot be repaired by a numeric input clamp.
+
+### Catalog inputs and bounds
+
+| Key | Meaning | Unit | Default | Bounds |
+|---|---|---|---|---|
+| `frequency` | Radar carrier frequency | Hz | 10000000000.0 | > 0.0 |
+| `range` | One-way target range | m | 1000.0 | > 0.0 |
+| `antenna_max_dimension` | Largest antenna dimension | m | 0.3 | > 0.0 |
+| `target_max_dimension` | Largest target dimension | m | 1.0 | > 0.0 |
+| `transmit_power_dbm` | In-pulse or CW transmit power | dBm | 30.0 | Any finite value |
+| `antenna_gain_dbi` | One-way antenna gain toward target | dBi | 30.0 | Any finite value |
+| `radar_cross_section` | Monostatic radar cross section | m^2 | 1.0 | > 0.0 |
+| `total_loss_db` | Total two-way and system loss | dB | 3.0 | >= 0.0 |
+| `receiver_threshold_dbm` | Receiver echo-power threshold | dBm | -100.0 | Any finite value |
+
+All inputs must be finite. Constraints run before outputs; invalid domains return errors, not clamps.
+
+- `range >= max(10*299792458/frequency,2*max(antenna_max_dimension,target_max_dimension)*(max(antenna_max_dimension,target_max_dimension)*frequency/299792458))`: Range must meet the documented far-field screen for both antenna and target dimensions.
+
+### Executable output sequence
+
+| Key | Unit | Expression |
+|---|---|---|
+| `received_power_dbm` | dBm | `transmit_power_dbm+2*antenna_gain_dbi+20*(log10(299792458)-log10(frequency))+10*log10(radar_cross_section)-30*log10(4*pi)-40*log10(range)-total_loss_db` |
+| `echo_margin_db` | dB | `received_power_dbm-receiver_threshold_dbm` |
+
+Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outputs require an absolute tolerance. All defaults equal the full worked-example inputs above.
+
+### Sources and illustration
+
+- [MIT Lincoln Laboratory, Introduction to Radar Systems: The Radar Equation, slides 5-10 and 13](https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf)
+- [Amrita Virtual Lab, Antenna Gain Measurement, procedure 1 (far-field aperture condition)](https://vlab.amrita.edu/?brch=180&cnt=1&sim=307&sub=3)
+
+The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
+
