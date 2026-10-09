@@ -178,7 +178,19 @@ Let `q=R4/R3`, so `p=q/(1+q)`. Algebra gives
 A_{cm}=(1+k)\frac{q}{1+q}-k=\frac{q-k}{1+q}.
 \]
 
-The executable expression uses `(r_four/r_three-r_two/r_one)/(1+r_four/r_three)`. It subtracts identical computed ratios directly, preserving exact zero at ratio matching rather than subtracting two separately rounded amplified divider terms. No CMRR division or special-case clamp is added. Differential gain, pin/output equations, nominal expected values and sequential output order remain unchanged. Tiny physical mismatches cannot be resolved below the floating-point precision of the supplied resistor values; this is not a tolerance-statistics model. Parent/independent QA should cover matched noninteger ratios and both mismatch signs. No such checks are executed here.
+The executable common-mode expression uses `(r_four/r_three-r_two/r_one)/(1+r_four/r_three)`. It subtracts identical computed ratios directly, preserving exact zero at ratio matching rather than subtracting two separately rounded amplified divider terms. No CMRR division or special-case clamp is added. Differential gain, pin-voltage equation, nominal expected values, admissible domains and sequential output order remain unchanged. Tiny physical mismatches cannot be resolved below the floating-point precision of the supplied resistor values; this is not a tolerance-statistics model.
+
+The output and both output-swing guards independently combine the differential, ratio-mismatch/common-mode and reference contributions:
+
+\[
+V_o=\frac{(1+k)q}{1+q}(V_2-V_1)
++\frac{q-k}{1+q}V_1
++\frac{1+k}{1+q}V_{ref}.
+\]
+
+This follows by expanding `Vo=(1+k)[q V2+Vref]/(1+q)-k V1` and writing `V2=V1+(V2-V1)`. The first coefficient multiplies `V2-V1` with `V1` held constant; it is not the separately reported differential gain defined at fixed source-average common mode. Computing the output independently of the rounded absolute `pin_voltage` prevents cancellation from erasing a tiny reference. At `q=k` and `V2=V1`, the first two contributions vanish exactly and the reference coefficient is one. No input bounds are tightened, no reference is clamped, and pin-common-mode limits still use the physical pin voltage.
+
+Independent regression vector: `r_one=r_two=r_three=r_four=10000 ohm`, `v_one=v_two=1 V`, `v_reference=1e-17 V`, and both pin/output ranges `[-10,10] V`. Exact model outputs are `differential_gain=1 V/V`, `common_mode_gain=0 V/V`, `pin_voltage=(1+1e-17)/2 V` (which rounds to approximately `0.5 V`), and `v_out=1e-17 V`. Reversing only the reference gives the same gains, `pin_voltage=(1-1e-17)/2 V` (again approximately `0.5 V`), and `v_out=-1e-17 V`. The rounded pin output cannot resolve the reference, but the independently evaluated output must retain it. For the positive vector, narrower output limits `[5e-18,2e-17] V` still admit the output, whereas a lower limit above `1e-17 V` must reject it; this checks that guards use the same stable expression. These are independent algebraic expectations, not executed results.
 
 
 ### Executable inputs and example vector
@@ -208,7 +220,7 @@ The shared Rust engine evaluates these expressions in the listed order; later ou
 | `differential_gain` | V/V | `((1+r_two/r_one)*r_four/(r_three+r_four)+r_two/r_one)/2` | `10.004504504504505` |
 | `common_mode_gain` | V/V | `(r_four/r_three-r_two/r_one)/(1+r_four/r_three)` | `0.009009009009009009` |
 | `pin_voltage` | V | `(r_four*v_two+r_three*v_reference)/(r_three+r_four)` | `1.000900900900901` |
-| `v_out` | V | `(1+r_two/r_one)*pin_voltage-r_two/r_one*v_one` | `1.0099099099099098` |
+| `v_out` | V | `(1+r_two/r_one)*(r_four/r_three)/(1+r_four/r_three)*(v_two-v_one)+(r_four/r_three-r_two/r_one)/(1+r_four/r_three)*v_one+(1+r_two/r_one)/(1+r_four/r_three)*v_reference` | `1.0099099099099098` |
 
 ### Input-only relational guards and error rationale
 
@@ -218,8 +230,8 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 - Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
 - Require `(r_four*v_two+r_three*v_reference)/(r_three+r_four) >= v_cm_min`: Input-pin voltage is below the common-mode range.
 - Require `(r_four*v_two+r_three*v_reference)/(r_three+r_four) <= v_cm_max`: Input-pin voltage is above the common-mode range.
-- Require `(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one >= v_out_min`: Predicted output is below the linear output range.
-- Require `(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one <= v_out_max`: Predicted output is above the linear output range.
+- Require `(1+r_two/r_one)*(r_four/r_three)/(1+r_four/r_three)*(v_two-v_one)+(r_four/r_three-r_two/r_one)/(1+r_four/r_three)*v_one+(1+r_two/r_one)/(1+r_four/r_three)*v_reference >= v_out_min`: Predicted output is below the linear output range.
+- Require `(1+r_two/r_one)*(r_four/r_three)/(1+r_four/r_three)*(v_two-v_one)+(r_four/r_three-r_two/r_one)/(1+r_four/r_three)*v_one+(1+r_two/r_one)/(1+r_four/r_three)*v_reference <= v_out_max`: Predicted output is above the linear output range.
 
 ### Catalog model assumptions
 
@@ -806,7 +818,7 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 
 ## Integration handoff and unexecuted verification
 
-All eight researched IDs are implemented as shared-engine catalog programs. This lane changed only `backend/catalog/opamps.json` and `docs/features/opamps.md`; the shared evaluator and Flutter arithmetic remain parent-owned. The difference-stage common-mode expression has the algebraically equivalent ratio-first conditioning correction documented above. All researched example input maps, expected output maps, units, source titles/URLs and the `1e-6` relative tolerance are preserved.
+All eight researched IDs are implemented as shared-engine catalog programs. This lane changed only `backend/catalog/opamps.json` and `docs/features/opamps.md`; the shared evaluator and Flutter arithmetic remain parent-owned. The difference-stage common-mode expression uses ratio-first conditioning; its output and output guards preserve independent differential, mismatch and reference contributions. The noninverting output and output guards preserve the direct-input term for unity-following tiny signals. These algebraically equivalent conditioning corrections are documented above. All researched example input maps, expected output maps, units, source titles/URLs and the `1e-6` relative tolerance are preserved.
 
 Main should exercise all complete examples/defaults, exact input-key and finite-value rejection, positive-divisor/capacitance guards, ordered operating ranges and pin/output violations. Independent QA should also exercise reference-biased stages, a unity follower (`r_feedback=0`), exactly matched noninteger difference ratios, small mismatch and common-mode leakage, zero-duration/zero-slope integration with valid endpoints, descending/flat differentiation and zero-duration rejection, inadequate slew margin as a valid diagnostic, and low finite open-loop gain versus high-loop-gain bandwidth plus minimum-stable-noise-gain rejection.
 

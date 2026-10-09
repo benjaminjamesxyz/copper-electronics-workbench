@@ -152,7 +152,7 @@
     "category": "Operational amplifier stages",
     "level": "expert",
     "description": "Predict differential gain, common-mode leakage and output for a four-resistor difference stage with unequal resistor ratios.",
-    "formula": "k = R2/R1; p = R4/(R3+R4); Vpin = p V2 + (1-p)Vref; Vo = (1+k)Vpin-k V1; Ad = ((1+k)p+k)/2; Acm = (1+k)p-k; Acm = (R4/R3-k)/(1+R4/R3) (equivalent matched-ratio-safe form)",
+    "formula": "k = R2/R1; q = R4/R3; p = q/(1+q); Vpin = p V2 + (1-p)Vref; Vo = (1+k)q/(1+q)(V2-V1) + (q-k)/(1+q)V1 + (1+k)/(1+q)Vref; Ad = ((1+k)p+k)/2; Acm = (q-k)/(1+q)",
     "assumptions": [
       "R1 connects V1 to the inverting input; R2 is feedback; R3 connects V2 to the noninverting input; R4 connects the noninverting input to Vref.",
       "Ad is defined for Vd=V2-V1 with Vcm=(V1+V2)/2 held constant. Acm describes external resistor-ratio leakage, not intrinsic op-amp CMRR.",
@@ -266,7 +266,7 @@
         "key": "v_out",
         "label": "Output voltage",
         "unit": "V",
-        "expression": "(1+r_two/r_one)*pin_voltage-r_two/r_one*v_one"
+        "expression": "(1+r_two/r_one)*(r_four/r_three)/(1+r_four/r_three)*(v_two-v_one)+(r_four/r_three-r_two/r_one)/(1+r_four/r_three)*v_one+(1+r_two/r_one)/(1+r_four/r_three)*v_reference"
       }
     ],
     "constraints": [
@@ -295,13 +295,13 @@
         "message": "Input-pin voltage is above the common-mode range."
       },
       {
-        "left": "(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one",
+        "left": "(1+r_two/r_one)*(r_four/r_three)/(1+r_four/r_three)*(v_two-v_one)+(r_four/r_three-r_two/r_one)/(1+r_four/r_three)*v_one+(1+r_two/r_one)/(1+r_four/r_three)*v_reference",
         "op": ">=",
         "right": "v_out_min",
         "message": "Predicted output is below the linear output range."
       },
       {
-        "left": "(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one",
+        "left": "(1+r_two/r_one)*(r_four/r_three)/(1+r_four/r_three)*(v_two-v_one)+(r_four/r_three-r_two/r_one)/(1+r_four/r_three)*v_one+(1+r_two/r_one)/(1+r_four/r_three)*v_reference",
         "op": "<=",
         "right": "v_out_max",
         "message": "Predicted output is above the linear output range."
