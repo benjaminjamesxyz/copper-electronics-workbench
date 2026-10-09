@@ -1,0 +1,103 @@
+[
+  {
+    "id": "oscillators.timer_555_astable",
+    "title": "555 astable charge-discharge timing",
+    "category": "Oscillator design",
+    "level": "basic",
+    "description": "Predict self-triggered 555 output timing from its separate charging and discharging paths.",
+    "formula": "tH=ln(2)(RA+RB)C; tL=ln(2)RB C; T=tH+tL; f=1/T; D=tH/T",
+    "assumptions": [
+      "Standard astable: pins 2 and 6 share the timing capacitor; RA connects supply to pin 7; RB connects pin 7 to the capacitor.",
+      "Ideal trigger/threshold levels are VCC/3 and 2VCC/3; discharge saturation, leakage, threshold errors and propagation delays are neglected.",
+      "Use a properly decoupled 5–15 V bipolar 555 supply, reset high, and component/current ratings from the selected device. The bipolar-555 distortion guideline limits the nominal frequency to 100 kHz.",
+      "Duty is the fraction of output-high time, not the discharge-transistor on-time. This topology cannot produce duty below 0.5 with positive RA."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments xx555 data sheet, SLFS022K, section 6.3.2, equations 1–4",
+        "url": "https://www.ti.com/lit/ds/symlink/ne555.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "charge_resistance",
+        "label": "Supply-to-discharge resistance RA",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "discharge_resistance",
+        "label": "Discharge-to-capacitor resistance RB",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "timing_capacitance",
+        "label": "Timing capacitance",
+        "unit": "F",
+        "default": 1e-07,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "high_time",
+        "label": "Output high interval",
+        "unit": "s",
+        "expression": "ln(2)*(charge_resistance+discharge_resistance)*timing_capacitance"
+      },
+      {
+        "key": "low_time",
+        "label": "Output low interval",
+        "unit": "s",
+        "expression": "ln(2)*discharge_resistance*timing_capacitance"
+      },
+      {
+        "key": "period",
+        "label": "Oscillation period",
+        "unit": "s",
+        "expression": "high_time+low_time"
+      },
+      {
+        "key": "frequency",
+        "label": "Oscillation frequency",
+        "unit": "Hz",
+        "expression": "1/period"
+      },
+      {
+        "key": "high_duty",
+        "label": "Output high duty fraction",
+        "unit": "1",
+        "expression": "(charge_resistance+discharge_resistance)/(charge_resistance+2*discharge_resistance)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "ln(2)*(charge_resistance+2*discharge_resistance)*timing_capacitance",
+        "op": ">=",
+        "right": "1e-5",
+        "message": "The bipolar 555 model requires nominal frequency no greater than 100 kHz."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "charge_resistance": 1000,
+        "discharge_resistance": 10000,
+        "timing_capacitance": 1e-07
+      },
+      "expected": {
+        "high_time": 0.0007624618986159398,
+        "low_time": 0.0006931471805599453,
+        "period": 0.001455609079175885,
+        "frequency": 686.997638518554,
+        "high_duty": 0.5238095238095238
+      },
+      "relative_tolerance": 1e-09
+    }
+  }
+]
