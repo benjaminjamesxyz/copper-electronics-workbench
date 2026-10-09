@@ -1,0 +1,829 @@
+{
+  "base": "8e9bcc5",
+  "developers": 16,
+  "atomic_features": 100,
+  "handoffs": [
+    {
+      "lane": "sensors",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "sensors.ntc_steinhart_hart",
+          "sha": "f19ad5ccd8bd4e2addc5a3d000d17d610b932899"
+        },
+        {
+          "id": "sensors.platinum_callendar_van_dusen",
+          "sha": "1b8355ba225b9dbd7195e43fca8904704241bab6"
+        },
+        {
+          "id": "sensors.type_t_cold_junction_emf",
+          "sha": "e7b7436f746c5e4114869a39cd0b6f41f5801f11"
+        },
+        {
+          "id": "sensors.hall_plate_angle",
+          "sha": "0ed1afe4a8025ada3ad06e3229738f29ac0dd2c8"
+        },
+        {
+          "id": "sensors.amr_angular_resistance",
+          "sha": "9d70f5b5bcfd7d217ec3d025d08dbd98ca282a64"
+        },
+        {
+          "id": "sensors.hydrogen_activity_electrode",
+          "sha": "651c1e83666c4559c64e197d2d881965965bfab7"
+        },
+        {
+          "id": "sensors.differential_gap_capacitor",
+          "sha": "a9f019c9bc4222e5afda56d7de2e1aedafb76723"
+        }
+      ],
+      "files": [
+        "backend/catalog/sensors.json",
+        "frontend/lib/diagrams/sensors.dart",
+        "docs/features/sensors.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted with ordered SHAs and acceptance cases.",
+        "Main must register sensorsDiagrams and execute numerical/native acceptance.",
+        "No research changes or source blockers identified. Calibration, component ratings, idealized geometry and mirrored AMR provenance remain documented limits."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, engine execution and native-image checks as required. Main should exercise all research examples, backlog boundaries and seven native diagrams.",
+      "integrated_commits": [
+        "4aa78fc",
+        "aba2817",
+        "57713da",
+        "12d3980",
+        "db55c3f",
+        "720c3c8",
+        "9d4f9a9"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "opto",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "opto.photodiode_quantum_conversion",
+          "sha": "57e6702cc19e1d2bc4fcbd79b2dc330b655dac85"
+        },
+        {
+          "id": "opto.lambertian_target_irradiance",
+          "sha": "ef20b6871da45cdf2c5bda2d769075cf9484f6be"
+        },
+        {
+          "id": "opto.layer_absorption_capture",
+          "sha": "630ef9869dc66981b15f1dd77fba3bdc59baeb29"
+        },
+        {
+          "id": "opto.gaussian_aperture_capture",
+          "sha": "8ec7371f7e60befb6e99ef293ce4c03cc662aa07"
+        },
+        {
+          "id": "opto.step_index_mode_cutoff",
+          "sha": "597d85cca724ec0f594eb74ae4b032d34465a750"
+        },
+        {
+          "id": "opto.fiber_gaussian_dispersion",
+          "sha": "b258a45264e22bff51a48f12d392cf08a838a841"
+        },
+        {
+          "id": "opto.sipm_finite_cell_response",
+          "sha": "2182477529feec010c7358f8be39386a203456e5"
+        }
+      ],
+      "files": [
+        "backend/catalog/opto.json",
+        "frontend/lib/diagrams/opto.dart",
+        "docs/features/opto.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted with ordered SHAs and acceptance requests.",
+        "Research catalog objects promoted unchanged; all seven exact-ID diagrams and complete derivation/example/limit documentation included atomically.",
+        "Main must register optoDiagrams and execute numerical/native-image acceptance.",
+        "Physical limits retained: calibration, paraxial/weak-guidance approximation, clipping and measured SiPM over-saturation. No source/model blocker identified."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, engine runs and native-image checks as required. Main should run every complete example, backlog boundary/error case and native diagram/legend acceptance.",
+      "integrated_commits": [
+        "a839cb1",
+        "d456b44",
+        "a6892f7",
+        "2378afc",
+        "9208ac6",
+        "b97f521",
+        "848ebe6"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "oscillators",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "oscillators.timer_555_astable",
+          "sha": "dbec91df6c97c93d38e994386d488c1c36f603cf"
+        },
+        {
+          "id": "oscillators.comparator_rc_oscillator",
+          "sha": "44ff9ea5e0330ffa8ab592c202f3117b15b49c27"
+        },
+        {
+          "id": "oscillators.triangle_integrator_oscillator",
+          "sha": "59a6d368ca4d749970a280ffbcb451035280b351"
+        },
+        {
+          "id": "oscillators.wien_bridge_balance",
+          "sha": "8e4dcab54aaca0625a5581e400a604a4cf0930fe"
+        },
+        {
+          "id": "oscillators.loaded_rc_phase_shift",
+          "sha": "1019d588dee5e821617dd76af23fc35bb0d41621"
+        },
+        {
+          "id": "oscillators.cross_coupled_lc_startup",
+          "sha": "77e08d76b62834d506206c7500aaa973d79d7360"
+        },
+        {
+          "id": "oscillators.pierce_crystal_startup",
+          "sha": "cb71f415e9ee27d490975518325168c7f2d1d0eb"
+        }
+      ],
+      "files": [
+        "backend/catalog/oscillators.json",
+        "frontend/lib/diagrams/oscillators.dart",
+        "docs/features/oscillators.md"
+      ],
+      "concerns": [
+        "No research correction or source blocker identified; all seven catalog objects preserve research schemas and examples.",
+        "Root COMMUNICATION.md handoff posted. Main owns oscillatorsDiagrams registry integration and numerical/native-image acceptance.",
+        "Hardware limits remain: headroom, bandwidth, amplitude stabilization, crystal drive power and startup robustness."
+      ],
+      "skipped_checks": "No builds, tests, lint, formatters, process runs or native-image checks. Main should exercise seven complete vectors, backlog boundary/error cases, RC ladder/LC pole identities, and inspect all seven native diagrams.",
+      "integrated_commits": [
+        "4b4416b",
+        "a55cc00",
+        "4133b55",
+        "5f14971",
+        "ececc5b",
+        "43be16f",
+        "95014d7"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "rf",
+      "base": "8e9bcc53eb419fec6ec4ead77d89d4ce302ff6dc",
+      "commits": [
+        {
+          "id": "rf.matched_t_attenuator",
+          "sha": "a4bdff242d0d7b1629c9ab83ec1706c440504bb2"
+        },
+        {
+          "id": "rf.lowpass_l_match",
+          "sha": "69f27a9211c4dfe0e6e88c5b0e56f5f67619a848"
+        },
+        {
+          "id": "rf.free_space_link_budget",
+          "sha": "03fb6befcd4c2b350860ed4007dcc86a21b23f62"
+        },
+        {
+          "id": "rf.first_fresnel_clearance",
+          "sha": "dae2545725a6d5aae0e185bff83ce0b4d2ce4aa8"
+        },
+        {
+          "id": "rf.circular_aperture_gain",
+          "sha": "0eb571cc4527a1fe115e533e9103b2e5b6f44266"
+        },
+        {
+          "id": "rf.two_tone_im3",
+          "sha": "5698481ed111018a7ed51ee19e774749baab5836"
+        },
+        {
+          "id": "rf.monostatic_radar_return",
+          "sha": "64e5c8405ca905e3a234f2df092a6fb08902d2fc"
+        }
+      ],
+      "files": [
+        "backend/catalog/rf.json",
+        "frontend/lib/diagrams/rf.dart",
+        "docs/features/rf.md"
+      ],
+      "concerns": [
+        "No research changes or unresolved source blockers identified. Main owns rfDiagrams registry integration and acceptance.",
+        "Root handoff posted: /home/simson/pi-projects/pcb-design-calculator/COMMUNICATION.md:859.",
+        "Physical limits remain: parasitics, characterized efficiency/RCS, propagation conditions and amplifier linear-output calibration."
+      ],
+      "skipped_checks": "No builds, tests, lint, formatters, process runs or native-image checks run. Main should execute all seven full examples, backlog boundary cases and native diagram/legend inspection.",
+      "integrated_commits": [
+        "5e92461",
+        "5bbd7f5",
+        "2c99535",
+        "7dec94c",
+        "256540b",
+        "6d46d75",
+        "184d42e"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "batteries",
+      "base": "8e9bcc53eb419fec6ec4ead77d89d4ce302ff6dc",
+      "commits": [
+        {
+          "id": "batteries.series_weakest_cell",
+          "sha": "af559ecab8ee2f49ee8e8a508efe30584c107663"
+        },
+        {
+          "id": "batteries.coulomb_state_cycle",
+          "sha": "0c2675ef3ffb2c12402f5efdea1e053f5fb75f14"
+        },
+        {
+          "id": "batteries.peukert_runtime",
+          "sha": "be47006160790642da6101e748618ca500f29603"
+        },
+        {
+          "id": "batteries.kinetic_charge_recovery",
+          "sha": "747633c81be4ff475fd004091f1d84b611767665"
+        },
+        {
+          "id": "batteries.intercalation_regular_solution",
+          "sha": "410d58c23bc7920ec59b3e7a46cd22bc351477ed"
+        },
+        {
+          "id": "batteries.sand_depletion_limit",
+          "sha": "17a7ff8ba73595b937b78cb6dccc623dfb796bc0"
+        }
+      ],
+      "files": [
+        "backend/catalog/batteries.json",
+        "frontend/lib/diagrams/batteries.dart",
+        "docs/features/batteries.md"
+      ],
+      "concerns": [
+        "No research corrections or source blockers identified; research objects promoted unchanged.",
+        "Main must register batteriesDiagrams and execute all six examples, backlog boundary cases and native-image acceptance.",
+        "Calibration, gauge synchronization, fitted kinetics, single-phase equilibrium and semi-infinite transport remain model limits, not safety guarantees.",
+        "Root COMMUNICATION.md handoff posted; excluded from feature commits."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, process runs and native-image checks as instructed. Main owns numerical and visual verification.",
+      "integrated_commits": [
+        "06eef12",
+        "1aa4728",
+        "5f6928c",
+        "6fc2ba7",
+        "5ac6872",
+        "bbfb178"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "protection",
+      "base": "8e9bcc53eb419fec6ec4ead77d89d4ce302ff6dc",
+      "commits": [
+        {
+          "id": "protection.fuse_pulse_coordination",
+          "sha": "2a0b6fb54319937e5663cbe06c3c01675f09836b"
+        },
+        {
+          "id": "protection.tvs_surge_load_line",
+          "sha": "6f39fb380725f62c3b9481af02f3a6381bfa2eb4"
+        },
+        {
+          "id": "protection.mov_power_law_pulse",
+          "sha": "1a0b5e9e4c5f6ce69e1d748159aaabc70c87a4dd"
+        },
+        {
+          "id": "protection.scr_crowbar_trigger_latch",
+          "sha": "965bab6eeb46e30ffd387a52e00053f0ca82094e"
+        },
+        {
+          "id": "protection.copper_adiabatic_fault_limit",
+          "sha": "68415b962b43caaf78e56bb8d48c1e071598ca50"
+        },
+        {
+          "id": "protection.foldback_fault_envelope",
+          "sha": "f9e0ae097f53c94fd1f0be57274caab2a7239a0f"
+        }
+      ],
+      "files": [
+        "backend/catalog/protection.json",
+        "frontend/lib/diagrams/protection.dart",
+        "docs/features/protection.md"
+      ],
+      "concerns": [
+        "No unresolved research correction identified. Models remain characterization-dependent engineering screens, not safety guarantees.",
+        "Main must register protectionDiagrams and perform numerical/native-image acceptance.",
+        "Root handoff posted at /home/simson/pi-projects/pcb-design-calculator/COMMUNICATION.md:800."
+      ],
+      "skipped_checks": "Skipped all builds, tests, lint, formatters, engine runs and native-image checks as instructed. Main should execute all six complete examples, backlog boundary cases and diagram acceptance.",
+      "integrated_commits": [
+        "278dfab",
+        "315153a",
+        "02bb2db",
+        "9d28e78",
+        "f6a91ae",
+        "67fbdab"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "converters",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "converters.inverting_charge_pump",
+          "sha": "280a0a3b3d43d4ecf1578d594903e40ddc8236f6"
+        },
+        {
+          "id": "converters.sepic_ccm_stress",
+          "sha": "d0c6ba624a04862b6b909e4a731e525691442be0"
+        },
+        {
+          "id": "converters.forward_reset_winding",
+          "sha": "6c96f9053bc8629ef4d4e2871ad03d8c62d33ddd"
+        },
+        {
+          "id": "converters.flyback_dcm_demagnetization",
+          "sha": "061a473359d8ae34ab67bfe75340e5f44c7a5194"
+        },
+        {
+          "id": "converters.llc_half_bridge_fha",
+          "sha": "d9512aeb3555e0b0ce14e61c3dd941ad3601cadc"
+        },
+        {
+          "id": "converters.dual_active_bridge_power",
+          "sha": "a417f26a5ac6d5a560f774542a8b9e8aa04b183c"
+        }
+      ],
+      "files": [
+        "backend/catalog/converters.json",
+        "frontend/lib/diagrams/converters.dart",
+        "docs/features/converters.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted; all six numerical objects preserve research unchanged.",
+        "Main must register convertersDiagrams and execute numerical/native-image acceptance.",
+        "No source/model correction identified. Approximation accuracy, losses/spikes, device ratings, isolation and soft-switching feasibility remain physical limits."
+      ],
+      "skipped_checks": "Skipped all builds, tests, lint, formatters, process runs and native-image checks as assigned.",
+      "integrated_commits": [
+        "5561c6d",
+        "ba2beca",
+        "8545940",
+        "4f6b850",
+        "4b04447",
+        "6ae2464"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "control",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "control.delay_phase_budget",
+          "sha": "70395acf7bb9b164988f42ab74638fb7564607e4"
+        },
+        {
+          "id": "control.loop_sensitivity",
+          "sha": "bf845cc2497c3037dc79f972b0f189eb6c5bfa74"
+        },
+        {
+          "id": "control.lead_crossover_synthesis",
+          "sha": "808a049d2e7cd3c2660065cc1658a7195d72df91"
+        },
+        {
+          "id": "control.pi_pole_placement",
+          "sha": "dd81bf66fc341e3b1f6182e689b7f17d35ff7d0f"
+        },
+        {
+          "id": "control.peak_current_slope_compensation",
+          "sha": "06740338e6ba16bb2f056711e975e856abe9bd52"
+        },
+        {
+          "id": "control.integral_two_lag_stability",
+          "sha": "e68040ce4b5d32bc9e773ecdc350864b537e8c4a"
+        }
+      ],
+      "files": [
+        "backend/catalog/control.json",
+        "frontend/lib/diagrams/control.dart",
+        "docs/features/control.md"
+      ],
+      "concerns": [
+        "No research corrections or source blockers identified. Root COMMUNICATION.md handoff posted.",
+        "Main must register controlDiagrams and execute numerical/native acceptance. Ideal local linear models do not certify hardware stability."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, process runs and native-image checks as required. Main should run all six complete examples, backlog boundaries and diagram image review.",
+      "integrated_commits": [
+        "e08a6b1",
+        "f382a00",
+        "1604dba",
+        "0915b5c",
+        "75af1fa",
+        "085ed3b"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "emc",
+      "base": "8e9bcc53eb419fec6ec4ead77d89d4ce302ff6dc",
+      "commits": [
+        {
+          "id": "emc.thin_slot_shielding",
+          "sha": "7b69e57698e300eba002e044daca61474ad50dbc"
+        },
+        {
+          "id": "emc.rc_common_mode_conversion",
+          "sha": "82a80c9a5e72d47c107bb1a30abdb272caa11ce4"
+        },
+        {
+          "id": "emc.trapezoid_conducted_harmonic",
+          "sha": "90de6b14ecd6defb18f0757cd5cfa74bfee95177"
+        },
+        {
+          "id": "emc.sinusoidal_dither_occupancy",
+          "sha": "fe3cc74cc12e938e383ebcda023933b28bd17a3e"
+        },
+        {
+          "id": "emc.ringing_rc_snubber",
+          "sha": "25ecb54e56145ac6ef2843af389bed3056cb1d10"
+        },
+        {
+          "id": "emc.short_cable_radiation",
+          "sha": "1f270a9aedc5a85a4c8f03eb3407ba70f7e9ba53"
+        }
+      ],
+      "files": [
+        "backend/catalog/emc.json",
+        "frontend/lib/diagrams/emc.dart",
+        "docs/features/emc.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted; Main must register emcDiagrams and execute numerical/native acceptance.",
+        "Research schemas and complete examples preserved unchanged; no source blocker identified.",
+        "Engineering estimates require enclosure/receiver characterization, snubber tuning and justified cable-current distribution; no EMC compliance claim."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, engine execution and native-image checks as assigned. Main should exercise all research vectors/backlog boundaries and inspect six native diagrams.",
+      "integrated_commits": [
+        "42bf371",
+        "8083b84",
+        "de6b8e7",
+        "40d377a",
+        "7fcc43e",
+        "e09f5a8"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "cables",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "cables.twin_lead_geometry",
+          "sha": "efcd4a99833ffbc4a55f589e605893d6a8c918e2"
+        },
+        {
+          "id": "cables.lossy_rlgc_line",
+          "sha": "9345c9cb7042992d5abca197520e6b8dca033b43"
+        },
+        {
+          "id": "cables.radial_insulation_stress",
+          "sha": "d265987285448f7a0f65f26521e9bc758af8bc7e"
+        },
+        {
+          "id": "cables.hertz_holm_contact",
+          "sha": "52326e6e2f7d18169d5fe10e8f275dc9505e2c81"
+        },
+        {
+          "id": "cables.contact_hotspot_temperature",
+          "sha": "1db31b9bddcdc457e6598612fbc030ea9a5bac15"
+        },
+        {
+          "id": "cables.cantilever_contact_spring",
+          "sha": "226669cead504fcc8be258128978856bbfa8e031"
+        }
+      ],
+      "files": [
+        "backend/catalog/cables.json",
+        "frontend/lib/diagrams/cables.dart",
+        "docs/features/cables.md"
+      ],
+      "concerns": [
+        "No research correction identified; catalog objects promoted unchanged.",
+        "Root COMMUNICATION.md handoff posted with ordered SHAs and acceptance cases.",
+        "Main must register cablesDiagrams and perform numerical/native-image acceptance.",
+        "Material qualification, real contact/insulation nonidealities and extreme binary64 scaling remain documented model limits."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, process runs and native-image checks as required. Main should run all six examples, backlog boundary/error cases and inspect native diagrams.",
+      "integrated_commits": [
+        "4fa1ead",
+        "60e957f",
+        "448697e",
+        "f9b4673",
+        "ef89e8c",
+        "b2444a0"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "precision",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "precision.bjt_mirror_base_current",
+          "sha": "50bdad6565f945552db0f3db56d9452c68ec3662"
+        },
+        {
+          "id": "precision.instrumentation_internal_headroom",
+          "sha": "df89319ae8142363f639d8fe4015de45bf0af63c"
+        },
+        {
+          "id": "precision.transimpedance_butterworth",
+          "sha": "3f688796fc2c437e8a827a05aac5d7a584603c33"
+        },
+        {
+          "id": "precision.howland_mismatch_load",
+          "sha": "74d5aa6709eacfe9fa0b429f56d6dfc9201f5a5d"
+        },
+        {
+          "id": "precision.brokaw_first_order_trim",
+          "sha": "0c0cd51d48732f7076e98773319a02f352b7c31c"
+        },
+        {
+          "id": "precision.log114_current_ratio",
+          "sha": "0ece306801904d6a100c822a897392147483c785"
+        }
+      ],
+      "files": [
+        "backend/catalog/precision.json",
+        "frontend/lib/diagrams/precision.dart",
+        "docs/features/precision.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted; Main owns precisionDiagrams registry integration.",
+        "No research correction identified. Device matching, stability, leakage, startup and temperature curvature remain documented limits.",
+        "Main must execute full examples and backlog boundaries, then inspect six native diagrams and accessible layouts."
+      ],
+      "skipped_checks": "Skipped all builds, tests, lint, formatters, engine runs and native-image checks as instructed.",
+      "integrated_commits": [
+        "b090a79",
+        "6c61510",
+        "b653d37",
+        "ab25fb1",
+        "f43d8ef",
+        "9ed7d8e"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "logic",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "logic.guaranteed_noise_margins",
+          "sha": "1acfe725a013f18ee4b594ea2a870e0e20142c15"
+        },
+        {
+          "id": "logic.dc_current_fanout",
+          "sha": "58aaca9d7c7f9d2b409952bfa320c366c12c898b"
+        },
+        {
+          "id": "logic.cmos_package_power",
+          "sha": "663c9ad0bb203b322381c7772f065a005b3d41cc"
+        },
+        {
+          "id": "logic.synchronizer_metastability",
+          "sha": "5d34923bf4844bd81ab8a173ac7f9540e44de083"
+        },
+        {
+          "id": "logic.three_stage_logical_effort",
+          "sha": "1940467e8c52caf50767f1db670ba444cdecbd87"
+        },
+        {
+          "id": "logic.fifo_envelope_depth",
+          "sha": "55e19b0e488ba84336d03d138b79f045fa91d66e"
+        }
+      ],
+      "files": [
+        "backend/catalog/logic.json",
+        "frontend/lib/diagrams/logic.dart",
+        "docs/features/logic.md"
+      ],
+      "concerns": [
+        "All six researched numerical objects promoted unchanged with per-feature diagrams and complete sourced examples/docs.",
+        "Root COMMUNICATION.md handoff posted for Main, T2Logic and V2Logic.",
+        "No source/model correction identified. Main owns logicDiagrams registration and numerical/native-image acceptance.",
+        "Hardware guarantees, characterized Cpd/metastability constants, gate-library limits and valid FIFO service envelopes remain required."
+      ],
+      "skipped_checks": "No builds, tests, lint, formatters, process runs or native-image checks. Main should execute all six examples/backlog boundaries and inspect all six native diagrams.",
+      "integrated_commits": [
+        "764d7a7",
+        "30b6d22",
+        "29070ee",
+        "6dcd3f7",
+        "640f58c",
+        "cd6df2a"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "motors",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "motors.pm_dc_load_equilibrium",
+          "sha": "1db3517e9abe15aa6b599e83d1707f12eb151e7a"
+        },
+        {
+          "id": "motors.stepper_static_microstep",
+          "sha": "bce809797747fad3625edf26f080afee960ab43c"
+        },
+        {
+          "id": "motors.geared_axis_acceleration",
+          "sha": "3458f559034079fae52f9a7399dc296e74c8059a"
+        },
+        {
+          "id": "motors.resistive_dynamic_braking",
+          "sha": "3a409adefdadec6312e3d1ed767e5600f6ea5ad0"
+        },
+        {
+          "id": "motors.salient_pmsm_dq_operating_point",
+          "sha": "d04792aab5f6dbfbd1c83aa2433814b0125d7aa2"
+        },
+        {
+          "id": "motors.induction_slip_power",
+          "sha": "a8715f892092cffe09c5cfb01819a8df5d40ea76"
+        }
+      ],
+      "files": [
+        "backend/catalog/motors.json",
+        "frontend/lib/diagrams/motors.dart",
+        "docs/features/motors.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted; Main owns motorsDiagrams registration.",
+        "No source/model blocker identified. Hardware calibration, ratings, braking time-scale separation and omitted nonideal physics remain limitations."
+      ],
+      "skipped_checks": "No builds, tests, lint, formatters, process or native-image checks run. Main should exercise six complete examples, backlog boundaries, power identities, tiny-time braking, signed PMSM generation, exact zero slip and native diagram accessibility.",
+      "integrated_commits": [
+        "eee188d",
+        "8bc8296",
+        "bf69c32",
+        "6c5d562",
+        "0b9fe63",
+        "eb8675e"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "passives",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "passives.mlcc_logarithmic_aging",
+          "sha": "43cbd17beab7f1aaa1f17afae4ed2d7daeacdc10"
+        },
+        {
+          "id": "passives.dielectric_absorption_recovery",
+          "sha": "e949f75268d9a5c9f7313dda1187684c213e6bd3"
+        },
+        {
+          "id": "passives.mlcc_bias_charge_energy",
+          "sha": "0ddc9376e153d6fdcd9f96f414ad72148e5fac48"
+        },
+        {
+          "id": "passives.resistor_excess_noise",
+          "sha": "20f4788ea61b4bdd963117e47423188c84b55055"
+        },
+        {
+          "id": "passives.negative_vcr_divider",
+          "sha": "2457565e925988448fce270e49361d07c4f83dc7"
+        },
+        {
+          "id": "passives.nonideal_r2r_ladder",
+          "sha": "5f14fded6e3ee8472e06306cc992971621896773"
+        }
+      ],
+      "files": [
+        "backend/catalog/passives.json",
+        "frontend/lib/diagrams/passives.dart",
+        "docs/features/passives.md"
+      ],
+      "concerns": [
+        "No source/model correction identified. Research definitions promoted unchanged; all six diagrams and complete researched documentation included atomically.",
+        "Root COMMUNICATION.md handoff posted. Main must register passivesDiagrams and execute six examples, backlog boundaries and native-image review.",
+        "Physical limits remain: characterized aging, single-branch dielectric memory, reversible linear C(V), assumed characterized 1/f spectrum, calibrated negative VCR and constant switch resistance."
+      ],
+      "skipped_checks": "Skipped builds, tests, lint, formatters, engine runs and native-image checks as instructed. Source provenance inherited from research; no renewed source retrieval.",
+      "integrated_commits": [
+        "462679c",
+        "57ecf74",
+        "f4c6f20",
+        "26e6dc3",
+        "fb76edc",
+        "37d8775"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "cores",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "cores.single_layer_air_solenoid",
+          "sha": "cebf89aab15899b9dc250586a298a593af9da204"
+        },
+        {
+          "id": "cores.square_planar_spiral",
+          "sha": "94b0315da1fcc0f7b35a4c6b4a29a3f5e582bf05"
+        },
+        {
+          "id": "cores.bobbin_layer_fit",
+          "sha": "295c56c9d4474d71d2dede787639b296459e4039"
+        },
+        {
+          "id": "cores.sinusoidal_steinmetz_loss",
+          "sha": "8c5f84c9161cc365c78e9eeb9de085b7715cfcd9"
+        },
+        {
+          "id": "cores.lamination_eddy_loss",
+          "sha": "a7458d4161800e45bb1daba03a727c0844d73d9d"
+        },
+        {
+          "id": "cores.thin_foil_winding_loss",
+          "sha": "e84ceba5ba16e39a857ba57c6af948a417946423"
+        }
+      ],
+      "files": [
+        "backend/catalog/cores.json",
+        "frontend/lib/diagrams/cores.dart",
+        "docs/features/cores.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted; all six researched models promoted unchanged with individual diagrams and documentation.",
+        "Main owns coresDiagrams registration, independent numerical acceptance and native-image inspection.",
+        "Preserved source limitations: original Wheeler scan inaccessible; material calibration and physical approximation screens are not hardware guarantees."
+      ],
+      "skipped_checks": "No builds, tests, lint, formatters, process runs or native-image checks. Main should exercise all examples, backlog boundaries and tiny representable dimensional foil-loss probe.",
+      "integrated_commits": [
+        "8751b4d",
+        "7f483d4",
+        "b366de0",
+        "13a1d62",
+        "1d1200d",
+        "d471c50"
+      ],
+      "promoted_models_equal_research": true
+    },
+    {
+      "lane": "measurement",
+      "base": "8e9bcc5",
+      "commits": [
+        {
+          "id": "measurement.dmm_accuracy_bound",
+          "sha": "8391ab087886acff2b00d1f6b912ba684a3f322a"
+        },
+        {
+          "id": "measurement.delta_resistance",
+          "sha": "fdbd1a36ad783c1e34f69b0c522952db329c9c60"
+        },
+        {
+          "id": "measurement.compensated_probe_loading",
+          "sha": "d117927e6c237c247556a70d769dbc6c67a31359"
+        },
+        {
+          "id": "measurement.rectangular_aperture_response",
+          "sha": "41e3ca9795a72d25b8723761dfa37cde11aacecb"
+        },
+        {
+          "id": "measurement.sampling_jitter_snr",
+          "sha": "cd29d8fad8783ad587374f2f452606125da9897a"
+        },
+        {
+          "id": "measurement.correlated_voltage_ratio",
+          "sha": "aa68681b47f49cde3fa219614e489d92412de123"
+        }
+      ],
+      "files": [
+        "backend/catalog/measurement.json",
+        "frontend/lib/diagrams/measurement.dart",
+        "docs/features/measurement.md"
+      ],
+      "concerns": [
+        "Root COMMUNICATION.md handoff posted; all six researched numerical objects promoted unchanged.",
+        "Main must register measurementDiagrams and execute nominal, boundary, invalid-domain and native-image acceptance.",
+        "Physical limits remain: probe parasitics, curved thermal drift, first-order jitter/ratio propagation and independently justified uncertainty coverage."
+      ],
+      "skipped_checks": "No builds, tests, lint, formatters, Rust-process runs or native-image checks performed, as assigned.",
+      "integrated_commits": [
+        "3192bf7",
+        "d818091",
+        "e341005",
+        "e5e9cfe",
+        "fbae017",
+        "703ec26"
+      ],
+      "promoted_models_equal_research": true
+    }
+  ]
+}

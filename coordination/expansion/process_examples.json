@@ -1,0 +1,5703 @@
+{
+  "implementation_head_before_registry": "703ec26",
+  "diagram_registry_pending_commit": true,
+  "binary": "backend/target/release/pcb-calculator",
+  "example_count": 228,
+  "new_example_count": 100,
+  "zero_scale_floor": 1e-300,
+  "levels": {
+    "basic": 65,
+    "expert": 74,
+    "intermediate": 89
+  },
+  "examples": [
+    {
+      "id": "ac.inductor_reactance",
+      "inputs": {
+        "frequency": 1000.0,
+        "inductance": 0.01,
+        "voltage_rms": 5.0
+      },
+      "expected_outputs": {
+        "current_rms": 0.07957747154594767,
+        "impedance_phase": 1.5707963267948966,
+        "reactance": 62.83185307179586
+      },
+      "actual_outputs": {
+        "current_rms": 0.07957747154594767,
+        "impedance_phase": 1.5707963267948966,
+        "reactance": 62.83185307179586
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.lossy_coil_antiresonance",
+      "inputs": {
+        "capacitance": 1e-06,
+        "coil_resistance": 30.0,
+        "inductance": 0.01,
+        "voltage_rms": 5.0
+      },
+      "expected_outputs": {
+        "coil_current_rms": 0.05,
+        "copper_loss": 0.075,
+        "ideal_lc_frequency": 1591.5494309189537,
+        "resonance_frequency": 1518.2413931464207,
+        "resonance_resistance": 333.3333333333333,
+        "source_current_rms": 0.015
+      },
+      "actual_outputs": {
+        "coil_current_rms": 0.05,
+        "copper_loss": 0.07500000000000001,
+        "ideal_lc_frequency": 1591.5494309189535,
+        "resonance_frequency": 1518.2413931464207,
+        "resonance_resistance": 333.33333333333337,
+        "source_current_rms": 0.014999999999999998
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.capacitor_reactance",
+      "inputs": {
+        "capacitance": 1e-06,
+        "frequency": 1000.0,
+        "voltage_rms": 5.0
+      },
+      "expected_outputs": {
+        "current_rms": 0.031415926535897934,
+        "impedance_imaginary": -159.15494309189535,
+        "impedance_phase": -1.5707963267948966,
+        "reactance_magnitude": 159.15494309189535
+      },
+      "actual_outputs": {
+        "current_rms": 0.03141592653589793,
+        "impedance_imaginary": -159.15494309189535,
+        "impedance_phase": -1.5707963267948966,
+        "reactance_magnitude": 159.15494309189535
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.series_rlc_impedance",
+      "inputs": {
+        "capacitance": 1e-06,
+        "frequency": 1000.0,
+        "inductance": 0.01,
+        "resistance": 100.0,
+        "voltage_rms": 5.0
+      },
+      "expected_outputs": {
+        "current_rms": 0.03601118939102619,
+        "impedance_imaginary": -96.32309002009949,
+        "impedance_magnitude": 138.84573335547688,
+        "impedance_phase": -0.7666714810055317,
+        "impedance_real": 100.0,
+        "power_factor": 0.7202237878205238
+      },
+      "actual_outputs": {
+        "current_rms": 0.03601118939102619,
+        "impedance_imaginary": -96.32309002009949,
+        "impedance_magnitude": 138.84573335547688,
+        "impedance_phase": -0.7666714810055317,
+        "impedance_real": 100.0,
+        "power_factor": 0.7202237878205238
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.parallel_rlc_impedance",
+      "inputs": {
+        "capacitance": 1e-06,
+        "frequency": 1000.0,
+        "inductance": 0.01,
+        "resistance": 1000.0,
+        "voltage_rms": 5.0
+      },
+      "expected_outputs": {
+        "conductance": 0.001,
+        "current_rms": 0.04842039258158743,
+        "impedance_imaginary": 102.71025378285056,
+        "impedance_magnitude": 103.26227718156343,
+        "impedance_phase": 1.4673496474397956,
+        "impedance_real": 10.66309788872204,
+        "susceptance": -0.009632309002009948
+      },
+      "actual_outputs": {
+        "conductance": 0.001,
+        "current_rms": 0.04842039258158743,
+        "impedance_imaginary": 102.71025378285059,
+        "impedance_magnitude": 103.26227718156346,
+        "impedance_phase": 1.4673496474397956,
+        "impedance_real": 10.66309788872204,
+        "susceptance": -0.009632309002009948
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.series_resonator_bandwidth",
+      "inputs": {
+        "capacitance": 1e-06,
+        "inductance": 0.01,
+        "resistance": 10.0
+      },
+      "expected_outputs": {
+        "bandwidth": 159.15494309189535,
+        "lower_half_power": 1513.9601543154847,
+        "quality_factor": 10.0,
+        "resonance_frequency": 1591.5494309189537,
+        "upper_half_power": 1673.11509740738
+      },
+      "actual_outputs": {
+        "bandwidth": 159.15494309189532,
+        "lower_half_power": 1513.960154315485,
+        "quality_factor": 10.0,
+        "resonance_frequency": 1591.5494309189535,
+        "upper_half_power": 1673.11509740738
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.sinusoidal_power_triangle",
+      "inputs": {
+        "current_rms": 4.0,
+        "phase": 0.5235987755982988,
+        "voltage_rms": 230.0
+      },
+      "expected_outputs": {
+        "apparent_power": 920.0,
+        "power_factor": 0.8660254037844387,
+        "reactive_power": 460.0,
+        "real_power": 796.7433714816837
+      },
+      "actual_outputs": {
+        "apparent_power": 920.0,
+        "power_factor": 0.8660254037844387,
+        "reactive_power": 459.99999999999994,
+        "real_power": 796.7433714816837
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "ac.shunt_power_factor_correction",
+      "inputs": {
+        "frequency": 50.0,
+        "initial_pf": 0.8,
+        "real_power": 1000.0,
+        "target_pf": 0.95,
+        "voltage_rms": 230.0
+      },
+      "expected_outputs": {
+        "capacitor_current_rms": 1.831808238352768,
+        "capacitor_reactive_power": 421.3158948211366,
+        "corrected_source_current": 4.576659038901602,
+        "initial_source_current": 5.434782608695652,
+        "required_capacitance": 2.5351420515678246e-05
+      },
+      "actual_outputs": {
+        "capacitor_current_rms": 1.8318082383527678,
+        "capacitor_reactive_power": 421.3158948211366,
+        "corrected_source_current": 4.576659038901602,
+        "initial_source_current": 5.434782608695652,
+        "required_capacitance": 2.5351420515678246e-05
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "batteries.series_weakest_cell",
+      "inputs": {
+        "capacity_one": 3.0,
+        "capacity_three": 3.2,
+        "capacity_two": 2.8,
+        "soc_floor": 0.1,
+        "soc_one": 0.9,
+        "soc_three": 0.95,
+        "soc_two": 0.85
+      },
+      "expected_outputs": {
+        "end_soc_one": 0.2,
+        "end_soc_three": 0.29375,
+        "end_soc_two": 0.1,
+        "usable_charge": 2.1
+      },
+      "actual_outputs": {
+        "end_soc_one": 0.20000000000000018,
+        "end_soc_three": 0.29375000000000007,
+        "end_soc_two": 0.10000000000000009,
+        "usable_charge": 2.0999999999999996
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "batteries.coulomb_state_cycle",
+      "inputs": {
+        "charge_current": 2.0,
+        "charge_efficiency": 0.95,
+        "charge_time": 3600.0,
+        "discharge_current": 1.0,
+        "discharge_time": 1800.0,
+        "full_capacity": 5.0,
+        "initial_soc": 0.4
+      },
+      "expected_outputs": {
+        "discharged_soc": 0.3,
+        "final_soc": 0.68,
+        "stored_charge": 1.9
+      },
+      "actual_outputs": {
+        "discharged_soc": 0.30000000000000004,
+        "final_soc": 0.68,
+        "stored_charge": 1.9
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "batteries.peukert_runtime",
+      "inputs": {
+        "load_current": 20.0,
+        "peukert_exponent": 1.25,
+        "rated_capacity": 100.0,
+        "rated_duration": 20.0
+      },
+      "expected_outputs": {
+        "delivered_capacity": 70.71067811865476,
+        "rated_current": 5.0,
+        "runtime": 3.5355339059327378
+      },
+      "actual_outputs": {
+        "delivered_capacity": 70.71067811865476,
+        "rated_current": 5.0,
+        "runtime": 3.5355339059327378
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "batteries.kinetic_charge_recovery",
+      "inputs": {
+        "available_fraction": 0.4,
+        "available_initial": 3000.0,
+        "bound_initial": 5000.0,
+        "equalization_rate": 0.001,
+        "maximum_charge": 10000.0,
+        "pulse_current": 2.0,
+        "pulse_duration": 600.0
+      },
+      "expected_outputs": {
+        "available_final": 2068.8116360940267,
+        "bound_final": 4731.188363905973,
+        "total_final": 6800.0
+      },
+      "actual_outputs": {
+        "available_final": 2068.8116360940267,
+        "bound_final": 4731.188363905974,
+        "total_final": 6800.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "batteries.intercalation_regular_solution",
+      "inputs": {
+        "filling_fraction": 0.3,
+        "full_insertion_charge": 10800.0,
+        "interaction_energy": 3000.0,
+        "midpoint_voltage": 3.5,
+        "temperature": 298.15
+      },
+      "expected_outputs": {
+        "chemical_capacitance": 179521.28576635703,
+        "equilibrium_voltage": 3.5093321437299303,
+        "voltage_slope": -0.06015999692680433
+      },
+      "actual_outputs": {
+        "chemical_capacitance": 179521.28576635697,
+        "equilibrium_voltage": 3.5093321437299303,
+        "voltage_slope": -0.06015999692680433
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "batteries.sand_depletion_limit",
+      "inputs": {
+        "cation_transference": 0.4,
+        "plating_current_density": 100.0,
+        "salt_concentration": 1000.0,
+        "salt_diffusivity": 1e-10
+      },
+      "expected_outputs": {
+        "diffusion_length": 0.0001425131653933264,
+        "sand_areal_charge": 20310.002310425607,
+        "sand_time": 203.10002310425608
+      },
+      "actual_outputs": {
+        "diffusion_length": 0.00014251316539332643,
+        "sand_areal_charge": 20310.00231042561,
+        "sand_time": 203.1000231042561
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.saturated_switch_drive",
+      "inputs": {
+        "beta_forced": 10.0,
+        "i_collector": 0.1,
+        "i_driver_max": 0.02,
+        "r_driver": 20.0,
+        "v_drive_min": 3.3,
+        "vbe_sat_max": 0.9
+      },
+      "expected_outputs": {
+        "i_base_required": 0.01,
+        "p_base_resistor": 0.022,
+        "r_base_max": 220.0
+      },
+      "actual_outputs": {
+        "i_base_required": 0.01,
+        "p_base_resistor": 0.022000000000000002,
+        "r_base_max": 220.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.early_output_resistance",
+      "inputs": {
+        "i_collector": 0.001,
+        "v_be": 0.7,
+        "v_ce": 5.0,
+        "v_early": 100.0
+      },
+      "expected_outputs": {
+        "approximation_relative_error": 0.047619047619047616,
+        "g_output": 9.523809523809525e-06,
+        "r_output": 105000.0,
+        "r_output_approx": 100000.0
+      },
+      "actual_outputs": {
+        "approximation_relative_error": 0.047619047619047616,
+        "g_output": 9.523809523809523e-06,
+        "r_output": 105000.0,
+        "r_output_approx": 100000.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.differential_pair_steering",
+      "inputs": {
+        "beta": 100.0,
+        "i_tail": 0.002,
+        "temperature": 300.0,
+        "v_differential": 0.02
+      },
+      "expected_outputs": {
+        "alpha": 0.99009900990099,
+        "current_ratio": 2.1676302961648406,
+        "g_differential": 0.03309487233880996,
+        "i_collector_one": 0.001355062560591518,
+        "i_collector_two": 0.0006251354592104623,
+        "i_difference": 0.0007299271013810556,
+        "v_thermal": 0.02585199978643553
+      },
+      "actual_outputs": {
+        "alpha": 0.9900990099009901,
+        "current_ratio": 2.16763029616484,
+        "g_differential": 0.03309487233880996,
+        "i_collector_one": 0.0013550625605915178,
+        "i_collector_two": 0.0006251354592104624,
+        "i_difference": 0.0007299271013810555,
+        "v_thermal": 0.025851999786435535
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.divider_bias",
+      "inputs": {
+        "beta": 99.0,
+        "r_bottom": 10000.0,
+        "r_collector": 2000.0,
+        "r_emitter": 1000.0,
+        "r_top": 40000.0,
+        "vbe": 0.7,
+        "vcc": 10.0
+      },
+      "expected_outputs": {
+        "i_base": 1.2037037037037035e-05,
+        "i_collector": 0.0011916666666666666,
+        "i_emitter": 0.0012037037037037038,
+        "r_thevenin": 8000.0,
+        "v_base": 1.9037037037037037,
+        "v_ce": 6.412962962962963,
+        "v_collector": 7.616666666666667,
+        "v_emitter": 1.2037037037037035,
+        "v_thevenin": 2.0
+      },
+      "actual_outputs": {
+        "i_base": 1.2037037037037037e-05,
+        "i_collector": 0.0011916666666666666,
+        "i_emitter": 0.0012037037037037038,
+        "r_thevenin": 8000.0,
+        "v_base": 1.9037037037037037,
+        "v_ce": 6.412962962962963,
+        "v_collector": 7.616666666666667,
+        "v_emitter": 1.2037037037037037,
+        "v_thevenin": 2.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.hybrid_pi_parameters",
+      "inputs": {
+        "beta_ac": 100.0,
+        "i_collector": 0.002,
+        "temperature": 300.0
+      },
+      "expected_outputs": {
+        "g_m": 0.07736345414366722,
+        "r_pi": 1292.5999893217763,
+        "v_thermal": 0.02585199978643553
+      },
+      "actual_outputs": {
+        "g_m": 0.07736345414366722,
+        "r_pi": 1292.5999893217765,
+        "v_thermal": 0.025851999786435535
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.emitter_degeneration_gain",
+      "inputs": {
+        "beta_ac": 100.0,
+        "i_collector": 0.002,
+        "r_collector": 4000.0,
+        "r_emitter": 100.0,
+        "r_intrinsic_output": 100000.0,
+        "r_load": 4000.0,
+        "r_source": 600.0,
+        "temperature": 300.0
+      },
+      "expected_outputs": {
+        "gain_base": -17.55525518208828,
+        "gain_source": -16.6769508011674,
+        "r_collector_load": 2000.0,
+        "r_input": 11392.599989321776
+      },
+      "actual_outputs": {
+        "gain_base": -17.555255182088278,
+        "gain_source": -16.6769508011674,
+        "r_collector_load": 2000.0,
+        "r_input": 11392.599989321778
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.terminal_dissipation",
+      "inputs": {
+        "i_base": 0.0002,
+        "i_collector": 0.02,
+        "v_be": 0.7,
+        "v_ce": 5.0
+      },
+      "expected_outputs": {
+        "p_base": 0.00014,
+        "p_collector": 0.1,
+        "p_total": 0.10014
+      },
+      "actual_outputs": {
+        "p_base": 0.00014,
+        "p_collector": 0.1,
+        "p_total": 0.10014
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "bjt.emitter_follower_loading",
+      "inputs": {
+        "beta_ac": 100.0,
+        "i_collector": 0.002,
+        "r_emitter": 1000.0,
+        "r_intrinsic_output": 100000.0,
+        "r_load": 1000.0,
+        "r_source": 600.0,
+        "temperature": 300.0
+      },
+      "expected_outputs": {
+        "gain_base": 0.9750427669283204,
+        "gain_source": 0.9638765781864708,
+        "r_emitter_effective": 500.0,
+        "r_input": 51792.599989321774
+      },
+      "actual_outputs": {
+        "gain_base": 0.9750427669283204,
+        "gain_source": 0.9638765781864709,
+        "r_emitter_effective": 500.0,
+        "r_input": 51792.599989321774
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cables.twin_lead_geometry",
+      "inputs": {
+        "center_spacing": 0.006,
+        "relative_permittivity": 2.25,
+        "wire_diameter": 0.001
+      },
+      "expected_outputs": {
+        "capacitance_per_length": 2.525802101358135e-11,
+        "differential_impedance": 198.09396088157135,
+        "geometry_factor": 2.477888730288475,
+        "inductance_per_length": 9.9115549211539e-07
+      },
+      "actual_outputs": {
+        "capacitance_per_length": 2.525802101358135e-11,
+        "differential_impedance": 198.09396088157135,
+        "geometry_factor": 2.477888730288475,
+        "inductance_per_length": 9.9115549211539e-07
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cables.lossy_rlgc_line",
+      "inputs": {
+        "capacitance_per_length": 1e-10,
+        "frequency": 1000000.0,
+        "inductance_per_length": 2.5e-07,
+        "length": 10.0,
+        "series_resistance_per_length": 2.0,
+        "shunt_conductance_per_length": 2e-05
+      },
+      "expected_outputs": {
+        "angular_frequency": 6283185.307179586,
+        "attenuation_constant": 0.018051746169367573,
+        "attenuation_db": 1.5679547500148998,
+        "forward_amplitude_ratio": 0.8348381028824459,
+        "impedance_imaginary": -26.89559334274006,
+        "impedance_real": 57.63732387347136,
+        "normalized_propagation_square_imaginary": 0.8056920125938358,
+        "normalized_propagation_square_real": -0.5923346865096576,
+        "phase_constant": 0.03567668678383984,
+        "series_impedance_magnitude": 2.5431085506270352,
+        "shunt_admittance_magnitude": 0.0006286367600161275
+      },
+      "actual_outputs": {
+        "angular_frequency": 6283185.307179586,
+        "attenuation_constant": 0.01805174616936757,
+        "attenuation_db": 1.5679547500148996,
+        "forward_amplitude_ratio": 0.8348381028824459,
+        "impedance_imaginary": -26.89559334274006,
+        "impedance_real": 57.63732387347137,
+        "normalized_propagation_square_imaginary": 0.8056920125938358,
+        "normalized_propagation_square_real": -0.5923346865096577,
+        "phase_constant": 0.035676686783839846,
+        "series_impedance_magnitude": 2.5431085506270352,
+        "shunt_admittance_magnitude": 0.0006286367600161275
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cables.radial_insulation_stress",
+      "inputs": {
+        "allowable_field": 8000000.0,
+        "conductor_radius": 0.001,
+        "peak_voltage": 2000.0,
+        "shield_inner_radius": 0.004
+      },
+      "expected_outputs": {
+        "field_margin": 6557304.959111037,
+        "inner_surface_field": 1442695.0408889633,
+        "outer_surface_field": 360673.7602222408,
+        "voltage_limit": 11090.354888959124
+      },
+      "actual_outputs": {
+        "field_margin": 6557304.959111037,
+        "inner_surface_field": 1442695.0408889635,
+        "outer_surface_field": 360673.7602222409,
+        "voltage_limit": 11090.354888959124
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cables.hertz_holm_contact",
+      "inputs": {
+        "elastic_pressure_limit": 300000000.0,
+        "electron_mean_free_path": 4e-08,
+        "normal_force": 0.01,
+        "poisson_ratio": 0.34,
+        "resistivity": 1.7e-08,
+        "sphere_radius": 0.002,
+        "young_modulus": 110000000000.0
+      },
+      "expected_outputs": {
+        "constriction_resistance": 0.0013655045698085684,
+        "contact_radius": 6.22480523898329e-06,
+        "effective_modulus": 62189054726.36816,
+        "indentation": 1.9374100131636908e-08,
+        "maximum_pressure": 123222453.1801636
+      },
+      "actual_outputs": {
+        "constriction_resistance": 0.0013655045698085684,
+        "contact_radius": 6.22480523898329e-06,
+        "effective_modulus": 62189054726.368164,
+        "indentation": 1.9374100131636905e-08,
+        "maximum_pressure": 123222453.18016359
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cables.contact_hotspot_temperature",
+      "inputs": {
+        "bulk_temperature": 300.0,
+        "contact_voltage": 0.05,
+        "lorenz_number": 2.45e-08,
+        "temperature_limit": 600.0
+      },
+      "expected_outputs": {
+        "contact_voltage_limit": 0.16266530054071152,
+        "hotspot_temperature": 339.8679215248663,
+        "temperature_margin": 260.1320784751337,
+        "temperature_rise": 39.86792152486629
+      },
+      "actual_outputs": {
+        "contact_voltage_limit": 0.16266530054071152,
+        "hotspot_temperature": 339.86792152486623,
+        "temperature_margin": 260.13207847513377,
+        "temperature_rise": 39.86792152486626
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cables.cantilever_contact_spring",
+      "inputs": {
+        "allowable_stress": 600000000.0,
+        "beam_length": 0.01,
+        "beam_thickness": 0.0002,
+        "beam_width": 0.002,
+        "tip_deflection": 0.0005,
+        "young_modulus": 130000000000.0
+      },
+      "expected_outputs": {
+        "normal_force": 0.26,
+        "root_stress": 195000000.0,
+        "spring_rate": 520.0,
+        "stress_margin": 405000000.0
+      },
+      "actual_outputs": {
+        "normal_force": 0.26000000000000006,
+        "root_stress": 195000000.0,
+        "spring_rate": 520.0000000000001,
+        "stress_margin": 405000000.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "control.delay_phase_budget",
+      "inputs": {
+        "added_delay": 2e-05,
+        "crossover_frequency": 1000.0,
+        "initial_phase_margin": 60.0,
+        "target_phase_margin": 45.0
+      },
+      "expected_outputs": {
+        "added_phase_lag": 7.2,
+        "delay_headroom": 2.1666666666666664e-05,
+        "maximum_delay": 4.1666666666666665e-05,
+        "remaining_phase_margin": 52.8
+      },
+      "actual_outputs": {
+        "added_phase_lag": 7.2,
+        "delay_headroom": 2.1666666666666664e-05,
+        "maximum_delay": 4.1666666666666665e-05,
+        "remaining_phase_margin": 52.8
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "control.loop_sensitivity",
+      "inputs": {
+        "disturbance_amplitude": 0.01,
+        "loop_imaginary": -0.5,
+        "loop_real": -0.5,
+        "noise_amplitude": 0.001
+      },
+      "expected_outputs": {
+        "complementary_magnitude": 1.0,
+        "disturbance_output": 0.014142135623730952,
+        "noise_output": 0.001,
+        "return_difference": 0.7071067811865476,
+        "sensitivity_magnitude": 1.4142135623730951
+      },
+      "actual_outputs": {
+        "complementary_magnitude": 1.0,
+        "disturbance_output": 0.014142135623730949,
+        "noise_output": 0.001,
+        "return_difference": 0.7071067811865476,
+        "sensitivity_magnitude": 1.414213562373095
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "control.lead_crossover_synthesis",
+      "inputs": {
+        "crossover_frequency": 1000.0,
+        "phase_boost": 30.0,
+        "plant_magnitude": 0.5
+      },
+      "expected_outputs": {
+        "dc_gain": 1.1547005383792517,
+        "high_frequency_gain": 3.4641016151377544,
+        "pole_frequency": 1732.0508075688772,
+        "pole_zero_ratio": 0.3333333333333333,
+        "zero_frequency": 577.3502691896258,
+        "zero_time_constant": 0.00027566444771089603
+      },
+      "actual_outputs": {
+        "dc_gain": 1.1547005383792517,
+        "high_frequency_gain": 3.464101615137754,
+        "pole_frequency": 1732.050807568877,
+        "pole_zero_ratio": 0.3333333333333334,
+        "zero_frequency": 577.3502691896258,
+        "zero_time_constant": 0.00027566444771089603
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "control.pi_pole_placement",
+      "inputs": {
+        "damping_ratio": 0.75,
+        "natural_frequency": 200.0,
+        "plant_gain": 2.0,
+        "plant_time_constant": 0.01
+      },
+      "expected_outputs": {
+        "integral_gain": 200.0,
+        "integral_time": 0.005,
+        "proportional_gain": 1.0,
+        "zero_frequency": 31.830988618379067
+      },
+      "actual_outputs": {
+        "integral_gain": 200.0,
+        "integral_time": 0.005,
+        "proportional_gain": 1.0,
+        "zero_frequency": 31.830988618379067
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "control.peak_current_slope_compensation",
+      "inputs": {
+        "falling_slope": 300000.0,
+        "initial_perturbation": 0.01,
+        "ramp_slope": 200000.0,
+        "rising_slope": 100000.0,
+        "switching_period": 1e-05
+      },
+      "expected_outputs": {
+        "minimum_ramp_slope": 100000.0,
+        "next_perturbation": -0.0033333333333333335,
+        "ramp_amplitude": 2.0,
+        "sample_multiplier": -0.3333333333333333,
+        "stability_reserve": 0.6666666666666666,
+        "steady_duty": 0.75
+      },
+      "actual_outputs": {
+        "minimum_ramp_slope": 100000.0,
+        "next_perturbation": -0.003333333333333333,
+        "ramp_amplitude": 2.0,
+        "sample_multiplier": -0.3333333333333333,
+        "stability_reserve": 0.6666666666666667,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "control.integral_two_lag_stability",
+      "inputs": {
+        "integral_gain": 100.0,
+        "plant_gain": 2.0,
+        "plant_time_constant": 0.001,
+        "sensor_time_constant": 0.002
+      },
+      "expected_outputs": {
+        "critical_frequency": 112.53953951963828,
+        "critical_integral_gain": 750.0,
+        "gain_factor_to_boundary": 7.5,
+        "routh_reserve": 0.8666666666666667
+      },
+      "actual_outputs": {
+        "critical_frequency": 112.53953951963827,
+        "critical_integral_gain": 750.0,
+        "gain_factor_to_boundary": 7.5,
+        "routh_reserve": 0.8666666666666667
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "converters.inverting_charge_pump",
+      "inputs": {
+        "flying_capacitance": 4.7e-05,
+        "flying_esr": 0.05,
+        "load_current": 0.02,
+        "output_esr": 0.05,
+        "switch_resistance": 1.0,
+        "switching_frequency": 10000.0,
+        "vin": 5.0
+      },
+      "expected_outputs": {
+        "output_resistance": 3.3776595744680855,
+        "output_voltage": -4.9324468085106385,
+        "transport_resistance": 2.1276595744680855,
+        "voltage_droop": 0.06755319148936172
+      },
+      "actual_outputs": {
+        "output_resistance": 3.3776595744680855,
+        "output_voltage": -4.9324468085106385,
+        "transport_resistance": 2.1276595744680855,
+        "voltage_droop": 0.06755319148936172
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "converters.sepic_ccm_stress",
+      "inputs": {
+        "input_inductance": 0.0001,
+        "load_current": 1.0,
+        "second_inductance": 0.00015,
+        "switching_frequency": 200000.0,
+        "vin": 12.0,
+        "vout": 18.0
+      },
+      "expected_outputs": {
+        "blocking_voltage": 30.0,
+        "coupling_cap_rms_current": 1.2276807402578245,
+        "duty": 0.6,
+        "input_current": 1.5,
+        "input_ripple": 0.36,
+        "second_ripple": 0.24,
+        "switch_peak_current": 2.8,
+        "switch_rms_current": 1.9411336893681488
+      },
+      "actual_outputs": {
+        "blocking_voltage": 30.0,
+        "coupling_cap_rms_current": 1.2276807402578245,
+        "duty": 0.6,
+        "input_current": 1.5,
+        "input_ripple": 0.35999999999999993,
+        "second_ripple": 0.24,
+        "switch_peak_current": 2.8,
+        "switch_rms_current": 1.9411336893681486
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "converters.forward_reset_winding",
+      "inputs": {
+        "primary_secondary_ratio": 1.5,
+        "reset_primary_ratio": 1.0,
+        "switching_frequency": 100000.0,
+        "vin": 48.0,
+        "vout": 12.0
+      },
+      "expected_outputs": {
+        "duty": 0.375,
+        "duty_limit": 0.5,
+        "idle_fraction": 0.25,
+        "reset_fraction": 0.375,
+        "reset_time": 3.75e-06,
+        "switch_blocking_voltage": 96.0
+      },
+      "actual_outputs": {
+        "duty": 0.375,
+        "duty_limit": 0.5,
+        "idle_fraction": 0.25,
+        "reset_fraction": 0.375,
+        "reset_time": 3.75e-06,
+        "switch_blocking_voltage": 96.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "converters.flyback_dcm_demagnetization",
+      "inputs": {
+        "load_current": 1.0,
+        "magnetizing_inductance": 0.0001,
+        "primary_secondary_ratio": 2.0,
+        "switching_frequency": 100000.0,
+        "vin": 48.0,
+        "vout": 12.0
+      },
+      "expected_outputs": {
+        "demagnetization_fraction": 0.6454972243679028,
+        "diode_reverse_voltage": 36.0,
+        "duty": 0.3227486121839514,
+        "idle_fraction": 0.031754163448145856,
+        "primary_peak_current": 1.5491933384829668,
+        "primary_rms_current": 0.5081327481546147,
+        "secondary_rms_current": 1.4372164478523368,
+        "switch_blocking_voltage": 72.0
+      },
+      "actual_outputs": {
+        "demagnetization_fraction": 0.6454972243679027,
+        "diode_reverse_voltage": 36.0,
+        "duty": 0.32274861218395134,
+        "idle_fraction": 0.03175416344814597,
+        "primary_peak_current": 1.5491933384829666,
+        "primary_rms_current": 0.5081327481546146,
+        "secondary_rms_current": 1.4372164478523366,
+        "switch_blocking_voltage": 72.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "converters.llc_half_bridge_fha",
+      "inputs": {
+        "load_resistance": 10.0,
+        "magnetizing_inductance": 0.0001,
+        "primary_secondary_ratio": 4.0,
+        "resonant_capacitance": 1e-07,
+        "resonant_inductance": 2e-05,
+        "switching_frequency": 120000.0,
+        "vin": 400.0
+      },
+      "expected_outputs": {
+        "ac_load_resistance": 129.69111506219235,
+        "inductance_ratio": 5.0,
+        "input_reactance": 58.16865958726068,
+        "normalized_frequency": 1.0662919051580078,
+        "output_voltage": 48.81902060978236,
+        "quality_factor": 0.10904475311935748,
+        "resonant_frequency": 112539.53951963827,
+        "tank_gain": 0.9763804121956472
+      },
+      "actual_outputs": {
+        "ac_load_resistance": 129.69111506219235,
+        "inductance_ratio": 5.0,
+        "input_reactance": 58.16865958726065,
+        "normalized_frequency": 1.066291905158008,
+        "output_voltage": 48.819020609782356,
+        "quality_factor": 0.10904475311935749,
+        "resonant_frequency": 112539.53951963826,
+        "tank_gain": 0.9763804121956471
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "converters.dual_active_bridge_power",
+      "inputs": {
+        "phase_shift": 0.5235987755982988,
+        "primary_secondary_ratio": 2.0,
+        "primary_voltage": 400.0,
+        "secondary_voltage": 200.0,
+        "switching_frequency": 100000.0,
+        "transfer_inductance": 5e-05
+      },
+      "expected_outputs": {
+        "maximum_power": 4000.0,
+        "phase_delay": 8.333333333333333e-07,
+        "primary_bus_current": 5.555555555555555,
+        "secondary_bus_current": 11.11111111111111,
+        "transferred_power": 2222.222222222222,
+        "voltage_ratio": 1.0
+      },
+      "actual_outputs": {
+        "maximum_power": 4000.0,
+        "phase_delay": 8.333333333333333e-07,
+        "primary_bus_current": 5.555555555555555,
+        "secondary_bus_current": 11.11111111111111,
+        "transferred_power": 2222.222222222222,
+        "voltage_ratio": 1.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "cores.single_layer_air_solenoid",
+      "inputs": {
+        "length": 0.03,
+        "radius": 0.01,
+        "turns": 20.0,
+        "wire_diameter": 0.001
+      },
+      "expected_outputs": {
+        "inductance": 4.037956793862305e-06,
+        "turn_pitch": 0.0015
+      },
+      "actual_outputs": {
+        "inductance": 4.037956793862305e-06,
+        "turn_pitch": 0.0015
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "cores.square_planar_spiral",
+      "inputs": {
+        "outer_side": 0.0003,
+        "spacing": 1e-05,
+        "trace_width": 1e-05,
+        "turns": 4.0
+      },
+      "expected_outputs": {
+        "average_side": 0.00022999999999999995,
+        "fill_ratio": 0.3043478260869566,
+        "inductance": 5.825908169108072e-09,
+        "inner_side": 0.00015999999999999996
+      },
+      "actual_outputs": {
+        "average_side": 0.00022999999999999995,
+        "fill_ratio": 0.3043478260869566,
+        "inductance": 5.825908169108072e-09,
+        "inner_side": 0.00015999999999999996
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "cores.bobbin_layer_fit",
+      "inputs": {
+        "copper_diameter": 0.0005,
+        "end_margin": 0.001,
+        "tape_thickness": 0.0001,
+        "turns": 100.0,
+        "window_height": 0.004,
+        "window_width": 0.02,
+        "wire_diameter": 0.0006
+      },
+      "expected_outputs": {
+        "copper_fill": 0.2727076956241139,
+        "height_margin": 0.0013000000000000004,
+        "layers_required": 4.0,
+        "radial_build": 0.0026999999999999997,
+        "turns_per_layer": 30.0
+      },
+      "actual_outputs": {
+        "copper_fill": 0.2727076956241139,
+        "height_margin": 0.0013000000000000004,
+        "layers_required": 4.0,
+        "radial_build": 0.0026999999999999997,
+        "turns_per_layer": 30.0
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "cores.sinusoidal_steinmetz_loss",
+      "inputs": {
+        "core_volume": 1e-05,
+        "fit_flux_max": 0.15,
+        "fit_flux_min": 0.05,
+        "fit_frequency_max": 200000.0,
+        "fit_frequency_min": 50000.0,
+        "flux_exponent": 2.5,
+        "flux_peak": 0.08,
+        "frequency": 150000.0,
+        "frequency_exponent": 1.5,
+        "reference_flux_peak": 0.1,
+        "reference_frequency": 100000.0,
+        "reference_loss_density": 200000.0
+      },
+      "expected_outputs": {
+        "core_loss": 2.103254620819838,
+        "energy_per_cycle": 1.4021697472132252e-05,
+        "loss_density": 210325.46208198377
+      },
+      "actual_outputs": {
+        "core_loss": 2.103254620819838,
+        "energy_per_cycle": 1.4021697472132253e-05,
+        "loss_density": 210325.46208198377
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "cores.lamination_eddy_loss",
+      "inputs": {
+        "flux_peak": 0.8,
+        "frequency": 50.0,
+        "lamination_thickness": 0.0002,
+        "linear_flux_limit": 1.2,
+        "metal_volume": 0.0001,
+        "relative_permeability": 1000.0,
+        "resistivity": 5e-07
+      },
+      "expected_outputs": {
+        "eddy_loss": 0.021055156055657307,
+        "eddy_loss_density": 210.5515605565731,
+        "penetration_ratio": 0.12566370614359174
+      },
+      "actual_outputs": {
+        "eddy_loss": 0.021055156055657304,
+        "eddy_loss_density": 210.55156055657304,
+        "penetration_ratio": 0.12566370614359174
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "cores.thin_foil_winding_loss",
+      "inputs": {
+        "current_rms": 10.0,
+        "foil_thickness": 5e-05,
+        "foil_width": 0.02,
+        "frequency": 100000.0,
+        "layers": 3.0,
+        "mean_turn_length": 0.1,
+        "resistivity": 1.72e-08
+      },
+      "expected_outputs": {
+        "ac_excess_factor": 0.0032194579693949473,
+        "ac_excess_loss": 0.0016612403122077928,
+        "resistance_ac": 0.005176612403122077,
+        "resistance_dc": 0.00516,
+        "thickness_ratio": 0.23954419411992856,
+        "winding_loss": 0.5176612403122077
+      },
+      "actual_outputs": {
+        "ac_excess_factor": 0.0032194579693949473,
+        "ac_excess_loss": 0.0016612403122077924,
+        "resistance_ac": 0.005176612403122077,
+        "resistance_dc": 0.00516,
+        "thickness_ratio": 0.23954419411992858,
+        "winding_loss": 0.5176612403122076
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "data.adc_lsb",
+      "inputs": {
+        "bits": 12.0,
+        "full_scale_span": 3.3
+      },
+      "expected_outputs": {
+        "code_count": 4096.0,
+        "lsb_v": 0.0008056640625
+      },
+      "actual_outputs": {
+        "code_count": 4096.0,
+        "lsb_v": 0.0008056640625
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.adc_quantization_error",
+      "inputs": {
+        "bits": 10.0,
+        "v_high": 1.0,
+        "v_in": 0.123,
+        "v_low": -1.0
+      },
+      "expected_outputs": {
+        "absolute_error_v": 0.0009296875,
+        "code": 574.0,
+        "error_v": -0.0009296875,
+        "quantization_step": 0.001953125,
+        "reconstructed_v": 0.1220703125
+      },
+      "actual_outputs": {
+        "absolute_error_v": 0.0009296874999999982,
+        "code": 574.0,
+        "error_v": -0.0009296874999999982,
+        "quantization_step": 0.001953125,
+        "reconstructed_v": 0.1220703125
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.bandlimited_quantization_snr",
+      "inputs": {
+        "amplitude_fraction": 0.8,
+        "bits": 12.0,
+        "noise_bandwidth": 20000.0,
+        "sample_rate": 1000000.0
+      },
+      "expected_outputs": {
+        "oversampling_ratio": 25.0,
+        "process_gain_db": 13.979400086720377,
+        "snr_db": 86.04931137647155,
+        "snr_linear": 20066.219972879797
+      },
+      "actual_outputs": {
+        "oversampling_ratio": 25.0,
+        "process_gain_db": 13.979400086720377,
+        "snr_db": 86.04931137647155,
+        "snr_linear": 20066.219972879797
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.sar_acquisition_settling",
+      "inputs": {
+        "bits": 12.0,
+        "sample_capacitance": 1.5e-11,
+        "source_resistance": 1000.0,
+        "step_fraction": 1.0,
+        "switch_resistance": 20.0
+      },
+      "expected_outputs": {
+        "minimum_acquisition_s": 1.3786697421337314e-07,
+        "required_time_constants": 9.010913347279288,
+        "time_constant_s": 1.53e-08
+      },
+      "actual_outputs": {
+        "minimum_acquisition_s": 1.3786697421337312e-07,
+        "required_time_constants": 9.010913347279288,
+        "time_constant_s": 1.53e-08
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.dynamic_enob",
+      "inputs": {
+        "sinad_db": 68.0
+      },
+      "expected_outputs": {
+        "enob_bits": 11.002074272256452
+      },
+      "actual_outputs": {
+        "enob_bits": 11.002074272256452
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.nyquist_sampling_margin",
+      "inputs": {
+        "highest_frequency": 20000.0,
+        "sample_rate": 48000.0
+      },
+      "expected_outputs": {
+        "frequency_margin": 4000.0,
+        "nyquist_frequency": 24000.0,
+        "rate_ratio": 1.2
+      },
+      "actual_outputs": {
+        "frequency_margin": 4000.0,
+        "nyquist_frequency": 24000.0,
+        "rate_ratio": 1.2
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.tone_alias_frequency",
+      "inputs": {
+        "input_frequency": 173000.0,
+        "sample_rate": 48000.0
+      },
+      "expected_outputs": {
+        "alias_frequency": 19000.0,
+        "nearest_sample_multiple": 4.0
+      },
+      "actual_outputs": {
+        "alias_frequency": 19000.0,
+        "nearest_sample_multiple": 4.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "data.unipolar_dac_output",
+      "inputs": {
+        "bits": 12.0,
+        "code": 1234.0,
+        "gain": 2.0,
+        "reference_v": 2.5
+      },
+      "expected_outputs": {
+        "configured_span": 5.0,
+        "maximum_code_v": 4.998779296875,
+        "output_v": 1.50634765625
+      },
+      "actual_outputs": {
+        "configured_span": 5.0,
+        "maximum_code_v": 4.998779296875,
+        "output_v": 1.50634765625
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.ohm_current",
+      "inputs": {
+        "resistance": 2200.0,
+        "voltage": -3.3
+      },
+      "expected_outputs": {
+        "current": -0.0015
+      },
+      "actual_outputs": {
+        "current": -0.0014999999999999998
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.loaded_wheatstone_bridge",
+      "inputs": {
+        "r_1": 1000.0,
+        "r_2": 1000.0,
+        "r_3": 1000.0,
+        "r_4": 3000.0,
+        "r_detector": 1250.0,
+        "v_excitation": 10.0
+      },
+      "expected_outputs": {
+        "i_detector": -0.001,
+        "r_output": 1250.0,
+        "v_common": 6.125,
+        "v_left": 5.5,
+        "v_loaded": -1.25,
+        "v_open": -2.5,
+        "v_right": 6.75
+      },
+      "actual_outputs": {
+        "i_detector": -0.001,
+        "r_output": 1250.0,
+        "v_common": 6.125,
+        "v_left": 5.5,
+        "v_loaded": -1.25,
+        "v_open": -2.5,
+        "v_right": 6.75
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.two_source_node",
+      "inputs": {
+        "r_1": 1000.0,
+        "r_2": 2000.0,
+        "r_load": 2000.0,
+        "v_1": 12.0,
+        "v_2": 3.0
+      },
+      "expected_outputs": {
+        "g_total": 0.002,
+        "i_load": 0.003375,
+        "i_source_1": 0.00525,
+        "i_source_2": -0.001875,
+        "v_node": 6.75
+      },
+      "actual_outputs": {
+        "g_total": 0.002,
+        "i_load": 0.003375,
+        "i_source_1": 0.0052499999999999995,
+        "i_source_2": -0.001875,
+        "v_node": 6.75
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.resistor_dissipation",
+      "inputs": {
+        "current": 0.012,
+        "resistance": 680.0
+      },
+      "expected_outputs": {
+        "power": 0.09792
+      },
+      "actual_outputs": {
+        "power": 0.09792000000000001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.series_parallel_branches",
+      "inputs": {
+        "r_1": 100.0,
+        "r_2": 200.0,
+        "r_3": 300.0,
+        "r_4": 300.0,
+        "voltage": 12.0
+      },
+      "expected_outputs": {
+        "i_branch_1": 0.04,
+        "i_branch_2": 0.02,
+        "i_total": 0.06,
+        "r_branch_1": 300.0,
+        "r_branch_2": 600.0,
+        "r_equivalent": 200.0
+      },
+      "actual_outputs": {
+        "i_branch_1": 0.04,
+        "i_branch_2": 0.02,
+        "i_total": 0.06,
+        "r_branch_1": 300.0,
+        "r_branch_2": 600.0,
+        "r_equivalent": 200.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.loaded_divider",
+      "inputs": {
+        "r_bottom": 5000.0,
+        "r_load": 10000.0,
+        "r_top": 10000.0,
+        "v_in": 12.0
+      },
+      "expected_outputs": {
+        "i_load": 0.0003,
+        "loading_error": 0.25,
+        "r_output": 3333.3333333333335,
+        "v_loaded": 3.0,
+        "v_open": 4.0
+      },
+      "actual_outputs": {
+        "i_load": 0.0003,
+        "loading_error": 0.25,
+        "r_output": 3333.3333333333335,
+        "v_loaded": 3.0,
+        "v_open": 4.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.resistive_source_matching",
+      "inputs": {
+        "r_load": 6.0,
+        "r_source": 3.0,
+        "v_thevenin": 9.0
+      },
+      "expected_outputs": {
+        "current": 1.0,
+        "p_load": 6.0,
+        "p_maximum": 6.75,
+        "p_source_resistance": 3.0,
+        "r_match": 3.0,
+        "v_load": 6.0
+      },
+      "actual_outputs": {
+        "current": 1.0,
+        "p_load": 6.0,
+        "p_maximum": 6.75,
+        "p_source_resistance": 3.0,
+        "r_match": 3.0,
+        "v_load": 6.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "dc.delta_to_star",
+      "inputs": {
+        "r_ab": 300.0,
+        "r_bc": 600.0,
+        "r_ca": 900.0
+      },
+      "expected_outputs": {
+        "r_a": 150.0,
+        "r_b": 100.0,
+        "r_c": 300.0
+      },
+      "actual_outputs": {
+        "r_a": 150.0,
+        "r_b": 100.0,
+        "r_c": 300.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.led_series_resistor",
+      "inputs": {
+        "forward_min": 1.8,
+        "forward_voltage": 2.0,
+        "led_count": 1.0,
+        "supply": 5.0,
+        "supply_max": 5.5,
+        "target_current": 0.02
+      },
+      "expected_outputs": {
+        "current_max": 0.024666666666666667,
+        "led_power": 0.04,
+        "resistance": 150.0,
+        "resistor_power": 0.06,
+        "resistor_power_max": 0.09126666666666668
+      },
+      "actual_outputs": {
+        "current_max": 0.024666666666666667,
+        "led_power": 0.04,
+        "resistance": 150.0,
+        "resistor_power": 0.060000000000000005,
+        "resistor_power_max": 0.09126666666666668
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.shockley_forward_current",
+      "inputs": {
+        "diode_voltage": 0.6,
+        "ideality": 1.0,
+        "model_current_max": 0.1,
+        "saturation_current": 1e-12,
+        "temperature": 300.0
+      },
+      "expected_outputs": {
+        "diode_current": 0.01201036955312849,
+        "incremental_resistance": 2.1524732998368954,
+        "junction_power": 0.007206221731877094,
+        "thermal_voltage": 0.025851999786435535
+      },
+      "actual_outputs": {
+        "diode_current": 0.01201036955312849,
+        "incremental_resistance": 2.1524732998368954,
+        "junction_power": 0.007206221731877094,
+        "thermal_voltage": 0.025851999786435535
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.zener_shunt_resistor_window",
+      "inputs": {
+        "input_max": 15.0,
+        "input_min": 12.0,
+        "load_max": 0.01,
+        "load_min": 0.0,
+        "resistance": 390.0,
+        "resistor_tolerance": 0.05,
+        "zener_current_limit": 0.05,
+        "zener_current_min": 0.005,
+        "zener_max": 5.1,
+        "zener_min": 4.9
+      },
+      "expected_outputs": {
+        "resistance_max": 438.0952380952381,
+        "resistance_min": 212.63157894736844,
+        "resistor_power_bound": 0.2753306342780027,
+        "zener_current_high": 0.02726045883940621,
+        "zener_current_low": 0.006849816849816852,
+        "zener_power_bound": 0.13902834008097165
+      },
+      "actual_outputs": {
+        "resistance_max": 438.09523809523813,
+        "resistance_min": 212.6315789473684,
+        "resistor_power_bound": 0.2753306342780027,
+        "zener_current_high": 0.027260458839406206,
+        "zener_current_low": 0.006849816849816852,
+        "zener_power_bound": 0.13902834008097165
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.reverse_recovery_charge_budget",
+      "inputs": {
+        "commutation_frequency": 100000.0,
+        "reverse_peak_current": 4.0,
+        "reverse_voltage": 400.0,
+        "triangle_duration": 1e-07
+      },
+      "expected_outputs": {
+        "charge_energy_budget": 8e-05,
+        "charge_power_budget": 8.0,
+        "recovery_charge": 2e-07,
+        "reverse_charge_current_avg": 0.02
+      },
+      "actual_outputs": {
+        "charge_energy_budget": 7.999999999999999e-05,
+        "charge_power_budget": 7.999999999999999,
+        "recovery_charge": 2e-07,
+        "reverse_charge_current_avg": 0.02
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.bridge_conduction_loss",
+      "inputs": {
+        "path_current_avg": 1.0,
+        "path_current_peak": 3.0,
+        "path_current_rms": 1.5,
+        "slope_resistance": 0.08,
+        "threshold_voltage": 0.7
+      },
+      "expected_outputs": {
+        "bridge_power": 1.76,
+        "peak_path_drop": 1.88,
+        "power_per_diode": 0.44
+      },
+      "actual_outputs": {
+        "bridge_power": 1.7599999999999998,
+        "peak_path_drop": 1.88,
+        "power_per_diode": 0.43999999999999995
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.full_wave_capacitor_ripple",
+      "inputs": {
+        "capacitance": 0.0022,
+        "forward_drop": 0.8,
+        "line_frequency": 50.0,
+        "load_current": 0.1,
+        "source_rms": 12.0
+      },
+      "expected_outputs": {
+        "capacitor_peak": 15.370562748477145,
+        "capacitor_trough": 14.916017293931688,
+        "output_dc": 15.143290021204416,
+        "ripple_frequency": 100.0,
+        "ripple_pp": 0.4545454545454546,
+        "ripple_rms": 0.13121597027036952
+      },
+      "actual_outputs": {
+        "capacitor_peak": 15.370562748477143,
+        "capacitor_trough": 14.916017293931688,
+        "output_dc": 15.143290021204416,
+        "ripple_frequency": 100.0,
+        "ripple_pp": 0.4545454545454546,
+        "ripple_rms": 0.13121597027036952
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.biased_two_sided_clipper",
+      "inputs": {
+        "input_voltage": 8.0,
+        "lower_drop": 0.65,
+        "lower_reference": -1.0,
+        "series_resistance": 1000.0,
+        "upper_drop": 0.65,
+        "upper_reference": 3.3
+      },
+      "expected_outputs": {
+        "lower_current": 0.0,
+        "lower_level": -1.65,
+        "output_voltage": 3.95,
+        "resistor_power": 0.0164025,
+        "upper_current": 0.00405,
+        "upper_level": 3.95
+      },
+      "actual_outputs": {
+        "lower_current": 0.0,
+        "lower_level": -1.65,
+        "output_voltage": 3.9499999999999997,
+        "resistor_power": 0.016402500000000007,
+        "upper_current": 0.004050000000000001,
+        "upper_level": 3.9499999999999997
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "diodes.parallel_led_ballast",
+      "inputs": {
+        "allowed_difference": 0.004,
+        "ballast_resistance": 68.0,
+        "forward_one": 3.0,
+        "forward_two": 3.2,
+        "sink_headroom_min": 0.3,
+        "supply": 5.0,
+        "total_current": 0.04
+      },
+      "expected_outputs": {
+        "ballast_min": 50.0,
+        "ballast_power_total": 0.054694117647058824,
+        "branch_voltage": 4.46,
+        "current_difference": 0.002941176470588232,
+        "current_one": 0.021470588235294116,
+        "current_two": 0.018529411764705885,
+        "sink_headroom": 0.54
+      },
+      "actual_outputs": {
+        "ballast_min": 50.00000000000004,
+        "ballast_power_total": 0.054694117647058824,
+        "branch_voltage": 4.46,
+        "current_difference": 0.002941176470588238,
+        "current_one": 0.02147058823529412,
+        "current_two": 0.01852941176470588,
+        "sink_headroom": 0.54
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "emc.thin_slot_shielding",
+      "inputs": {
+        "frequency": 100000000.0,
+        "shield_thickness": 0.0005,
+        "slot_length": 0.02,
+        "slot_width": 0.002
+      },
+      "expected_outputs": {
+        "field_ratio": 0.013342563807926084,
+        "shielding_db": 37.495214231999306,
+        "wavelength": 2.99792458
+      },
+      "actual_outputs": {
+        "field_ratio": 0.013342563807926084,
+        "shielding_db": 37.495214231999306,
+        "wavelength": 2.99792458
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "emc.rc_common_mode_conversion",
+      "inputs": {
+        "capacitance_one": 1.01e-08,
+        "capacitance_two": 9.9e-09,
+        "common_mode_rms": 0.1,
+        "differential_capacitance": 1e-07,
+        "frequency": 10000.0,
+        "resistance_one": 1000.0,
+        "resistance_two": 1000.0
+      },
+      "expected_outputs": {
+        "conversion_gain": 0.0008041073247070083,
+        "differential_rms": 8.041073247070084e-05,
+        "mismatch_time": -2e-07
+      },
+      "actual_outputs": {
+        "conversion_gain": 0.0008041073247071154,
+        "differential_rms": 8.041073247071155e-05,
+        "mismatch_time": -1.9999999999999978e-07
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "emc.trapezoid_conducted_harmonic",
+      "inputs": {
+        "duty_half_height": 0.4,
+        "edge_time": 1e-07,
+        "harmonic_order": 3.0,
+        "pulse_current": 0.001,
+        "switching_frequency": 100000.0,
+        "termination_resistance": 50.0
+      },
+      "expected_outputs": {
+        "dc_current": 0.0004,
+        "harmonic_current_rms": 8.806826043190418e-05,
+        "harmonic_frequency": 300000.0,
+        "termination_voltage_rms": 0.004403413021595208
+      },
+      "actual_outputs": {
+        "dc_current": 0.0004,
+        "harmonic_current_rms": 8.806826043190419e-05,
+        "harmonic_frequency": 300000.0,
+        "termination_voltage_rms": 0.004403413021595209
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "emc.sinusoidal_dither_occupancy",
+      "inputs": {
+        "harmonic_order": 3.0,
+        "modulation_frequency": 2000.0,
+        "peak_deviation": 10000.0,
+        "switching_frequency": 100000.0
+      },
+      "expected_outputs": {
+        "harmonic_modulation_index": 15.0,
+        "next_harmonic_gap": 26000.0,
+        "occupied_bandwidth": 64000.0
+      },
+      "actual_outputs": {
+        "harmonic_modulation_index": 15.0,
+        "next_harmonic_gap": 26000.0,
+        "occupied_bandwidth": 64000.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "emc.ringing_rc_snubber",
+      "inputs": {
+        "capacitance_multiplier": 3.0,
+        "damping_target": 0.75,
+        "loaded_frequency": 15000000.0,
+        "original_frequency": 30000000.0,
+        "switching_frequency": 500000.0,
+        "test_capacitance": 3e-09,
+        "voltage_swing": 12.0
+      },
+      "expected_outputs": {
+        "parasitic_capacitance": 1e-09,
+        "parasitic_inductance": 2.8144773233982716e-08,
+        "snubber_capacitance": 3e-09,
+        "snubber_power": 0.216,
+        "snubber_resistance": 3.53677651315323
+      },
+      "actual_outputs": {
+        "parasitic_capacitance": 1e-09,
+        "parasitic_inductance": 2.814477323398272e-08,
+        "snubber_capacitance": 3.0000000000000004e-09,
+        "snubber_power": 0.21600000000000008,
+        "snubber_resistance": 3.53677651315323
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "emc.short_cable_radiation",
+      "inputs": {
+        "cable_length": 0.1,
+        "common_mode_current_rms": 1e-05,
+        "distance": 10.0,
+        "frequency": 100000000.0
+      },
+      "expected_outputs": {
+        "electric_field_rms": 6.283185307179587e-06,
+        "electrical_length": 0.03335640951981521,
+        "far_field_parameter": 20.958450219516816
+      },
+      "actual_outputs": {
+        "electric_field_rms": 6.2831853071795875e-06,
+        "electrical_length": 0.03335640951981521,
+        "far_field_parameter": 20.958450219516816
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.rc_lowpass_response",
+      "inputs": {
+        "c": 1e-08,
+        "f": 1000.0,
+        "r": 10000.0
+      },
+      "expected_outputs": {
+        "attenuation_db": 1.445070116205288,
+        "cutoff_hz": 1591.5494309189537,
+        "frequency_ratio": 0.6283185307179586,
+        "phase_rad": -0.5609821161086238,
+        "voltage_gain": 0.8467330159648303
+      },
+      "actual_outputs": {
+        "attenuation_db": 1.4450701162052866,
+        "cutoff_hz": 1591.5494309189535,
+        "frequency_ratio": 0.6283185307179586,
+        "phase_rad": -0.5609821161086238,
+        "voltage_gain": 0.8467330159648304
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.deliyannis_bandpass_design",
+      "inputs": {
+        "c0": 1e-08,
+        "center_frequency": 1000.0,
+        "f": 1000.0,
+        "q": 2.0
+      },
+      "expected_outputs": {
+        "bandwidth_hz": 500.0,
+        "lower_edge_hz": 780.7764064044152,
+        "peak_gain": 2.0,
+        "r0": 15915.494309189537,
+        "r2": 5305.164769729846,
+        "r3": 47746.482927568606,
+        "upper_edge_hz": 1280.7764064044152,
+        "voltage_gain": 2.0
+      },
+      "actual_outputs": {
+        "bandwidth_hz": 500.0,
+        "lower_edge_hz": 780.7764064044152,
+        "peak_gain": 2.0,
+        "r0": 15915.494309189537,
+        "r2": 5305.164769729846,
+        "r3": 47746.482927568606,
+        "upper_edge_hz": 1280.7764064044152,
+        "voltage_gain": 2.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.butterworth_spec_synthesis",
+      "inputs": {
+        "passband_edge": 1000.0,
+        "passband_loss": 1.0,
+        "stopband_edge": 4000.0,
+        "stopband_loss": 40.0
+      },
+      "expected_outputs": {
+        "actual_passband_db": 1.0,
+        "actual_stopband_db": 42.29680198990891,
+        "cutoff_max_hz": 1264.9268763451062,
+        "cutoff_min_hz": 1184.003988964071,
+        "order": 4.0,
+        "order_bound": 3.8092399086702753
+      },
+      "actual_outputs": {
+        "actual_passband_db": 1.000000000000001,
+        "actual_stopband_db": 42.29680198990889,
+        "cutoff_max_hz": 1264.926876345106,
+        "cutoff_min_hz": 1184.003988964071,
+        "order": 4.0,
+        "order_bound": 3.8092399086702757
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.sallen_key_lowpass",
+      "inputs": {
+        "amplifier_gain": 2.0,
+        "c1": 1e-08,
+        "c2": 1e-08,
+        "f": 1000.0,
+        "r1": 10000.0,
+        "r2": 10000.0
+      },
+      "expected_outputs": {
+        "dc_gain": 2.0,
+        "frequency_ratio": 0.6283185307179586,
+        "gain_db": 7.206351772370593,
+        "half_power_hz": 2024.482149301843,
+        "pole_hz": 1591.5494309189537,
+        "section_q": 1.0,
+        "voltage_gain": 2.2925435192800947
+      },
+      "actual_outputs": {
+        "dc_gain": 2.0,
+        "frequency_ratio": 0.6283185307179586,
+        "gain_db": 7.206351772370593,
+        "half_power_hz": 2024.482149301843,
+        "pole_hz": 1591.5494309189535,
+        "section_q": 1.0,
+        "voltage_gain": 2.2925435192800947
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.fliege_notch_response",
+      "inputs": {
+        "c0": 1e-07,
+        "f": 160.0,
+        "r0": 10000.0,
+        "rq": 200000.0
+      },
+      "expected_outputs": {
+        "bandwidth_hz": 15.915494309189535,
+        "frequency_ratio": 1.0053096491487337,
+        "lower_edge_hz": 151.3960154315485,
+        "notch_hz": 159.15494309189535,
+        "section_q": 10.0,
+        "upper_edge_hz": 167.31150974073802,
+        "voltage_gain": 0.10532346435527204
+      },
+      "actual_outputs": {
+        "bandwidth_hz": 15.915494309189535,
+        "frequency_ratio": 1.0053096491487337,
+        "lower_edge_hz": 151.39601543154848,
+        "notch_hz": 159.15494309189535,
+        "section_q": 10.0,
+        "upper_edge_hz": 167.31150974073802,
+        "voltage_gain": 0.10532346435527207
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.rc_highpass_response",
+      "inputs": {
+        "c": 1e-08,
+        "f": 1000.0,
+        "r": 10000.0
+      },
+      "expected_outputs": {
+        "attenuation_db": 5.481472749042987,
+        "cutoff_hz": 1591.5494309189537,
+        "frequency_ratio": 0.6283185307179586,
+        "phase_rad": 1.0098142106862729,
+        "voltage_gain": 0.532018044501408
+      },
+      "actual_outputs": {
+        "attenuation_db": 5.481472749042985,
+        "cutoff_hz": 1591.5494309189535,
+        "frequency_ratio": 0.6283185307179586,
+        "phase_rad": 1.0098142106862729,
+        "voltage_gain": 0.532018044501408
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.second_order_highpass",
+      "inputs": {
+        "f": 500.0,
+        "passband_gain": 2.0,
+        "pole_frequency": 1000.0,
+        "q": 0.7071067811865476
+      },
+      "expected_outputs": {
+        "frequency_ratio": 0.5,
+        "gain_db": -6.283889300503116,
+        "half_power_hz": 1000.0,
+        "voltage_gain": 0.48507125007266594
+      },
+      "actual_outputs": {
+        "frequency_ratio": 0.5,
+        "gain_db": -6.283889300503116,
+        "half_power_hz": 999.9999999999999,
+        "voltage_gain": 0.48507125007266594
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "filters.buffered_rc_cascade",
+      "inputs": {
+        "c": 1e-08,
+        "f": 1000.0,
+        "r": 10000.0,
+        "stage_count": 3.0
+      },
+      "expected_outputs": {
+        "attenuation_db": 4.3352103486158615,
+        "cascade_cutoff_hz": 811.4109382567457,
+        "frequency_ratio": 0.6283185307179586,
+        "overall_order": 3.0,
+        "phase_rad": -1.6829463483258713,
+        "stage_cutoff_hz": 1591.5494309189537,
+        "voltage_gain": 0.6070709938555954
+      },
+      "actual_outputs": {
+        "attenuation_db": 4.33521034861586,
+        "cascade_cutoff_hz": 811.4109382567455,
+        "frequency_ratio": 0.6283185307179586,
+        "overall_order": 3.0,
+        "phase_rad": -1.6829463483258715,
+        "stage_cutoff_hz": 1591.5494309189535,
+        "voltage_gain": 0.6070709938555955
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "logic.guaranteed_noise_margins",
+      "inputs": {
+        "ground_offset": 0.1,
+        "high_noise": 0.1,
+        "input_high_min": 2.0,
+        "input_low_max": 0.8,
+        "low_noise": 0.1,
+        "output_high_min": 2.4,
+        "output_low_max": 0.4
+      },
+      "expected_outputs": {
+        "high_margin": 0.2,
+        "low_margin": 0.4,
+        "minimum_margin": 0.2
+      },
+      "actual_outputs": {
+        "high_margin": 0.19999999999999982,
+        "low_margin": 0.4,
+        "minimum_margin": 0.19999999999999982
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "logic.dc_current_fanout",
+      "inputs": {
+        "load_count": 18.0,
+        "receiver_high_current": 2e-05,
+        "receiver_low_current": 0.0004,
+        "sink_limit": 0.008,
+        "source_limit": 0.004
+      },
+      "expected_outputs": {
+        "high_fanout": 200.0,
+        "low_fanout": 20.0,
+        "maximum_fanout": 20.0,
+        "sink_headroom": 0.0008,
+        "source_headroom": 0.00364
+      },
+      "actual_outputs": {
+        "high_fanout": 200.0,
+        "low_fanout": 20.0,
+        "maximum_fanout": 20.0,
+        "sink_headroom": 0.0007999999999999995,
+        "source_headroom": 0.00364
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "logic.cmos_package_power",
+      "inputs": {
+        "active_sections": 8.0,
+        "input_cycle_rate": 20000000.0,
+        "load_capacitance": 2.5e-11,
+        "output_cycle_rate": 10000000.0,
+        "power_capacitance": 1.5e-11,
+        "quiescent_current": 2e-05,
+        "supply_voltage": 3.3
+      },
+      "expected_outputs": {
+        "average_current": 0.01454,
+        "internal_power": 0.026136,
+        "load_power": 0.02178,
+        "static_power": 6.6e-05,
+        "total_power": 0.047982
+      },
+      "actual_outputs": {
+        "average_current": 0.014539999999999997,
+        "internal_power": 0.026135999999999993,
+        "load_power": 0.021779999999999997,
+        "static_power": 6.6e-05,
+        "total_power": 0.04798199999999999
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "logic.synchronizer_metastability",
+      "inputs": {
+        "aperture_parameter": 1e-10,
+        "chain_count": 100.0,
+        "clock_frequency": 100000000.0,
+        "data_transition_rate": 1000000.0,
+        "resolution_constant": 5e-11,
+        "resolution_time": 2e-09,
+        "target_system_mtbf": 31557600000.0
+      },
+      "expected_outputs": {
+        "log10_chain_mtbf": 13.371779276130074,
+        "log10_system_mtbf": 11.371779276130074,
+        "required_resolution_time": 1.8995295421184683e-09,
+        "resolution_margin": 1.0047045788153164e-10
+      },
+      "actual_outputs": {
+        "log10_chain_mtbf": 13.371779276130074,
+        "log10_system_mtbf": 11.371779276130074,
+        "required_resolution_time": 1.8995295421184687e-09,
+        "resolution_margin": 1.0047045788153146e-10
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "logic.three_stage_logical_effort",
+      "inputs": {
+        "final_load_capacitance": 1.44e-13,
+        "first_input_capacitance": 3e-15,
+        "first_logical_effort": 1.3333333333333333,
+        "path_parasitic_delay": 4.0,
+        "process_delay_unit": 2e-11,
+        "second_logical_effort": 1.0,
+        "third_logical_effort": 1.0
+      },
+      "expected_outputs": {
+        "normalized_path_delay": 16.0,
+        "optimal_stage_effort": 4.0,
+        "path_delay": 3.2e-10,
+        "second_input_capacitance": 9e-15,
+        "third_input_capacitance": 3.6e-14
+      },
+      "actual_outputs": {
+        "normalized_path_delay": 16.000000000000004,
+        "optimal_stage_effort": 4.000000000000001,
+        "path_delay": 3.2000000000000003e-10,
+        "second_input_capacitance": 9.000000000000003e-15,
+        "third_input_capacitance": 3.599999999999999e-14
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "logic.fifo_envelope_depth",
+      "inputs": {
+        "arrival_rate": 25000000.0,
+        "burst_words": 64.0,
+        "service_latency": 1e-06,
+        "service_rate": 50000000.0,
+        "word_bits": 32.0
+      },
+      "expected_outputs": {
+        "backlog_bound": 89.0,
+        "delay_bound": 2.28e-06,
+        "storage_bits": 2848.0,
+        "usable_depth": 89.0
+      },
+      "actual_outputs": {
+        "backlog_bound": 89.0,
+        "delay_bound": 2.28e-06,
+        "storage_bits": 2848.0,
+        "usable_depth": 89.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.turns_ratio",
+      "inputs": {
+        "load_resistance": 24.0,
+        "primary_turns": 1000.0,
+        "primary_voltage": 230.0,
+        "secondary_turns": 100.0
+      },
+      "expected_outputs": {
+        "reflected_resistance": 2400.0,
+        "secondary_voltage": 23.0,
+        "voltage_ratio": 0.1
+      },
+      "actual_outputs": {
+        "reflected_resistance": 2400.0,
+        "secondary_voltage": 23.0,
+        "voltage_ratio": 0.1
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.rectangular_toroid_inductance",
+      "inputs": {
+        "height": 0.005,
+        "inner_radius": 0.01,
+        "linear_flux_limit": 0.2,
+        "outer_radius": 0.02,
+        "peak_current": 0.1,
+        "relative_permeability": 100.0,
+        "turns": 50.0
+      },
+      "expected_outputs": {
+        "inductance": 0.00017328679513998633,
+        "inner_flux_density": 0.01
+      },
+      "actual_outputs": {
+        "inductance": 0.00017328679513998636,
+        "inner_flux_density": 0.01
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.gapped_core_inductance",
+      "inputs": {
+        "core_length": 0.1,
+        "gap_length": 0.0005,
+        "linear_flux_limit": 0.3,
+        "peak_current": 1.0,
+        "pole_height": 0.01,
+        "pole_width": 0.01,
+        "relative_permeability": 2000.0,
+        "turns": 100.0
+      },
+      "expected_outputs": {
+        "core_reluctance": 397887.35772973835,
+        "gap_reluctance": 3978873.577297383,
+        "inductance": 0.0022847946571562133,
+        "peak_flux_density": 0.22847946571562133
+      },
+      "actual_outputs": {
+        "core_reluctance": 397887.3577297384,
+        "gap_reluctance": 3978873.577297384,
+        "inductance": 0.002284794657156213,
+        "peak_flux_density": 0.22847946571562128
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.conductor_skin_depth",
+      "inputs": {
+        "conductivity": 58000000.0,
+        "frequency": 100000.0,
+        "relative_permeability": 1.0,
+        "relative_permittivity": 1.0
+      },
+      "expected_outputs": {
+        "skin_depth": 0.0002089806784938892
+      },
+      "actual_outputs": {
+        "skin_depth": 0.0002089806784938892
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.coupled_coil_inductance",
+      "inputs": {
+        "coupling": 0.9,
+        "inductance_one": 0.0001,
+        "inductance_two": 0.0004
+      },
+      "expected_outputs": {
+        "mutual_inductance": 0.00018,
+        "series_aiding": 0.00086,
+        "series_opposing": 0.00014
+      },
+      "actual_outputs": {
+        "mutual_inductance": 0.00018,
+        "series_aiding": 0.0008600000000000001,
+        "series_opposing": 0.00014000000000000004
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.sinusoidal_flux_density",
+      "inputs": {
+        "core_area": 0.0004,
+        "flux_limit": 0.3,
+        "frequency": 50.0,
+        "rms_voltage": 24.0,
+        "turns": 1000.0
+      },
+      "expected_outputs": {
+        "peak_flux": 0.00010803795793885272,
+        "peak_flux_density": 0.2700948948471318
+      },
+      "actual_outputs": {
+        "peak_flux": 0.00010803795793885274,
+        "peak_flux_density": 0.27009489484713184
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.field_energy_density",
+      "inputs": {
+        "flux_density": 0.2,
+        "linear_flux_limit": 0.3,
+        "relative_permeability": 1.0,
+        "volume": 5e-08
+      },
+      "expected_outputs": {
+        "energy_density": 15915.494309189537,
+        "field_energy": 0.0007957747154594767
+      },
+      "actual_outputs": {
+        "energy_density": 15915.494309189533,
+        "field_energy": 0.0007957747154594768
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "magnetics.transformer_va_budget",
+      "inputs": {
+        "headroom_factor": 1.25,
+        "secondary_one_current": 2.0,
+        "secondary_one_voltage": 24.0,
+        "secondary_two_current": 0.5,
+        "secondary_two_voltage": 12.0
+      },
+      "expected_outputs": {
+        "minimum_rating_va": 67.5,
+        "secondary_one_va": 48.0,
+        "secondary_two_va": 6.0,
+        "total_load_va": 54.0
+      },
+      "actual_outputs": {
+        "minimum_rating_va": 67.5,
+        "secondary_one_va": 48.0,
+        "secondary_two_va": 6.0,
+        "total_load_va": 54.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "measurement.dmm_accuracy_bound",
+      "inputs": {
+        "range_percent": 0.001,
+        "range_value": 2.0,
+        "reading": 0.5,
+        "reading_percent": 0.003
+      },
+      "expected_outputs": {
+        "lower_bound": 0.499965,
+        "range_error_bound": 2e-05,
+        "reading_error_bound": 1.5e-05,
+        "total_error_bound": 3.5e-05,
+        "upper_bound": 0.500035
+      },
+      "actual_outputs": {
+        "lower_bound": 0.499965,
+        "range_error_bound": 2e-05,
+        "reading_error_bound": 1.5e-05,
+        "total_error_bound": 3.5000000000000004e-05,
+        "upper_bound": 0.500035
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "measurement.delta_resistance",
+      "inputs": {
+        "sample_interval": 0.1,
+        "test_current": 0.01,
+        "voltage_first": 0.001012,
+        "voltage_second": -0.000986,
+        "voltage_third": 0.001016
+      },
+      "expected_outputs": {
+        "emf_drift_rate": 2e-05,
+        "midpoint_emf": 1.4e-05,
+        "resistance": 0.1,
+        "resistive_voltage": 0.001
+      },
+      "actual_outputs": {
+        "emf_drift_rate": 1.9999999999999402e-05,
+        "midpoint_emf": 1.400000000000007e-05,
+        "resistance": 0.1,
+        "resistive_voltage": 0.001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "measurement.compensated_probe_loading",
+      "inputs": {
+        "frequency": 1000000.0,
+        "probe_capacitance": 1e-11,
+        "probe_resistance": 9000000.0,
+        "scope_capacitance": 9e-11,
+        "scope_resistance": 1000000.0,
+        "source_resistance": 1000.0,
+        "source_voltage": 1.0
+      },
+      "expected_outputs": {
+        "ac_gain": 0.09983054361596318,
+        "dc_gain": 0.0999900009999,
+        "matched_probe_capacitance": 1e-11,
+        "scope_voltage": 0.09983054361596318
+      },
+      "actual_outputs": {
+        "ac_gain": 0.09983054361596315,
+        "dc_gain": 0.0999900009999,
+        "matched_probe_capacitance": 1e-11,
+        "scope_voltage": 0.09983054361596315
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "measurement.rectangular_aperture_response",
+      "inputs": {
+        "aperture_time": 0.01,
+        "frequency": 25.0,
+        "input_peak": 0.2
+      },
+      "expected_outputs": {
+        "amplitude_ratio": 0.9003163161571061,
+        "effective_delay": 0.005,
+        "measured_peak": 0.18006326323142122,
+        "midpoint_gain": 0.9003163161571061
+      },
+      "actual_outputs": {
+        "amplitude_ratio": 0.9003163161571061,
+        "effective_delay": 0.005,
+        "measured_peak": 0.18006326323142122,
+        "midpoint_gain": 0.9003163161571061
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "measurement.sampling_jitter_snr",
+      "inputs": {
+        "frequency": 10000000.0,
+        "input_peak": 1.0,
+        "timing_jitter": 2e-12
+      },
+      "expected_outputs": {
+        "error_rms": 8.885765876316733e-05,
+        "jitter_snr": 78.01580271955808,
+        "phase_jitter": 0.00012566370614359174
+      },
+      "actual_outputs": {
+        "error_rms": 8.885765876316733e-05,
+        "jitter_snr": 78.01580271955807,
+        "phase_jitter": 0.00012566370614359174
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "measurement.correlated_voltage_ratio",
+      "inputs": {
+        "correlation": 0.8,
+        "coverage_factor": 2.0,
+        "denominator_uncertainty": 0.0015,
+        "denominator_voltage": 2.5,
+        "numerator_uncertainty": 0.002,
+        "numerator_voltage": 5.0
+      },
+      "expected_outputs": {
+        "expanded_uncertainty": 0.0014751271131668625,
+        "ratio_standard_uncertainty": 0.0007375635565834311,
+        "relative_standard_uncertainty": 0.0003687817782917156,
+        "voltage_ratio": 2.0
+      },
+      "actual_outputs": {
+        "expanded_uncertainty": 0.0014751271131668619,
+        "ratio_standard_uncertainty": 0.0007375635565834309,
+        "relative_standard_uncertainty": 0.00036878177829171546,
+        "voltage_ratio": 2.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.gate_charge_supply",
+      "inputs": {
+        "f_sw": 250000.0,
+        "q_g": 4e-08,
+        "v_drive": 12.0
+      },
+      "expected_outputs": {
+        "e_drive": 4.8e-07,
+        "i_supply": 0.01,
+        "p_drive": 0.12
+      },
+      "actual_outputs": {
+        "e_drive": 4.800000000000001e-07,
+        "i_supply": 0.01,
+        "p_drive": 0.12000000000000001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.gate_loop_damping_resistor",
+      "inputs": {
+        "c_iss": 2e-09,
+        "l_loop": 3.2e-08,
+        "r_driver": 1.5,
+        "r_internal": 0.5
+      },
+      "expected_outputs": {
+        "r_critical": 8.0,
+        "r_external": 6.0,
+        "zeta": 1.0
+      },
+      "actual_outputs": {
+        "r_critical": 8.0,
+        "r_external": 6.0,
+        "zeta": 1.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.bootstrap_charge_budget",
+      "inputs": {
+        "d_max": 0.8,
+        "delta_v": 0.5,
+        "f_sw": 50000.0,
+        "i_hb": 0.0005,
+        "i_hbs": 2.5e-05,
+        "q_g": 1e-07,
+        "v_dd": 15.0,
+        "v_diode": 1.0,
+        "v_min": 10.0
+      },
+      "expected_outputs": {
+        "c_min": 2.208e-07,
+        "q_total": 1.104e-07,
+        "v_headroom": 4.0
+      },
+      "actual_outputs": {
+        "c_min": 2.208e-07,
+        "q_total": 1.104e-07,
+        "v_headroom": 4.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.output_capacitance_hard_turn_on_loss",
+      "inputs": {
+        "c_o_er": 2.5e-10,
+        "f_sw": 500000.0,
+        "v_ds": 200.0
+      },
+      "expected_outputs": {
+        "e_oss": 5e-06,
+        "p_oss": 2.5
+      },
+      "actual_outputs": {
+        "e_oss": 5e-06,
+        "p_oss": 2.5
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.channel_conduction_loss",
+      "inputs": {
+        "delta_i_pp": 6.0,
+        "duty": 0.6,
+        "i_mean": 8.0,
+        "r_ds_on": 0.015
+      },
+      "expected_outputs": {
+        "i_rms": 6.340346993658943,
+        "p_cond": 0.603
+      },
+      "actual_outputs": {
+        "i_rms": 6.340346993658943,
+        "p_cond": 0.6029999999999999
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.hard_switch_overlap_loss",
+      "inputs": {
+        "f_sw": 200000.0,
+        "i_load": 5.0,
+        "t_off": 6e-08,
+        "t_on": 4e-08,
+        "v_off": 100.0
+      },
+      "expected_outputs": {
+        "e_cycle": 2.5e-05,
+        "e_off": 1.5e-05,
+        "e_on": 1e-05,
+        "p_overlap": 5.0
+      },
+      "actual_outputs": {
+        "e_cycle": 2.4999999999999998e-05,
+        "e_off": 1.4999999999999999e-05,
+        "e_on": 1e-05,
+        "p_overlap": 5.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.miller_plateau_timing",
+      "inputs": {
+        "q_gd": 3e-08,
+        "r_external": 3.0,
+        "r_internal": 1.0,
+        "r_sink": 1.0,
+        "r_source": 2.0,
+        "v_drive": 12.0,
+        "v_plateau": 5.0
+      },
+      "expected_outputs": {
+        "i_gate_off": 1.0,
+        "i_gate_on": 1.1666666666666667,
+        "t_miller_off": 3e-08,
+        "t_miller_on": 2.5714285714285715e-08
+      },
+      "actual_outputs": {
+        "i_gate_off": 1.0,
+        "i_gate_on": 1.1666666666666667,
+        "t_miller_off": 3e-08,
+        "t_miller_on": 2.571428571428571e-08
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "mosfet.long_channel_triode_current",
+      "inputs": {
+        "beta": 0.004,
+        "v_ds": 0.4,
+        "v_gs": 2.5,
+        "v_th": 0.7
+      },
+      "expected_outputs": {
+        "i_d": 0.00256,
+        "v_overdrive": 1.8
+      },
+      "actual_outputs": {
+        "i_d": 0.0025600000000000006,
+        "v_overdrive": 1.8
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "motors.pm_dc_load_equilibrium",
+      "inputs": {
+        "armature_resistance": 2.0,
+        "load_torque": 0.2,
+        "motor_constant": 0.1,
+        "viscous_drag": 0.001,
+        "voltage": 24.0
+      },
+      "expected_outputs": {
+        "back_emf": 16.666666666666668,
+        "copper_loss": 26.88888888888889,
+        "current": 3.6666666666666665,
+        "friction_loss": 27.77777777777778,
+        "shaft_power": 33.333333333333336,
+        "speed": 166.66666666666666
+      },
+      "actual_outputs": {
+        "back_emf": 16.666666666666668,
+        "copper_loss": 26.888888888888893,
+        "current": 3.666666666666667,
+        "friction_loss": 27.777777777777786,
+        "shaft_power": 33.333333333333336,
+        "speed": 166.66666666666669
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "motors.stepper_static_microstep",
+      "inputs": {
+        "full_steps_per_turn": 200.0,
+        "holding_torque": 0.5,
+        "load_torque": 0.1,
+        "microsteps_per_step": 16.0
+      },
+      "expected_outputs": {
+        "angular_stiffness": 24.49489742783178,
+        "incremental_torque": 0.0490085701647803,
+        "load_lag": 0.004027158415806616,
+        "microstep_angle": 0.001963495408493621
+      },
+      "actual_outputs": {
+        "angular_stiffness": 24.49489742783178,
+        "incremental_torque": 0.0490085701647803,
+        "load_lag": 0.004027158415806616,
+        "microstep_angle": 0.001963495408493621
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "motors.geared_axis_acceleration",
+      "inputs": {
+        "armature_resistance": 1.0,
+        "final_speed": 20.0,
+        "gear_efficiency": 0.9,
+        "gear_ratio": 10.0,
+        "initial_speed": 0.0,
+        "load_inertia": 0.02,
+        "load_torque": 0.4,
+        "motor_constant": 0.08,
+        "motor_inertia": 0.0002,
+        "ramp_time": 0.5
+      },
+      "expected_outputs": {
+        "armature_current": 2.6666666666666665,
+        "motor_acceleration": 400.0,
+        "motor_final_speed": 200.0,
+        "motor_torque": 0.21333333333333335,
+        "reflected_inertia": 0.0002,
+        "required_final_voltage": 18.666666666666668
+      },
+      "actual_outputs": {
+        "armature_current": 2.666666666666667,
+        "motor_acceleration": 400.0,
+        "motor_final_speed": 200.0,
+        "motor_torque": 0.21333333333333337,
+        "reflected_inertia": 0.0002,
+        "required_final_voltage": 18.666666666666668
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "motors.resistive_dynamic_braking",
+      "inputs": {
+        "armature_resistance": 1.0,
+        "brake_resistance": 3.0,
+        "inertia": 0.002,
+        "initial_speed": 100.0,
+        "motor_constant": 0.1,
+        "time": 0.8
+      },
+      "expected_outputs": {
+        "angular_travel": 50.56964470628461,
+        "brake_energy": 6.484985375725405,
+        "braking_current": 0.9196986029286058,
+        "electromagnetic_torque": -0.09196986029286058,
+        "mechanical_tau": 0.8,
+        "speed": 36.787944117144235,
+        "winding_energy": 2.161661791908468
+      },
+      "actual_outputs": {
+        "angular_travel": 50.56964470628461,
+        "brake_energy": 6.4849853757254055,
+        "braking_current": 0.9196986029286056,
+        "electromagnetic_torque": -0.09196986029286057,
+        "mechanical_tau": 0.7999999999999999,
+        "speed": 36.78794411714422,
+        "winding_energy": 2.1616617919084686
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "motors.salient_pmsm_dq_operating_point",
+      "inputs": {
+        "d_current": -5.0,
+        "d_inductance": 0.0005,
+        "magnet_flux": 0.05,
+        "mechanical_speed": 100.0,
+        "pole_pairs": 4.0,
+        "q_current": 10.0,
+        "q_inductance": 0.001,
+        "stator_resistance": 0.2
+      },
+      "expected_outputs": {
+        "converted_power": 315.0,
+        "d_voltage": -5.0,
+        "electrical_speed": 400.0,
+        "electromagnetic_torque": 3.15,
+        "phase_current_peak": 11.180339887498947,
+        "phase_voltage_peak": 21.587033144922906,
+        "q_voltage": 21.0,
+        "stator_copper_loss": 37.5
+      },
+      "actual_outputs": {
+        "converted_power": 315.00000000000006,
+        "d_voltage": -5.0,
+        "electrical_speed": 400.0,
+        "electromagnetic_torque": 3.1500000000000004,
+        "phase_current_peak": 11.180339887498949,
+        "phase_voltage_peak": 21.587033144922902,
+        "q_voltage": 21.0,
+        "stator_copper_loss": 37.50000000000001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "motors.induction_slip_power",
+      "inputs": {
+        "frequency": 50.0,
+        "pole_pairs": 2.0,
+        "rotor_reactance": 1.0,
+        "rotor_resistance": 0.4,
+        "slip": 0.05,
+        "thevenin_reactance": 1.0,
+        "thevenin_resistance": 0.5,
+        "thevenin_voltage": 220.0
+      },
+      "expected_outputs": {
+        "air_gap_power": 15234.098360655737,
+        "breakdown_slip": 0.1940285000290664,
+        "breakdown_torque": 180.431944415802,
+        "converted_power": 14472.39344262295,
+        "electromagnetic_torque": 96.98328230585996,
+        "rotor_copper_loss": 761.7049180327868,
+        "rotor_current": 25.1943267098102,
+        "rotor_speed": 149.22565104551518,
+        "synchronous_speed": 157.07963267948966
+      },
+      "actual_outputs": {
+        "air_gap_power": 15234.098360655735,
+        "breakdown_slip": 0.19402850002906638,
+        "breakdown_torque": 180.43194441580198,
+        "converted_power": 14472.393442622948,
+        "electromagnetic_torque": 96.98328230585997,
+        "rotor_copper_loss": 761.7049180327867,
+        "rotor_current": 25.1943267098102,
+        "rotor_speed": 149.22565104551518,
+        "synchronous_speed": 157.07963267948966
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.johnson_resistor",
+      "inputs": {
+        "bandwidth": 20000.0,
+        "resistance": 10000.0,
+        "temperature": 300.0
+      },
+      "expected_outputs": {
+        "voltage_noise_density": 1.2871591976131002e-08,
+        "voltage_noise_rms": 1.8203179941977172e-06
+      },
+      "actual_outputs": {
+        "voltage_noise_density": 1.2871591976131005e-08,
+        "voltage_noise_rms": 1.8203179941977176e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.noninverting_amplifier_budget",
+      "inputs": {
+        "bandwidth": 20000.0,
+        "feedback_resistance": 9000.0,
+        "ground_resistance": 1000.0,
+        "minus_current_density": 2e-12,
+        "plus_current_density": 1e-12,
+        "source_resistance": 1000.0,
+        "temperature": 300.0,
+        "voltage_density": 5e-09
+      },
+      "expected_outputs": {
+        "input_referred_noise_rms": 1.1019872703439002e-06,
+        "noise_gain": 10.0,
+        "output_noise_density": 7.79222671641425e-08,
+        "output_noise_rms": 1.1019872703439002e-05
+      },
+      "actual_outputs": {
+        "input_referred_noise_rms": 1.1019872703439002e-06,
+        "noise_gain": 10.0,
+        "output_noise_density": 7.79222671641425e-08,
+        "output_noise_rms": 1.1019872703439002e-05
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.friis_three_stage",
+      "inputs": {
+        "first_gain_db": 20.0,
+        "first_noise_figure_db": 2.0,
+        "second_gain_db": 10.0,
+        "second_noise_figure_db": 6.0,
+        "third_noise_figure_db": 10.0
+      },
+      "expected_outputs": {
+        "cascade_noise_factor": 1.6237039095164632,
+        "cascade_noise_figure_db": 2.1050683636637153,
+        "cascade_noise_temperature": 180.8741337597743,
+        "first_noise_factor": 1.5848931924611136,
+        "first_power_gain": 100.0,
+        "second_noise_factor": 3.981071705534972,
+        "second_power_gain": 10.0,
+        "third_noise_factor": 10.0
+      },
+      "actual_outputs": {
+        "cascade_noise_factor": 1.6237039095164634,
+        "cascade_noise_figure_db": 2.105068363663716,
+        "cascade_noise_temperature": 180.8741337597744,
+        "first_noise_factor": 1.5848931924611136,
+        "first_power_gain": 100.0,
+        "second_noise_factor": 3.9810717055349722,
+        "second_power_gain": 10.0,
+        "third_noise_factor": 10.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.junction_shot",
+      "inputs": {
+        "bandwidth": 10000.0,
+        "dc_current": 1e-06
+      },
+      "expected_outputs": {
+        "current_noise_density": 5.660700723408719e-13,
+        "current_noise_rms": 5.6607007234087186e-11
+      },
+      "actual_outputs": {
+        "current_noise_density": 5.660700723408719e-13,
+        "current_noise_rms": 5.6607007234087186e-11
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.uncorrelated_rms_sum",
+      "inputs": {
+        "noise_one": 3e-06,
+        "noise_three": 1.2e-05,
+        "noise_two": 4e-06
+      },
+      "expected_outputs": {
+        "total_noise_rms": 1.3e-05
+      },
+      "actual_outputs": {
+        "total_noise_rms": 1.3000000000000001e-05
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.decibel_to_linear",
+      "inputs": {
+        "gain_db": -6.0
+      },
+      "expected_outputs": {
+        "power_ratio": 0.251188643150958,
+        "voltage_ratio": 0.5011872336272722
+      },
+      "actual_outputs": {
+        "power_ratio": 0.251188643150958,
+        "voltage_ratio": 0.5011872336272722
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.analog_dynamic_range",
+      "inputs": {
+        "maximum_sine_peak": 2.0,
+        "noise_rms": 1e-05,
+        "required_snr_db": 20.0
+      },
+      "expected_outputs": {
+        "maximum_signal_rms": 1.414213562373095,
+        "minimum_signal_rms": 0.0001,
+        "noise_limited_dynamic_range_db": 103.0102999566398,
+        "usable_dynamic_range_db": 83.01029995663981
+      },
+      "actual_outputs": {
+        "maximum_signal_rms": 1.414213562373095,
+        "minimum_signal_rms": 0.0001,
+        "noise_limited_dynamic_range_db": 103.01029995663981,
+        "usable_dynamic_range_db": 83.01029995663981
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "noise.figure_equivalent_temperature",
+      "inputs": {
+        "noise_figure_db": 3.0
+      },
+      "expected_outputs": {
+        "equivalent_noise_temperature": 288.62607134097505,
+        "noise_factor": 1.9952623149688795
+      },
+      "actual_outputs": {
+        "equivalent_noise_temperature": 288.6260713409751,
+        "noise_factor": 1.9952623149688795
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.inverting_stage",
+      "inputs": {
+        "r_feedback": 47000.0,
+        "r_in": 10000.0,
+        "v_cm_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_in": 0.2,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_reference": 0.0
+      },
+      "expected_outputs": {
+        "gain": -4.7,
+        "v_out": -0.94
+      },
+      "actual_outputs": {
+        "gain": -4.7,
+        "v_out": -0.9400000000000001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.difference_ratio_error",
+      "inputs": {
+        "r_four": 101000.0,
+        "r_one": 10000.0,
+        "r_three": 10000.0,
+        "r_two": 100000.0,
+        "v_cm_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_one": 1.0,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_reference": 0.0,
+        "v_two": 1.1
+      },
+      "expected_outputs": {
+        "common_mode_gain": 0.009009009009009007,
+        "differential_gain": 10.004504504504505,
+        "pin_voltage": 1.000900900900901,
+        "v_out": 1.0099099099099098
+      },
+      "actual_outputs": {
+        "common_mode_gain": 0.009009009009008978,
+        "differential_gain": 10.004504504504505,
+        "pin_voltage": 1.0009009009009011,
+        "v_out": 1.0099099099099107
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.dominant_pole_gain_bandwidth",
+      "inputs": {
+        "gain_bandwidth": 10000000.0,
+        "minimum_stable_noise_gain": 1.0,
+        "open_loop_gain": 100000.0,
+        "r_feedback": 90000.0,
+        "r_ground": 10000.0
+      },
+      "expected_outputs": {
+        "approximate_bandwidth": 1000000.0,
+        "closed_loop_bandwidth": 1000100.0,
+        "dc_gain": 9.99900009999,
+        "noise_gain": 10.0,
+        "open_loop_pole": 100.0,
+        "relative_gain_error": 9.999000099990002e-05
+      },
+      "actual_outputs": {
+        "approximate_bandwidth": 1000000.0,
+        "closed_loop_bandwidth": 1000100.0,
+        "dc_gain": 9.99900009999,
+        "noise_gain": 10.0,
+        "open_loop_pole": 100.0,
+        "relative_gain_error": 9.999000099990002e-05
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.noninverting_stage",
+      "inputs": {
+        "r_feedback": 90000.0,
+        "r_ground": 10000.0,
+        "v_cm_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_in": 0.4,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_reference": 0.1
+      },
+      "expected_outputs": {
+        "gain": 10.0,
+        "v_out": 3.1
+      },
+      "actual_outputs": {
+        "gain": 10.0,
+        "v_out": 3.1
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.weighted_summing_stage",
+      "inputs": {
+        "r_feedback": 40000.0,
+        "r_one": 10000.0,
+        "r_three": 40000.0,
+        "r_two": 20000.0,
+        "v_cm_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_one": 0.2,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_reference": 0.0,
+        "v_three": 0.4,
+        "v_two": -0.3
+      },
+      "expected_outputs": {
+        "gain_one": -4.0,
+        "gain_three": -1.0,
+        "gain_two": -2.0,
+        "v_out": -0.6
+      },
+      "actual_outputs": {
+        "gain_one": -4.0,
+        "gain_three": -1.0,
+        "gain_two": -2.0,
+        "v_out": -0.6000000000000001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.integrator_constant_input",
+      "inputs": {
+        "c_feedback": 1e-07,
+        "duration": 0.002,
+        "r_input": 10000.0,
+        "v_cm_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_in": 0.25,
+        "v_initial": 1.0,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_reference": 0.0
+      },
+      "expected_outputs": {
+        "output_slope": -250.0,
+        "v_final": 0.5
+      },
+      "actual_outputs": {
+        "output_slope": -250.0,
+        "v_final": 0.5
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.differentiator_ramp",
+      "inputs": {
+        "c_input": 1e-08,
+        "duration": 0.001,
+        "r_feedback": 10000.0,
+        "v_cm_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_end": 0.5,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_reference": 0.0,
+        "v_start": -0.5
+      },
+      "expected_outputs": {
+        "input_slope": 1000.0,
+        "v_out": -0.1
+      },
+      "actual_outputs": {
+        "input_slope": 1000.0,
+        "v_out": -0.1
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opamps.sinusoidal_slew_requirement",
+      "inputs": {
+        "design_margin": 2.0,
+        "frequency": 100000.0,
+        "slew_available": 5000000.0,
+        "v_center": 0.0,
+        "v_out_max": 10.0,
+        "v_out_min": -10.0,
+        "v_peak": 2.0
+      },
+      "expected_outputs": {
+        "design_slew": 2513274.1228718343,
+        "required_slew": 1256637.0614359172,
+        "slew_margin": 3.978873577297384
+      },
+      "actual_outputs": {
+        "design_slew": 2513274.1228718343,
+        "required_slew": 1256637.0614359172,
+        "slew_margin": 3.978873577297384
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.photodiode_quantum_conversion",
+      "inputs": {
+        "optical_power": 2e-05,
+        "quantum_efficiency": 0.75,
+        "wavelength": 8.5e-07
+      },
+      "expected_outputs": {
+        "photocurrent": 1.0283568520120244e-05,
+        "photon_energy": 2.3369951260575634e-19,
+        "photon_rate": 85579981648226.06,
+        "responsivity": 0.5141784260060123
+      },
+      "actual_outputs": {
+        "photocurrent": 1.0283568520120244e-05,
+        "photon_energy": 2.336995126057563e-19,
+        "photon_rate": 85579981648226.08,
+        "responsivity": 0.5141784260060122
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.lambertian_target_irradiance",
+      "inputs": {
+        "distance": 0.2,
+        "emission_angle": 0.5235987755982989,
+        "incidence_angle": 0.7853981633974483,
+        "radiant_flux": 0.1
+      },
+      "expected_outputs": {
+        "axial_intensity": 0.03183098861837907,
+        "directional_intensity": 0.0275664447710896,
+        "target_irradiance": 0.4873105007710476
+      },
+      "actual_outputs": {
+        "axial_intensity": 0.03183098861837907,
+        "directional_intensity": 0.0275664447710896,
+        "target_irradiance": 0.4873105007710475
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.layer_absorption_capture",
+      "inputs": {
+        "active_absorption": 100000.0,
+        "active_thickness": 1e-05,
+        "dead_absorption": 200000.0,
+        "dead_thickness": 1e-06,
+        "incident_power": 0.002
+      },
+      "expected_outputs": {
+        "active_absorbed_power": 0.0010350730823315596,
+        "active_capture_fraction": 0.5175365411657797,
+        "dead_absorbed_power": 0.0003625384938440363,
+        "transmitted_power": 0.0006023884238244042
+      },
+      "actual_outputs": {
+        "active_absorbed_power": 0.0010350730823315596,
+        "active_capture_fraction": 0.5175365411657797,
+        "dead_absorbed_power": 0.0003625384938440363,
+        "transmitted_power": 0.0006023884238244043
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.gaussian_aperture_capture",
+      "inputs": {
+        "aperture_radius": 0.00015,
+        "axial_distance": 0.05,
+        "beam_power": 0.01,
+        "waist_radius": 0.0001,
+        "wavelength": 6.33e-07
+      },
+      "expected_outputs": {
+        "axis_irradiance": 315947.0612663579,
+        "beam_radius": 0.0001419491843517115,
+        "captured_fraction": 0.8928256332251838,
+        "captured_power": 0.008928256332251838,
+        "rayleigh_range": 0.04963021569652122
+      },
+      "actual_outputs": {
+        "axis_irradiance": 315947.06126635784,
+        "beam_radius": 0.0001419491843517115,
+        "captured_fraction": 0.8928256332251837,
+        "captured_power": 0.008928256332251838,
+        "rayleigh_range": 0.04963021569652122
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.step_index_mode_cutoff",
+      "inputs": {
+        "cladding_index": 1.444,
+        "core_index": 1.45,
+        "core_radius": 4.1e-06,
+        "wavelength": 1.55e-06
+      },
+      "expected_outputs": {
+        "cutoff_wavelength": 1.411476113497827e-06,
+        "normalized_frequency": 2.190064550298241,
+        "numerical_aperture": 0.13177253128023306,
+        "single_mode_margin": 0.21493544970175896
+      },
+      "actual_outputs": {
+        "cutoff_wavelength": 1.4114761134978273e-06,
+        "normalized_frequency": 2.1900645502982417,
+        "numerical_aperture": 0.1317725312802331,
+        "single_mode_margin": 0.21493544970175815
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.fiber_gaussian_dispersion",
+      "inputs": {
+        "beta_two": -1.9999999999999998e-26,
+        "fiber_length": 2000.0,
+        "initial_chirp": 1.0,
+        "initial_width": 1e-11,
+        "pulse_energy": 1e-13
+      },
+      "expected_outputs": {
+        "normalized_dispersion": -0.4,
+        "output_fwhm": 1.2007273360612253e-11,
+        "output_peak_power": 0.007823901817554269,
+        "output_width": 7.211102550927979e-12,
+        "width_ratio": 0.7211102550927979
+      },
+      "actual_outputs": {
+        "normalized_dispersion": -0.39999999999999997,
+        "output_fwhm": 1.2007273360612251e-11,
+        "output_peak_power": 0.007823901817554269,
+        "output_width": 7.211102550927979e-12,
+        "width_ratio": 0.7211102550927979
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "opto.sipm_finite_cell_response",
+      "inputs": {
+        "avalanche_gain": 1000000.0,
+        "cell_count": 1600.0,
+        "detection_efficiency": 0.4,
+        "photon_count": 2000.0
+      },
+      "expected_outputs": {
+        "fired_cells": 629.5509444597865,
+        "output_charge": 1.0086518131261018e-10,
+        "relative_response": 0.7869386805747332,
+        "seed_count": 800.0
+      },
+      "actual_outputs": {
+        "fired_cells": 629.5509444597865,
+        "output_charge": 1.0086518131261015e-10,
+        "relative_response": 0.7869386805747332,
+        "seed_count": 800.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "oscillators.timer_555_astable",
+      "inputs": {
+        "charge_resistance": 1000.0,
+        "discharge_resistance": 10000.0,
+        "timing_capacitance": 1e-07
+      },
+      "expected_outputs": {
+        "frequency": 686.997638518554,
+        "high_duty": 0.5238095238095238,
+        "high_time": 0.0007624618986159398,
+        "low_time": 0.0006931471805599453,
+        "period": 0.001455609079175885
+      },
+      "actual_outputs": {
+        "frequency": 686.997638518554,
+        "high_duty": 0.5238095238095238,
+        "high_time": 0.0007624618986159398,
+        "low_time": 0.0006931471805599452,
+        "period": 0.001455609079175885
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "oscillators.comparator_rc_oscillator",
+      "inputs": {
+        "feedback_resistance": 20000.0,
+        "lower_resistance": 40000.0,
+        "supply_voltage": 5.0,
+        "timing_capacitance": 1e-07,
+        "timing_resistance": 10000.0,
+        "upper_resistance": 20000.0
+      },
+      "expected_outputs": {
+        "frequency": 558.1106265512473,
+        "high_duty": 0.6131471927654584,
+        "high_time": 0.0010986122886681095,
+        "low_time": 0.0006931471805599453,
+        "lower_threshold": 2.0,
+        "upper_threshold": 4.0
+      },
+      "actual_outputs": {
+        "frequency": 558.1106265512473,
+        "high_duty": 0.6131471927654584,
+        "high_time": 0.0010986122886681095,
+        "low_time": 0.0006931471805599453,
+        "lower_threshold": 2.0,
+        "upper_threshold": 4.0
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "oscillators.triangle_integrator_oscillator",
+      "inputs": {
+        "feedback_resistance": 20000.0,
+        "integrator_capacitance": 1e-08,
+        "integrator_resistance": 10000.0,
+        "square_peak": 5.0,
+        "triangle_resistance": 8000.0
+      },
+      "expected_outputs": {
+        "frequency": 6250.0,
+        "period": 0.00016,
+        "ramp_slew": 50000.0,
+        "triangle_peak": 2.0,
+        "triangle_pp": 4.0
+      },
+      "actual_outputs": {
+        "frequency": 6249.999999999999,
+        "period": 0.00016,
+        "ramp_slew": 50000.0,
+        "triangle_peak": 2.0,
+        "triangle_pp": 4.0
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "oscillators.wien_bridge_balance",
+      "inputs": {
+        "bridge_capacitance": 1e-08,
+        "bridge_resistance": 10000.0,
+        "feedback_resistance": 20200.0,
+        "gain_resistance": 10000.0
+      },
+      "expected_outputs": {
+        "amplifier_gain": 3.02,
+        "critical_feedback_resistance": 20000.0,
+        "feedback_fraction": 0.3333333333333333,
+        "frequency": 1591.5494309189537,
+        "loop_excess": 0.006666666666666667,
+        "loop_gain": 1.0066666666666666
+      },
+      "actual_outputs": {
+        "amplifier_gain": 3.02,
+        "critical_feedback_resistance": 20000.0,
+        "feedback_fraction": 0.3333333333333333,
+        "frequency": 1591.5494309189532,
+        "loop_excess": 0.006666666666666667,
+        "loop_gain": 1.0066666666666666
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "oscillators.loaded_rc_phase_shift",
+      "inputs": {
+        "feedback_resistance": 300000.0,
+        "section_capacitance": 1e-08,
+        "section_resistance": 10000.0
+      },
+      "expected_outputs": {
+        "amplifier_gain_magnitude": 30.0,
+        "critical_feedback_resistance": 290000.0,
+        "feedback_magnitude": 0.034482758620689655,
+        "frequency": 649.7473343613968,
+        "loop_excess": 0.034482758620689655,
+        "loop_gain": 1.0344827586206895
+      },
+      "actual_outputs": {
+        "amplifier_gain_magnitude": 30.0,
+        "critical_feedback_resistance": 290000.0,
+        "feedback_magnitude": 0.034482758620689655,
+        "frequency": 649.7473343613968,
+        "loop_excess": 0.034482758620689655,
+        "loop_gain": 1.0344827586206897
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "oscillators.cross_coupled_lc_startup",
+      "inputs": {
+        "parallel_loss_resistance": 2000.0,
+        "tank_capacitance": 1e-11,
+        "tank_inductance": 1e-08,
+        "transistor_transconductance": 0.002
+      },
+      "expected_outputs": {
+        "critical_transconductance": 0.001,
+        "growth_rate": 25000000.0,
+        "negative_resistance": -1000.0,
+        "startup_frequency": 503276392.9203319,
+        "startup_ratio": 2.0,
+        "tank_frequency": 503292121.0448704
+      },
+      "actual_outputs": {
+        "critical_transconductance": 0.001,
+        "growth_rate": 25000000.000000004,
+        "negative_resistance": -1000.0,
+        "startup_frequency": 503276392.920332,
+        "startup_ratio": 2.0,
+        "tank_frequency": 503292121.04487044
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "oscillators.pierce_crystal_startup",
+      "inputs": {
+        "available_transconductance": 0.005,
+        "crystal_esr": 40.0,
+        "crystal_frequency": 16000000.0,
+        "load_capacitance": 1.2e-11,
+        "margin_target": 5.0,
+        "shunt_capacitance": 3e-12,
+        "stray_capacitance": 2e-12
+      },
+      "expected_outputs": {
+        "critical_transconductance": 0.0003638330966417581,
+        "design_transconductance": 0.0018191654832087909,
+        "gain_margin": 13.74256505565562,
+        "load_capacitor_each": 2e-11,
+        "transconductance_headroom": 0.0031808345167912092
+      },
+      "actual_outputs": {
+        "critical_transconductance": 0.000363833096641758,
+        "design_transconductance": 0.00181916548320879,
+        "gain_margin": 13.742565055655627,
+        "load_capacitor_each": 2.0000000000000002e-11,
+        "transconductance_headroom": 0.00318083451679121
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "passives.mlcc_logarithmic_aging",
+      "inputs": {
+        "age": 36000000.0,
+        "aging_percent_decade": 2.0,
+        "capacitance_one_hour": 1e-05
+      },
+      "expected_outputs": {
+        "aged_capacitance": 9.2e-06,
+        "elapsed_decades": 4.0,
+        "fractional_loss": 0.08
+      },
+      "actual_outputs": {
+        "aged_capacitance": 9.200000000000002e-06,
+        "elapsed_decades": 4.0,
+        "fractional_loss": 0.08
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "passives.dielectric_absorption_recovery",
+      "inputs": {
+        "absorption_capacitance": 1e-08,
+        "absorption_resistance": 1000000000.0,
+        "charge_time": 20.0,
+        "charge_voltage": 10.0,
+        "main_capacitance": 1e-06,
+        "recovery_time": 10.0,
+        "short_time": 1.0
+      },
+      "expected_outputs": {
+        "final_recovery_voltage": 0.07746346433494829,
+        "memory_voltage": 7.823809897829776,
+        "recovered_voltage": 0.04924980040079833,
+        "recovery_time_constant": 9.9009900990099
+      },
+      "actual_outputs": {
+        "final_recovery_voltage": 0.07746346433494827,
+        "memory_voltage": 7.823809897829776,
+        "recovered_voltage": 0.04924980040079832,
+        "recovery_time_constant": 9.900990099009901
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "passives.mlcc_bias_charge_energy",
+      "inputs": {
+        "fit_capacitance": 4e-06,
+        "fit_voltage": 10.0,
+        "lower_voltage": 2.0,
+        "upper_voltage": 8.0,
+        "zero_bias_capacitance": 1e-05
+      },
+      "expected_outputs": {
+        "charge_equivalent_capacitance": 7e-06,
+        "energy_equivalent_capacitance": 6.64e-06,
+        "upper_capacitance": 5.2e-06,
+        "usable_charge": 4.2e-05,
+        "usable_energy": 0.0001992
+      },
+      "actual_outputs": {
+        "charge_equivalent_capacitance": 7.000000000000001e-06,
+        "energy_equivalent_capacitance": 6.64e-06,
+        "upper_capacitance": 5.199999999999999e-06,
+        "usable_charge": 4.2000000000000004e-05,
+        "usable_energy": 0.00019919999999999996
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "passives.resistor_excess_noise",
+      "inputs": {
+        "dc_voltage": 10.0,
+        "lower_frequency": 1.0,
+        "noise_index_db": -20.0,
+        "probe_frequency": 10.0,
+        "upper_frequency": 1000.0
+      },
+      "expected_outputs": {
+        "band_decades": 3.0,
+        "decade_voltage_ratio": 1e-07,
+        "excess_noise_density": 2.0839733249330518e-07,
+        "excess_noise_rms": 1.7320508075688771e-06
+      },
+      "actual_outputs": {
+        "band_decades": 2.9999999999999996,
+        "decade_voltage_ratio": 1e-07,
+        "excess_noise_density": 2.0839733249330513e-07,
+        "excess_noise_rms": 1.7320508075688771e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "passives.negative_vcr_divider",
+      "inputs": {
+        "bottom_resistance": 100000.0,
+        "high_resistance_zero": 9900000.0,
+        "supply_voltage": 1000.0,
+        "vcr_ppm_volt": -10.0
+      },
+      "expected_outputs": {
+        "fractional_ratio_error": 0.009897011104604824,
+        "high_resistance": 9801999.798040994,
+        "high_voltage": 989.901029888954,
+        "ideal_output_voltage": 10.0,
+        "output_voltage": 10.098970111046048
+      },
+      "actual_outputs": {
+        "fractional_ratio_error": 0.009897011104604824,
+        "high_resistance": 9801999.798040994,
+        "high_voltage": 989.901029888954,
+        "ideal_output_voltage": 10.0,
+        "output_voltage": 10.098970111046048
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "passives.nonideal_r2r_ladder",
+      "inputs": {
+        "code": 5.0,
+        "ladder_resistance": 1000.0,
+        "load_conductance": 0.0001,
+        "lsb_switch_resistance": 100.0,
+        "middle_switch_resistance": 200.0,
+        "msb_switch_resistance": 300.0,
+        "reference_voltage": 5.0
+      },
+      "expected_outputs": {
+        "code_error_lsb": -0.6267628715038625,
+        "ideal_voltage": 3.125,
+        "loaded_voltage": 2.733273205310086,
+        "lsb_thevenin_resistance": 1024.3902439024391,
+        "lsb_thevenin_voltage": 2.4390243902439024,
+        "middle_thevenin_resistance": 1054.2725173210165,
+        "middle_thevenin_voltage": 1.2702078521939957,
+        "open_voltage": 3.029861037445635,
+        "output_resistance": 1085.101304762915
+      },
+      "actual_outputs": {
+        "code_error_lsb": -0.6267628715038622,
+        "ideal_voltage": 3.125,
+        "loaded_voltage": 2.7332732053100863,
+        "lsb_thevenin_resistance": 1024.3902439024391,
+        "lsb_thevenin_voltage": 2.439024390243903,
+        "middle_thevenin_resistance": 1054.272517321016,
+        "middle_thevenin_voltage": 1.2702078521939955,
+        "open_voltage": 3.029861037445635,
+        "output_resistance": 1085.101304762915
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.trace_resistance_drop",
+      "inputs": {
+        "current": 4.0,
+        "length": 0.06,
+        "resistivity": 1.7e-08,
+        "thickness": 7e-05,
+        "width": 0.002
+      },
+      "expected_outputs": {
+        "cross_section": 1.4e-07,
+        "resistance": 0.007285714285714286,
+        "voltage_drop": 0.029142857142857144
+      },
+      "actual_outputs": {
+        "cross_section": 1.3999999999999998e-07,
+        "resistance": 0.007285714285714287,
+        "voltage_drop": 0.029142857142857147
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.ipc2221_current_estimate",
+      "inputs": {
+        "temperature_rise": 20.0,
+        "thickness_mil": 1.4,
+        "width_mil": 40.0
+      },
+      "expected_outputs": {
+        "area_mil2": 56.0,
+        "external_current": 3.319943975951099,
+        "internal_current": 1.6599719879755492
+      },
+      "actual_outputs": {
+        "area_mil2": 56.0,
+        "external_current": 3.319943975951098,
+        "internal_current": 1.659971987975549
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.via_barrel_resistance",
+      "inputs": {
+        "barrel_length": 0.0016,
+        "finished_diameter": 0.0003,
+        "plated_resistivity": 6e-08,
+        "plating_thickness": 2.5e-05,
+        "via_count": 4.0
+      },
+      "expected_outputs": {
+        "bank_resistance": 0.0009402384330351973,
+        "barrel_copper_area": 2.552544031041707e-08,
+        "single_resistance": 0.003760953732140788
+      },
+      "actual_outputs": {
+        "bank_resistance": 0.000940238433035197,
+        "barrel_copper_area": 2.5525440310417068e-08,
+        "single_resistance": 0.003760953732140788
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.annular_ring_registration",
+      "inputs": {
+        "pad_diameter": 0.0008,
+        "registration_offset": 5e-05,
+        "tool_diameter": 0.0004
+      },
+      "expected_outputs": {
+        "minimum_ring": 0.00015,
+        "nominal_ring": 0.0002
+      },
+      "actual_outputs": {
+        "minimum_ring": 0.00015000000000000001,
+        "nominal_ring": 0.0002
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.nominal_copper_thickness",
+      "inputs": {
+        "copper_weight": 2.0
+      },
+      "expected_outputs": {
+        "nominal_thickness": 7e-05,
+        "nominal_thickness_mil": 2.7559055118110236
+      },
+      "actual_outputs": {
+        "nominal_thickness": 7e-05,
+        "nominal_thickness_mil": 2.755905511811023
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.differential_length_skew",
+      "inputs": {
+        "delay_per_length": 6.84e-09,
+        "negative_length": 0.0775,
+        "positive_length": 0.08
+      },
+      "expected_outputs": {
+        "signed_length_mismatch": 0.0025,
+        "signed_skew": 1.71e-11,
+        "skew_magnitude": 1.71e-11
+      },
+      "actual_outputs": {
+        "signed_length_mismatch": 0.0025000000000000022,
+        "signed_skew": 1.7100000000000017e-11,
+        "skew_magnitude": 1.7100000000000017e-11
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.trace_joule_heat_density",
+      "inputs": {
+        "duration": 0.2,
+        "length": 0.05,
+        "pulse_current": 3.0,
+        "resistivity": 1.7e-08,
+        "thickness": 3.5e-05,
+        "width": 0.001
+      },
+      "expected_outputs": {
+        "current_density": 85714285.71428572,
+        "deposited_energy": 0.04371428571428571,
+        "generated_power": 0.21857142857142856,
+        "volumetric_heat_rate": 124897959.18367349
+      },
+      "actual_outputs": {
+        "current_density": 85714285.71428573,
+        "deposited_energy": 0.04371428571428573,
+        "generated_power": 0.21857142857142864,
+        "volumetric_heat_rate": 124897959.18367352
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "pcb.stencil_aperture_area_ratio",
+      "inputs": {
+        "aperture_length": 0.0005,
+        "aperture_width": 0.0003,
+        "stencil_thickness": 0.0001,
+        "target_area_ratio": 0.66
+      },
+      "expected_outputs": {
+        "area_ratio": 0.9375,
+        "opening_area": 1.5e-07,
+        "ratio_margin": 0.2775,
+        "wall_area": 1.6e-07
+      },
+      "actual_outputs": {
+        "area_ratio": 0.9374999999999999,
+        "opening_area": 1.5e-07,
+        "ratio_margin": 0.27749999999999986,
+        "wall_area": 1.6e-07
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.ldo_dissipation",
+      "inputs": {
+        "i_gnd": 5e-05,
+        "iout": 0.2,
+        "v_dropout": 0.2,
+        "vin": 5.0,
+        "vout": 3.3
+      },
+      "expected_outputs": {
+        "p_diss": 0.34025,
+        "p_ground": 0.00025,
+        "p_pass": 0.34
+      },
+      "actual_outputs": {
+        "p_diss": 0.34025000000000005,
+        "p_ground": 0.00025,
+        "p_pass": 0.3400000000000001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.boost_output_capacitor",
+      "inputs": {
+        "delta_i": 0.36,
+        "esr": 0.01,
+        "fs": 500000.0,
+        "iout": 0.5,
+        "ripple_budget": 0.05,
+        "vin": 5.0,
+        "vout": 12.0
+      },
+      "expected_outputs": {
+        "c_min": 1.6114180478821363e-05,
+        "duty": 0.5833333333333334,
+        "i_peak": 1.38,
+        "ripple_cap_budget": 0.0362,
+        "ripple_esr": 0.0138
+      },
+      "actual_outputs": {
+        "c_min": 1.6114180478821363e-05,
+        "duty": 0.5833333333333334,
+        "i_peak": 1.38,
+        "ripple_cap_budget": 0.0362,
+        "ripple_esr": 0.0138
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.buck_input_capacitor_rms",
+      "inputs": {
+        "delta_i": 0.6,
+        "iout": 2.0,
+        "vin": 12.0,
+        "vout": 5.0
+      },
+      "expected_outputs": {
+        "duty": 0.4166666666666667,
+        "i_cin_rms": 0.9923317097736132
+      },
+      "actual_outputs": {
+        "duty": 0.4166666666666667,
+        "i_cin_rms": 0.9923317097736131
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.boost_rhp_zero",
+      "inputs": {
+        "fs": 500000.0,
+        "inductance": 2.2e-05,
+        "iout": 0.5,
+        "vin": 5.0,
+        "vout": 12.0
+      },
+      "expected_outputs": {
+        "duty": 0.5833333333333334,
+        "f_crossover_guideline": 3014.29816461923,
+        "f_rhp_zero": 30142.9816461923,
+        "r_load": 24.0
+      },
+      "actual_outputs": {
+        "duty": 0.5833333333333334,
+        "f_crossover_guideline": 3014.29816461923,
+        "f_rhp_zero": 30142.981646192304,
+        "r_load": 24.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.converter_input_budget",
+      "inputs": {
+        "efficiency": 0.9,
+        "iout": 2.0,
+        "vin": 12.0,
+        "vout": 5.0
+      },
+      "expected_outputs": {
+        "i_in": 0.925925925925926,
+        "p_in": 11.11111111111111,
+        "p_loss": 1.1111111111111112,
+        "p_out": 10.0
+      },
+      "actual_outputs": {
+        "i_in": 0.9259259259259259,
+        "p_in": 11.11111111111111,
+        "p_loss": 1.1111111111111107,
+        "p_out": 10.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.buck_inductor_design",
+      "inputs": {
+        "fs": 500000.0,
+        "iout": 2.0,
+        "ripple_ratio": 0.3,
+        "vin": 12.0,
+        "vout": 5.0
+      },
+      "expected_outputs": {
+        "delta_i": 0.6,
+        "duty": 0.4166666666666667,
+        "i_peak": 2.3,
+        "i_valley": 1.7,
+        "l_min": 9.722222222222224e-06
+      },
+      "actual_outputs": {
+        "delta_i": 0.6,
+        "duty": 0.4166666666666667,
+        "i_peak": 2.3,
+        "i_valley": 1.7,
+        "l_min": 9.722222222222223e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.boost_inductor_design",
+      "inputs": {
+        "fs": 500000.0,
+        "iout": 0.5,
+        "ripple_ratio": 0.3,
+        "vin": 5.0,
+        "vout": 12.0
+      },
+      "expected_outputs": {
+        "delta_i": 0.36,
+        "duty": 0.5833333333333334,
+        "i_l_avg": 1.2,
+        "i_peak": 1.38,
+        "i_valley": 1.02,
+        "l_min": 1.6203703703703704e-05
+      },
+      "actual_outputs": {
+        "delta_i": 0.36,
+        "duty": 0.5833333333333334,
+        "i_l_avg": 1.2,
+        "i_peak": 1.38,
+        "i_valley": 1.02,
+        "l_min": 1.6203703703703704e-05
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "power.buck_output_capacitor",
+      "inputs": {
+        "delta_i": 0.6,
+        "esr": 0.01,
+        "fs": 500000.0,
+        "iout": 2.0,
+        "ripple_budget": 0.02,
+        "vout": 5.0
+      },
+      "expected_outputs": {
+        "c_min": 1.0714285714285714e-05,
+        "ripple_cap_budget": 0.014,
+        "ripple_esr": 0.006
+      },
+      "actual_outputs": {
+        "c_min": 1.0714285714285714e-05,
+        "ripple_cap_budget": 0.014,
+        "ripple_esr": 0.006
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "precision.bjt_mirror_base_current",
+      "inputs": {
+        "base_emitter_voltage": 0.65,
+        "beta": 100.0,
+        "collector_voltage": 2.0,
+        "reference_current": 0.001
+      },
+      "expected_outputs": {
+        "base_current_each": 9.803921568627451e-06,
+        "collector_current": 0.000980392156862745,
+        "compliance_margin": 1.35,
+        "current_deficit": 1.9607843137254903e-05,
+        "fractional_deficit": 0.0196078431372549
+      },
+      "actual_outputs": {
+        "base_current_each": 9.803921568627451e-06,
+        "collector_current": 0.000980392156862745,
+        "compliance_margin": 1.35,
+        "current_deficit": 1.9607843137254903e-05,
+        "fractional_deficit": 0.0196078431372549
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "precision.instrumentation_internal_headroom",
+      "inputs": {
+        "common_max": 8.0,
+        "common_min": -8.0,
+        "common_voltage": 2.0,
+        "difference_feedback_resistance": 20000.0,
+        "difference_input_resistance": 10000.0,
+        "differential_voltage": 0.01,
+        "feedback_resistance": 10000.0,
+        "gain_resistance": 1000.0,
+        "output_max": 10.0,
+        "output_min": -10.0,
+        "reference_voltage": 0.5
+      },
+      "expected_outputs": {
+        "difference_pin_voltage": 1.57,
+        "first_high_voltage": 2.105,
+        "first_low_voltage": 1.895,
+        "first_stage_gain": 21.0,
+        "output_voltage": 0.92,
+        "total_gain": 42.0
+      },
+      "actual_outputs": {
+        "difference_pin_voltage": 1.57,
+        "first_high_voltage": 2.105,
+        "first_low_voltage": 1.895,
+        "first_stage_gain": 21.0,
+        "output_voltage": 0.9199999999999999,
+        "total_gain": 42.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "precision.transimpedance_butterworth",
+      "inputs": {
+        "feedback_resistance": 100000.0,
+        "gain_bandwidth": 10000000.0,
+        "input_peak": 1e-05,
+        "output_peak_limit": 4.0,
+        "source_capacitance": 1e-10
+      },
+      "expected_outputs": {
+        "butterworth_bandwidth": 388147.3164084609,
+        "dc_transimpedance": -100000.0,
+        "feedback_capacitance": 5.6396505496766794e-12,
+        "noise_gain_zero": 15065.833923508984,
+        "output_peak": 1.0
+      },
+      "actual_outputs": {
+        "butterworth_bandwidth": 388147.3164084609,
+        "dc_transimpedance": -100000.0,
+        "feedback_capacitance": 5.63965054967668e-12,
+        "noise_gain_zero": 15065.833923508984,
+        "output_peak": 1.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "precision.howland_mismatch_load",
+      "inputs": {
+        "common_max": 8.0,
+        "common_min": -8.0,
+        "load_resistance": 5000.0,
+        "negative_drive": 0.0,
+        "output_current_limit": 0.01,
+        "output_max": 10.0,
+        "output_min": -10.0,
+        "positive_drive": 1.0,
+        "r_four": 9900.0,
+        "r_one": 10000.0,
+        "r_three": 10000.0,
+        "r_two": 10000.0
+      },
+      "expected_outputs": {
+        "amplifier_current": 9.900497512437812e-05,
+        "amplifier_voltage": 0.9900497512437813,
+        "load_current": 9.950248756218904e-05,
+        "load_voltage": 0.4975124378109453,
+        "norton_drive_current": 0.0001,
+        "output_conductance": 1e-06
+      },
+      "actual_outputs": {
+        "amplifier_current": 9.900497512437811e-05,
+        "amplifier_voltage": 0.9900497512437811,
+        "load_current": 9.950248756218905e-05,
+        "load_voltage": 0.4975124378109453,
+        "norton_drive_current": 0.0001,
+        "output_conductance": 1.0000000000000108e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "precision.brokaw_first_order_trim",
+      "inputs": {
+        "area_ratio": 8.0,
+        "base_emitter_slope": -0.002,
+        "base_emitter_voltage": 0.65,
+        "ptat_resistance": 10000.0,
+        "temperature": 300.0
+      },
+      "expected_outputs": {
+        "branch_current": 5.375772229141229e-06,
+        "common_resistor": 55805.93581955471,
+        "delta_vbe": 0.05375772229141229,
+        "reference_voltage": 1.25,
+        "resistor_ratio": 5.580593581955471,
+        "thermal_voltage": 0.025851999786435535
+      },
+      "actual_outputs": {
+        "branch_current": 5.375772229141229e-06,
+        "common_resistor": 55805.93581955471,
+        "delta_vbe": 0.05375772229141229,
+        "reference_voltage": 1.25,
+        "resistor_ratio": 5.580593581955471,
+        "thermal_voltage": 0.025851999786435535
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "precision.log114_current_ratio",
+      "inputs": {
+        "reference_resistance": 2500000.0,
+        "signal_current": 0.0001
+      },
+      "expected_outputs": {
+        "current_ratio": 100.0,
+        "local_transimpedance": 1628.6043071371942,
+        "log_decades": 2.0,
+        "log_output": 0.75,
+        "reference_current": 1e-06
+      },
+      "actual_outputs": {
+        "current_ratio": 100.00000000000001,
+        "local_transimpedance": 1628.6043071371942,
+        "log_decades": 2.0,
+        "log_output": 0.75,
+        "reference_current": 1e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "protection.fuse_pulse_coordination",
+      "inputs": {
+        "arcing_i2t": 0.7,
+        "device_withstand_i2t": 4.0,
+        "fall_time": 0.001,
+        "hold_time": 0.002,
+        "peak_current": 20.0,
+        "pre_arcing_i2t": 2.0,
+        "pulse_allowance_fraction": 0.8,
+        "rise_time": 0.001
+      },
+      "expected_outputs": {
+        "clearing_i2t": 2.7,
+        "clearing_margin": 1.3,
+        "clearing_utilization": 0.675,
+        "pulse_i2t": 1.0666666666666669,
+        "pulse_margin": 0.5333333333333333,
+        "pulse_utilization": 0.6666666666666667
+      },
+      "actual_outputs": {
+        "clearing_i2t": 2.7,
+        "clearing_margin": 1.2999999999999998,
+        "clearing_utilization": 0.675,
+        "pulse_i2t": 1.0666666666666664,
+        "pulse_margin": 0.5333333333333337,
+        "pulse_utilization": 0.6666666666666665
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "protection.tvs_surge_load_line",
+      "inputs": {
+        "breakdown_intercept": 30.0,
+        "dynamic_resistance": 0.5,
+        "fit_current_max": 100.0,
+        "fit_current_min": 1.0,
+        "protected_voltage_limit": 60.0,
+        "rated_pulse_current": 35.0,
+        "source_resistance": 2.0,
+        "surge_voltage": 100.0
+      },
+      "expected_outputs": {
+        "clamp_voltage": 44.0,
+        "current_margin": 7.0,
+        "peak_power": 1232.0,
+        "surge_current": 28.0,
+        "voltage_margin": 16.0
+      },
+      "actual_outputs": {
+        "clamp_voltage": 44.0,
+        "current_margin": 7.0,
+        "peak_power": 1232.0,
+        "surge_current": 28.0,
+        "voltage_margin": 16.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "protection.mov_power_law_pulse",
+      "inputs": {
+        "current_one": 1.0,
+        "current_two": 100.0,
+        "energy_allowance": 1.0,
+        "pulse_current": 10.0,
+        "pulse_duration": 0.0001,
+        "voltage_one": 320.0,
+        "voltage_two": 400.0
+      },
+      "expected_outputs": {
+        "absorbed_energy": 0.35777087639996635,
+        "clamp_voltage": 357.77087639996637,
+        "current_exponent": 20.637702317032343,
+        "differential_resistance": 1.7335790142912242,
+        "energy_margin": 0.6422291236000337,
+        "voltage_exponent": 0.0484550065040282
+      },
+      "actual_outputs": {
+        "absorbed_energy": 0.35777087639996635,
+        "clamp_voltage": 357.77087639996637,
+        "current_exponent": 20.637702317032343,
+        "differential_resistance": 1.7335790142912242,
+        "energy_margin": 0.6422291236000337,
+        "voltage_exponent": 0.0484550065040282
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "protection.scr_crowbar_trigger_latch",
+      "inputs": {
+        "fault_voltage": 18.0,
+        "gate_resistance": 100.0,
+        "gate_shunt_resistance": 1000.0,
+        "gate_trigger_current": 0.005,
+        "gate_voltage": 0.8,
+        "holding_current": 0.02,
+        "latching_current": 0.05,
+        "on_voltage": 1.2,
+        "source_resistance": 10.0,
+        "zener_voltage": 12.0
+      },
+      "expected_outputs": {
+        "available_anode_current": 1.68,
+        "available_gate_current": 0.04647272727272727,
+        "holding_release_voltage": 1.4,
+        "latch_margin": 1.63,
+        "trigger_source_voltage": 13.438
+      },
+      "actual_outputs": {
+        "available_anode_current": 1.6800000000000002,
+        "available_gate_current": 0.04647272727272727,
+        "holding_release_voltage": 1.4,
+        "latch_margin": 1.6300000000000001,
+        "trigger_source_voltage": 13.438
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "protection.copper_adiabatic_fault_limit",
+      "inputs": {
+        "area_mm2": 4.0,
+        "clearing_time": 0.5,
+        "fault_current": 500.0,
+        "initial_temperature": 90.0,
+        "limit_temperature": 250.0
+      },
+      "expected_outputs": {
+        "allowable_fault_current": 809.9167934122551,
+        "allowable_i2t": 327982.6061255947,
+        "area_margin_mm2": 1.5306105315166842,
+        "material_k": 143.1744142046674,
+        "minimum_area_mm2": 2.469389468483316
+      },
+      "actual_outputs": {
+        "allowable_fault_current": 809.9167934122551,
+        "allowable_i2t": 327982.6061255947,
+        "area_margin_mm2": 1.5306105315166842,
+        "material_k": 143.1744142046674,
+        "minimum_area_mm2": 2.4693894684833158
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "protection.foldback_fault_envelope",
+      "inputs": {
+        "fault_resistance": 2.0,
+        "input_voltage": 9.0,
+        "knee_current": 1.0,
+        "knee_voltage": 5.0,
+        "short_current": 0.2
+      },
+      "expected_outputs": {
+        "fault_output_current": 0.29411764705882354,
+        "fault_output_voltage": 0.5882352941176471,
+        "fault_pass_power": 2.4740484429065743,
+        "foldback_slope": 0.16,
+        "knee_load_resistance": 5.0,
+        "maximum_pass_power": 4.2025,
+        "peak_stress_current": 0.82,
+        "peak_stress_voltage": 3.875,
+        "short_pass_power": 1.8
+      },
+      "actual_outputs": {
+        "fault_output_current": 0.2941176470588236,
+        "fault_output_voltage": 0.5882352941176472,
+        "fault_pass_power": 2.474048442906575,
+        "foldback_slope": 0.16,
+        "knee_load_resistance": 5.0,
+        "maximum_pass_power": 4.202500000000001,
+        "peak_stress_current": 0.8200000000000001,
+        "peak_stress_voltage": 3.875,
+        "short_pass_power": 1.8
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "rf.matched_t_attenuator",
+      "inputs": {
+        "attenuation_db": 20.0,
+        "reference_impedance": 50.0
+      },
+      "expected_outputs": {
+        "power_transmission": 0.01,
+        "series_resistance": 40.90909090909091,
+        "shunt_resistance": 10.1010101010101
+      },
+      "actual_outputs": {
+        "power_transmission": 0.009999999999999995,
+        "series_resistance": 40.90909090909091,
+        "shunt_resistance": 10.101010101010099
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "rf.lowpass_l_match",
+      "inputs": {
+        "frequency": 100000000.0,
+        "load_resistance": 200.0,
+        "source_resistance": 50.0
+      },
+      "expected_outputs": {
+        "loaded_q": 1.7320508075688772,
+        "series_inductance": 1.3783222385544806e-07,
+        "shunt_capacitance": 1.37832223855448e-11
+      },
+      "actual_outputs": {
+        "loaded_q": 1.7320508075688772,
+        "series_inductance": 1.3783222385544804e-07,
+        "shunt_capacitance": 1.3783222385544801e-11
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "rf.free_space_link_budget",
+      "inputs": {
+        "antenna_max_dimension": 0.1,
+        "distance": 1000.0,
+        "frequency": 2400000000.0,
+        "receive_gain_dbi": 2.0,
+        "sensitivity_dbm": -90.0,
+        "total_loss_db": 2.0,
+        "transmit_gain_dbi": 2.0,
+        "transmit_power_dbm": 20.0
+      },
+      "expected_outputs": {
+        "free_space_loss_db": 100.0520080561155,
+        "link_margin_db": 11.947991943884505,
+        "received_power_dbm": -78.0520080561155
+      },
+      "actual_outputs": {
+        "free_space_loss_db": 100.05200805611551,
+        "link_margin_db": 11.947991943884489,
+        "received_power_dbm": -78.05200805611551
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "rf.first_fresnel_clearance",
+      "inputs": {
+        "available_clearance": 4.0,
+        "clearance_fraction": 0.6,
+        "distance_from_tx": 400.0,
+        "distance_to_rx": 600.0,
+        "frequency": 2400000000.0
+      },
+      "expected_outputs": {
+        "clearance_margin": 0.7148016059908957,
+        "required_clearance": 3.2851983940091043,
+        "zone_radius": 5.475330656681841
+      },
+      "actual_outputs": {
+        "clearance_margin": 0.7148016059908957,
+        "required_clearance": 3.2851983940091043,
+        "zone_radius": 5.475330656681841
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "rf.circular_aperture_gain",
+      "inputs": {
+        "aperture_efficiency": 0.6,
+        "diameter": 1.0,
+        "frequency": 10000000000.0
+      },
+      "expected_outputs": {
+        "effective_aperture": 0.47123889803846897,
+        "gain_dbi": 38.188095899160565,
+        "gain_linear": 6588.849534059469
+      },
+      "actual_outputs": {
+        "effective_aperture": 0.471238898038469,
+        "gain_dbi": 38.18809589916057,
+        "gain_linear": 6588.849534059468
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "rf.two_tone_im3",
+      "inputs": {
+        "gain_db": 20.0,
+        "input_intercept_dbm": 10.0,
+        "input_tone_power_dbm": -20.0,
+        "lower_frequency": 100000000.0,
+        "maximum_total_linear_output_dbm": 10.0,
+        "upper_frequency": 101000000.0
+      },
+      "expected_outputs": {
+        "carrier_to_product_db": 60.0,
+        "lower_product_frequency": 99000000.0,
+        "output_intercept_dbm": 30.0,
+        "output_tone_power_dbm": 0.0,
+        "product_power_dbm": -60.0,
+        "total_fundamental_power_dbm": 3.010299956639812,
+        "upper_product_frequency": 102000000.0
+      },
+      "actual_outputs": {
+        "carrier_to_product_db": 60.0,
+        "lower_product_frequency": 99000000.0,
+        "output_intercept_dbm": 30.0,
+        "output_tone_power_dbm": 0.0,
+        "product_power_dbm": -60.0,
+        "total_fundamental_power_dbm": 3.010299956639812,
+        "upper_product_frequency": 102000000.0
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "rf.monostatic_radar_return",
+      "inputs": {
+        "antenna_gain_dbi": 30.0,
+        "antenna_max_dimension": 0.3,
+        "frequency": 10000000000.0,
+        "radar_cross_section": 1.0,
+        "range": 1000.0,
+        "receiver_threshold_dbm": -100.0,
+        "target_max_dimension": 1.0,
+        "total_loss_db": 3.0,
+        "transmit_power_dbm": 30.0
+      },
+      "expected_outputs": {
+        "echo_margin_db": 3.560118137895657,
+        "received_power_dbm": -96.43988186210434
+      },
+      "actual_outputs": {
+        "echo_margin_db": 3.560118137895671,
+        "received_power_dbm": -96.43988186210433
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.ntc_steinhart_hart",
+      "inputs": {
+        "coefficient_a": 0.001129148,
+        "coefficient_b": 0.000234125,
+        "coefficient_c": 8.76741e-08,
+        "fit_temperature_max": 398.15,
+        "fit_temperature_min": 233.15,
+        "resistance": 10000.0
+      },
+      "expected_outputs": {
+        "temperature_celsius": 24.99966817669632,
+        "temperature_kelvin": 298.1496681766963,
+        "temperature_sensitivity": -0.002279553664363643
+      },
+      "actual_outputs": {
+        "temperature_celsius": 24.999668176696332,
+        "temperature_kelvin": 298.1496681766963,
+        "temperature_sensitivity": -0.002279553664363643
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.platinum_callendar_van_dusen",
+      "inputs": {
+        "temperature_celsius": -100.0,
+        "zero_resistance": 100.0
+      },
+      "expected_outputs": {
+        "linear_model_error": -0.66116,
+        "resistance": 60.25584,
+        "resistance_sensitivity": 0.4053081
+      },
+      "actual_outputs": {
+        "linear_model_error": -0.66116,
+        "resistance": 60.255840000000006,
+        "resistance_sensitivity": 0.4053081
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.type_t_cold_junction_emf",
+      "inputs": {
+        "cold_temperature": 25.0,
+        "hot_temperature": 100.0
+      },
+      "expected_outputs": {
+        "cold_emf": 0.0009919772678200114,
+        "hot_emf": 0.00427851861580027,
+        "hot_sensitivity": 4.67849607861716e-05,
+        "terminal_emf": 0.003286541347980259
+      },
+      "actual_outputs": {
+        "cold_emf": 0.0009919772678200114,
+        "hot_emf": 0.0042785186158002695,
+        "hot_sensitivity": 4.6784960786171594e-05,
+        "terminal_emf": 0.0032865413479802584
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.hall_plate_angle",
+      "inputs": {
+        "bias_current": 0.001,
+        "current_limit": 0.005,
+        "field_angle": 1.0471975511965976,
+        "field_limit": 0.2,
+        "field_magnitude": 0.05,
+        "hall_coefficient": 0.01,
+        "plate_thickness": 1e-05
+      },
+      "expected_outputs": {
+        "angle_sensitivity": -0.04330127018922193,
+        "hall_voltage": 0.02500000000000001,
+        "normal_field": 0.02500000000000001
+      },
+      "actual_outputs": {
+        "angle_sensitivity": -0.04330127018922193,
+        "hall_voltage": 0.02500000000000001,
+        "normal_field": 0.02500000000000001
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.amr_angular_resistance",
+      "inputs": {
+        "bias_current": 0.001,
+        "current_limit": 0.005,
+        "magnetization_angle": 1.0471975511965976,
+        "perpendicular_resistance": 1000.0,
+        "resistance_anisotropy": 20.0
+      },
+      "expected_outputs": {
+        "angular_resistance_sensitivity": -17.320508075688775,
+        "resistance": 1005.0,
+        "voltage_drop": 1.005
+      },
+      "actual_outputs": {
+        "angular_resistance_sensitivity": -17.320508075688775,
+        "resistance": 1005.0,
+        "voltage_drop": 1.0050000000000001
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.hydrogen_activity_electrode",
+      "inputs": {
+        "offset_voltage": 0.005,
+        "sample_activity": 0.0001,
+        "standard_activity": 1e-07,
+        "temperature": 298.15
+      },
+      "expected_outputs": {
+        "activity_sensitivity": 256.92579121085845,
+        "electrode_voltage": 0.182478049054347,
+        "nernst_slope": 0.05915934968478233,
+        "sample_ph": 4.0
+      },
+      "actual_outputs": {
+        "activity_sensitivity": 256.9257912108585,
+        "electrode_voltage": 0.182478049054347,
+        "nernst_slope": 0.05915934968478234,
+        "sample_ph": 4.0
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "sensors.differential_gap_capacitor",
+      "inputs": {
+        "displacement": 2e-05,
+        "plate_length": 0.01,
+        "plate_width": 0.01,
+        "relative_permittivity": 1.0,
+        "rest_gap": 0.0001
+      },
+      "expected_outputs": {
+        "differential_capacitance": 3.689244922e-12,
+        "differential_sensitivity": 1.998340999416667e-07,
+        "far_capacitance": 7.378489844e-12,
+        "near_capacitance": 1.1067734766e-11,
+        "normalized_difference": 0.2
+      },
+      "actual_outputs": {
+        "differential_capacitance": 3.689244922e-12,
+        "differential_sensitivity": 1.9983409994166667e-07,
+        "far_capacitance": 7.378489844e-12,
+        "near_capacitance": 1.1067734766e-11,
+        "normalized_difference": 0.2
+      },
+      "relative_tolerance": 1e-09,
+      "passed": true
+    },
+    {
+      "id": "signals.line_propagation",
+      "inputs": {
+        "effective_permittivity": 3.0,
+        "frequency": 1000000000.0,
+        "length": 0.15
+      },
+      "expected_outputs": {
+        "delay": 8.666249406959114e-10,
+        "electrical_length": 5.445165094215932,
+        "round_trip_delay": 1.733249881391823e-09,
+        "velocity": 173085256.3273196,
+        "wavelength": 0.17308525632731958
+      },
+      "actual_outputs": {
+        "delay": 8.666249406959115e-10,
+        "electrical_length": 5.445165094215932,
+        "round_trip_delay": 1.733249881391823e-09,
+        "velocity": 173085256.3273196,
+        "wavelength": 0.17308525632731958
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.microstrip_impedance",
+      "inputs": {
+        "frequency": 1000000000.0,
+        "height": 0.0004,
+        "relative_permittivity": 3.66,
+        "thickness": 2e-06,
+        "width": 0.0008
+      },
+      "expected_outputs": {
+        "air_factor": 6.000115105754384,
+        "air_impedance": 89.09056365708382,
+        "effective_permittivity": 2.8372126159506297,
+        "fit_a": 0.9995302713283848,
+        "fit_b": 0.5382736881490864,
+        "impedance": 52.89148559435723,
+        "width_ratio": 2.0
+      },
+      "actual_outputs": {
+        "air_factor": 6.000115105754384,
+        "air_impedance": 89.09056365708382,
+        "effective_permittivity": 2.8372126159506297,
+        "fit_a": 0.9995302713283848,
+        "fit_b": 0.5382736881490864,
+        "impedance": 52.89148559435723,
+        "width_ratio": 2.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.stripline_impedance",
+      "inputs": {
+        "plane_spacing": 0.001,
+        "relative_permittivity": 4.0,
+        "thickness": 1.8e-05,
+        "width": 0.0006
+      },
+      "expected_outputs": {
+        "effective_width_ratio": 0.6,
+        "fringe_factor": 0.4659693534707028,
+        "impedance": 43.41181070235101,
+        "thickness_ratio": 0.018,
+        "width_ratio": 0.6
+      },
+      "actual_outputs": {
+        "effective_width_ratio": 0.6,
+        "fringe_factor": 0.4659693534707028,
+        "impedance": 43.41181070235101,
+        "thickness_ratio": 0.018,
+        "width_ratio": 0.6
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.quarter_wave_transformer",
+      "inputs": {
+        "effective_permittivity": 2.25,
+        "frequency": 2400000000.0,
+        "load_resistance": 100.0,
+        "source_resistance": 50.0
+      },
+      "expected_outputs": {
+        "length": 0.020818920694444444,
+        "transformer_impedance": 70.71067811865476
+      },
+      "actual_outputs": {
+        "length": 0.020818920694444444,
+        "transformer_impedance": 70.71067811865476
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.coax_impedance",
+      "inputs": {
+        "inner_radius": 0.0005,
+        "relative_permittivity": 2.25,
+        "shield_radius": 0.0015
+      },
+      "expected_outputs": {
+        "impedance": 43.94449154672439
+      },
+      "actual_outputs": {
+        "impedance": 43.944491546724386
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.load_reflection",
+      "inputs": {
+        "incident_voltage": 1.2,
+        "line_impedance": 50.0,
+        "load_resistance": 75.0
+      },
+      "expected_outputs": {
+        "load_voltage": 1.44,
+        "reflected_fraction": 0.04,
+        "reflected_voltage": 0.24,
+        "reflection_coefficient": 0.2,
+        "transmitted_fraction": 0.96
+      },
+      "actual_outputs": {
+        "load_voltage": 1.4400000000000002,
+        "reflected_fraction": 0.04000000000000001,
+        "reflected_voltage": 0.24,
+        "reflection_coefficient": 0.2,
+        "transmitted_fraction": 0.9600000000000002
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.source_series_termination",
+      "inputs": {
+        "driver_resistance": 18.0,
+        "line_impedance": 60.0,
+        "step_voltage": 3.3
+      },
+      "expected_outputs": {
+        "launch_voltage": 1.65,
+        "receiver_voltage": 3.3,
+        "series_resistance": 42.0
+      },
+      "actual_outputs": {
+        "launch_voltage": 1.65,
+        "receiver_voltage": 3.3,
+        "series_resistance": 42.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "signals.rise_time_bandwidth",
+      "inputs": {
+        "rise_time": 2e-09
+      },
+      "expected_outputs": {
+        "bandwidth": 174849576.2830299
+      },
+      "actual_outputs": {
+        "bandwidth": 174849576.2830299
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.resistor_power_derating",
+      "inputs": {
+        "actual_power": 0.12,
+        "ambient_temperature": 373.15,
+        "rated_power": 0.25,
+        "rated_temperature": 343.15,
+        "zero_power_temperature": 428.15
+      },
+      "expected_outputs": {
+        "allowed_power": 0.16176470588235295,
+        "power_margin": 0.04176470588235294,
+        "rating_fraction": 0.6470588235294118
+      },
+      "actual_outputs": {
+        "allowed_power": 0.16176470588235295,
+        "power_margin": 0.041764705882352954,
+        "rating_fraction": 0.6470588235294118
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.junction_feedback_equilibrium",
+      "inputs": {
+        "ambient_temperature": 298.15,
+        "fit_temperature_max": 423.15,
+        "fit_temperature_min": 233.15,
+        "power_coefficient": 0.004,
+        "reference_power": 2.0,
+        "reference_temperature": 298.15,
+        "thermal_resistance": 20.0
+      },
+      "expected_outputs": {
+        "equilibrium_power": 2.380952380952381,
+        "feedback_gain": 0.16,
+        "junction_temperature": 345.7690476190476
+      },
+      "actual_outputs": {
+        "equilibrium_power": 2.380952380952381,
+        "feedback_gain": 0.16,
+        "junction_temperature": 345.76904761904757
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.arrhenius_acceleration",
+      "inputs": {
+        "activation_energy": 0.7,
+        "test_duration": 360000.0,
+        "test_temperature": 398.15,
+        "use_temperature": 328.15
+      },
+      "expected_outputs": {
+        "acceleration_factor": 77.64538204961666,
+        "equivalent_use_duration": 27952337.537862
+      },
+      "actual_outputs": {
+        "acceleration_factor": 77.6453820496167,
+        "equivalent_use_duration": 27952337.53786201
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.heatsink_resistance_budget",
+      "inputs": {
+        "ambient_temperature": 313.15,
+        "case_sink_resistance": 0.5,
+        "dissipated_power": 10.0,
+        "junction_case_resistance": 1.5,
+        "junction_limit": 393.15
+      },
+      "expected_outputs": {
+        "maximum_sink_resistance": 6.0,
+        "total_resistance_budget": 8.0
+      },
+      "actual_outputs": {
+        "maximum_sink_resistance": 6.0,
+        "total_resistance_budget": 8.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.parallel_conduction_paths",
+      "inputs": {
+        "path_one_area": 0.0001,
+        "path_one_conductivity": 200.0,
+        "path_one_length": 0.005,
+        "path_two_area": 0.0004,
+        "path_two_conductivity": 1.0,
+        "path_two_length": 0.002,
+        "sink_temperature": 298.15,
+        "source_power": 21.0
+      },
+      "expected_outputs": {
+        "equivalent_resistance": 0.2380952380952381,
+        "hot_temperature": 303.15,
+        "path_one_heat": 20.0,
+        "path_one_resistance": 0.25,
+        "path_two_heat": 1.0,
+        "path_two_resistance": 5.0
+      },
+      "actual_outputs": {
+        "equivalent_resistance": 0.23809523809523808,
+        "hot_temperature": 303.15,
+        "path_one_heat": 20.0,
+        "path_one_resistance": 0.25,
+        "path_two_heat": 1.0,
+        "path_two_resistance": 5.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.lumped_thermal_step",
+      "inputs": {
+        "ambient_temperature": 298.15,
+        "convection_coefficient": 10.0,
+        "density": 2700.0,
+        "elapsed_time": 243.0,
+        "initial_temperature": 298.15,
+        "power": 2.0,
+        "specific_heat": 900.0,
+        "surface_area": 0.01,
+        "thermal_conductivity": 200.0,
+        "volume": 1e-05
+      },
+      "expected_outputs": {
+        "biot_number": 5e-05,
+        "body_temperature": 310.7924111765712,
+        "convection_resistance": 10.0,
+        "steady_temperature": 318.15,
+        "thermal_capacitance": 24.3,
+        "time_constant": 243.0
+      },
+      "actual_outputs": {
+        "biot_number": 5e-05,
+        "body_temperature": 310.79241117657114,
+        "convection_resistance": 10.0,
+        "steady_temperature": 318.15,
+        "thermal_capacitance": 24.300000000000004,
+        "time_constant": 243.00000000000006
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.resistor_tcr_drift",
+      "inputs": {
+        "fit_temperature_max": 443.15,
+        "fit_temperature_min": 218.15,
+        "operating_temperature": 358.15,
+        "reference_resistance": 10000.0,
+        "reference_temperature": 298.15,
+        "tcr_ppm": 100.0
+      },
+      "expected_outputs": {
+        "fractional_drift": 0.006,
+        "operating_resistance": 10060.0,
+        "resistance_change": 60.0
+      },
+      "actual_outputs": {
+        "fractional_drift": 0.005999999999999999,
+        "operating_resistance": 10060.0,
+        "resistance_change": 59.99999999999999
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "thermal.free_linear_expansion",
+      "inputs": {
+        "expansion_coefficient": 2.3e-05,
+        "final_temperature": 378.15,
+        "fit_temperature_max": 423.15,
+        "fit_temperature_min": 273.15,
+        "initial_length": 0.1,
+        "initial_temperature": 298.15
+      },
+      "expected_outputs": {
+        "final_length": 0.100184,
+        "length_change": 0.000184,
+        "thermal_strain": 0.00184
+      },
+      "actual_outputs": {
+        "final_length": 0.10018400000000001,
+        "length_change": 0.00018400000000000003,
+        "thermal_strain": 0.00184
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.timer_clock_divider",
+      "inputs": {
+        "clock_hz": 16000000.0,
+        "prescaler": 8.0,
+        "target_hz": 3000.0
+      },
+      "expected_outputs": {
+        "actual_hz": 3003.003003003003,
+        "compare_value": 332.0,
+        "count": 333.0,
+        "error_percent": 0.1001001001001001,
+        "output_period": 0.000333
+      },
+      "actual_outputs": {
+        "actual_hz": 3003.003003003003,
+        "compare_value": 332.0,
+        "count": 333.0,
+        "error_percent": 0.10010010010010895,
+        "output_period": 0.000333
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.capacitive_crosstalk_peak",
+      "inputs": {
+        "c_mutual": 2e-12,
+        "c_victim": 8e-12,
+        "edge_time": 2e-08,
+        "r_victim": 2000.0,
+        "segment_delay": 1e-09,
+        "voltage_swing": 5.0
+      },
+      "expected_outputs": {
+        "fast_edge_limit": 1.0,
+        "peak_excursion": 0.6321205588285577,
+        "victim_time_constant": 2e-08
+      },
+      "actual_outputs": {
+        "fast_edge_limit": 1.0,
+        "peak_excursion": 0.6321205588285577,
+        "victim_time_constant": 2e-08
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.uart_sampling_margin",
+      "inputs": {
+        "baud_rx": 9700.0,
+        "baud_tx": 9600.0,
+        "data_bits": 8.0,
+        "guard_time": 0.0,
+        "oversample": 16.0,
+        "parity_bits": 0.0
+      },
+      "expected_outputs": {
+        "early_margin": 4.188144329896905e-05,
+        "late_margin": 5.5841924398625466e-05,
+        "minimum_margin": 4.188144329896905e-05,
+        "mismatch_percent": 1.0416666666666667,
+        "stop_center_time": 0.000979381443298969,
+        "sync_quantization": 6.443298969072165e-06
+      },
+      "actual_outputs": {
+        "early_margin": 4.1881443298969053e-05,
+        "late_margin": 5.5841924398625466e-05,
+        "minimum_margin": 4.1881443298969053e-05,
+        "mismatch_percent": 1.041666666666674,
+        "stop_center_time": 0.000979381443298969,
+        "sync_quantization": 6.443298969072165e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.plate_displacement_current",
+      "inputs": {
+        "edge_time": 2e-08,
+        "epsilon_r": 4.0,
+        "gap": 0.0005,
+        "length": 0.03,
+        "voltage_change": 100.0,
+        "width": 0.02
+      },
+      "expected_outputs": {
+        "current_density": 354.167512512,
+        "displacement_current": 0.2125005075072,
+        "overlap_capacitance": 4.2500101501440004e-11,
+        "voltage_slew": 5000000000.0
+      },
+      "actual_outputs": {
+        "current_density": 354.16751251200003,
+        "displacement_current": 0.2125005075072,
+        "overlap_capacitance": 4.2500101501440004e-11,
+        "voltage_slew": 5000000000.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.i2c_pullup_bounds",
+      "inputs": {
+        "c_bus": 2e-10,
+        "i_sink": 0.003,
+        "rise_limit": 3e-07,
+        "v_ol": 0.4,
+        "v_supply": 3.3
+      },
+      "expected_outputs": {
+        "interval_width": 803.667085049076,
+        "r_max": 1770.333751715743,
+        "r_min": 966.6666666666666
+      },
+      "actual_outputs": {
+        "interval_width": 803.667085049076,
+        "r_max": 1770.3337517157427,
+        "r_min": 966.6666666666666
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.schmitt_rc_delay_bounds",
+      "inputs": {
+        "c": 1e-09,
+        "gate_delay_max": 2e-08,
+        "gate_delay_min": 1e-08,
+        "r": 2000.0,
+        "threshold_max": 3.75,
+        "threshold_min": 2.5,
+        "v_supply": 5.0
+      },
+      "expected_outputs": {
+        "earliest_transition": 1.3962943611198904e-06,
+        "latest_transition": 2.7925887222397808e-06,
+        "time_constant": 2e-06,
+        "timing_window": 1.3962943611198904e-06
+      },
+      "actual_outputs": {
+        "earliest_transition": 1.3962943611198908e-06,
+        "latest_transition": 2.7925887222397816e-06,
+        "time_constant": 2.0000000000000003e-06,
+        "timing_window": 1.3962943611198908e-06
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.synchronous_setup_slack",
+      "inputs": {
+        "clock_period": 1e-08,
+        "clock_skew": 2e-10,
+        "clock_to_q": 5e-10,
+        "path_delay": 7e-09,
+        "setup_time": 3e-10,
+        "uncertainty": 1e-10
+      },
+      "expected_outputs": {
+        "arrival_time": 7.5e-09,
+        "available_time": 9.8e-09,
+        "setup_slack": 2.3e-09
+      },
+      "actual_outputs": {
+        "arrival_time": 7.5e-09,
+        "available_time": 9.800000000000002e-09,
+        "setup_slack": 2.3000000000000024e-09
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "timing.inductive_turnoff_spike",
+      "inputs": {
+        "current_final": 1.0,
+        "current_initial": 5.0,
+        "fall_time": 1e-08,
+        "loop_inductance": 4e-08,
+        "supply_voltage": 12.0
+      },
+      "expected_outputs": {
+        "current_fall_rate": 400000000.0,
+        "spike_voltage": 16.0,
+        "switch_voltage": 28.0
+      },
+      "actual_outputs": {
+        "current_fall_rate": 400000000.0,
+        "spike_voltage": 16.0,
+        "switch_voltage": 28.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.rc_step",
+      "inputs": {
+        "c": 1e-06,
+        "error_fraction": 0.01,
+        "r": 1000.0,
+        "time": 0.001,
+        "v_initial": 0.0,
+        "v_source": 5.0
+      },
+      "expected_outputs": {
+        "capacitor_current": 0.0018393972058572117,
+        "capacitor_energy": 4.9947050111716e-06,
+        "capacitor_voltage": 3.1606027941427883,
+        "resistor_energy": 1.080830895954234e-05,
+        "settling_time": 0.004605170185988092,
+        "tau": 0.001
+      },
+      "actual_outputs": {
+        "capacitor_current": 0.0018393972058572117,
+        "capacitor_energy": 4.9947050111716e-06,
+        "capacitor_voltage": 3.1606027941427883,
+        "resistor_energy": 1.080830895954234e-05,
+        "settling_time": 0.004605170185988091,
+        "tau": 0.001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.rc_ladder_step",
+      "inputs": {
+        "c_one": 1e-06,
+        "c_two": 1e-06,
+        "r_one": 1000.0,
+        "r_two": 1000.0,
+        "time": 0.001,
+        "v_step": 5.0
+      },
+      "expected_outputs": {
+        "capacitor_two_current": 0.0013630446883126453,
+        "linear_coefficient": 0.003,
+        "quadratic_coefficient": 1e-06,
+        "tau_fast": 0.0003819660112501051,
+        "tau_slow": 0.002618033988749895,
+        "voltage_one": 2.4298166917958035,
+        "voltage_two": 1.0667720034831585
+      },
+      "actual_outputs": {
+        "capacitor_two_current": 0.0013630446883126453,
+        "linear_coefficient": 0.003,
+        "quadratic_coefficient": 1e-06,
+        "tau_fast": 0.0003819660112501051,
+        "tau_slow": 0.002618033988749895,
+        "voltage_one": 2.4298166917958035,
+        "voltage_two": 1.0667720034831583
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.rlc_underdamped_step",
+      "inputs": {
+        "c": 1e-05,
+        "error_fraction": 0.01,
+        "l": 0.001,
+        "r": 10.0,
+        "time": 0.0001,
+        "v_step": 5.0
+      },
+      "expected_outputs": {
+        "alpha": 5000.0,
+        "capacitor_voltage": 1.701499233041492,
+        "damping_ratio": 0.5,
+        "envelope_settling_bound": 0.0009498022444427964,
+        "omega_d": 8660.254037844386,
+        "omega_n": 10000.0,
+        "overshoot_fraction": 0.16303353482158048,
+        "peak_time": 0.0003627598728468435,
+        "peak_voltage": 5.815167674107903,
+        "series_current": 0.2667535975573465
+      },
+      "actual_outputs": {
+        "alpha": 5000.0,
+        "capacitor_voltage": 1.7014992330414915,
+        "damping_ratio": 0.5,
+        "envelope_settling_bound": 0.0009498022444427963,
+        "omega_d": 8660.254037844386,
+        "omega_n": 10000.0,
+        "overshoot_fraction": 0.16303353482158048,
+        "peak_time": 0.00036275987284684356,
+        "peak_voltage": 5.815167674107903,
+        "series_current": 0.2667535975573465
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.rc_periodic_switching",
+      "inputs": {
+        "c": 1e-06,
+        "r": 1000.0,
+        "time_high": 0.001,
+        "time_low": 0.001,
+        "v_high": 5.0,
+        "v_low": 0.0
+      },
+      "expected_outputs": {
+        "average_voltage": 2.5,
+        "high_decay": 0.36787944117144233,
+        "high_initial_current": 0.003655292893150025,
+        "low_decay": 0.36787944117144233,
+        "low_initial_current": -0.003655292893150025,
+        "ripple": 2.3105857863000487,
+        "tau": 0.001,
+        "voltage_max": 3.655292893150024,
+        "voltage_min": 1.3447071068499756
+      },
+      "actual_outputs": {
+        "average_voltage": 2.5,
+        "high_decay": 0.36787944117144233,
+        "high_initial_current": 0.0036552928931500245,
+        "low_decay": 0.36787944117144233,
+        "low_initial_current": -0.0036552928931500245,
+        "ripple": 2.3105857863000487,
+        "tau": 0.001,
+        "voltage_max": 3.6552928931500244,
+        "voltage_min": 1.3447071068499759
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.rl_step",
+      "inputs": {
+        "error_fraction": 0.01,
+        "i_initial": 0.0,
+        "l": 0.01,
+        "r": 10.0,
+        "time": 0.001,
+        "v_source": 12.0
+      },
+      "expected_outputs": {
+        "final_current": 1.2,
+        "inductor_current": 0.7585446705942692,
+        "inductor_voltage": 4.414553294057308,
+        "settling_time": 0.004605170185988092,
+        "tau": 0.001
+      },
+      "actual_outputs": {
+        "final_current": 1.2,
+        "inductor_current": 0.7585446705942692,
+        "inductor_voltage": 4.414553294057308,
+        "settling_time": 0.004605170185988091,
+        "tau": 0.001
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.capacitor_constant_current",
+      "inputs": {
+        "c": 0.0001,
+        "current": 0.01,
+        "time": 0.02,
+        "v_initial": 1.0
+      },
+      "expected_outputs": {
+        "capacitor_voltage": 3.0,
+        "charge_change": 0.0002,
+        "energy_change": 0.0004,
+        "stored_energy": 0.00045,
+        "voltage_slope": 100.0
+      },
+      "actual_outputs": {
+        "capacitor_voltage": 3.0,
+        "charge_change": 0.0002,
+        "energy_change": 0.0004,
+        "stored_energy": 0.00045000000000000004,
+        "voltage_slope": 100.0
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.capacitor_charge_sharing",
+      "inputs": {
+        "c_one": 0.0001,
+        "c_two": 0.0002,
+        "r": 10.0,
+        "time": 0.0006666666666666668,
+        "v_one": 8.0,
+        "v_two": 2.0
+      },
+      "expected_outputs": {
+        "current": 0.2207276647028654,
+        "dissipated_energy": 0.0010375976601160648,
+        "equivalent_capacitance": 6.666666666666667e-05,
+        "final_energy": 0.0024,
+        "final_voltage": 4.0,
+        "initial_energy": 0.0036,
+        "tau": 0.0006666666666666668,
+        "total_loss": 0.0012,
+        "transferred_charge": 0.0002528482235314231,
+        "voltage_one": 5.471517764685769,
+        "voltage_two": 3.2642411176571153
+      },
+      "actual_outputs": {
+        "current": 0.22072766470286534,
+        "dissipated_energy": 0.0010375976601160648,
+        "equivalent_capacitance": 6.666666666666666e-05,
+        "final_energy": 0.0024000000000000002,
+        "final_voltage": 4.0,
+        "initial_energy": 0.0036000000000000003,
+        "tau": 0.0006666666666666665,
+        "total_loss": 0.0012,
+        "transferred_charge": 0.0002528482235314231,
+        "voltage_one": 5.471517764685769,
+        "voltage_two": 3.2642411176571153
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    },
+    {
+      "id": "transients.rc_ramp_source",
+      "inputs": {
+        "c": 1e-06,
+        "r": 1000.0,
+        "slope": 1000.0,
+        "time": 0.002,
+        "v_initial": 0.0,
+        "v_source_initial": 0.0
+      },
+      "expected_outputs": {
+        "capacitor_current": 0.0008646647167633873,
+        "capacitor_voltage": 1.1353352832366128,
+        "source_voltage": 2.0,
+        "tau": 0.001,
+        "tracking_error": 0.8646647167633873
+      },
+      "actual_outputs": {
+        "capacitor_current": 0.0008646647167633873,
+        "capacitor_voltage": 1.1353352832366128,
+        "source_voltage": 2.0,
+        "tau": 0.001,
+        "tracking_error": 0.8646647167633873
+      },
+      "relative_tolerance": 1e-06,
+      "passed": true
+    }
+  ],
+  "recovery": {
+    "malformed_response": {
+      "error": "Invalid request: expected ident at line 1 column 2",
+      "ok": false
+    },
+    "invalid_inputs": {
+      "center_spacing": 0.001,
+      "relative_permittivity": 2.25,
+      "wire_diameter": 0.001
+    },
+    "invalid_response": {
+      "error": "Wire centers must be farther apart than one bare conductor diameter.",
+      "ok": false
+    },
+    "valid_inputs": {
+      "center_spacing": 0.006,
+      "relative_permittivity": 2.25,
+      "wire_diameter": 0.001
+    },
+    "valid_response": {
+      "id": "cables.twin_lead_geometry",
+      "ok": true,
+      "outputs": {
+        "capacitance_per_length": 2.525802101358135e-11,
+        "differential_impedance": 198.09396088157135,
+        "geometry_factor": 2.477888730288475,
+        "inductance_per_length": 9.9115549211539e-07
+      }
+    }
+  },
+  "eof_exit_code": 0
+}

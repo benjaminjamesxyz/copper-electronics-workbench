@@ -1,4 +1,4 @@
-# Research board — 128 delivered; 100-addition sprint
+# Research board — 128 delivered; 100 implemented, in QA
 
 All 16 research lanes completed eight calculators each: **128 actual unique IDs**, with **39 basic, 50 intermediate and 39 expert** models. Research, implementation and Linux desktop acceptance are complete. The scrum-master reconciled physical problem boundaries and retained every ID: supporting outputs, inverse modes, charge/discharge and empirical layer alternatives are not extra calculators. See [sprint execution and overlap decisions](coordination/SPRINT.md) and [128 explicit acceptance/owner/example backlog rows](coordination/BACKLOG.md).
 
@@ -205,9 +205,9 @@ See [illustration evidence](coordination/diagram_evidence.json), [review history
 
 Baseline: `29f9c2b`, 128 live Rust catalog IDs, all illustrated. Target: 100 genuinely additional models, 228 total. The existing implementation is preserved. The following reservations prevent cross-lane duplication; every candidate must also pass the [actual baseline exclusion inventory](coordination/expansion/baseline.json). No inverse, renamed formula or extra output counts as another calculator.
 
-Contract: [expansion workflow, ownership and diagram requirements](coordination/EXPANSION_CONTRACT.md). All sixteen researchers completed exactly 100 unique new definitions: **26 basic, 39 intermediate and 35 expert**. Parent checked ID/schema/example completeness and compared physical problem boundaries against the baseline. Research completion is not implementation or runtime acceptance. Scrum planning follows this completed wave; all items and diagrams remain required.
+Contract: [expansion workflow, ownership and diagram requirements](coordination/EXPANSION_CONTRACT.md). All sixteen researchers completed exactly 100 unique new definitions: **26 basic, 39 intermediate and 35 expert**. The scrum master completed the [sprint plan](coordination/expansion/SPRINT.md) and [100-item backlog](coordination/expansion/BACKLOG.md). All sixteen developers completed isolated branches; Main integrated all 100 atomic calculator/diagram/documentation commits and registered the sixteen new diagram maps. [Developer handoffs](coordination/expansion/developer_handoffs.json) retain original and integrated commit identities. The actual Rust process passed all **228** complete examples and malformed/coupled-domain recovery; [recorded outputs](coordination/expansion/process_examples.json) retain every oracle and observation. All 35 baseline catalog/diagram source checksums still match. Independent testing, source/pixel review and native release acceptance remain required; implementation and process examples alone are not delivery acceptance.
 
-| Lane / ID prefix | New count | Research and diagram specifications | Status |
+| Lane / ID prefix | New count | Research and diagram specifications | Research gate |
 |---|---:|---|---|
 | sensors | 7 | [Research](research/expansion/sensors.md), [Definitions](research/expansion/sensors.json) | Research complete |
 | opto | 7 | [Research](research/expansion/opto.md), [Definitions](research/expansion/opto.json) | Research complete |
