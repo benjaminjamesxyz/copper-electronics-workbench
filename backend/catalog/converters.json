@@ -1,0 +1,128 @@
+[
+  {
+    "id": "converters.inverting_charge_pump",
+    "title": "Single-flying-capacitor inverter load regulation",
+    "category": "Additional power converters",
+    "level": "basic",
+    "description": "Estimate the negative rail of a two-phase, single-flying-capacitor inverter from charge-transfer resistance and characterized conduction resistance.",
+    "formula": "Rtransport = 1/(fs Cfly); Rout = Rtransport + Rswitch + 4 ESRfly + ESRout; Vout = -Vin + Iload Rout",
+    "assumptions": [
+      "Two nonoverlapping equal-duration phases, one complete charge-transfer cycle per fs period; fs is not oscillator frequency. LM2662 oscillator frequency is twice fs.",
+      "Manufacturer first-order output-resistance approximation; capacitances are effective operating values and Rswitch is the characterized effective switch-path contribution, not one MOSFET Rds(on).",
+      "Steady state with small reservoir ripple, positive input, and positive load-current magnitude flowing from ground into the negative output. No interleaving, regulation, startup, leakage or quiescent-current model.",
+      "Require Iload Rout < Vin so the approximate output remains negative. Check device voltage/current/thermal ratings independently; this generic model does not enforce LM2662-specific ratings."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments LM2662/LM2663, SNVS002E, sections 8.1, 8.3 and 9.2.1.2",
+        "url": "https://www.ti.com/lit/ds/symlink/lm2662.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "vin",
+        "label": "Positive input voltage",
+        "unit": "V",
+        "default": 5.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_current",
+        "label": "Negative-rail load current magnitude",
+        "unit": "A",
+        "default": 0.02,
+        "min": 0.0
+      },
+      {
+        "key": "switching_frequency",
+        "label": "Complete charge-transfer cycle frequency",
+        "unit": "Hz",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "flying_capacitance",
+        "label": "Effective flying capacitance",
+        "unit": "F",
+        "default": 4.7e-05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "switch_resistance",
+        "label": "Effective switch resistance contribution",
+        "unit": "ohm",
+        "default": 1.0,
+        "min": 0.0
+      },
+      {
+        "key": "flying_esr",
+        "label": "Flying capacitor ESR",
+        "unit": "ohm",
+        "default": 0.05,
+        "min": 0.0
+      },
+      {
+        "key": "output_esr",
+        "label": "Output capacitor ESR",
+        "unit": "ohm",
+        "default": 0.05,
+        "min": 0.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "transport_resistance",
+        "label": "Charge-transfer resistance contribution",
+        "unit": "ohm",
+        "expression": "1/switching_frequency/flying_capacitance"
+      },
+      {
+        "key": "output_resistance",
+        "label": "Approximate output resistance",
+        "unit": "ohm",
+        "expression": "transport_resistance+switch_resistance+4*flying_esr+output_esr"
+      },
+      {
+        "key": "voltage_droop",
+        "label": "Loss of negative-rail magnitude",
+        "unit": "V",
+        "expression": "load_current*output_resistance"
+      },
+      {
+        "key": "output_voltage",
+        "label": "Signed output voltage relative to ground",
+        "unit": "V",
+        "expression": "-vin+voltage_droop"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "load_current*(1/switching_frequency/flying_capacitance+switch_resistance+4*flying_esr+output_esr)",
+        "op": "<",
+        "right": "vin",
+        "message": "Load drop must remain below the input voltage for a negative output."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "vin": 5.0,
+        "load_current": 0.02,
+        "switching_frequency": 10000.0,
+        "flying_capacitance": 4.7e-05,
+        "switch_resistance": 1.0,
+        "flying_esr": 0.05,
+        "output_esr": 0.05
+      },
+      "expected": {
+        "transport_resistance": 2.1276595744680855,
+        "output_resistance": 3.3776595744680855,
+        "voltage_droop": 0.06755319148936172,
+        "output_voltage": -4.9324468085106385
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
