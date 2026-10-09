@@ -106,5 +106,249 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+{
+  "id": "precision.instrumentation_internal_headroom",
+  "title": "Three-op-amp instrumentation internal headroom",
+  "category": "Precision analog front ends",
+  "level": "intermediate",
+  "description": "Compute differential gain and every amplifier node needed to reject hidden internal clipping.",
+  "formula": "G1=1+2Rf/Rg; G=G1 Rd/Ri; Va,b=Vcm +/- G1 Vd/2; Vp=(Rd/Ri Vb+Vref)/(1+Rd/Ri); Vo=Vref+G Vd",
+  "assumptions": [
+    "Ideal three-op-amp instrumentation topology with two equal first-stage feedback resistors and matched final resistor ratios.",
+    "High-impedance signal inputs; no sensor model, resistor mismatch, bias current, bandwidth or noise model.",
+    "All three amplifiers use supplied guaranteed loaded output and common-mode intervals. Reference is driven from negligible impedance; verify actual output currents and stability separately.",
+    "first_low_voltage names the negative-input branch, not the numerical minimum when differential_voltage is negative."
+  ],
+  "references": [
+    {
+      "title": "TI SLOA034: section 2.2 and Figure 5",
+      "url": "https://www.ti.com/lit/an/sloa034/sloa034.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "feedback_resistance",
+      "label": "Each first-stage feedback resistor",
+      "unit": "ohm",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "gain_resistance",
+      "label": "Resistor between first-stage minus pins",
+      "unit": "ohm",
+      "default": 1000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "difference_input_resistance",
+      "label": "Each difference-stage input resistor",
+      "unit": "ohm",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "difference_feedback_resistance",
+      "label": "Matched difference-stage feedback/reference resistors",
+      "unit": "ohm",
+      "default": 20000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "common_voltage",
+      "label": "Input common-mode voltage",
+      "unit": "V",
+      "default": 2
+    },
+    {
+      "key": "differential_voltage",
+      "label": "Positive minus negative input",
+      "unit": "V",
+      "default": 0.01
+    },
+    {
+      "key": "reference_voltage",
+      "label": "Difference-stage reference",
+      "unit": "V",
+      "default": 0.5
+    },
+    {
+      "key": "output_min",
+      "label": "Guaranteed amplifier output minimum",
+      "unit": "V",
+      "default": -10
+    },
+    {
+      "key": "output_max",
+      "label": "Guaranteed amplifier output maximum",
+      "unit": "V",
+      "default": 10
+    },
+    {
+      "key": "common_min",
+      "label": "Guaranteed amplifier common-mode minimum",
+      "unit": "V",
+      "default": -8
+    },
+    {
+      "key": "common_max",
+      "label": "Guaranteed amplifier common-mode maximum",
+      "unit": "V",
+      "default": 8
+    }
+  ],
+  "outputs": [
+    {
+      "key": "first_stage_gain",
+      "label": "First-stage differential gain",
+      "unit": "1",
+      "expression": "1+2*feedback_resistance/gain_resistance"
+    },
+    {
+      "key": "total_gain",
+      "label": "Total differential gain",
+      "unit": "1",
+      "expression": "first_stage_gain*difference_feedback_resistance/difference_input_resistance"
+    },
+    {
+      "key": "first_low_voltage",
+      "label": "Negative-input branch output",
+      "unit": "V",
+      "expression": "common_voltage-first_stage_gain*differential_voltage/2"
+    },
+    {
+      "key": "first_high_voltage",
+      "label": "Positive-input branch output",
+      "unit": "V",
+      "expression": "common_voltage+first_stage_gain*differential_voltage/2"
+    },
+    {
+      "key": "difference_pin_voltage",
+      "label": "Final-stage common input voltage",
+      "unit": "V",
+      "expression": "(difference_feedback_resistance/difference_input_resistance*first_high_voltage+reference_voltage)/(1+difference_feedback_resistance/difference_input_resistance)"
+    },
+    {
+      "key": "output_voltage",
+      "label": "Instrumentation output",
+      "unit": "V",
+      "expression": "reference_voltage+total_gain*differential_voltage"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "output_max",
+      "op": ">",
+      "right": "output_min",
+      "message": "Output voltage limits must be ordered"
+    },
+    {
+      "left": "common_max",
+      "op": ">",
+      "right": "common_min",
+      "message": "Common-mode limits must be ordered"
+    },
+    {
+      "left": "(common_voltage-(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+      "op": ">=",
+      "right": "output_min",
+      "message": "Negative-input first-stage output falls below output swing"
+    },
+    {
+      "left": "(common_voltage-(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+      "op": "<=",
+      "right": "output_max",
+      "message": "Negative-input first-stage output exceeds output swing"
+    },
+    {
+      "left": "(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+      "op": ">=",
+      "right": "output_min",
+      "message": "Positive-input first-stage output falls below output swing"
+    },
+    {
+      "left": "(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+      "op": "<=",
+      "right": "output_max",
+      "message": "Positive-input first-stage output exceeds output swing"
+    },
+    {
+      "left": "(reference_voltage+(1+2*feedback_resistance/gain_resistance)*(difference_feedback_resistance/difference_input_resistance)*differential_voltage)",
+      "op": ">=",
+      "right": "output_min",
+      "message": "Final output falls below output swing"
+    },
+    {
+      "left": "(reference_voltage+(1+2*feedback_resistance/gain_resistance)*(difference_feedback_resistance/difference_input_resistance)*differential_voltage)",
+      "op": "<=",
+      "right": "output_max",
+      "message": "Final output exceeds output swing"
+    },
+    {
+      "left": "common_voltage-differential_voltage/2",
+      "op": ">=",
+      "right": "common_min",
+      "message": "Negative signal input falls below common-mode range"
+    },
+    {
+      "left": "common_voltage-differential_voltage/2",
+      "op": "<=",
+      "right": "common_max",
+      "message": "Negative signal input exceeds common-mode range"
+    },
+    {
+      "left": "common_voltage+differential_voltage/2",
+      "op": ">=",
+      "right": "common_min",
+      "message": "Positive signal input falls below common-mode range"
+    },
+    {
+      "left": "common_voltage+differential_voltage/2",
+      "op": "<=",
+      "right": "common_max",
+      "message": "Positive signal input exceeds common-mode range"
+    },
+    {
+      "left": "(((difference_feedback_resistance/difference_input_resistance)*(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)+reference_voltage)/(1+(difference_feedback_resistance/difference_input_resistance)))",
+      "op": ">=",
+      "right": "common_min",
+      "message": "Difference-stage input falls below common-mode range"
+    },
+    {
+      "left": "(((difference_feedback_resistance/difference_input_resistance)*(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)+reference_voltage)/(1+(difference_feedback_resistance/difference_input_resistance)))",
+      "op": "<=",
+      "right": "common_max",
+      "message": "Difference-stage input exceeds common-mode range"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "feedback_resistance": 10000,
+      "gain_resistance": 1000,
+      "difference_input_resistance": 10000,
+      "difference_feedback_resistance": 20000,
+      "common_voltage": 2,
+      "differential_voltage": 0.01,
+      "reference_voltage": 0.5,
+      "output_min": -10,
+      "output_max": 10,
+      "common_min": -8,
+      "common_max": 8
+    },
+    "expected": {
+      "first_stage_gain": 21.0,
+      "total_gain": 42.0,
+      "first_low_voltage": 1.895,
+      "first_high_voltage": 2.105,
+      "difference_pin_voltage": 1.57,
+      "output_voltage": 0.9199999999999999
+    },
+    "relative_tolerance": 1e-06
   }
+}
 ]

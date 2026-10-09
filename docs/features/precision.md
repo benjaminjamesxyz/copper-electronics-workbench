@@ -57,3 +57,63 @@ Exact quantity bindings: incoming reference arrow `reference_current`; Q2 collec
 
 Caption: “Reference current supplies one collector and two bases. The output collector stays at or above the base voltage; matched DC devices and no Early effect are assumed.” Break all wires at transistor bodies and place explicit dots at the base and emitter joins.
 
+
+## 2. `precision.instrumentation_internal_headroom` — intermediate
+
+### Purpose and novelty
+
+Design a high-input-impedance three-op-amp instrumentation amplifier while checking hidden internal clipping. Nearest baseline is `opamps.difference_ratio_error`, a single difference amplifier with resistor mismatch. This model has two additional input amplifiers and a floating gain resistor; its limiting behavior depends on their individual output nodes. It is not a renamed scalar noninverting gain or a second bridge-transducer calculation.
+
+### Topology, law and limits
+
+The signal inputs are `common_voltage ± differential_voltage/2`. Each drives an op amp's noninverting terminal. Both first-stage feedback resistors equal `feedback_resistance`; `gain_resistance` connects the two inverting terminals.
+
+The negative-input branch output Va drives the final op amp's minus input through `difference_input_resistance`. The positive-input branch output Vb drives the final plus input through another equal input resistor. `difference_feedback_resistance` connects final output to its minus input; an equal resistor connects final plus input to the low-impedance `reference_voltage` source. This is the Figure 5 topology with a driven reference replacing ground.
+
+Let `G1=1+2Rf/Rg`, `k=Rd/Ri`:
+
+- `first_stage_gain = G1`.
+- `total_gain = G1 k`.
+- `first_low_voltage = Va = Vcm - G1 Vd/2`.
+- `first_high_voltage = Vb = Vcm + G1 Vd/2`.
+- `difference_pin_voltage = (k Vb + Vref)/(1+k)`.
+- `output_voltage = Vref + G1 k Vd`.
+
+“Low” and “high” are branch names, not sorting operations: negative Vd swaps their numerical order. This is stated in catalog assumptions and must be retained in UI wording.
+
+Check both first-stage outputs and the final output against the supplied guaranteed loaded output range. Check both signal input voltages and the final difference-stage pin voltage against the supplied common-mode range. Constraints use inputs only. A final output that is within range does not rescue a saturated input stage.
+
+The same guaranteed limits apply to all three amplifiers. Matching is ideal; no bias current, resistor mismatch, noise, bandwidth or output-current prediction is included. The reference source must have negligible impedance. Actual amplifier drive capability and stability need a device-level check; the voltage range supplied must be valid under the intended loading.
+
+### Complete independent example
+
+Inputs: `feedback_resistance=10000`, `gain_resistance=1000`, `difference_input_resistance=10000`, `difference_feedback_resistance=20000`, `common_voltage=2`, `differential_voltage=0.01`, `reference_voltage=0.5`, `output_min=-10`, `output_max=10`, `common_min=-8`, `common_max=8`.
+
+`G1=1+20=21`, `k=2`, `G=42`. Input pins are 1.995 and 2.005 V. The gain-resistor current is 10 µA; each feedback resistor develops 0.1 V. Therefore Va=1.895 V and Vb=2.105 V. The difference-stage plus node is `(2×2.105+0.5)/3=1.57 V`.
+
+| Output key | Independent value |
+|---|---:|
+| `first_stage_gain` | 21 |
+| `total_gain` | 42 |
+| `first_low_voltage` | 1.895 V |
+| `first_high_voltage` | 2.105 V |
+| `difference_pin_voltage` | 1.57 V |
+| `output_voltage` | 0.92 V |
+
+### Tester cases
+
+- Nominal: assert all values and final difference-stage KCL.
+- Zero differential voltage: Va=Vb=2 V, final output=0.5 V and final input pin=1.5 V.
+- Reverse differential: Vd=-0.01 V gives Va=2.105 V, Vb=1.895 V, final pin=1.43 V and final output=0.08 V.
+- Hidden clipping: set `common_voltage=7.89`, `differential_voltage=0.21`, keeping other inputs nominal. Both signal pins (7.785 V and 7.995 V) remain inside [-8,8] V and final output=9.32 V remains inside [-10,10] V, but Vb=10.095 V. Reject specifically because the first-stage output clips.
+- Boundary: final output exactly on either supplied endpoint is accepted if all other nodes fit.
+- Invalid: nonpositive resistance, reversed/equal limit intervals, any signal/common-mode pin outside its interval, or any of the three outputs outside its interval.
+
+### Mandatory diagram specification
+
+Draw two input amplifiers at the left and one difference amplifier at the right. Va is the upper/negative-input branch, Vb the lower/positive-input branch. Include both feedback resistors and the single resistor between the two minus pins. Show all four final-stage resistors with matched-value labels; the lower reference resistor terminates in a voltage-source port, not ground. The final minus input must receive Va, and plus input must receive Vb through its resistor.
+
+Exact quantity bindings: first-stage resistors `feedback_resistance`, cross resistor `gain_resistance`, both final input resistors `difference_input_resistance`, both final feedback/reference resistors `difference_feedback_resistance`, Va `first_low_voltage`, Vb `first_high_voltage`, reference port `reference_voltage`, final input node `difference_pin_voltage`, final output `output_voltage`. Input labels bind `common_voltage` and `differential_voltage` only in an explanatory bracket reading “inputs = Vcm ± Vd/2”; do not bind either individual input wire to Vcm or Vd alone.
+
+Caption: “Three amplifier outputs need headroom. Input common mode can clip an internal stage even when the final differential output fits. Va/Vb identify branches, not sorted voltages.” Use the full 700×280 surface with clear labels; put gain and limits in the catalog-linked legend rather than crowding the schematic.
+
