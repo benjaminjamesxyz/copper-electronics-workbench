@@ -161,7 +161,7 @@
     "category": "Noise measurement and analog budgets",
     "level": "expert",
     "description": "Predict cascade noise factor, noise figure and equivalent input noise temperature from three stages and the first two available power gains.",
-    "formula": "F_i=10^(NF_i/10); G_i=10^(g_i/10); F_total=F_1+(F_2-1)/G_1+(F_3-1)/(G_1G_2); NF_total=10log10(F_total)",
+    "formula": "F_i=10^(NF_i/10); G_i=10^(g_i/10); X=expm1(NF_1 ln(10)/10)+expm1(NF_2 ln(10)/10)/G_1+expm1(NF_3 ln(10)/10)/(G_1G_2); F_total=1+X; NF_total=10 log1p(X)/ln(10); T_e=290 expm1(NF_total ln(10)/10)",
     "assumptions": ["Linear, stable cascade at a common frequency/band; all stage noise figures use the 290 K reference.", "Gains are available power gains, not voltage gains; compatible/matched terminations prevent mismatch and multiple-reflection corrections.", "Stage-added noise is uncorrelated, gains and noise factors are constant across the band and stages are not compressed.", "Negative gain dB is permitted for passive loss, but its noise figure must independently match the attenuator's physical temperature.", "The third-stage gain is not required to compute the input-referred cascade noise figure. No arbitrary-source output-noise prediction or frequency-converting mixer model is implied."],
     "references": [{"title": "Rohde & Schwarz 1SL378, section 3.6 Friis Cascade Equations, equations 32-40", "url": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_application/application_notes/1sl378/1SL378_0e_ColdSrcNF.pdf"}],
     "inputs": [
@@ -177,9 +177,9 @@
       {"key": "third_noise_factor", "label": "Third stage linear noise factor", "unit": "1", "expression": "10^(third_noise_figure_db/10)"},
       {"key": "first_power_gain", "label": "First stage linear power gain", "unit": "1", "expression": "10^(first_gain_db/10)"},
       {"key": "second_power_gain", "label": "Second stage linear power gain", "unit": "1", "expression": "10^(second_gain_db/10)"},
-      {"key": "cascade_noise_factor", "label": "Cascade linear noise factor", "unit": "1", "expression": "first_noise_factor+(second_noise_factor-1)/first_power_gain+(third_noise_factor-1)/(first_power_gain*second_power_gain)"},
-      {"key": "cascade_noise_figure_db", "label": "Cascade noise figure", "unit": "dB", "expression": "10*log10(cascade_noise_factor)"},
-      {"key": "cascade_noise_temperature", "label": "Cascade equivalent input noise temperature", "unit": "K", "expression": "290*(cascade_noise_factor-1)"}
+      {"key": "cascade_noise_factor", "label": "Cascade linear noise factor", "unit": "1", "expression": "1+expm1(first_noise_figure_db*ln(10)/10)+expm1(second_noise_figure_db*ln(10)/10)/first_power_gain+expm1(third_noise_figure_db*ln(10)/10)/(first_power_gain*second_power_gain)"},
+      {"key": "cascade_noise_figure_db", "label": "Cascade noise figure", "unit": "dB", "expression": "10*log1p(expm1(first_noise_figure_db*ln(10)/10)+expm1(second_noise_figure_db*ln(10)/10)/first_power_gain+expm1(third_noise_figure_db*ln(10)/10)/(first_power_gain*second_power_gain))/ln(10)"},
+      {"key": "cascade_noise_temperature", "label": "Cascade equivalent input noise temperature", "unit": "K", "expression": "290*expm1(cascade_noise_figure_db*ln(10)/10)"}
     ],
     "constraints": [],
     "example": {"inputs": {"first_noise_figure_db": 2.0, "second_noise_figure_db": 6.0, "third_noise_figure_db": 10.0, "first_gain_db": 20.0, "second_gain_db": 10.0}, "expected": {"first_noise_factor": 1.5848931924611136, "second_noise_factor": 3.9810717055349722, "third_noise_factor": 10.0, "first_power_gain": 100.0, "second_power_gain": 10.0, "cascade_noise_factor": 1.6237039095164632, "cascade_noise_figure_db": 2.1050683636637153, "cascade_noise_temperature": 180.8741337597743}, "relative_tolerance": 0.000001}

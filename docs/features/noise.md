@@ -94,3 +94,33 @@ Thus e_o² = (e_n G_N)² + (i_plus R_S G_N)² + 4kTR_S G_N² + (i_minus R_F)² +
 
 Sequential output order is noise gain, output density, output RMS, input-referred RMS; the independent example tolerance is 1e-6.
 
+## Three-stage Friis noise cascade
+
+**ID:** `noise.friis_three_stage` — **expert**. Purpose: refer independently added stage noise back through preceding available power gains. Source [S4, section 3.6, equations 32–40].
+
+For two stages N_out = N0 G1 G2 + N_added1 G1 G2 + N_added2 G2. Divide by N0 G1 G2, and repeat with stage three:
+
+F_c = F1 + (F2 − 1)/G1 + (F3 − 1)/(G1 G2), with Fi = 10^(NFi/10), Gi = 10^(gi/10).
+
+NF_c = 10 log10(F_c), T_e,c = 290(F_c − 1) K. Third-stage gain cancels and is not required. This is not simple RMS aggregation or a voltage-gain cascade.
+
+**Stable numerical realization:** x_i = NFi ln(10)/10; X = expm1(x_1) + expm1(x_2)/G1 + expm1(x_3)/(G1 G2). Compute NF_c = 10 log1p(X)/ln(10), then T_e,c = 290 expm1(NF_c ln(10)/10). This preserves tiny positive excess noise lost by subtracting unity from rounded factors. With NF1 = 1e-16 dB, NF2 = NF3 = 0, g1 = g2 = 0 dB, independently the small-x limit gives NF_c ≈ 1e-16 dB and T_e,c ≈ 6.67749676968e-15 K. Linear factors necessarily round to unity below binary64 spacing. The all-ideal NF/temperature outputs remain exactly zero. Main owns the approved native Rust log1p extension; no local evaluator is introduced.
+
+**Inputs/domain/error rationale:** all NFi in [0,100] dB, gains g1,g2 in [-120,120] dB. Reject nonfinite/out-of-range inputs and negative conventional NF. Gains in [1e-12,1e12] are strictly positive; their product cannot vanish or overflow within these bounds. F_c ≥ 1 and X ≥ 0 guard logarithms; upper ranges bound cascade excess by roughly 1e34. Negative gain is permitted for loss, provided the supplied NF is consistent with physical attenuator temperature. No extra numerical NF minimum is imposed.
+
+**Assumptions:** stable, linear, uncompressed stages, common frequency/passband, uncorrelated added noise, flat parameters, available POWER gains and compatible/matched terminations. Scalar Friis excludes mismatch/multiple reflections and mixer frequency-conversion conventions. Every NF uses T0 = 290 K; this reference is not physical device/source temperature. An arbitrary actual source temperature need not give output SNR degradation equal to standard NF [S4, section 3.5].
+
+**Independent worked example:** NF1 = 2 dB, NF2 = 6 dB, NF3 = 10 dB, g1 = 20 dB, g2 = 10 dB.
+
+- `first_noise_factor` = **1.5848931924611136**.
+- `second_noise_factor` = **3.9810717055349722**.
+- `third_noise_factor` = **10**.
+- `first_power_gain` = **100**.
+- `second_power_gain` = **10**.
+- Second excess = 2.9810717055349722/100 = 0.029810717055349722; third excess = 9/1000 = 0.009.
+- `cascade_noise_factor` = **1.6237039095164632**.
+- `cascade_noise_figure_db` = **2.1050683636637153 dB**.
+- `cascade_noise_temperature` = **180.8741337597743 K**.
+
+All supporting outputs remain in the original order (three factors, two gains, cascade factor, cascade NF, cascade temperature). The 1e-6 nominal oracle is unchanged; small-NF tests require quantity-scaled tolerances rather than a blanket absolute 1e-6.
+

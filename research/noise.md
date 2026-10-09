@@ -281,8 +281,10 @@ The cascade noise figure uses the standard 290 K source reference. When actual s
 - `cascade_noise_figure_db` = 10 log10(1.6237039095164632) = **2.1050683636637153 dB**.
 - `cascade_noise_temperature` = 290 × 0.6237039095164632 = **180.8741337597743 K**.
 
+**Numerical implementation correction:** Let x_i = NFi ln(10)/10 and X = expm1(x_1) + expm1(x_2)/G1 + expm1(x_3)/(G1 G2). The cascade NF is evaluated as 10 log1p(X)/ln(10); its temperature is 290 expm1(NF_c ln(10)/10), reusing the preceding stable NF output. This avoids losing tiny positive added-noise factors when subtracting one from a rounded linear factor. At first-stage NF = 1e-16 dB, other NFs = 0 and gains = 0 dB, first-order independent arithmetic gives cascade NF ≈ 1e-16 dB and temperature ≈ 6.67749676968e-15 K. The linear factor must round to unity below binary64 spacing; that does not justify returning zero for the representable NF/temperature. Exact all-ideal NF/temperature remain zero. Main approved the shared Rust native `log1p` extension; `expm1` was already supported. No nominal example or domain change.
+
 ## Implementation handoff
 
-`research/noise.json` uses only the contract's supported `+ - * / ^`, `sqrt`, and `log10` operations. Supporting output keys appear before outputs that depend on them. The sole cross-input constraint (analog dynamic range) uses only input keys and constants because constraints are evaluated before outputs. Expected examples include every supporting and final output key. No output key duplicates an input key or reserved `pi`/`e`.
+`research/noise.json` uses supported arithmetic, `sqrt`, `ln`, `log10`, `expm1` and the parent-approved `log1p` extension. Supporting output keys appear before outputs that depend on them. The sole cross-input constraint (analog dynamic range) uses only input keys and constants because constraints are evaluated before outputs. Expected examples include every supporting and final output key. No output key duplicates an input key or reserved `pi`/`e`.
 
 The integration owner should exercise example/default numerical evaluation, input-bound rejection, zero shot current, all-zero RMS sum, ideal 0 dB noise figure/cascade, negative-gain cascade, impossible dynamic-range margin, and the constraint-before-outputs path in the global engine checks. These checks are recommended, not claimed to have been run here.
