@@ -119,4 +119,38 @@
     ],
     "example": {"inputs": {"r1": 10000.0, "r2": 10000.0, "c1": 1e-8, "c2": 1e-8, "amplifier_gain": 2.0, "f": 1000.0}, "expected": {"dc_gain": 2.0, "pole_hz": 1591.5494309189535, "section_q": 1.0, "frequency_ratio": 0.6283185307179586, "voltage_gain": 2.2925435192800947, "gain_db": 7.206351772370593, "half_power_hz": 2024.482149301843}, "relative_tolerance": 1e-6}
   }
+  ,
+  {
+    "id": "filters.fliege_notch_response",
+    "title": "Fliege notch component and frequency response",
+    "category": "Analog filters",
+    "level": "intermediate",
+    "description": "Predict notch frequency, Q, rejection bandwidth and transmission for TI's equal-component two-op-amp Fliege notch circuit.",
+    "formula": "f0=1/(2*pi*R0*C0); Q=RQ/(2*R0); x=f/f0; H(s)=(s^2+w0^2)/(s^2+(w0/Q)*s+w0^2); |H|=abs(1-x^2)/sqrt((1-x^2)^2+(x/Q)^2)",
+    "assumptions": ["Use TI SLOA096 Figure 21: R3=R4=R0, C1=C2=C0, R1=R2=RQ and R5=R6 (nominally 100 kohm).", "Ideal unity-gain symmetric notch with coincident zero and pole natural frequencies.", "Bandwidth and edges use half-power transmission relative to unity passbands; bandwidth is exactly f0/Q for this biquad.", "Ideal gain is exactly zero at the notch frequency; no dB output is supplied because its logarithm would be infinite.", "Real notch depth is limited by component matching and op-amp imperfections; perfect cancellation is not a hardware guarantee.", "Frequency ratio uses f/notch_hz so reusing the reported notch frequency produces exactly unit ratio in floating-point arithmetic."],
+    "references": [
+      {"title": "Texas Instruments SLOA096, section 5.1, Figure 21 and equations 4–5", "url": "https://www.ti.com/lit/an/sloa096/sloa096.pdf"},
+      {"title": "Texas Instruments AN-779 / SNOA224A, section 1.2 notch numerator and Q", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"}
+    ],
+    "inputs": [
+      {"key": "r0", "label": "Equal frequency resistors R3 and R4", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c0", "label": "Equal capacitors C1 and C2", "unit": "F", "default": 1e-7, "min": 1e-15, "max": 1.0},
+      {"key": "rq", "label": "Equal Q-setting resistors R1 and R2", "unit": "ohm", "default": 200000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 160.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "notch_hz", "label": "Ideal zero-transmission frequency", "unit": "Hz", "expression": "1/(2*pi*r0*c0)"},
+      {"key": "section_q", "label": "Notch section Q", "unit": "1", "expression": "rq/(2*r0)"},
+      {"key": "frequency_ratio", "label": "Signal / notch frequency", "unit": "1", "expression": "f/notch_hz"},
+      {"key": "voltage_gain", "label": "Voltage transmission magnitude", "unit": "V/V", "expression": "abs(1-frequency_ratio^2)/sqrt((1-frequency_ratio^2)^2+(frequency_ratio/section_q)^2)"},
+      {"key": "bandwidth_hz", "label": "Half-power rejection bandwidth", "unit": "Hz", "expression": "notch_hz/section_q"},
+      {"key": "lower_edge_hz", "label": "Lower half-power edge", "unit": "Hz", "expression": "notch_hz*2*section_q/(sqrt(4*section_q^2+1)+1)"},
+      {"key": "upper_edge_hz", "label": "Upper half-power edge", "unit": "Hz", "expression": "notch_hz*(sqrt(4*section_q^2+1)+1)/(2*section_q)"}
+    ],
+    "constraints": [
+      {"left": "rq/(2*r0)", "op": ">=", "right": "0.05", "message": "Notch Q must be at least 0.05."},
+      {"left": "rq/(2*r0)", "op": "<=", "right": "50", "message": "Notch Q must not exceed 50."}
+    ],
+    "example": {"inputs": {"r0": 10000.0, "c0": 1e-7, "rq": 200000.0, "f": 160.0}, "expected": {"notch_hz": 159.15494309189535, "section_q": 10.0, "frequency_ratio": 1.0053096491487337, "voltage_gain": 0.10532346435527205, "bandwidth_hz": 15.915494309189535, "lower_edge_hz": 151.3960154315485, "upper_edge_hz": 167.31150974073802}, "relative_tolerance": 1e-6}
+  }
 ]

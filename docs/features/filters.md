@@ -180,3 +180,41 @@ The rationalized form avoids low-Q subtractive cancellation; the Q≤50 envelope
 Gain above K and cutoff above f0 are legitimate Q=1 peaking, not clipping. A unity-gain equal-R Butterworth alternative uses C2=2C1 and Q=1/√2.
 
 **Source/limits:** TI SLOA049D §6/Fig.6-1/Eq.21, with §§11–12 nonideal limitations, linked above. No finite GBW, output impedance, loading, slew, saturation, parasitics or component tolerance effects; stable ideal damping is not hardware stability certification.
+
+## `filters.fliege_notch_response` — Fliege notch component and frequency response (intermediate)
+
+**Purpose/topology:** Two-op-amp equal-component Fliege notch per TI SLOA096 Fig.21: R3=R4=R0, C1=C2=C0, R1=R2=RQ and R5=R6 (nominally 100 kohm). The coincident zero/pole natural frequency and Q are f0=1/(2πR0C0), Q=RQ/(2R0).
+
+\[
+H(s)=\frac{s^2+\omega_0^2}{s^2+(\omega_0/Q)s+\omega_0^2},\quad
+|H|=\frac{|1-x^2|}{\sqrt{(1-x^2)^2+(x/Q)^2}},\quad x=f/f_0.
+\]
+
+DC and asymptotically high-frequency gains are unity. At x=1 the denominator is 1/Q>0 and linear gain is zero. There is deliberately **no dB output**: exact ideal cancellation has infinite logarithmic attenuation, not a fabricated finite floor.
+
+**Conditioning correction:** Compute `frequency_ratio=f/notch_hz`, reusing the earlier output rather than multiplying 2πfR0C0. Supplying the reported `notch_hz` then divides an identical finite value by itself, giving exactly x=1 and zero gain, without special-casing input or suppressing an error. Independently rounded center-frequency inputs can still yield a tiny legitimate floating-point residual; this is not a physical mismatch prediction.
+
+Half-power transmission relative to unity solves (1−x²)²=(x/Q)²:
+
+\[
+f_L=f_0\frac{2Q}{\sqrt{4Q^2+1}+1},\quad
+f_H=f_0\frac{\sqrt{4Q^2+1}+1}{2Q},\quad BW=f_H-f_L=f_0/Q.
+\]
+
+These exact edges have fLfH=f0², but unlike band-pass the central region is rejected. Sequential outputs: notch_hz, section_q, frequency_ratio, voltage_gain, bandwidth_hz, lower_edge_hz, upper_edge_hz.
+
+**Inputs/domain/error rationale:** `r0`,`rq` (ohm) 0.001…1e9; `c0` (F) 1e-15…1; `f` (Hz) 0…1e12. Input-only constraints require 0.05≤rq/(2r0)≤50. Positive components prevent frequency/Q divisors from vanishing, Q bounds control the supported damping envelope, and the magnitude denominator is positive at both DC and notch. DC and exact cancellation remain valid.
+
+**Independent worked substitution/default:** r0=10000 ohm, c0=1e-7 F, rq=200000 ohm, f=160 Hz. f0=1000/(2π) Hz and Q=10; direct complex numerator/denominator division at the off-center probe gives:
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| notch_hz | 159.15494309189535 | Hz |
+| section_q | 10.0 | 1 |
+| frequency_ratio | 1.0053096491487337 | 1 |
+| voltage_gain | 0.10532346435527205 | V/V |
+| bandwidth_hz | 15.915494309189535 | Hz |
+| lower_edge_hz | 151.3960154315485 | Hz |
+| upper_edge_hz | 167.31150974073802 | Hz |
+
+**Sources/limits:** TI SLOA096 §5.1/Fig.21/Eqs.4–5 and SNOA224A §1.2 notch numerator/Q, linked above. Exact component matching, ideal amplifiers and unity symmetric passbands are assumptions. Real mismatch, parasitics and finite loop gain limit notch depth; ideal zero is not a hardware hum-rejection guarantee.
