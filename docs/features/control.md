@@ -77,3 +77,51 @@ Bottom half: a phase-budget strip at y=205. Mark a fixed crossover with quantity
 
 Caption: “A pure delay changes phase but not gain. The phase budget applies at the stated crossover; the strip is illustrative, not a plotted loop response.”
 
+## 2. `control.loop_sensitivity` — intermediate
+
+### Purpose, novelty and source
+
+Predict whether feedback rejects an output disturbance or amplifies it, and separately quantify transmission of measurement noise. Nearest old models are `opamps.dominant_pole_gain_bandwidth` and `noise.noninverting_amplifier_budget`. Neither accepts a complex return ratio nor distinguishes output disturbance from measurement noise injection. This is not another noise-source sum or scalar closed-loop amplifier gain.
+
+Source S, slides 13–15 equations 10–19, gives `L=GK`, `S=1/(1+L)`, `T=L/(1+L)` and the distinct injection transfers.
+
+### Equations, units, signs and validity
+
+Use the negative-feedback convention `y=L(r-y-n)+d`, where `d` is an additive output disturbance and `n` is noise added to the measured output. Thus `y=T r+S d-T n`. Enter `L=a+jb` without folding the summing-junction minus sign into L.
+
+Let `D=hypot(1+a,b)`. Then `|S|=1/D`, `|T|=hypot(a,b)/D`. Separate output amplitudes are `d/D` and `n|T|`. Dimensionless gains multiply voltage amplitudes; all amplitudes must use one convention, such as RMS. Noise transmission has a negative complex sign, but its reported amplitude is nonnegative.
+
+The singular point `a=-1,b=0` is excluded. `hypot` avoids premature overflow from squaring real/imaginary inputs. A point close to -1 legitimately returns large amplification. A measured single-frequency point cannot prove global closed-loop stability; these steady-state amplitudes require that stability independently. Do not sum the two amplitudes without their relative phase or stochastic correlation.
+
+### Complete independent example
+
+Inputs: `loop_real=-0.5`, `loop_imaginary=-0.5`, `disturbance_amplitude=0.01 V`, `noise_amplitude=0.001 V`.
+
+`1+L=0.5-j0.5`; its magnitude is `sqrt(1/2)`. Here `S=1+j` and `T=-j`, so their complex sum is one even though their magnitudes do not sum to one.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `return_difference` | `sqrt(0.25+0.25)` | `0.7071067811865476` |
+| `sensitivity_magnitude` | `sqrt(2)` | `1.4142135623730951` |
+| `complementary_magnitude` | `sqrt(0.5)/sqrt(0.5)` | `1` |
+| `disturbance_output` | `0.01 sqrt(2)` | `0.014142135623730952 V` |
+| `noise_output` | `0.001 × 1` | `0.001 V` |
+
+### Independent test cases
+
+- Nominal: complete vector above.
+- `loop_real=0,loop_imaginary=0`, same amplitudes: return difference `1`, sensitivity `1`, complementary sensitivity `0`, disturbance output `0.01 V`, noise output `0`.
+- `loop_real=9,loop_imaginary=0`, same amplitudes: return difference `10`, sensitivity `0.1`, complementary sensitivity `0.9`, disturbance output `0.001 V`, noise output `0.0009 V`.
+- Conjugating L must leave all five outputs unchanged.
+- `loop_real=-1,loop_imaginary=0.001`: return difference `0.001`, sensitivity `1000`; the large result must not be suppressed.
+- Zero disturbance/noise amplitudes are valid and independently produce zero contributions.
+- Reject the exact singular point, negative amplitudes and nonfinite inputs. Do not reject negative real/imaginary return-ratio components.
+
+### Mandatory diagram
+
+Draw the actual injection topology, not a generic feedback loop. Reference enters a plus/minus summing circle at `(100,90)`. Forward block `L(jω)` occupies `(200,60)`–`(360,120)`; quantity labels `Re L` and `Im L` bind `loop_real` and `loop_imaginary` above/below it. Its output reaches a second plus summing circle at `(470,90)`. A vertical down arrow labeled `d` with `disturbance_amplitude` enters the top of this second summer. Output y leaves to the right, then branches into the feedback path. A third plus summer on that feedback path adds `n`, with quantity `noise_amplitude`, before returning to the negative input of the first summer. This must not place n on the physical output node.
+
+Below the loop, show two separate transfer statements: `d → y: |S|` bound to `sensitivity_magnitude`, and `n → y: |T|` bound to `complementary_magnitude`. Adjacent outcome labels bind `disturbance_output` and `noise_output`, without an addition sign between them.
+
+Caption: “Output disturbances follow S; measurement noise follows -T. Magnitudes shown separately at one frequency; the diagram does not establish loop stability or combine the sources.”
+

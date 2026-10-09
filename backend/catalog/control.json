@@ -102,5 +102,110 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "control.loop_sensitivity",
+    "title": "Complex loop disturbance and measurement-noise sensitivity",
+    "category": "Feedback and control design",
+    "level": "intermediate",
+    "description": "Compute output-disturbance rejection and measurement-noise transmission from a measured complex return ratio at one frequency.",
+    "formula": "L = a + j b; D = |1+L|; |S| = 1/D; |T| = |L|/D; |y_d| = |S| d; |y_n| = |T| n",
+    "assumptions": [
+      "SISO linear negative feedback with return ratio L measured without including the summing-junction minus sign.",
+      "The physical closed loop must be stable for sinusoidal steady-state amplitudes to apply; one complex frequency point cannot establish stability.",
+      "Disturbance is added at the plant output before the feedback pickoff; measurement noise is added only in the feedback measurement.",
+      "Disturbance and noise amplitudes use the same voltage convention, such as both RMS. Outputs are separate contributions, not their coherent or statistical sum.",
+      "The exact singular point L=-1 is excluded. Near this point the ideal linear model predicts large amplification, often beyond real actuator headroom."
+    ],
+    "references": [
+      {
+        "title": "Lehigh University ME450, Lecture 5: Classical Feedback Control, slides 13-15, equations 10-19",
+        "url": "https://www.lehigh.edu/~eus204/teaching/ME450_SIRC/lectures/lecture05.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "loop_real",
+        "label": "Real part of return ratio",
+        "unit": "1",
+        "default": -0.5
+      },
+      {
+        "key": "loop_imaginary",
+        "label": "Imaginary part of return ratio",
+        "unit": "1",
+        "default": -0.5
+      },
+      {
+        "key": "disturbance_amplitude",
+        "label": "Additive output disturbance amplitude",
+        "unit": "V",
+        "default": 0.01,
+        "min": 0
+      },
+      {
+        "key": "noise_amplitude",
+        "label": "Measurement noise amplitude",
+        "unit": "V",
+        "default": 0.001,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "return_difference",
+        "label": "Distance of return ratio from -1",
+        "unit": "1",
+        "expression": "hypot(1+loop_real,loop_imaginary)"
+      },
+      {
+        "key": "sensitivity_magnitude",
+        "label": "Output-disturbance sensitivity magnitude",
+        "unit": "1",
+        "expression": "1/return_difference"
+      },
+      {
+        "key": "complementary_magnitude",
+        "label": "Complementary sensitivity magnitude",
+        "unit": "1",
+        "expression": "hypot(loop_real,loop_imaginary)/return_difference"
+      },
+      {
+        "key": "disturbance_output",
+        "label": "Output contribution from disturbance",
+        "unit": "V",
+        "expression": "disturbance_amplitude/return_difference"
+      },
+      {
+        "key": "noise_output",
+        "label": "Output contribution from measurement noise",
+        "unit": "V",
+        "expression": "noise_amplitude*complementary_magnitude"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "hypot(1+loop_real,loop_imaginary)",
+        "op": ">",
+        "right": "0",
+        "message": "The singular return ratio L=-1 has no finite sensitivity"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "loop_real": -0.5,
+        "loop_imaginary": -0.5,
+        "disturbance_amplitude": 0.01,
+        "noise_amplitude": 0.001
+      },
+      "expected": {
+        "return_difference": 0.7071067811865476,
+        "sensitivity_magnitude": 1.4142135623730951,
+        "complementary_magnitude": 1,
+        "disturbance_output": 0.014142135623730952,
+        "noise_output": 0.001
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
