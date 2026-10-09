@@ -203,3 +203,75 @@ Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outpu
 
 The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
 
+## 4. `rf.first_fresnel_clearance`
+
+### Purpose, novelty and evidence
+
+The nearest neighbor is the free-space link budget, but this item solves **path-interference clearance geometry**, not power spreading or an inverse range budget. No baseline model computes an ellipsoidal Fresnel region. `signals.line_propagation` supplies only wavelength/delay. S3 section 3 provides the radius expression and warns about points close to either endpoint.
+
+### Equations, signs and limits
+
+With `d1 = distance_from_tx`, `d2 = distance_to_rx`, and `lambda = c/f`:
+
+`zone_radius = sqrt(lambda d1 d2/(d1+d2))` m;
+`required_clearance = clearance_fraction * zone_radius` m;
+`clearance_margin = available_clearance - required_clearance` m.
+
+Expanding the two off-axis ray lengths gives path excess `r^2/(2d1) + r^2/(2d2)`. Setting that to `lambda/2` derives the first-zone formula independently. `available_clearance` is the signed perpendicular gap between line of sight and the closest obstacle point: positive is clear, negative means the obstacle crosses line of sight. Negative margin is a useful design failure, not invalid input.
+
+The explicit paraxial domain is `d1,d2 >= 100 lambda`. This is a local engineering accuracy screen derived from `r/di <= sqrt(lambda/di) <= 0.1`, not an arbitrary range clamp or a manufacturer-mandated value. The first neglected term in each square-root ray-length expansion is at most approximately 0.25% of its quadratic term at that boundary. More exact ellipsoid/terrain models are needed closer to an endpoint. The fraction is a chosen planning rule in [0,1]; the 0.6 default is not asserted to eliminate diffraction loss. Earth curvature and atmospheric refraction must be accounted for before entering actual clearance.
+
+The catalog evaluates `d1*d2/(d1+d2)` as `min(d1,d2)/(1+min(d1,d2)/max(d1,d2))` and factors the square root to avoid needless product overflow.
+
+### Complete independent example
+
+Inputs: `frequency=2400000000 Hz`, `distance_from_tx=400 m`, `distance_to_rx=600 m`, `clearance_fraction=0.6`, `available_clearance=4 m`.
+
+The effective distance is `400*600/1000 = 240 m`; each segment exceeds the `12.491352416666667 m` paraxial screen.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `zone_radius` | `sqrt(0.12491352416666667 * 240)` | `5.475330656681841 m` |
+| `required_clearance` | `0.6 * 5.475330656681841` | `3.2851983940091043 m` |
+| `clearance_margin` | `4 - 3.2851983940091043` | `0.7148016059908957 m` |
+
+### Nominal, limiting and invalid cases
+
+- Swap d1 and d2: every output remains unchanged.
+- Hold total length 1000 m and use d1=d2=500 m: radius=`5.588235950786855 m`, the maximum along this link.
+- Quadruple frequency: radius and required clearance halve; changing obstacle clearance alone changes only margin.
+- `clearance_fraction=0` yields zero requirement and margin equal to available clearance. Fraction=1 requests the full first zone. Both are valid.
+- Available clearance zero or negative is valid and shows obstruction. Screen equality is valid; one endpoint below 100 wavelengths is rejected.
+- Reject nonpositive frequency/endpoint distances, fraction outside [0,1] and nonfinite values. A point at an antenna endpoint is outside this approximation, not silently reported as a zero-radius zone.
+
+### Catalog inputs and bounds
+
+| Key | Meaning | Unit | Default | Bounds |
+|---|---|---|---|---|
+| `frequency` | Carrier frequency | Hz | 2400000000.0 | > 0.0 |
+| `distance_from_tx` | TX to obstacle-plane distance | m | 400.0 | > 0.0 |
+| `distance_to_rx` | Obstacle-plane to RX distance | m | 600.0 | > 0.0 |
+| `clearance_fraction` | Required fraction of first-Fresnel radius | 1 | 0.6 | >= 0.0; <= 1.0 |
+| `available_clearance` | Signed perpendicular obstacle clearance | m | 4.0 | Any finite value |
+
+All inputs must be finite. Constraints run before outputs; invalid domains return errors, not clamps.
+
+- `distance_from_tx >= 100*299792458/frequency`: TX-to-obstacle distance must be at least 100 wavelengths for the documented paraxial screen.
+- `distance_to_rx >= 100*299792458/frequency`: Obstacle-to-RX distance must be at least 100 wavelengths for the documented paraxial screen.
+
+### Executable output sequence
+
+| Key | Unit | Expression |
+|---|---|---|
+| `zone_radius` | m | `sqrt(299792458/frequency)*sqrt(min(distance_from_tx,distance_to_rx)/(1+min(distance_from_tx,distance_to_rx)/max(distance_from_tx,distance_to_rx)))` |
+| `required_clearance` | m | `clearance_fraction*zone_radius` |
+| `clearance_margin` | m | `available_clearance-required_clearance` |
+
+Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outputs require an absolute tolerance. All defaults equal the full worked-example inputs above.
+
+### Sources and illustration
+
+- [Wurth Elektronik ANR010 Range Estimator v1.1, section 3, equations 1-3 and wavelength-distance limitation](https://www.we-online.com/components/media/o164527v410%20ANR010_Range_Estimation.pdf)
+
+The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
+

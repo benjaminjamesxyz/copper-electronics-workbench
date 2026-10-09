@@ -288,5 +288,115 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "rf.first_fresnel_clearance",
+    "title": "First-Fresnel obstruction clearance",
+    "category": "RF networks, antennas and links",
+    "level": "intermediate",
+    "description": "Find the first-Fresnel radius at an obstacle and compare actual perpendicular clearance with a chosen required radius fraction.",
+    "formula": "r1=sqrt((c/f) d1 d2/(d1+d2)); hreq=k r1; margin=h-hreq",
+    "assumptions": [
+      "Distances d1 and d2 run along the straight antenna-to-antenna line of sight to the obstacle plane; clearance is perpendicular to that line.",
+      "Paraxial first-Fresnel approximation. Each axial segment must be at least 100 wavelengths, an explicit small-angle screen that keeps r1/di <= 0.1.",
+      "The required fraction is a user planning criterion between zero and one, not a prediction of diffraction loss or a standards-compliance claim.",
+      "Signed clearance is positive when the obstacle stays below the line of sight and negative when it crosses the line. Negative margin is a valid failed-clearance result.",
+      "No Earth curvature, refraction, terrain profile, vegetation motion or diffraction attenuation is modeled."
+    ],
+    "references": [
+      {
+        "title": "Wurth Elektronik ANR010 Range Estimator v1.1, section 3, equations 1-3 and wavelength-distance limitation",
+        "url": "https://www.we-online.com/components/media/o164527v410%20ANR010_Range_Estimation.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Carrier frequency",
+        "unit": "Hz",
+        "default": 2400000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "distance_from_tx",
+        "label": "TX to obstacle-plane distance",
+        "unit": "m",
+        "default": 400.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "distance_to_rx",
+        "label": "Obstacle-plane to RX distance",
+        "unit": "m",
+        "default": 600.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "clearance_fraction",
+        "label": "Required fraction of first-Fresnel radius",
+        "unit": "1",
+        "default": 0.6,
+        "min": 0.0,
+        "max": 1.0
+      },
+      {
+        "key": "available_clearance",
+        "label": "Signed perpendicular obstacle clearance",
+        "unit": "m",
+        "default": 4.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "zone_radius",
+        "label": "First-Fresnel radius at obstacle",
+        "unit": "m",
+        "expression": "sqrt(299792458/frequency)*sqrt(min(distance_from_tx,distance_to_rx)/(1+min(distance_from_tx,distance_to_rx)/max(distance_from_tx,distance_to_rx)))"
+      },
+      {
+        "key": "required_clearance",
+        "label": "Required obstacle clearance",
+        "unit": "m",
+        "expression": "clearance_fraction*zone_radius"
+      },
+      {
+        "key": "clearance_margin",
+        "label": "Clearance margin",
+        "unit": "m",
+        "expression": "available_clearance-required_clearance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "distance_from_tx",
+        "op": ">=",
+        "right": "100*299792458/frequency",
+        "message": "TX-to-obstacle distance must be at least 100 wavelengths for the documented paraxial screen."
+      },
+      {
+        "left": "distance_to_rx",
+        "op": ">=",
+        "right": "100*299792458/frequency",
+        "message": "Obstacle-to-RX distance must be at least 100 wavelengths for the documented paraxial screen."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 2400000000.0,
+        "distance_from_tx": 400.0,
+        "distance_to_rx": 600.0,
+        "clearance_fraction": 0.6,
+        "available_clearance": 4.0
+      },
+      "expected": {
+        "zone_radius": 5.475330656681841,
+        "required_clearance": 3.2851983940091043,
+        "clearance_margin": 0.7148016059908957
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
