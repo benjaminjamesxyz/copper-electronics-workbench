@@ -194,3 +194,39 @@ Relative tolerance: `1e-6`; these values are the independently derived research 
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 4. `dc.loaded_divider` — Finite-load voltage divider (intermediate)
+
+**Design question:** How much does a finite DC load or meter input disturb an otherwise unloaded voltage-divider output?
+
+**Topology:** `Rtop` is source-to-output; `Rbottom` and the distinct load `Rload` connect output-to-ground in parallel.
+
+**Derivation:** With the load removed, `Vopen = Vin Rbottom/(Rtop+Rbottom)`. Replacing the ideal source by a short leaves `Rout = Rtop || Rbottom = Rtop Rbottom/(Rtop+Rbottom)`. The load then forms a divider with the Thevenin source:
+
+`Vloaded = Vopen Rload/(Rout+Rload)`; `Iload = Vloaded/Rload`.
+
+The fractional attenuation is `error = Rout/(Rout+Rload)`. Defining it from resistance ratios rather than `1-Vloaded/Vopen` supports `Vin = 0` without an undefined `0/0`. Source: S4, §2.6–2.7. Direct parallel reduction gives the same result; this is not an approximate “load at least ten times larger” rule.
+
+**Inputs:** `v_in` (V), `r_top`, `r_bottom`, `r_load` (ohm). **Outputs:** `v_open`, `v_loaded` (V); `r_output` (ohm); `i_load` (A); `loading_error` (1).
+
+**Domain and limitations:** Three positive finite resistors. The load is not constant current/power or an ADC switched-capacitor input. Open-load behavior is the limit `Rload → infinity`, not an infinity input. A practical source's extra impedance or active buffer is outside this exact topology.
+
+**Independent example/default:** `Vin = 12 V`, `Rtop = 10000`, `Rbottom = 5000`, `Rload = 10000 ohm`.
+
+- Unloaded KVL: current is `12/15000 = 0.0008 A`, so `Vopen = 4 V`.
+- With excitation shorted, `Rout = (1/10000+1/5000)^(-1) = 10000/3 = 3333.3333333333335 ohm`.
+- Independent loaded-node KCL: `(12-V)/10000 = V/5000 + V/10000`; multiplying by 10000 gives `12-V = 3V`, hence `Vloaded = 3 V`.
+- `Iload = 3/10000 = 0.0003 A`.
+- Error is `(4-3)/4 = 0.25`, which is a fraction (25%), not the number 25.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `v_open` | `4.0` | V |
+| `r_output` | `3333.3333333333335` | ohm |
+| `v_loaded` | `3.0` | V |
+| `i_load` | `0.0003` | A |
+| `loading_error` | `0.25` | 1 |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+
