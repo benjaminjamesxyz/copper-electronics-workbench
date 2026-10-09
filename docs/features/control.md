@@ -125,3 +125,57 @@ Below the loop, show two separate transfer statements: `d → y: |S|` bound to `
 
 Caption: “Output disturbances follow S; measurement noise follows -T. Magnitudes shown separately at one frequency; the diagram does not establish loop stability or combine the sources.”
 
+## 3. `control.lead_crossover_synthesis` — intermediate
+
+### Purpose, novelty and source
+
+Choose a controller zero, pole and gain for a desired phase boost at an intended loop crossover. The nearest old calculators, `filters.rc_highpass_response` and `filters.butterworth_spec_synthesis`, compute passive frequency response or attenuation-based filter order. This model designs a finite-gain lead controller from a feedback phase requirement and the measured plant magnitude, preserving a specified crossover. It is not an inverse of either filter calculator.
+
+Source L §13.2 equations 13-1–13-7 and §13.2.1 give the controller form, peak phase, midpoint frequency and gain adjustment.
+
+### Equations, units, signs and validity
+
+`C(s)=Kc(1+sτ)/(1+sατ)`, with `0<α<1`. Peak phase boost is `asin((1-α)/(1+α))` and occurs at `ωc=1/(τ sqrt(α))`. Therefore:
+
+- `α=(1-sin φ)/(1+sin φ)=[cos φ/(1+sin φ)]²`.
+- `fz=fc sqrt(α)` and `fp=fc/sqrt(α)`.
+- At fc, `|C|=Kc/sqrt(α)`. For uncompensated magnitude M, require `M |C|=1`, hence `Kc=sqrt(α)/M`.
+- High-frequency gain is `Kc/α=1/(M sqrt(α))`.
+- `τ=1/(2πfz)`.
+
+Angles are entered in degrees and converted to radians inside trig functions; frequencies are Hz. The cosine form avoids subtracting `1-sin φ` near 90 degrees. Exactly zero boost degenerates to a scalar gain, and exactly 90 degrees needs infinite separation; both are excluded rather than disguised as a finite lead design.
+
+The boost is not the final phase margin: final margin also requires plant phase and all-crossing analysis. Plant magnitude includes the sensor and existing fixed gain. Analog realization, noise, amplifier limits and component tolerance are not solved here. No simple phase-margin-to-damping heuristic is used.
+
+### Complete independent example
+
+Inputs: `phase_boost=30 deg`, `crossover_frequency=1000 Hz`, `plant_magnitude=0.5`.
+
+Since `sin 30°=1/2`, `α=1/3` exactly. At fc, compensator magnitude is two, making loop magnitude one.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `pole_zero_ratio` | `(1-1/2)/(1+1/2)` | `0.3333333333333333` |
+| `zero_frequency` | `1000/sqrt(3)` | `577.3502691896258 Hz` |
+| `pole_frequency` | `1000 sqrt(3)` | `1732.0508075688772 Hz` |
+| `dc_gain` | `2/sqrt(3)` | `1.1547005383792517` |
+| `high_frequency_gain` | `2 sqrt(3)` | `3.4641016151377544` |
+| `zero_time_constant` | `sqrt(3)/(2000π)` | `0.00027566444771089603 s` |
+
+### Independent test cases
+
+- Nominal: all outputs above. Independently substitute these coefficients into C(j2πfc); magnitude must be `2` and phase must be `30 deg`.
+- Double fc: zero/pole frequencies double, time constant halves, alpha and both gains stay unchanged.
+- Double M: both gains halve; frequencies, alpha and time constant stay unchanged.
+- As positive boost tends toward zero, alpha tends to one, both corners approach fc and both gains approach `1/M`.
+- Near 90 degrees, e.g. `89.999 deg`, corners must remain ordered and finite at ordinary scales. Their geometric mean remains fc; do not evaluate alpha with cancellation-prone `1-sin φ`.
+- Reject zero/negative boost, boost at or above 90, nonpositive crossover or plant magnitude, and nonfinite inputs.
+
+### Mandatory diagram
+
+Use two aligned explanatory response panels: magnitude above and phase below, with log-frequency increasing right. Put the zero marker at x=230, the selected center at x=350 and the pole marker at x=470. Bind `zero_frequency`, `crossover_frequency`, and `pole_frequency` to their respective markers. Draw magnitude with low/high plateaus and a rising transition; bind low plateau label `Kc` to `dc_gain` and high plateau label `Kc/α` to `high_frequency_gain`. Draw phase as a positive hump peaking at the center, returning toward zero on either side. Bind peak label `φmax` to `phase_boost`.
+
+At the top-left include the static transfer `C(s)=Kc(1+sτ)/(1+sατ)`. Place a short note `M |C(jωc)| = 1` with M bound to `plant_magnitude`. Do not depict the compensated plant's complete response or label the boost as phase margin.
+
+Caption: “A lead zero precedes its pole. Peak phase boost is centered at the selected crossover; Kc normalizes local loop magnitude. Curves are schematic, not computed Bode plots.”
+

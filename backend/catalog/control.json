@@ -207,5 +207,109 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "control.lead_crossover_synthesis",
+    "title": "Phase-lead compensator at a chosen loop crossover",
+    "category": "Feedback and control design",
+    "level": "intermediate",
+    "description": "Place a lead compensator's peak phase boost at a selected crossover and normalize its gain using the uncompensated loop magnitude there.",
+    "formula": "C(s)=Kc(1+s tau)/(1+s alpha tau); alpha=(1-sin(phi))/(1+sin(phi)); fz=fc sqrt(alpha); fp=fc/sqrt(alpha); Kc=sqrt(alpha)/M",
+    "assumptions": [
+      "The requested positive phase boost is strictly between 0 and 90 degrees and is centered at the chosen crossover.",
+      "Plant magnitude includes all fixed gain and feedback sensing, but excludes the new lead compensator.",
+      "This design makes the local loop magnitude unity; plant phase, other crossovers and Nyquist stability still require separate assessment.",
+      "The controller is a continuous-time minimum-phase lead network. Finite amplifier bandwidth, component tolerances and high-frequency noise are not included.",
+      "No phase-margin-to-overshoot approximation is used. Peak boost approaching 90 degrees needs unbounded pole separation and high-frequency gain."
+    ],
+    "references": [
+      {
+        "title": "Toronto Metropolitan University: Introduction to Control Systems, section 13.2, equations 13-1 through 13-11",
+        "url": "https://pressbooks.library.torontomu.ca/controlsystems/chapter/13-2lead-controller/"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "phase_boost",
+        "label": "Required peak phase boost",
+        "unit": "deg",
+        "default": 30,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 90,
+        "exclusive_max": true
+      },
+      {
+        "key": "crossover_frequency",
+        "label": "Chosen loop crossover",
+        "unit": "Hz",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plant_magnitude",
+        "label": "Uncompensated return-ratio magnitude at crossover",
+        "unit": "1",
+        "default": 0.5,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "pole_zero_ratio",
+        "label": "Alpha: zero-frequency to pole-frequency ratio",
+        "unit": "1",
+        "expression": "(cos(phase_boost*pi/180)/(1+sin(phase_boost*pi/180)))^2"
+      },
+      {
+        "key": "zero_frequency",
+        "label": "Compensator zero frequency",
+        "unit": "Hz",
+        "expression": "crossover_frequency*sqrt(pole_zero_ratio)"
+      },
+      {
+        "key": "pole_frequency",
+        "label": "Compensator pole frequency",
+        "unit": "Hz",
+        "expression": "crossover_frequency/sqrt(pole_zero_ratio)"
+      },
+      {
+        "key": "dc_gain",
+        "label": "Compensator DC gain",
+        "unit": "1",
+        "expression": "sqrt(pole_zero_ratio)/plant_magnitude"
+      },
+      {
+        "key": "high_frequency_gain",
+        "label": "Compensator high-frequency gain",
+        "unit": "1",
+        "expression": "1/plant_magnitude/sqrt(pole_zero_ratio)"
+      },
+      {
+        "key": "zero_time_constant",
+        "label": "Compensator zero time constant",
+        "unit": "s",
+        "expression": "1/(2*pi)/zero_frequency"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "phase_boost": 30,
+        "crossover_frequency": 1000,
+        "plant_magnitude": 0.5
+      },
+      "expected": {
+        "pole_zero_ratio": 0.3333333333333333,
+        "zero_frequency": 577.3502691896258,
+        "pole_frequency": 1732.0508075688772,
+        "dc_gain": 1.1547005383792517,
+        "high_frequency_gain": 3.4641016151377544,
+        "zero_time_constant": 0.00027566444771089603
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
