@@ -1,0 +1,36 @@
+import 'primitives.dart';
+
+const protectionDiagrams = <String, CalculatorDiagram>{
+  'protection.fuse_pulse_coordination': CalculatorDiagram(
+    title: 'Inrush survival and separate fault clearing',
+    caption: 'Illustrative trapezoidal inrush; square-current integration checks pulse survival, not the geometric area under i(t). Fault clearing uses separate manufacturer pre-arcing plus arcing data. I²t is not joules.',
+    marks: [
+      Wire([50, 208, 50, 42], arrow: true),
+      Wire([50, 208, 355, 208], arrow: true),
+      Label(22, 37, 'i(t)'),
+      Label(343, 184, 't'),
+      Wire([65, 208, 130, 90, 245, 90, 325, 208], ink: DiagramInk.input),
+      Label(163, 61, 'Ipk', quantity: 'peak_current', ink: DiagramInk.input),
+      Label(113, 131, '∫ i² dt', quantity: 'pulse_i2t', ink: DiagramInk.output),
+      Label(96, 159, 'Not area under i(t)', ink: DiagramInk.muted),
+      Wire([65, 224, 65, 231, 130, 231, 130, 224]),
+      Wire([137, 224, 137, 231, 245, 231, 245, 224]),
+      Wire([252, 224, 252, 231, 325, 231, 325, 224]),
+      Label(76, 239, 'trise', quantity: 'rise_time'),
+      Label(171, 239, 'thold', quantity: 'hold_time'),
+      Label(273, 239, 'tfall', quantity: 'fall_time'),
+      Part(CircuitPart.block, 420, 100, width: 60, height: 44),
+      Label(395, 90, 'Source'),
+      Wire([450, 100, 480, 100], arrow: true),
+      Part(CircuitPart.block, 510, 100, width: 60, height: 44),
+      Label(494, 90, 'Fuse'),
+      Wire([540, 100, 578, 100], arrow: true),
+      Part(CircuitPart.block, 624, 100, width: 92, height: 44),
+      Label(590, 90, 'Semi device'),
+      Label(392, 45, 'Separate fault-current path'),
+      Label(393, 146, 'Fuse Jpre', quantity: 'pre_arcing_i2t'),
+      Label(393, 180, 'Fuse Jclear = Jpre + Jarc', quantity: 'clearing_i2t'),
+      Label(393, 214, 'Device withstand I²t', quantity: 'device_withstand_i2t'),
+    ],
+  ),
+};

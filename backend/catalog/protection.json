@@ -1,0 +1,158 @@
+[
+  {
+    "id": "protection.fuse_pulse_coordination",
+    "title": "Fuse pulse survival and semiconductor clearing budget",
+    "category": "Protection",
+    "level": "basic",
+    "description": "Integrate a trapezoidal inrush pulse and compare its thermal integral with fuse pre-arcing allowance, while separately checking total clearing against semiconductor withstand.",
+    "formula": "Jpulse = Ipk²[thold+(trise+tfall)/3]; Jallow = f Jpre; Jclear = Jpre+Jarc",
+    "assumptions": [
+      "Current starts and ends at zero; rise and fall are linear and the plateau is constant. Total pulse duration is below 10 ms for the short-pulse adiabatic approximation.",
+      "Pre-arcing and arcing integrals are manufacturer values for the applicable fault current, voltage, temperature and AC power factor or DC L/R; they are not calculated from the inrush waveform.",
+      "The pulse allowance fraction is supplied from the selected fuse's pulse-life and temperature guidance; 0.8 is an illustrative input, not a universal recommendation.",
+      "Semiconductor withstand must explicitly be an I²t rating for the applicable pulse conditions. This is not a generic MOSFET or IGBT SOA test.",
+      "Negative margins identify failed screening criteria. Voltage rating, interrupting capacity, steady current, arc voltage, repetition and complete time-current coordination require separate checks; this calculation does not certify safety."
+    ],
+    "references": [
+      {
+        "title": "SCHURTER Fuse-Link, sections 10, 11 and 13",
+        "url": "https://www.schurter.com/en/knowledge/fuse-link"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "peak_current",
+        "label": "Inrush peak current",
+        "unit": "A",
+        "default": 20,
+        "min": 0
+      },
+      {
+        "key": "rise_time",
+        "label": "Linear rise duration",
+        "unit": "s",
+        "default": 0.001,
+        "min": 0
+      },
+      {
+        "key": "hold_time",
+        "label": "Plateau duration",
+        "unit": "s",
+        "default": 0.002,
+        "min": 0
+      },
+      {
+        "key": "fall_time",
+        "label": "Linear fall duration",
+        "unit": "s",
+        "default": 0.001,
+        "min": 0
+      },
+      {
+        "key": "pre_arcing_i2t",
+        "label": "Fuse pre-arcing integral",
+        "unit": "A² s",
+        "default": 2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "arcing_i2t",
+        "label": "Fuse arcing integral",
+        "unit": "A² s",
+        "default": 0.7,
+        "min": 0
+      },
+      {
+        "key": "pulse_allowance_fraction",
+        "label": "Manufacturer pulse allowance fraction",
+        "unit": "1",
+        "default": 0.8,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1
+      },
+      {
+        "key": "device_withstand_i2t",
+        "label": "Semiconductor applicable withstand integral",
+        "unit": "A² s",
+        "default": 4,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "pulse_i2t",
+        "label": "Inrush pulse integral",
+        "unit": "A² s",
+        "expression": "(peak_current*sqrt(hold_time+(rise_time+fall_time)/3))^2"
+      },
+      {
+        "key": "pulse_margin",
+        "label": "Fuse pulse allowance minus inrush",
+        "unit": "A² s",
+        "expression": "pulse_allowance_fraction*pre_arcing_i2t-pulse_i2t"
+      },
+      {
+        "key": "clearing_i2t",
+        "label": "Fuse total clearing integral",
+        "unit": "A² s",
+        "expression": "pre_arcing_i2t+arcing_i2t"
+      },
+      {
+        "key": "clearing_margin",
+        "label": "Device withstand minus clearing",
+        "unit": "A² s",
+        "expression": "device_withstand_i2t-clearing_i2t"
+      },
+      {
+        "key": "pulse_utilization",
+        "label": "Pulse allowance utilization",
+        "unit": "1",
+        "expression": "pulse_i2t/(pulse_allowance_fraction*pre_arcing_i2t)"
+      },
+      {
+        "key": "clearing_utilization",
+        "label": "Device integral utilization",
+        "unit": "1",
+        "expression": "clearing_i2t/device_withstand_i2t"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "rise_time+hold_time+fall_time",
+        "op": ">",
+        "right": "0",
+        "message": "The inrush pulse must have positive duration"
+      },
+      {
+        "left": "rise_time+hold_time+fall_time",
+        "op": "<",
+        "right": "0.01",
+        "message": "This adiabatic short-pulse screening model requires a pulse shorter than 10 ms"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "peak_current": 20,
+        "rise_time": 0.001,
+        "hold_time": 0.002,
+        "fall_time": 0.001,
+        "pre_arcing_i2t": 2,
+        "arcing_i2t": 0.7,
+        "pulse_allowance_fraction": 0.8,
+        "device_withstand_i2t": 4
+      },
+      "expected": {
+        "pulse_i2t": 1.0666666666666667,
+        "pulse_margin": 0.5333333333333333,
+        "clearing_i2t": 2.7,
+        "clearing_margin": 1.3,
+        "pulse_utilization": 0.6666666666666667,
+        "clearing_utilization": 0.675
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
