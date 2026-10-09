@@ -121,5 +121,108 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.early_output_resistance",
+    "title": "Early-effect incremental output resistance",
+    "category": "Bipolar transistor design",
+    "level": "expert",
+    "description": "Estimate intrinsic collector output resistance from the affine Early-effect model, retaining operating Vce instead of assuming it negligible.",
+    "formula": "Ic=I0(1+Vce/VA); ro=(VA+Vce)/Ic; go=Ic/(VA+Vce); ro_approx=VA/Ic",
+    "assumptions": [
+      "Forward-active idealized NPN at constant base-emitter voltage and junction temperature.",
+      "VA is the positive magnitude of the negative collector-voltage-axis extrapolation; Ic is the measured current at the supplied Vce, not its zero-Vce extrapolation.",
+      "Affine Early model excludes breakdown, high injection and collector resistance; ro is differential resistance, not Vce/Ic.",
+      "Actual device voltage/current limits and the range over which output curves are approximately straight require datasheet or measurement confirmation."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.101 Lecture 3, slide 21: Early voltage; slide 42: usual VA/Ic approximation",
+        "url": "https://web.mit.edu/6.101/www/s2019/handouts/L03_4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_early",
+        "label": "Positive Early-voltage magnitude",
+        "unit": "V",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_ce",
+        "label": "Operating collector-emitter voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_be",
+        "label": "Operating base-emitter voltage",
+        "unit": "V",
+        "default": 0.7,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "i_collector",
+        "label": "Collector current at operating voltage",
+        "unit": "A",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_output",
+        "label": "Affine-model intrinsic output resistance",
+        "unit": "ohm",
+        "expression": "(v_early+v_ce)/i_collector"
+      },
+      {
+        "key": "g_output",
+        "label": "Intrinsic output conductance",
+        "unit": "S",
+        "expression": "1/r_output"
+      },
+      {
+        "key": "r_output_approx",
+        "label": "VA much greater than Vce approximation",
+        "unit": "ohm",
+        "expression": "v_early/i_collector"
+      },
+      {
+        "key": "approximation_relative_error",
+        "label": "Fractional underestimate of the approximation",
+        "unit": "1",
+        "expression": "v_ce/(v_early+v_ce)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_ce",
+        "op": ">",
+        "right": "v_be",
+        "message": "Collector-base junction must be reverse biased for this forward-active model."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "v_early": 100,
+        "v_ce": 5,
+        "v_be": 0.7,
+        "i_collector": 0.001
+      },
+      "expected": {
+        "r_output": 105000,
+        "g_output": 9.523809523809523e-06,
+        "r_output_approx": 100000,
+        "approximation_relative_error": 0.047619047619047616
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

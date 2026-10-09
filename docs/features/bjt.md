@@ -66,3 +66,47 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 | `r_base_max` | `220` | ohm |
 | `p_base_resistor` | `0.022` | W |
 
+
+## 6. `bjt.early_output_resistance` — collector incremental resistance
+
+**Level:** expert. **Purpose:** distinguish differential collector resistance from DC Vce/Ic and show the correction to the usual VA/Ic approximation.
+
+### Derivation and units
+
+S1 illustrates approximately straight output curves extrapolating to negative Early voltage and gives `ro≈VA/Ic`. Let VA be its positive magnitude. At fixed Vbe and temperature, the affine straight-line model is
+
+`Ic(Vce)=I0*(1+Vce/VA)`.
+
+Then `go=dIc/dVce=I0/VA`. Because the supplied Ic is measured at the supplied Vce, `I0=Ic/(1+Vce/VA)`, so
+
+`go=Ic/(VA+Vce)` in S, `ro=(VA+Vce)/Ic` in ohm.
+
+The source's common approximation is `ro_approx=VA/Ic`. Its fractional underestimate relative to the full affine-model value is `Vce/(VA+Vce)`. Retaining Vce is a stated algebraic refinement of the source's straight-line model; it is not a claim that real BJT characteristics obey an exact global law.
+
+### Domain and limitations
+
+VA, Ic, Vce and Vbe are positive; require Vce>Vbe to keep the collector above base. VA is neither a breakdown voltage nor the current operating Vce. No artificial Vce<<VA restriction is imposed on the corrected expression; the approximation error is returned explicitly. Device output curves still must be locally approximately affine, below breakdown and high injection. Collector series resistance, thermal slope and nonlinear Early-voltage dependence are omitted.
+
+### Independent worked example
+
+Inputs: VA=100 V, Vce=5 V, Vbe=0.7 V, measured Ic=0.001 A.
+
+- `I0=1 mA/1.05=0.952380952380952 mA`.
+- `go=I0/100=9.52380952380952 uS`.
+- `ro=1/go=105000 ohm`.
+- Approximation: `ro_approx=100000 ohm`.
+- Fractional underestimate: `(105000-100000)/105000=0.0476190476190476` (4.7619047619%).
+
+In contrast `Vce/Ic=5000 ohm` is DC resistance, not this small-signal ro.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `r_output` | `105000` | ohm |
+| `g_output` | `9.523809523809523e-06` | S |
+| `r_output_approx` | `100000` | ohm |
+| `approximation_relative_error` | `0.047619047619047616` | 1 |
+
