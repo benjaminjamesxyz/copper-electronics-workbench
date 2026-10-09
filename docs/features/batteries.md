@@ -78,3 +78,41 @@ Nominal: assert all three outputs. Zero both durations: discharged and final SOC
 
 The connected state flow shows discharge before recharge, a separate unretained-charge branch and retained Ah. Arrows represent coulomb accounting, not converter power efficiency.
 
+## 3. `batteries.peukert_runtime` — intermediate
+
+### Purpose and novelty
+
+Estimate rate-capacity loss under a constant-current discharge using a calibrated empirical exponent. This is not ideal `Ah/A` runtime except at the explicit ideal limit `n=1`. No baseline models battery rate dependence. The nearest new model, KiBaM, instead evolves two internal availability states and represents rest recovery; Peukert has no state history or recovery mechanism.
+
+### Equation, convention and physical limits
+
+Victron chapter 8 gives `Cp=I^n t`. Equating the invariant at the rated point `Ir=Cr/Hr` and requested current gives:
+
+`t=Hr(Ir/I)^n`; `Cdelivered=It=Cr(Ir/I)^(n-1)`.
+
+Use Ah, hours and amperes consistently. The direct delivered-capacity expression avoids multiplying a potentially tiny runtime by a large current. `n>=1` describes the intended loss-with-rate family. No arbitrary upper exponent bound is copied from Victron's instrument configuration range: a fitted exponent outside that range is not mathematically invalid, though its applicability still needs experimental evidence.
+
+A fully charged battery, same temperature and same cutoff are required at both rating and requested load. Fit `n` from actual constant-current data and stay inside that calibration range. The model is unreliable for interrupted loads, very high currents and low-current extrapolation. In particular, infinite delivered capacity as current tends to zero for `n>1` is a model failure, not a physical prediction; zero current is excluded.
+
+### Complete independent example
+
+Inputs: `rated_capacity=100 Ah`, `rated_duration=20 h`, `load_current=20 A`, `peukert_exponent=1.25`.
+
+- `rated_current=100/20=5 A`.
+- Current ratio `5/20=1/4`.
+- `runtime=20(1/4)^(5/4)=20/(4 sqrt(2))=3.5355339059327378 h`.
+- `delivered_capacity=100(1/4)^(1/4)=100/sqrt(2)=70.71067811865476 Ah`.
+
+These exact radical forms supply an independent oracle.
+
+### Independent tester cases
+
+Nominal: assert all outputs. At `load_current=5 A` with other nominal inputs, runtime is `20 h` and delivered capacity `100 Ah` for every allowed exponent. At `peukert_exponent=1`, nominal current gives `5 h`, `100 Ah`. Double load current: runtime scales by `2^-n` and delivered capacity by `2^(1-n)`. Invalid: zero current, zero rated duration/capacity, exponent below one and nonfinite values. Do not add a zero-current fake infinite lifetime. Low-current extrapolation is documented as physically unsupported, not silently clamped.
+
+### Sources and illustration
+
+- [Victron SmartShunt manual, chapter 8: Battery capacity and Peukert exponent](https://www.victronenergy.com/media/pg/SmartShunt/en/battery-capacity-and-peukert-exponent.html)
+- [Jongerden and Haverkort, Battery Modeling, section 5.1 equation (1)](https://ris.utwente.nl/ws/portalfiles/portal/5101624/BatteryRep4.pdf)
+
+The schematic log-log plot shows the fitted slope −n, a dashed ideal −1 reference, and symbolic rated/requested points. Positions are not computed results.
+

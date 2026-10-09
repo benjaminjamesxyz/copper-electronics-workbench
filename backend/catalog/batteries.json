@@ -267,5 +267,97 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "batteries.peukert_runtime",
+    "title": "Peukert rate-dependent discharge runtime",
+    "category": "Battery design",
+    "level": "intermediate",
+    "description": "Estimate full-to-cutoff runtime and delivered capacity at a different constant discharge current using a calibrated Peukert exponent.",
+    "formula": "Ir = Cr/Hr; t = Hr (Ir/I)^n; Cdelivered = Cr (Ir/I)^(n-1)",
+    "assumptions": [
+      "Capacity rating and exponent describe the same battery, temperature and terminal cutoff; the initial battery is fully charged.",
+      "The load is a constant current within the measured fit range. The exponent must be fitted from manufacturer discharge data, not assumed universal.",
+      "The model captures rate-capacity loss but not interrupted-load recovery, aging, self-discharge or voltage sag separately.",
+      "Extrapolation to very low current predicts unbounded capacity for n>1 and is not physical; very high current may perform worse than the model."
+    ],
+    "references": [
+      {
+        "title": "Victron SmartShunt manual, chapter 8: Battery capacity and Peukert exponent",
+        "url": "https://www.victronenergy.com/media/pg/SmartShunt/en/battery-capacity-and-peukert-exponent.html"
+      },
+      {
+        "title": "Jongerden and Haverkort, Battery Modeling, section 5.1 equation (1)",
+        "url": "https://ris.utwente.nl/ws/portalfiles/portal/5101624/BatteryRep4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "rated_capacity",
+        "label": "Rated capacity at rated duration",
+        "unit": "Ah",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rated_duration",
+        "label": "Capacity-rating discharge duration",
+        "unit": "h",
+        "default": 20,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_current",
+        "label": "Constant discharge current",
+        "unit": "A",
+        "default": 20,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "peukert_exponent",
+        "label": "Calibrated Peukert exponent",
+        "unit": "1",
+        "default": 1.25,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "rated_current",
+        "label": "Current at capacity rating",
+        "unit": "A",
+        "expression": "rated_capacity/rated_duration"
+      },
+      {
+        "key": "runtime",
+        "label": "Full-to-cutoff runtime",
+        "unit": "h",
+        "expression": "rated_duration*(rated_current/load_current)^peukert_exponent"
+      },
+      {
+        "key": "delivered_capacity",
+        "label": "Effective delivered capacity",
+        "unit": "Ah",
+        "expression": "rated_capacity*(rated_current/load_current)^(peukert_exponent-1)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "rated_capacity": 100,
+        "rated_duration": 20,
+        "load_current": 20,
+        "peukert_exponent": 1.25
+      },
+      "expected": {
+        "rated_current": 5,
+        "runtime": 3.5355339059327378,
+        "delivered_capacity": 70.71067811865476
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
