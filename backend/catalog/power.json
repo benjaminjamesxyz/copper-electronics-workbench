@@ -132,5 +132,31 @@
     ],
     "constraints": [],
     "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "efficiency": 0.9}, "expected": {"p_out": 10, "p_in": 11.11111111111111, "i_in": 0.9259259259259259, "p_loss": 1.1111111111111112}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.buck_inductor_design",
+    "title": "Buck CCM inductor sizing",
+    "category": "Power conversion and regulation",
+    "level": "intermediate",
+    "description": "Size an ideal buck inductor for chosen peak-to-peak ripple fraction and calculate current endpoints.",
+    "formula": "D = Vout/Vin; delta_I = r Iout; Lmin = (Vin-Vout) D/(fs delta_I); Ipeak,valley = Iout (1 +/- r/2)",
+    "assumptions": ["Ideal fixed-frequency single-phase buck in steady-state CCM; switch drops and winding resistance are neglected.", "Ripple ratio means peak-to-peak ripple divided by average output current; 0<r<2 guarantees positive valley at this load.", "Lmin is effective inductance at operating bias. Tolerances, saturation rating and controller recommendations require separate checks. Duty is ideal, not efficiency-corrected."],
+    "references": [{"title": "TI SLVA057, Understanding Buck Power Stages in Switchmode Power Supplies, section 2.1", "url": "https://www.ti.com/lit/an/slva057/slva057.pdf"}, {"title": "TI SLVA477, Basic Calculation of a Buck Converter's Power Stage, section 3", "url": "https://www.ti.com/lit/an/slva477b/slva477b.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_ratio", "label": "Peak-to-peak ripple / average current", "unit": "1", "default": 0.3, "min": 0, "exclusive_min": true, "max": 2, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "vout/vin"},
+      {"key": "delta_i", "label": "Target peak-to-peak inductor ripple", "unit": "A", "expression": "ripple_ratio*iout"},
+      {"key": "l_min", "label": "Minimum effective inductance", "unit": "H", "expression": "(vin-vout)*duty/(fs*delta_i)"},
+      {"key": "i_peak", "label": "Inductor peak current", "unit": "A", "expression": "iout*(1+ripple_ratio/2)"},
+      {"key": "i_valley", "label": "Inductor valley current", "unit": "A", "expression": "iout*(1-ripple_ratio/2)"}
+    ],
+    "constraints": [{"left": "vin", "op": ">", "right": "vout", "message": "Buck operation requires input voltage above output voltage."}],
+    "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "fs": 500000, "ripple_ratio": 0.3}, "expected": {"duty": 0.4166666666666667, "delta_i": 0.6, "l_min": 0.000009722222222222223, "i_peak": 2.3, "i_valley": 1.7}, "relative_tolerance": 0.000001}
   }
 ]

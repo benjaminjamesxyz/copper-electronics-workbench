@@ -132,3 +132,27 @@ From `eta=Pout/Pin`, sequential outputs are `p_out=vout*iout`, `p_in=p_out/effic
 | `p_loss` | `10*(1/10)/(9/10)=10/9` | `1.1111111111111112 W` |
 
 Conservation identities: `Pin=Pout+Ploss` and `Pout/Pin=0.9`. At unity efficiency the same vector gives `Pin=10 W`, `Iin=5/6 A`, `Ploss=0 W`; changing Vin alone inversely scales DC source current.
+
+## `power.buck_inductor_design` — intermediate
+
+**Purpose:** size the energy-transfer inductor of an ideal buck at a chosen load/ripple design point. Sources: S1 section 2.1 and S2 section 3. Neither duty inversion nor stored energy is a separate feature.
+
+Volt-second balance `(Vin-Vout)D - Vout(1-D)=0` gives `D=Vout/Vin`. During on-time `D/fs`, `di/dt=(Vin-Vout)/L`. With target `delta_I=r Iout`, the minimum effective L is `(Vin-Vout)D/(fs*delta_I)`. Capacitor charge balance gives `ILavg=Iout`.
+
+Sequential outputs are `duty=vout/vin`, `delta_i=ripple_ratio*iout`, `l_min=(vin-vout)*duty/(fs*delta_i)`, `i_peak=iout*(1+ripple_ratio/2)` and `i_valley=iout*(1-ripple_ratio/2)`. Units are `1`, A, H, A, A; `V/(Hz A)=H`. Factored endpoint expressions are equivalent to `Iout +/- delta_I/2` but avoid separately rounded large-current subtraction near the CCM boundary.
+
+**Inputs/defaults:** `vin=12 V`, `vout=5 V`, `iout=2 A`, `fs=500000 Hz`, `ripple_ratio=0.3` (unit `1`). All dimensional inputs are positive; `0<ripple_ratio<2`.
+
+**Model-domain errors:** reject `vin<=vout` (not buck step-down), nonpositive fs/load/ripple (undefined sizing denominator/design point), and ratio ≥ 2 (zero/negative valley, not CCM). Ratio is peak-to-peak ripple divided by output mean, not RMS. Effective Lmin/endpoints describe the target design; larger L reduces ripple. Switch drops, winding loss, duty/current limits, saturation, tolerance and load-range guarantees are excluded.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `duty` | `5/12` | `0.4166666666666667` |
+| `delta_i` | `0.3*2` | `0.6 A` |
+| `l_min` | `7*(5/12)/(500000*0.6)` | `0.000009722222222222223 H` |
+| `i_peak` | `2*(1+0.3/2)` | `2.3 A` |
+| `i_valley` | `2*(1-0.3/2)` | `1.7 A` |
+
+On-time is 0.8333333333 μs; `(Vin-Vout)*ton/Lmin=0.6 A`. Endpoint mean equals 2 A and difference equals 0.6 A. Positive valley and `7D-5(1-D)=0` independently establish the stated ideal operating point.
