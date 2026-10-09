@@ -1,0 +1,112 @@
+[
+  {
+    "id": "cores.single_layer_air_solenoid",
+    "title": "Single-layer air solenoid geometry",
+    "category": "Winding and magnetic design",
+    "level": "basic",
+    "description": "Estimate the low-frequency inductance of a finite-length, closely spaced cylindrical air winding.",
+    "formula": "L = (1e-6/0.0254) r^2 N^2/(9r+10l); pitch=l/N",
+    "assumptions": [
+      "Wheeler empirical current-sheet approximation; all supplied dimensions are metres, not inches.",
+      "Nonmagnetic former, single uniform layer, no nearby conducting or magnetic body; low-frequency inductance only, well below self resonance.",
+      "Radius is to wire centres. Length is the axial current-sheet span N times pitch. End leads are omitted.",
+      "Length >= radius and pitch <= radius/5 are conservative geometry screens, not a certified accuracy guarantee. Actual winding shape requires measurement."
+    ],
+    "references": [
+      {
+        "title": "University of Georgia: Inductance Meter for Small Inductances, Motivation",
+        "url": "https://photonics.engr.uga.edu/inductor_meter/index.html"
+      },
+      {
+        "title": "Jim Lux: Wheeler Formulas, explicit inch and microhenry units",
+        "url": "https://www.pe2bz.philpem.me.uk/Power/-%20-%20Power-Design%20-%20-/HighVoltage/wheeler.htm"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "radius",
+        "label": "Mean winding radius",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "length",
+        "label": "Axial winding span",
+        "unit": "m",
+        "default": 0.03,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "turns",
+        "label": "Complete turns",
+        "unit": "turn",
+        "default": 20,
+        "min": 1
+      },
+      {
+        "key": "wire_diameter",
+        "label": "Insulated wire diameter",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "inductance",
+        "label": "Estimated inductance",
+        "unit": "H",
+        "expression": "(1e-6/0.0254)*radius*turns^2/(9+10*length/radius)"
+      },
+      {
+        "key": "turn_pitch",
+        "label": "Axial turn pitch",
+        "unit": "m",
+        "expression": "length/turns"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "turns",
+        "op": "==",
+        "right": "floor(turns)",
+        "message": "Turns must be an integer."
+      },
+      {
+        "left": "length",
+        "op": ">=",
+        "right": "radius",
+        "message": "Use a winding at least one mean radius long."
+      },
+      {
+        "left": "length/turns",
+        "op": ">=",
+        "right": "wire_diameter",
+        "message": "Insulated turns must not overlap."
+      },
+      {
+        "left": "length/turns",
+        "op": "<=",
+        "right": "radius/5",
+        "message": "Current-sheet screening requires pitch no greater than radius/5."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "radius": 0.01,
+        "length": 0.03,
+        "turns": 20,
+        "wire_diameter": 0.001
+      },
+      "expected": {
+        "inductance": 4.037956793862305e-06,
+        "turn_pitch": 0.0015
+      },
+      "relative_tolerance": 1e-09
+    }
+  }
+]
