@@ -247,3 +247,34 @@ Then |H|=x/√(1+x²), phase=π/2−atan(x)=atan(1/x) for x>0, and A=10log10(1+x
 | attenuation_db | 5.481472749042987 | dB |
 
 **Source:** Colorado PHYS 3330 Lab 3 §5.5, linked above. Real coupling capacitors/source/load impedances and parasitics require separate circuit analysis.
+
+## `filters.second_order_highpass` — Second-order active high-pass response (intermediate)
+
+**Purpose/model:** Predict the canonical stable high-pass biquad from natural pole frequency f0, Q and high-frequency passband gain K. It has two DC zeros:
+
+\[
+H(s)=\frac{K(s/\omega_0)^2}{(s/\omega_0)^2+s/(Q\omega_0)+1},\quad
+|H|=\frac{Kx^2}{\sqrt{(1-x^2)^2+(x/Q)^2}},\quad x=f/f_0.
+\]
+
+Report gain_db=20log10(|H|). Half-power relative to asymptotic K, **not a resonant peak**, satisfies |H|²/K²=1/2. Set t=x²:
+
+\[
+t^2+(2-Q^{-2})t-1=0,\quad
+f_{1/2}=f_0\sqrt{\frac{Q^{-2}-2+\sqrt{(2-Q^{-2})^2+4}}2}.
+\]
+
+For Q=1/√2, t=1; otherwise f0 is not generally the cutoff. Q bounds keep the positive-root cancellation bounded. Sequential outputs are frequency_ratio, voltage_gain, gain_db and half_power_hz.
+
+**Inputs/domain/error rationale:** `pole_frequency` (Hz) 1e-6…1e12; `q` (1) 0.05…50; `passband_gain` (V/V) 0.001…1000; `f` (Hz) 1e-12…1e12. Positive Q ensures stable damping and a nonzero denominator, while positive K/f make the logged magnitude strictly positive throughout the envelope. DC is rejected because gain_db would diverge. No cross-input constraint is needed. The real amplifier's high-frequency behavior is excluded, not replaced with an ideal-bandwidth assertion.
+
+**Independent worked substitution/default:** pole_frequency=1000 Hz, q=0.7071067811865476, passband_gain=2, f=500 Hz. x=1/2; |H|=0.5/√(0.75²+(0.5/Q)²), and the half-power positive root t=1:
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| frequency_ratio | 0.5 | 1 |
+| voltage_gain | 0.48507125007266594 | V/V |
+| gain_db | -6.283889300503116 | dB |
+| half_power_hz | 1000.0 | Hz |
+
+**Sources/limits:** TI SNOA224A §§1.2–1.3 canonical response and TI CIRCUIT060053 active high-pass realization, linked above. Ideal biquad, realizable with Sallen–Key or multiple feedback; finite GBW, slew, clipping and tolerance are not included. The cited concrete circuit does not validate arbitrary operating frequency.
