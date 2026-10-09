@@ -422,6 +422,61 @@ All inputs are the default/worked input column above; every result is named belo
 | `field_energy` | Energy in specified material volume | J | 0.0007957747154594767 |
 
 
+## `magnetics.transformer_va_budget` — Two-secondary transformer VA budget (basic)
+
+ID: `magnetics.transformer_va_budget`.
+
+**Question:** What transformer winding VA allocation is needed for two simultaneous RMS loads with a chosen headroom factor?
+
+**Derivation:** A winding's apparent load is S = Vrms Irms; this is not real watts unless the appropriate power-factor condition holds. Budget each independently rated secondary and sum their allocated VA: Sload = S1 + S2. Apply user headroom h ≥ 1 to obtain Sminimum = h Sload. This sum is a conservative nameplate allocation, not a phasor sum of reactive power or a general prediction of input mains apparent power.
+
+**Formula and outputs:**
+
+- `secondary_one_va = secondary_one_voltage*secondary_one_current` [VA].
+- `secondary_two_va = secondary_two_voltage*secondary_two_current` [VA].
+- `total_load_va = secondary_one_va+secondary_two_va` [VA].
+- `minimum_rating_va = headroom_factor*total_load_va` [VA].
+
+**Input units/domain:** V1, V2 [V RMS] > 0; I1, I2 [A RMS] ≥ 0; headroom [1] ≥ 1. Use I2 = 0 for a single-load budget. No expressions divide by an input, so an empty additional-constraints list is intentional.
+
+**Limitations:** Simultaneously operating separate loads/windings only. Check individual winding ratings, series/parallel topology, line frequency, manufacturer thermal derating and starting current independently. A center-tap or series/parallel reconnection must not be double-counted as another full winding. Headroom = 1.25 is an example user choice, not Hammond's universal recommendation or safety certification. Enter actual winding RMS current for a rectifier load; DC load current can differ substantially and no rectifier conversion model is smuggled into this lane.
+
+**Worked example/defaults:** Secondary one: 24 V RMS, 2 A RMS. Secondary two: 12 V RMS, 0.5 A RMS. Headroom = 1.25.
+
+- S1 = 24 × 2 = **48 VA**.
+- S2 = 12 × 0.5 = **6 VA**.
+- Sload = 48 + 6 = **54 VA**.
+- Sminimum = 54 × 1.25 = **67.5 VA**. Select an available component meeting this budget and each individual winding limit; no stock-size table is assumed.
+
+**Sources:** [Hammond 265 rating tables](https://www.hammfg.com/electronics/transformers/power/265); [Hammond rectifier guide RMS/DC caveats](https://www.hammfg.com/electronics/transformers/rectifier).
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `secondary_one_voltage` | Secondary one RMS voltage | V | 24.0 | > 0.0 |
+| `secondary_one_current` | Secondary one RMS load current | A | 2.0 | >= 0.0 |
+| `secondary_two_voltage` | Secondary two RMS voltage | V | 12.0 | > 0.0 |
+| `secondary_two_current` | Secondary two RMS load current | A | 0.5 | >= 0.0 |
+| `headroom_factor` | User-chosen VA headroom factor | 1 | 1.25 | >= 1.0 |
+
+**Model-domain and error rationale:** Positive secondary RMS voltages define the rated windings; nonnegative currents include zero load and disabling winding two. Headroom at least one prevents a budget smaller than the stated simultaneous winding load. No cross-input constraint is necessary because expressions only multiply and sum, with no divisors or roots.
+
+**Additional constraints:** none; input bounds fully guard this model.
+
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `secondary_one_va` | Secondary one load VA | VA | 48.0 |
+| `secondary_two_va` | Secondary two load VA | VA | 6.0 |
+| `total_load_va` | Simultaneous winding VA budget | VA | 54.0 |
+| `minimum_rating_va` | Minimum VA budget with chosen headroom | VA | 67.5 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.

@@ -756,5 +756,112 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.transformer_va_budget",
+    "title": "Two-secondary transformer VA budget",
+    "category": "Magnetics and transformers",
+    "level": "basic",
+    "description": "Sum simultaneous winding RMS load VA and apply explicitly chosen sizing headroom.",
+    "formula": "S1 = V1,rms I1,rms; S2 = V2,rms I2,rms; Sload = S1+S2; Sminimum = headroom Sload",
+    "assumptions": [
+      "Separate secondary-winding loads operate simultaneously; inputs are actual AC winding RMS values, not rectified DC values.",
+      "Summed winding VA is a conservative nameplate allocation budget; it is not phasor-summed mains apparent power or real watts.",
+      "Do not double-count taps or the same winding's series/parallel connection. Set secondary-two current to zero for a single load.",
+      "Headroom is a user-selected factor >= 1, not a universal safety rule or thermal certification. Check individual winding current limits, frequency and ambient derating separately.",
+      "For capacitor-input rectification the pulsed winding RMS current must be obtained separately; this calculator deliberately does not assume a DC-to-AC conversion factor."
+    ],
+    "references": [
+      {
+        "title": "Hammond 265 Series: VA and secondary RMS voltage/current rating tables",
+        "url": "https://www.hammfg.com/electronics/transformers/power/265"
+      },
+      {
+        "title": "Hammond Design Guide for Rectifier Use: Transformer RMS ratings versus DC loads",
+        "url": "https://www.hammfg.com/electronics/transformers/rectifier"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "secondary_one_voltage",
+        "label": "Secondary one RMS voltage",
+        "unit": "V",
+        "default": 24.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "secondary_one_current",
+        "label": "Secondary one RMS load current",
+        "unit": "A",
+        "default": 2.0,
+        "min": 0.0
+      },
+      {
+        "key": "secondary_two_voltage",
+        "label": "Secondary two RMS voltage",
+        "unit": "V",
+        "default": 12.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "secondary_two_current",
+        "label": "Secondary two RMS load current",
+        "unit": "A",
+        "default": 0.5,
+        "min": 0.0
+      },
+      {
+        "key": "headroom_factor",
+        "label": "User-chosen VA headroom factor",
+        "unit": "1",
+        "default": 1.25,
+        "min": 1.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "secondary_one_va",
+        "label": "Secondary one load VA",
+        "unit": "VA",
+        "expression": "secondary_one_voltage*secondary_one_current"
+      },
+      {
+        "key": "secondary_two_va",
+        "label": "Secondary two load VA",
+        "unit": "VA",
+        "expression": "secondary_two_voltage*secondary_two_current"
+      },
+      {
+        "key": "total_load_va",
+        "label": "Simultaneous winding VA budget",
+        "unit": "VA",
+        "expression": "secondary_one_va+secondary_two_va"
+      },
+      {
+        "key": "minimum_rating_va",
+        "label": "Minimum VA budget with chosen headroom",
+        "unit": "VA",
+        "expression": "headroom_factor*total_load_va"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "secondary_one_voltage": 24.0,
+        "secondary_one_current": 2.0,
+        "secondary_two_voltage": 12.0,
+        "secondary_two_current": 0.5,
+        "headroom_factor": 1.25
+      },
+      "expected": {
+        "secondary_one_va": 48.0,
+        "secondary_two_va": 6.0,
+        "total_load_va": 54.0,
+        "minimum_rating_va": 67.5
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
