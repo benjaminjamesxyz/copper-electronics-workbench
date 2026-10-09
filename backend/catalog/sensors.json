@@ -191,5 +191,87 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "sensors.type_t_cold_junction_emf",
+    "title": "Type-T thermocouple EMF with finite cold junction",
+    "category": "Sensor transduction",
+    "level": "expert",
+    "description": "Predict terminal EMF from both junction temperatures using the nonlinear NIST Type-T positive-temperature polynomial.",
+    "formula": "E(t)=1e-3 sum(c_i t^i) V; Vterminal=E(Th)-E(Tc); Shot=dE(Th)/dTh",
+    "assumptions": [
+      "This calculation implements the NIST 0 to 400 degrees Celsius polynomial branch for both junctions; negative-temperature operation is not supported.",
+      "Copper is the positive Type-T leg and constantan the negative leg. Terminal voltage is copper minus constantan at an isothermal reference block.",
+      "Use homogeneous wire and open-circuit measurement; no parasitic junction gradients, leakage, wire tolerance or calibration error included.",
+      "Cold-junction correction occurs in EMF space, not by subtracting temperatures. Divided differences preserve near-equal junction signals."
+    ],
+    "references": [
+      {
+        "title": "NIST SRD 60, Type T reference function, 0 to 400 degrees Celsius",
+        "url": "https://its90.nist.gov/downloadFiles/type_t.tab.txt"
+      },
+      {
+        "title": "Texas Instruments SBAA274A, sections 1.1 and 1.3",
+        "url": "https://www.ti.com/lit/an/sbaa274a/sbaa274a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "hot_temperature",
+        "label": "Measurement-junction temperature",
+        "unit": "degC",
+        "default": 100,
+        "min": 0,
+        "max": 400
+      },
+      {
+        "key": "cold_temperature",
+        "label": "Isothermal reference-block temperature",
+        "unit": "degC",
+        "default": 25,
+        "min": 0,
+        "max": 400
+      }
+    ],
+    "outputs": [
+      {
+        "key": "hot_emf",
+        "label": "Hot-junction EMF relative to zero Celsius",
+        "unit": "V",
+        "expression": "1e-3*hot_temperature*(0.038748106364+hot_temperature*(0.00003329222788+hot_temperature*(2.0618243404E-7+hot_temperature*(-2.1882256846E-9+hot_temperature*(1.0996880928E-11+hot_temperature*(-3.0815758772E-14+hot_temperature*(4.547913529E-17+hot_temperature*-2.7512901673E-20)))))))"
+      },
+      {
+        "key": "cold_emf",
+        "label": "Cold-junction EMF relative to zero Celsius",
+        "unit": "V",
+        "expression": "1e-3*cold_temperature*(0.038748106364+cold_temperature*(0.00003329222788+cold_temperature*(2.0618243404E-7+cold_temperature*(-2.1882256846E-9+cold_temperature*(1.0996880928E-11+cold_temperature*(-3.0815758772E-14+cold_temperature*(4.547913529E-17+cold_temperature*-2.7512901673E-20)))))))"
+      },
+      {
+        "key": "terminal_emf",
+        "label": "Copper-minus-constantan terminal EMF",
+        "unit": "V",
+        "expression": "1e-3*(hot_temperature-cold_temperature)*((0.038748106364)*(1)+(0.00003329222788)*(hot_temperature+cold_temperature)+(2.0618243404E-7)*(hot_temperature^2+hot_temperature*cold_temperature+cold_temperature^2)+(-2.1882256846E-9)*(hot_temperature^3+hot_temperature^2*cold_temperature+hot_temperature*cold_temperature^2+cold_temperature^3)+(1.0996880928E-11)*(hot_temperature^4+hot_temperature^3*cold_temperature+hot_temperature^2*cold_temperature^2+hot_temperature*cold_temperature^3+cold_temperature^4)+(-3.0815758772E-14)*(hot_temperature^5+hot_temperature^4*cold_temperature+hot_temperature^3*cold_temperature^2+hot_temperature^2*cold_temperature^3+hot_temperature*cold_temperature^4+cold_temperature^5)+(4.547913529E-17)*(hot_temperature^6+hot_temperature^5*cold_temperature+hot_temperature^4*cold_temperature^2+hot_temperature^3*cold_temperature^3+hot_temperature^2*cold_temperature^4+hot_temperature*cold_temperature^5+cold_temperature^6)+(-2.7512901673E-20)*(hot_temperature^7+hot_temperature^6*cold_temperature+hot_temperature^5*cold_temperature^2+hot_temperature^4*cold_temperature^3+hot_temperature^3*cold_temperature^4+hot_temperature^2*cold_temperature^5+hot_temperature*cold_temperature^6+cold_temperature^7))"
+      },
+      {
+        "key": "hot_sensitivity",
+        "label": "Hot-junction Seebeck sensitivity",
+        "unit": "V/K",
+        "expression": "1e-3*((1*(0.038748106364))*hot_temperature^0+(2*(0.00003329222788))*hot_temperature^1+(3*(2.0618243404E-7))*hot_temperature^2+(4*(-2.1882256846E-9))*hot_temperature^3+(5*(1.0996880928E-11))*hot_temperature^4+(6*(-3.0815758772E-14))*hot_temperature^5+(7*(4.547913529E-17))*hot_temperature^6+(8*(-2.7512901673E-20))*hot_temperature^7)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "hot_temperature": 100,
+        "cold_temperature": 25
+      },
+      "expected": {
+        "hot_emf": 0.00427851861580027,
+        "cold_emf": 0.0009919772678200114,
+        "terminal_emf": 0.003286541347980259,
+        "hot_sensitivity": 4.67849607861716e-05
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

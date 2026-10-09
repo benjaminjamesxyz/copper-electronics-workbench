@@ -59,3 +59,45 @@ Rust evaluates the catalog; diagrams are static explanations, not live plots. Ex
 
 **Mandatory diagram.** Left x=45–260: a platinum serpentine element inside a sensor outline, with four unconnected measurement/excitation lead stubs terminating at the element's two endpoint junctions. Two sense leads are distinct from two current leads; do not depict another resistor network. Bind `temperature_celsius` above the element and `resistance` below. Right x=360–650: conceptual R(t) curve through an indicated zero-temperature reference, with a straight tangent at zero. Bind `zero_resistance` to the zero-temperature intercept, `resistance_sensitivity` to “local dR/dT”, and `linear_model_error` to a vertical bracket explicitly “R − tangent-at-zero model”. Caption: “Nominal platinum Callendar–Van Dusen response; subzero quartic term joins the positive-temperature quadratic smoothly. Curves and deviation bracket are explanatory, not computed.”
 
+
+## 3. sensors.type_t_cold_junction_emf
+
+**Level:** expert.
+
+- [NIST SRD 60, Type T reference function, 0 to 400 degrees Celsius](https://its90.nist.gov/downloadFiles/type_t.tab.txt)
+- [Texas Instruments SBAA274A, sections 1.1 and 1.3](https://www.ti.com/lit/an/sbaa274a/sbaa274a.pdf)
+
+
+**Purpose and novelty.** Predict the actual Type-T terminal signal from two junction temperatures, not a generic voltage difference or constant Seebeck slope. No baseline sensor EMF model exists. NTC/RTD are excited resistive sensors; a thermocouple is a self-generated thermoelectric source.
+
+**Model and source coefficients.** NIST defines `E(t)=sum(c_i t^i)` in mV and Celsius. This item deliberately implements the complete positive-temperature branch, `0<=Th,Tc<=400 degC`; it does not pretend to cover the negative branch.
+
+| i | c_i in mV/(degC)^i |
+|---|---:|
+| 0 | 0 |
+| 1 | 0.038748106364 |
+| 2 | 0.00003329222788 |
+| 3 | 2.0618243404e-7 |
+| 4 | -2.1882256846e-9 |
+| 5 | 1.0996880928e-11 |
+| 6 | -3.0815758772e-14 |
+| 7 | 4.547913529e-17 |
+| 8 | -2.7512901673e-20 |
+
+Outputs use volts, multiplying by 1e-3. `Vterminal=E(Th)-E(Tc)` and `hot_sensitivity=dE(Th)/dTh`. The JSON uses Horner evaluation for individual EMFs. Its terminal expression factors each polynomial difference using `Th^i-Tc^i=(Th-Tc) sum(k=0..i-1,Th^(i-1-k) Tc^k)`; thus near-equal temperatures retain their physical differential signal. The coefficient sum is bounded and well-conditioned over the stated branch. Names “hot” and “cold” identify junction roles; Th<Tc is valid and produces negative terminal voltage.
+
+**Validity and signs.** Copper positive leg, constantan negative leg; both termination junctions share the measured isothermal reference temperature. Homogeneous wire and negligible measurement current. No tolerance class, parasitic thermal-junction voltage, finite meter loading or calibration error included. Correction uses EMF, not simply E(Th−Tc).
+
+**Complete example inputs.** `hot_temperature=100 degC`, `cold_temperature=25 degC`. Independently sum the tabulated polynomial at each temperature and differentiate term by term:
+
+| Output key | Independent expected value |
+|---|---:|
+| `hot_emf` | 0.00427851861580027 V |
+| `cold_emf` | 0.0009919772678200114 V |
+| `terminal_emf` | 0.003286541347980259 V |
+| `hot_sensitivity` | 0.0000467849607861716 V/K |
+
+**Tester cases.** Nominal; Th=Tc gives exactly zero terminal EMF without requiring both absolute EMFs to be zero. Swapping temperatures negates terminal voltage and swaps absolute EMFs; sensitivity follows the new hot input. Tc=0 gives zero cold EMF. Th=400,Tc=0 gives `terminal_emf=0.02087197005052672 V`, agreeing with the rounded 20.872 mV NIST table. With Tc=100 and Th=100+2^-46, terminal voltage is approximately `6.648542805887075e-19 V`, positive and nonzero; use the divided-difference oracle, not subtraction of binary64 absolute EMFs. Reject either input below 0 or above 400.
+
+**Mandatory diagram.** Draw a measurement weld at (100,140), upper copper leg from the weld toward (470,85), lower constantan leg toward (470,195). The two legs do not reconnect at the right. Enclose their right terminations within an isothermal block x=435–515. Open measurement terminals at x=600, with upper “+ Cu” and lower “− constantan”; `terminal_emf` labels the voltage across these open terminals. Bind `hot_temperature` by the weld and `cold_temperature` above the isothermal block. Optional lower legend binds `hot_emf` and `cold_emf` to “E(Th), E(Tc), each relative to 0 degC”; never label either as the actual terminal signal. Caption: “Type-T copper/constantan pair with isothermal reference connections. Vterminal = E(Th) − E(Tc); both junction temperatures use the NIST 0–400 degC branch.”
+
