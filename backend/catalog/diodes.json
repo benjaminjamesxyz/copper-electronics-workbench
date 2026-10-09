@@ -993,7 +993,7 @@
     "category": "Diodes, LEDs and rectification",
     "level": "intermediate",
     "description": "Size equal individual ballast resistors and calculate current imbalance in two parallel LEDs supplied by a common constant-current sink.",
-    "formula": "Rmin = abs(VF2-VF1)/DeltaIallow; I1 = [Itotal+(VF2-VF1)/R]/2; I2 = Itotal-I1",
+    "formula": "Rmin = abs(VF2-VF1)/DeltaIallow; I1 = [Itotal+(VF2-VF1)/R]/2; I2 = [Itotal+(VF1-VF2)/R]/2",
     "assumptions": [
       "Exactly two LED branches, each with its own equal ballast resistor, and one common regulated total-current sink.",
       "Forward voltages are bounded values evaluated near the resulting operating currents, not universal constant LED characteristics.",
@@ -1086,7 +1086,7 @@
         "key": "current_two",
         "label": "LED 2 branch current",
         "unit": "A",
-        "expression": "total_current-current_one"
+        "expression": "(total_current+(forward_one-forward_two)/ballast_resistance)/2"
       },
       {
         "key": "current_difference",
