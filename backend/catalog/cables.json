@@ -1,0 +1,95 @@
+[
+  {
+    "id": "cables.twin_lead_geometry",
+    "title": "Homogeneous parallel-wire line geometry",
+    "category": "Cables and connectors",
+    "level": "intermediate",
+    "description": "Find differential line impedance and distributed capacitance/inductance for two equal round wires in a homogeneous dielectric.",
+    "formula": "q = acosh(D/d); L' = mu0 q/pi; C' = pi eps0 er/q; Zdiff = sqrt(L'/C')",
+    "assumptions": [
+      "Two straight, parallel, equal-diameter round conductors; D is center-to-center spacing and d is conductor diameter, not jacket diameter.",
+      "Homogeneous nonmagnetic dielectric, perfectly conducting surfaces and negligible internal inductance; TEM field solution without nearby conductors, shield, bends or radiation.",
+      "Real twin-lead jackets and air are not homogeneous; use a characterized effective permittivity only as an explicitly approximate engineering model.",
+      "Constants: mu0 = 4*pi*1e-7 H/m and eps0 = 8.8541878128e-12 F/m. No delay or reflection model is included."
+    ],
+    "references": [
+      {
+        "title": "Virginia Tech, Ellingson Electromagnetics II §7.1: Parallel Wire Transmission Line, exact L' and C' expressions",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_II_%28Ellingson%29/07%3A_Transmission_Lines_Redux/7.01%3A_Parallel_Wire_Transmission_Line"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "wire_diameter",
+        "label": "Bare wire diameter",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "center_spacing",
+        "label": "Wire center spacing",
+        "unit": "m",
+        "default": 0.006,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Homogeneous relative permittivity",
+        "unit": "1",
+        "default": 2.25,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "geometry_factor",
+        "label": "Inverse-hyperbolic geometry factor",
+        "unit": "1",
+        "expression": "log1p((center_spacing-wire_diameter)/wire_diameter+sqrt((center_spacing-wire_diameter)/wire_diameter)*sqrt((center_spacing+wire_diameter)/wire_diameter))"
+      },
+      {
+        "key": "inductance_per_length",
+        "label": "Differential loop inductance per length",
+        "unit": "H/m",
+        "expression": "4e-7*geometry_factor"
+      },
+      {
+        "key": "capacitance_per_length",
+        "label": "Wire-to-wire capacitance per length",
+        "unit": "F/m",
+        "expression": "pi*8.8541878128e-12*relative_permittivity/geometry_factor"
+      },
+      {
+        "key": "differential_impedance",
+        "label": "Differential characteristic impedance",
+        "unit": "ohm",
+        "expression": "sqrt(4*pi*1e-7/8.8541878128e-12)/pi/sqrt(relative_permittivity)*geometry_factor"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "center_spacing",
+        "op": ">",
+        "right": "wire_diameter",
+        "message": "Wire centers must be farther apart than one bare conductor diameter."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "wire_diameter": 0.001,
+        "center_spacing": 0.006,
+        "relative_permittivity": 2.25
+      },
+      "expected": {
+        "geometry_factor": 2.477888730288475,
+        "inductance_per_length": 9.9115549211539e-07,
+        "capacitance_per_length": 2.525802101358135e-11,
+        "differential_impedance": 198.09396088157135
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
