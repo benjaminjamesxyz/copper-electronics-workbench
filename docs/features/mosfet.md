@@ -354,6 +354,66 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 5. Miller plateau source/sink timing
+
+**ID:** `mosfet.miller_plateau_timing` — **intermediate**. Sources: S1 for gate-path resistance and plateau behavior; S6 equation 1 for Q_gd / slew time.
+
+While the gate voltage remains at the approximate plateau V_plateau, driver voltage headroom determines gate current:
+
+- I_gate_on = (V_drive − V_plateau)/(R_source + R_external + R_internal).
+- I_gate_off = V_plateau/(R_sink + R_external + R_internal), for a 0 V off level.
+
+Since charge equals the integral of gate current over the plateau, constant-current approximation gives
+
+- t_miller_on = Q_gd/I_gate_on.
+- t_miller_off = Q_gd/I_gate_off.
+
+**Inputs and model domain:** Q_gd > 0 C, V_plateau > 0 V, V_drive > V_plateau. All resistance inputs are nonnegative, with separate constraints requiring each source/sink path total to be strictly positive. These input-only constraints protect every output division, including the later Q/current operations. Gate plateau voltage is not the low-current datasheet threshold voltage. Use charge at the actual drain swing and load current; source and sink resistances need not match. The same charge and plateau are approximated in both directions. Common-source inductance and a current-limited driver invalidate a purely resistive estimate.
+
+**Independent example:** Q_gd = 30 nC, V_drive = 12 V, plateau = 5 V, source = 2 ohm, sink = 1 ohm, external = 3 ohm, internal = 1 ohm. Source total is 6 ohm and sink total 5 ohm. Currents are **7/6 = 1.166666666666667 A** and **1 A**. Multiplying charge by source resistance and dividing by source headroom gives 30 nC × 6/7 = **25.714285714285714 ns**; the off interval is **30 ns**.
+
+**Defaults:** 20 nC, 10 V drive, 4 V plateau, source 2 ohm, sink 1 ohm, external 4 ohm, internal 1 ohm yield **0.857142857142857 A**, **0.666666666666667 A**, **23.333333333333333 ns**, **30 ns**.
+
+These are only drain-voltage transition intervals. They must not be passed unmodified as complete t_on/t_off overlap durations when a nonnegligible drain-current ramp also occurs.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `q_gd` | Gate-drain Miller charge | C | 2e-08 | > 0 |
+| `v_drive` | Positive gate drive voltage | V | 10 | > 0 |
+| `v_plateau` | Miller plateau gate voltage | V | 4 | > 0 |
+| `r_source` | Driver source resistance | ohm | 2 | ≥ 0 |
+| `r_sink` | Driver sink resistance | ohm | 1 | ≥ 0 |
+| `r_external` | External gate resistance | ohm | 4 | ≥ 0 |
+| `r_internal` | MOSFET internal gate resistance | ohm | 1 | ≥ 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `i_gate_on` | Gate current during turn-on plateau | A | `(v_drive-v_plateau)/(r_source+r_external+r_internal)` | 1.1666666666666667 |
+| `i_gate_off` | Gate current magnitude during turn-off plateau | A | `v_plateau/(r_sink+r_external+r_internal)` | 1 |
+| `t_miller_on` | Turn-on Miller duration | s | `q_gd/i_gate_on` | 2.5714285714285715e-08 |
+| `t_miller_off` | Turn-off Miller duration | s | `q_gd/i_gate_off` | 3e-08 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "q_gd": 3e-08,
+  "v_drive": 12,
+  "v_plateau": 5,
+  "r_source": 2,
+  "r_sink": 1,
+  "r_external": 3,
+  "r_internal": 1
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.

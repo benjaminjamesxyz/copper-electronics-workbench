@@ -601,5 +601,148 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.miller_plateau_timing",
+    "title": "Miller plateau source/sink timing",
+    "category": "MOSFET and gate drive",
+    "level": "intermediate",
+    "description": "Estimate the drain-voltage slew interval from gate-drain charge and the source/sink current available at the Miller plateau.",
+    "formula": "I_on = (V_drive - V_plateau)/(R_source + R_external + R_internal); I_off = V_plateau/(R_sink + R_external + R_internal); t_on = Q_gd/I_on; t_off = Q_gd/I_off",
+    "assumptions": [
+      "Unipolar drive from 0 V to V_drive; approximately flat Miller plateau at the supplied load current and drain voltage.",
+      "Q_gd is characterized across the actual drain-voltage swing. The same charge and plateau voltage are approximated for turn-on and turn-off.",
+      "Driver source and sink stages are approximately resistive and not current limited; choose resistance from behavior near the plateau, not a peak-current headline rating.",
+      "Times describe only the Miller drain-voltage transition, not total gate delay or total switching overlap time.",
+      "Common-source inductance, gate-loop ringing and nonlinear changes in plateau voltage are neglected."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLUA618A, sections 2.4-2.7 and equation 11",
+        "url": "https://www.ti.com/lit/slua618"
+      },
+      {
+        "title": "Texas Instruments SBAA730, How Can I Determine Which IDRIVE Setting to Use?, equation 1",
+        "url": "https://www.ti.com/document-viewer/lit/html/SBAA730/GUID-5A1B27F5-016C-44FA-9999-FB0187F97B06"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "q_gd",
+        "label": "Gate-drain Miller charge",
+        "unit": "C",
+        "default": 2e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_drive",
+        "label": "Positive gate drive voltage",
+        "unit": "V",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_plateau",
+        "label": "Miller plateau gate voltage",
+        "unit": "V",
+        "default": 4,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_source",
+        "label": "Driver source resistance",
+        "unit": "ohm",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "r_sink",
+        "label": "Driver sink resistance",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "r_external",
+        "label": "External gate resistance",
+        "unit": "ohm",
+        "default": 4,
+        "min": 0
+      },
+      {
+        "key": "r_internal",
+        "label": "MOSFET internal gate resistance",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "i_gate_on",
+        "label": "Gate current during turn-on plateau",
+        "unit": "A",
+        "expression": "(v_drive-v_plateau)/(r_source+r_external+r_internal)"
+      },
+      {
+        "key": "i_gate_off",
+        "label": "Gate current magnitude during turn-off plateau",
+        "unit": "A",
+        "expression": "v_plateau/(r_sink+r_external+r_internal)"
+      },
+      {
+        "key": "t_miller_on",
+        "label": "Turn-on Miller duration",
+        "unit": "s",
+        "expression": "q_gd/i_gate_on"
+      },
+      {
+        "key": "t_miller_off",
+        "label": "Turn-off Miller duration",
+        "unit": "s",
+        "expression": "q_gd/i_gate_off"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_drive",
+        "op": ">",
+        "right": "v_plateau",
+        "message": "Drive voltage must exceed the Miller plateau voltage."
+      },
+      {
+        "left": "r_source+r_external+r_internal",
+        "op": ">",
+        "right": "0",
+        "message": "The source path must have positive total resistance."
+      },
+      {
+        "left": "r_sink+r_external+r_internal",
+        "op": ">",
+        "right": "0",
+        "message": "The sink path must have positive total resistance."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "q_gd": 3e-08,
+        "v_drive": 12,
+        "v_plateau": 5,
+        "r_source": 2,
+        "r_sink": 1,
+        "r_external": 3,
+        "r_internal": 1
+      },
+      "expected": {
+        "i_gate_on": 1.1666666666666667,
+        "i_gate_off": 1,
+        "t_miller_on": 2.5714285714285715e-08,
+        "t_miller_off": 3e-08
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
