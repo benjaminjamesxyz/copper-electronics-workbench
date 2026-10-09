@@ -1,0 +1,579 @@
+{
+ "lane": "opto",
+ "base": "2cca03e",
+ "file": "backend/tests/opto.rs",
+ "authored_tests": 28,
+ "behaviors_covered": {
+  "opto.photodiode_quantum_conversion": "Complete non-default SI-constant oracle (hc/lambda at 500 nm, eta=0.6, 3 uW) with photon-rate energy conservation and per-carrier charge identities; power/efficiency scaling including admitted zero power and eta endpoints 0 and 1; wavelength doubling flips every output by the exact factor; every invalid boundary (nonpositive wavelength, eta outside [0,1], negative power) plus every NaN/+Inf/-Inf input followed by fully asserted valid recovery.",
+  "opto.lambertian_target_irradiance": "Complete hemisphere-projection oracle at 60/30 degree angles with exact cos-product symmetry under angle swap; inverse-square halving; zero-flux, axial, and exact pi/2 grazing endpoints whose one-ulp cosine residual is bounded by an explicitly justified absolute tolerance; every invalid boundary (negative flux/distance/angles, distance 0, angles one ulp past pi/2) plus all nonfinite inputs with recovery.",
+  "opto.layer_absorption_capture": "Complete ln(2)/ln(4) optical-depth oracle (half absorbed in dead layer, quarter of remainder in active layer, eighth transmitted) with energy conservation; transparent, absent-layer, opaque and zero-power rows; tiny 1e-16 optical depth retained through expm1 without cancellation in either layer order; every negative input plus all nonfinite inputs with recovery; source-derived underflow defect reproduction asserting representable dimensional transmitted/absorbed power at optical depth 800.",
+  "opto.gaussian_aperture_capture": "Complete Rayleigh-plane oracle (z=zR gives w=sqrt(2)w0, aperture=w0 encloses 1-e^-1) with peak-energy identity Iaxis*pi*w^2/2=P; signed-z invariance, z=0 waist plane, zero-power and zero-aperture rows; tiny-aperture disk-integral limit checked against Iaxis*pi*a^2; inclusive 0.1*pi paraxial endpoint verified exact at double precision and one-step-past endpoint rejected; all nonfinite inputs with recovery; source-derived underflow defect reproduction asserting representable captured power 2e-240 W when the squared aperture ratio underflows.",
+  "opto.step_index_mode_cutoff": "Complete binary-exact oracle (200/128 and 199/128 indices give NA=sqrt(399)/128 with zero decimal cancellation); radius doubling scales V and cutoff by 2 and flips the margin sign; exact 2.405 crossing with roundoff-only margin tolerance; one-ulp index spacing against delta*(2n1-delta) identity; exact dyadic 1% contrast endpoint accepted and one-bit-lower cladding rejected; every invalid boundary plus all nonfinite inputs with recovery.",
+  "opto.fiber_gaussian_dispersion": "Complete chirped-compression oracle (completing the square gives b=sqrt(1/5) for C=2, x=-0.4) with pulse-energy and FWHM-ratio identities; signed chirp, zero length, zero beta2, unchirped broadening, both signs of x with equal |b|, and zero admitted energy; every invalid boundary plus all nonfinite inputs with recovery.",
+  "opto.sipm_finite_cell_response": "Complete one-seed-per-cell Poisson oracle (mean 1 leaves e^-1 of 300 cells dark) with fired/seed linearity-factor and per-avalanche charge identities; zero exposure and zero PDE keep the analytic unity response while fired cells and charge vanish; gain doubling rescales only charge; single-cell vector; 4e-17 photon exposure retained without underflow; saturation monotonicity of fired cells and the decreasing linearity factor including the exact 0.02 at u=50; every invalid boundary including fractional and one-ulp-off integer cells plus all nonfinite inputs with recovery."
+ },
+ "oracle_provenance": "Every expected value was derived independently of the catalog examples and implementation outputs: SI defining constants (h, c, q exact), closed-form hemisphere/Gaussian/Poisson/optical-depth integrals evaluated at exact binary-friendly arguments (200/128 indices, ln(2) depths, z=zR), and 70-digit Decimal cross-checks of every decimal literal. Guard endpoints were verified at double precision: the 0.1*pi paraxial ratio compares bit-equal, the 1% contrast boundary is the exact dyadic 0.015625/1.5625, and invalid probes one ulp past each limit were confirmed to trip the constraint. expm1/exprel small-argument and saturation behavior (including expm1(-50) rounding to -1 giving exactly 0.02) was checked to be platform-robust well inside 1e-12.",
+ "verification": "Not executed. No builds, tests, lint, formatter, backend process or native launches. Independent f64/Decimal arithmetic only; all 28 Rust tests and 23 flat process scenarios await Main.",
+ "untested_gaps": [
+  "Main must compile and run the opto integration target and the full integrated suite; no worker executed any code.",
+  "Main must run the 23 flat scenarios in one real JSON-lines process and confirm the two intentional failing defect reproductions fail exactly where predicted.",
+  "Diagram semantics and native pixel review are outside the tester lane; V2OptoRun owns them.",
+  "Engine behavior beyond the seven calculators (shared helper, other lanes) was not probed."
+ ],
+ "suspected_defects": [
+  {
+   "severity": "medium",
+   "id": "opto.layer_absorption_capture",
+   "location": "backend/catalog/opto.json active_absorbed_power and transmitted_power expressions (plain exp of large optical depth)",
+   "evidence": "Source-derived, not executed. For optical depth >= ~745, exp(-depth) underflows to +0.0 (a finite value admitted by checked::evaluate), so incident_power*0.0 fabricates zero although the dimensional products are representable.",
+   "inputs": {
+    "incident_power": 1e+300,
+    "dead_absorption": 800000.0,
+    "dead_thickness": 0.001,
+    "active_absorption": 1.0,
+    "active_thickness": 1.0
+   },
+   "expected_outputs": {
+    "dead_absorbed_power": 1e+300,
+    "active_capture_fraction": 0.0,
+    "active_absorbed_power": 2.3185389318634633e-48,
+    "transmitted_power": 1.3493356523142239e-48
+   },
+   "observation": "True values (70-digit Decimal): e^-800=3.6678745841776872e-348, so transmitted=P0*e^-801=1.34933565231422395e-48 W and active_absorbed=P0*e^-800*(1-e^-1)=2.31853893186346326e-48 W; the implementation returns 0 for both, violating the lane research rule that unrepresentable intermediates remain arithmetic errors rather than fabricated finite outputs. Reproducing test layer_preserves_dimensional_power_when_transmission_fraction_underflows asserts the representable values and is expected to fail (row 1: transmitted only)."
+  },
+  {
+   "severity": "medium",
+   "id": "opto.gaussian_aperture_capture",
+   "location": "backend/catalog/opto.json captured_fraction/captured_power expressions (squared ratio underflows before expm1)",
+   "evidence": "Source-derived, not executed. With aperture_radius/beam_radius=1e-170, the square 1e-340 is below the smallest binary64 subnormal, so -expm1(-2*(a/w)^2) sees 0 and captured_power=beam_power*0.0 fabricates zero although the disk integral 2e-240 W is representable.",
+   "inputs": {
+    "wavelength": 6.33e-07,
+    "waist_radius": 0.0001,
+    "axial_distance": 0.0,
+    "aperture_radius": 1e-174,
+    "beam_power": 1e+100
+   },
+   "expected_outputs": {
+    "rayleigh_range": 0.04963021569652122,
+    "beam_radius": 0.0001,
+    "captured_fraction": 0.0,
+    "captured_power": 2e-240,
+    "axis_irradiance": 6.366197723675813e+107
+   },
+   "observation": "captured_fraction==0.0 is the correctly rounded true fraction (2e-340 itself is unrepresentable), but captured_power loses a representable product; research requires tiny fractions retained through expm1. Reproducing test gaussian_preserves_dimensional_power_when_capture_fraction_underflows asserts captured_power 2e-240 and is expected to fail on that one assertion only."
+  }
+ ],
+ "parent_json_lines_scenarios": [
+  {
+   "name": "photon_independent_nondefault",
+   "request": {
+    "command": "calculate",
+    "id": "opto.photodiode_quantum_conversion",
+    "inputs": {"wavelength": 5e-07, "quantum_efficiency": 0.6, "optical_power": 3e-06}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Independent SI-constant derivation at 500 nm; not the catalog example vector.",
+   "expected_outputs": {
+    "photon_energy": 3.972891714297857e-19,
+    "photon_rate": 7551174851314.063,
+    "responsivity": 0.24196631812047634,
+    "photocurrent": 7.258989543614291e-07
+   }
+  },
+  {
+   "name": "photon_zero_power_admitted_zeros",
+   "request": {
+    "command": "calculate",
+    "id": "opto.photodiode_quantum_conversion",
+    "inputs": {"wavelength": 5e-07, "quantum_efficiency": 0.6, "optical_power": 0.0}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Admitted zero power leaves energy and responsivity intact while rate and current are exact zeros.",
+   "expected_outputs": {
+    "photon_energy": 3.972891714297857e-19,
+    "photon_rate": 0.0,
+    "responsivity": 0.24196631812047634,
+    "photocurrent": 0.0
+   }
+  },
+  {
+   "name": "photon_negative_power_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.photodiode_quantum_conversion",
+    "inputs": {"wavelength": 5e-07, "quantum_efficiency": 0.6, "optical_power": -1e-12}
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "Negative optical power is outside the model domain; reject without terminating the process."
+  },
+  {
+   "name": "lambert_independent_nondefault",
+   "request": {
+    "command": "calculate",
+    "id": "opto.lambertian_target_irradiance",
+    "inputs": {"radiant_flux": 0.36, "distance": 0.75, "emission_angle": 1.0471975511965976, "incidence_angle": 0.5235987755982988}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Hemisphere integral I0=Phi/pi with 60/30 degree projections; cos60*cos30 gives sqrt(3)/4 scaling.",
+   "expected_outputs": {
+    "axial_intensity": 0.11459155902616464,
+    "directional_intensity": 0.05729577951308232,
+    "target_irradiance": 0.08821262326748673
+   }
+  },
+  {
+   "name": "lambert_emission_past_grazing_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.lambertian_target_irradiance",
+    "inputs": {"radiant_flux": 0.36, "distance": 0.75, "emission_angle": 1.5707963267948968, "incidence_angle": 0.5235987755982988}
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "One ulp past pi/2 violates the forward-hemisphere constraint; adjacent valid scenario follows."
+  },
+  {
+   "name": "lambert_recovered_nominal",
+   "request": {
+    "command": "calculate",
+    "id": "opto.lambertian_target_irradiance",
+    "inputs": {"radiant_flux": 0.36, "distance": 0.75, "emission_angle": 1.0471975511965976, "incidence_angle": 0.5235987755982988}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Invalid-then-valid adjacency: the engine must fully recover after the grazing rejection.",
+   "expected_outputs": {
+    "axial_intensity": 0.11459155902616464,
+    "directional_intensity": 0.05729577951308232,
+    "target_irradiance": 0.08821262326748673
+   }
+  },
+  {
+   "name": "layer_independent_optical_depth",
+   "request": {
+    "command": "calculate",
+    "id": "opto.layer_absorption_capture",
+    "inputs": {
+     "incident_power": 0.008,
+     "dead_absorption": 69314.71805599453,
+     "dead_thickness": 1e-05,
+     "active_absorption": 138629.43611198905,
+     "active_thickness": 1e-05
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "ln(2) dead depth transmits half, ln(4) active depth transmits a quarter of that; conservation closes at 8 mW.",
+   "expected_outputs": {
+    "dead_absorbed_power": 0.004,
+    "active_capture_fraction": 0.375,
+    "active_absorbed_power": 0.003,
+    "transmitted_power": 0.001
+   }
+  },
+  {
+   "name": "layer_zero_dead_layer_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.layer_absorption_capture",
+    "inputs": {
+     "incident_power": 0.008,
+     "dead_absorption": 0.0,
+     "dead_thickness": 1e-05,
+     "active_absorption": 138629.43611198905,
+     "active_thickness": 1e-05
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Absent dead layer leaves the active ln(4) depth absorbing three quarters.",
+   "expected_outputs": {
+    "dead_absorbed_power": 0.0,
+    "active_capture_fraction": 0.75,
+    "active_absorbed_power": 0.006,
+    "transmitted_power": 0.002
+   }
+  },
+  {
+   "name": "layer_negative_thickness_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.layer_absorption_capture",
+    "inputs": {
+     "incident_power": 0.008,
+     "dead_absorption": 69314.71805599453,
+     "dead_thickness": 1e-05,
+     "active_absorption": 138629.43611198905,
+     "active_thickness": -1e-05
+    }
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "Negative layer thickness is unphysical; reject without terminating the process."
+  },
+  {
+   "name": "gaussian_independent_rayleigh_plane",
+   "request": {
+    "command": "calculate",
+    "id": "opto.gaussian_aperture_capture",
+    "inputs": {
+     "wavelength": 1e-06,
+     "waist_radius": 0.0002,
+     "axial_distance": 0.12566370614359174,
+     "aperture_radius": 0.0002,
+     "beam_power": 0.024
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "z=zR plane: beam radius sqrt(2)w0 and aperture w0 enclose 1-e^-1 of the radial integral.",
+   "expected_outputs": {
+    "rayleigh_range": 0.12566370614359174,
+    "beam_radius": 0.000282842712474619,
+    "captured_fraction": 0.6321205588285577,
+    "captured_power": 0.015170893411885385,
+    "axis_irradiance": 190985.9317102744
+   }
+  },
+  {
+   "name": "gaussian_negative_axial_symmetry_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.gaussian_aperture_capture",
+    "inputs": {
+     "wavelength": 1e-06,
+     "waist_radius": 0.0002,
+     "axial_distance": -0.12566370614359174,
+     "aperture_radius": 0.0002,
+     "beam_power": 0.024
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Backward propagation through -zR must reproduce every output of the +zR plane.",
+   "expected_outputs": {
+    "rayleigh_range": 0.12566370614359174,
+    "beam_radius": 0.000282842712474619,
+    "captured_fraction": 0.6321205588285577,
+    "captured_power": 0.015170893411885385,
+    "axis_irradiance": 190985.9317102744
+   }
+  },
+  {
+   "name": "gaussian_paraxial_guard_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.gaussian_aperture_capture",
+    "inputs": {
+     "wavelength": 6.346017160251383e-05,
+     "waist_radius": 0.0002,
+     "axial_distance": 0.12566370614359174,
+     "aperture_radius": 0.0002,
+     "beam_power": 0.024
+    }
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "Divergence 0.101 rad exceeds the 0.1 rad paraxial guard; adjacent valid endpoint scenario follows."
+  },
+  {
+   "name": "gaussian_inclusive_paraxial_endpoint_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.gaussian_aperture_capture",
+    "inputs": {
+     "wavelength": 0.0003141592653589793,
+     "waist_radius": 0.001,
+     "axial_distance": 0.0,
+     "aperture_radius": 0.001,
+     "beam_power": 0.02
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Exact 0.1*pi divergence ratio is the admitted inclusive endpoint; verified bit-equal at double precision.",
+   "expected_outputs": {
+    "rayleigh_range": 0.01,
+    "beam_radius": 0.001,
+    "captured_fraction": 0.8646647167633873,
+    "captured_power": 0.017293294335267746,
+    "axis_irradiance": 12732.395447351628
+   }
+  },
+  {
+   "name": "step_independent_binary_contrast",
+   "request": {
+    "command": "calculate",
+    "id": "opto.step_index_mode_cutoff",
+    "inputs": {"core_index": 1.5625, "cladding_index": 1.5546875, "core_radius": 3e-06, "wavelength": 1.3e-06}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Exact binary indices 200/128 and 199/128 give NA=sqrt(399)/128 with no decimal cancellation.",
+   "expected_outputs": {
+    "numerical_aperture": 0.15605456527686076,
+    "normalized_frequency": 2.2627378884596983,
+    "cutoff_wavelength": 1.2231015613295666e-06,
+    "single_mode_margin": 0.14226211154030166
+   }
+  },
+  {
+   "name": "step_exact_cutoff_boundary_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.step_index_mode_cutoff",
+    "inputs": {"core_index": 1.5625, "cladding_index": 1.5546875, "core_radius": 3e-06, "wavelength": 1.2231015613295666e-06}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "absolute_tolerances": {"single_mode_margin": 4.3e-15},
+   "rationale": "Wavelength at the LP11 cutoff: V is 2.405 and the margin is roundoff-only; the absolute tolerance is eight double ulps of 2.405, justified by the subtraction of two O(2.405) values.",
+   "expected_outputs": {
+    "numerical_aperture": 0.15605456527686076,
+    "normalized_frequency": 2.405,
+    "cutoff_wavelength": 1.2231015613295666e-06,
+    "single_mode_margin": 0.0
+   }
+  },
+  {
+   "name": "step_contrast_above_one_percent_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.step_index_mode_cutoff",
+    "inputs": {"core_index": 1.5625, "cladding_index": 1.54, "core_radius": 3e-06, "wavelength": 1.3e-06}
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "1.44% relative contrast leaves the weak-guidance screening scope; reject without terminating the process."
+  },
+  {
+   "name": "dispersion_independent_compression",
+   "request": {
+    "command": "calculate",
+    "id": "opto.fiber_gaussian_dispersion",
+    "inputs": {
+     "initial_width": 2e-12,
+     "initial_chirp": 2.0,
+     "beta_two": -4e-27,
+     "fiber_length": 400.0,
+     "pulse_energy": 3e-14
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Chirp C=2 with x=-0.4 compresses the pulse; completing the square gives b=1/sqrt(5).",
+   "expected_outputs": {
+    "normalized_dispersion": -0.4,
+    "width_ratio": 0.4472135954999579,
+    "output_width": 8.944271909999159e-13,
+    "output_fwhm": 1.4893189644236137e-12,
+    "output_peak_power": 0.0189234939151512
+   }
+  },
+  {
+   "name": "dispersion_unchirped_broadening_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.fiber_gaussian_dispersion",
+    "inputs": {
+     "initial_width": 2e-12,
+     "initial_chirp": 0.0,
+     "beta_two": -4e-27,
+     "fiber_length": 1000.0,
+     "pulse_energy": 3e-14
+    }
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Unchirped pulse with x=-1 broadens by sqrt(2); peak power preserves energy through sqrt(pi).",
+   "expected_outputs": {
+    "normalized_dispersion": -1.0,
+    "width_ratio": 1.4142135623730951,
+    "output_width": 2.8284271247461903e-12,
+    "output_fwhm": 4.709640090061899e-12,
+    "output_peak_power": 0.00598413420602149
+   }
+  },
+  {
+   "name": "dispersion_negative_length_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.fiber_gaussian_dispersion",
+    "inputs": {
+     "initial_width": 2e-12,
+     "initial_chirp": 2.0,
+     "beta_two": -4e-27,
+     "fiber_length": -1.0,
+     "pulse_energy": 3e-14
+    }
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "Negative fiber length is outside the model domain; reject without terminating the process."
+  },
+  {
+   "name": "sipm_independent_poisson_occupancy",
+   "request": {
+    "command": "calculate",
+    "id": "opto.sipm_finite_cell_response",
+    "inputs": {"photon_count": 1200.0, "detection_efficiency": 0.25, "cell_count": 300.0, "avalanche_gain": 2000000.0}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Mean one detected seed per cell leaves e^-1 of the cells dark; response is the fired/seed linearity factor.",
+   "expected_outputs": {
+    "seed_count": 300.0,
+    "fired_cells": 189.6361676485673,
+    "relative_response": 0.6321205588285577,
+    "output_charge": 6.076612735356825e-11
+   }
+  },
+  {
+   "name": "sipm_zero_exposure_analytic_unity_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.sipm_finite_cell_response",
+    "inputs": {"photon_count": 0.0, "detection_efficiency": 0.25, "cell_count": 300.0, "avalanche_gain": 2000000.0}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Zero exposure keeps the analytic unity linearity factor while fired cells and charge vanish.",
+   "expected_outputs": {
+    "seed_count": 0.0,
+    "fired_cells": 0.0,
+    "relative_response": 1.0,
+    "output_charge": 0.0
+   }
+  },
+  {
+   "name": "sipm_fractional_cells_rejected",
+   "request": {
+    "command": "calculate",
+    "id": "opto.sipm_finite_cell_response",
+    "inputs": {"photon_count": 1200.0, "detection_efficiency": 0.25, "cell_count": 1.5, "avalanche_gain": 2000000.0}
+   },
+   "expected_ok": false,
+   "relative_tolerance": 1e-12,
+   "rationale": "Fractional microcell count violates the integer constraint; adjacent valid single-cell scenario follows."
+  },
+  {
+   "name": "sipm_single_cell_recovery_valid",
+   "request": {
+    "command": "calculate",
+    "id": "opto.sipm_finite_cell_response",
+    "inputs": {"photon_count": 1.0, "detection_efficiency": 1.0, "cell_count": 1.0, "avalanche_gain": 2000000.0}
+   },
+   "expected_ok": true,
+   "relative_tolerance": 1e-12,
+   "rationale": "Invalid-then-valid adjacency at the one-cell boundary; mean one seed in one cell fires 1-e^-1 of it.",
+   "expected_outputs": {
+    "seed_count": 1.0,
+    "fired_cells": 0.6321205588285577,
+    "relative_response": 0.6321205588285577,
+    "output_charge": 2.0255375784522748e-13
+   }
+  }
+ ],
+ "parent_desktop_scenarios": [
+  {
+   "id": "opto.photodiode_quantum_conversion",
+   "inputs": {"wavelength": 5e-07, "quantum_efficiency": 0.6, "optical_power": 3e-06},
+   "expected_outputs": {
+    "photon_energy": 3.972891714297857e-19,
+    "photon_rate": 7551174851314.063,
+    "responsivity": 0.24196631812047634,
+    "photocurrent": 7.258989543614291e-07
+   },
+   "steps": "Select the photodiode calculator in the native app, enter the complete non-default vector, confirm all four outputs render in their units, then set power 0 and confirm rate/current show admitted zeros while energy/responsivity stay."
+  },
+  {
+   "id": "opto.lambertian_target_irradiance",
+   "inputs": {"radiant_flux": 0.36, "distance": 0.75, "emission_angle": 1.0471975511965976, "incidence_angle": 0.5235987755982988},
+   "expected_outputs": {
+    "axial_intensity": 0.11459155902616464,
+    "directional_intensity": 0.05729577951308232,
+    "target_irradiance": 0.08821262326748673
+   },
+   "steps": "Enter the 60/30 degree vector, confirm irradiance, then type 1.5707963267948968 into emission_angle and confirm an inline domain message without crashing; restore the valid angle and confirm recovery."
+  },
+  {
+   "id": "opto.layer_absorption_capture",
+   "inputs": {
+    "incident_power": 0.008,
+    "dead_absorption": 69314.71805599453,
+    "dead_thickness": 1e-05,
+    "active_absorption": 138629.43611198905,
+    "active_thickness": 1e-05
+   },
+   "expected_outputs": {
+    "dead_absorbed_power": 0.004,
+    "active_capture_fraction": 0.375,
+    "active_absorbed_power": 0.003,
+    "transmitted_power": 0.001
+   },
+   "steps": "Enter the ln(2)/ln(4) vector, confirm the 4/3/1 mW split renders, then set active_thickness to a negative value and confirm rejection; restore and confirm recovery."
+  },
+  {
+   "id": "opto.gaussian_aperture_capture",
+   "inputs": {
+    "wavelength": 1e-06,
+    "waist_radius": 0.0002,
+    "axial_distance": 0.12566370614359174,
+    "aperture_radius": 0.0002,
+    "beam_power": 0.024
+   },
+   "expected_outputs": {
+    "rayleigh_range": 0.12566370614359174,
+    "beam_radius": 0.000282842712474619,
+    "captured_fraction": 0.6321205588285577,
+    "captured_power": 0.015170893411885385,
+    "axis_irradiance": 190985.9317102744
+   },
+   "steps": "Enter the Rayleigh-plane vector, confirm outputs, flip axial_distance sign and confirm identical outputs, then enter wavelength 6.346017160251383e-05 and confirm the paraxial guard message."
+  },
+  {
+   "id": "opto.step_index_mode_cutoff",
+   "inputs": {"core_index": 1.5625, "cladding_index": 1.5546875, "core_radius": 3e-06, "wavelength": 1.3e-06},
+   "expected_outputs": {
+    "numerical_aperture": 0.15605456527686076,
+    "normalized_frequency": 2.2627378884596983,
+    "cutoff_wavelength": 1.2231015613295666e-06,
+    "single_mode_margin": 0.14226211154030166
+   },
+   "steps": "Enter the binary-contrast vector, confirm the positive margin, set wavelength to 6e-06 to render the negative margin diagnostic with its sign, then set cladding_index 1.54 and confirm the contrast guard message."
+  },
+  {
+   "id": "opto.fiber_gaussian_dispersion",
+   "inputs": {
+    "initial_width": 2e-12,
+    "initial_chirp": 2.0,
+    "beta_two": -4e-27,
+    "fiber_length": 400.0,
+    "pulse_energy": 3e-14
+   },
+   "expected_outputs": {
+    "normalized_dispersion": -0.4,
+    "width_ratio": 0.4472135954999579,
+    "output_width": 8.944271909999159e-13,
+    "output_fwhm": 1.4893189644236137e-12,
+    "output_peak_power": 0.0189234939151512
+   },
+   "steps": "Enter the chirped vector, confirm the compressed width below 2 ps and the boosted peak power, then set chirp 0 and confirm broadening instead of compression."
+  },
+  {
+   "id": "opto.sipm_finite_cell_response",
+   "inputs": {"photon_count": 1200.0, "detection_efficiency": 0.25, "cell_count": 300.0, "avalanche_gain": 2000000.0},
+   "expected_outputs": {
+    "seed_count": 300.0,
+    "fired_cells": 189.6361676485673,
+    "relative_response": 0.6321205588285577,
+    "output_charge": 6.076612735356825e-11
+   },
+   "steps": "Enter the one-seed-per-cell vector, confirm fired cells below cell count, enter cell_count 1.5 and confirm the integer-cell message, then restore 300 and set photon_count 0 to confirm the analytic unity response with zero charge."
+  }
+ ]
+}
