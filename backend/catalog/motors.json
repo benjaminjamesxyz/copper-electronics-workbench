@@ -236,5 +236,187 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "motors.geared_axis_acceleration",
+    "title": "Geared-axis acceleration current and voltage requirement",
+    "category": "Electromechanical drives",
+    "level": "intermediate",
+    "description": "Size a PM DC motor drive for a positive constant-acceleration load ramp through a fixed-ratio lossy gearbox.",
+    "formula": "n=omega_motor/omega_load; alpha_load=(omega_final-omega_initial)/t; Jref=Jload/n^2; Tmotor=Jmotor*n*alpha_load+(Jload*alpha_load+Tload)/(eta*n); I=Tmotor/K; Vfinal=K*n*omega_final+R*I",
+    "assumptions": [
+      "Positive-direction motoring with nondecreasing load speed, constant acceleration, constant opposing load torque, and constant forward gearbox efficiency.",
+      "motor_inertia includes rotor and all input-side gearbox inertia. load_inertia includes all output-side rotating inertia. Gear compliance, backlash and shaft resonance are neglected.",
+      "Reflected inertia is a kinetic-energy equivalence, Jload/n^2; efficiency changes demanded torque, not that physical inertia.",
+      "PM DC torque and back-EMF constants are numerically equal in SI. Current regulation is ideal during the ramp; required voltage excludes L di/dt at the acceleration discontinuities, brush drop and PWM overhead.",
+      "Check peak current, speed, gear tooth strength, thermal duty and actual transient voltage headroom separately. This is not a deceleration or back-driving efficiency model."
+    ],
+    "references": [
+      {
+        "title": "Oriental Motor, How to Address Increased Loads in Both Size and Weight, page 1 inertia reflection and output torque",
+        "url": "https://www.orientalmotor.com/stepper-motors/technology/pdf/Increase-Load-Weight.pdf"
+      },
+      {
+        "title": "Oriental Motor, Motor Sizing Calculations, Torque and Acceleration Torque",
+        "url": "https://www.orientalmotor.com/technology/motor-sizing-calculations.html"
+      },
+      {
+        "title": "Auburn University, Modeling Electrical-Mechanical Systems (DC Motors), slides 12-16",
+        "url": "https://eng.auburn.edu/~dmbevly/mech3140/Modeling_DC_Motors.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "motor_inertia",
+        "label": "Motor and input-side inertia",
+        "unit": "kg m^2",
+        "default": 0.0002,
+        "min": 0
+      },
+      {
+        "key": "load_inertia",
+        "label": "Load and output-side inertia",
+        "unit": "kg m^2",
+        "default": 0.02,
+        "min": 0
+      },
+      {
+        "key": "gear_ratio",
+        "label": "Motor-speed to load-speed ratio",
+        "unit": "1",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gear_efficiency",
+        "label": "Forward gearbox efficiency",
+        "unit": "1",
+        "default": 0.9,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1
+      },
+      {
+        "key": "load_torque",
+        "label": "Opposing output-shaft load torque",
+        "unit": "N m",
+        "default": 0.4,
+        "min": 0
+      },
+      {
+        "key": "initial_speed",
+        "label": "Initial load angular speed",
+        "unit": "rad/s",
+        "default": 0,
+        "min": 0
+      },
+      {
+        "key": "final_speed",
+        "label": "Final load angular speed",
+        "unit": "rad/s",
+        "default": 20,
+        "min": 0
+      },
+      {
+        "key": "ramp_time",
+        "label": "Constant-acceleration ramp duration",
+        "unit": "s",
+        "default": 0.5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "motor_constant",
+        "label": "SI torque and back-EMF constant",
+        "unit": "N m/A",
+        "default": 0.08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "armature_resistance",
+        "label": "Armature resistance at operating temperature",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "reflected_inertia",
+        "label": "Load inertia referred to motor shaft",
+        "unit": "kg m^2",
+        "expression": "load_inertia/gear_ratio/gear_ratio"
+      },
+      {
+        "key": "motor_acceleration",
+        "label": "Motor angular acceleration",
+        "unit": "rad/s^2",
+        "expression": "gear_ratio*(final_speed-initial_speed)/ramp_time"
+      },
+      {
+        "key": "motor_torque",
+        "label": "Required electromagnetic motor torque",
+        "unit": "N m",
+        "expression": "motor_inertia*motor_acceleration+(load_inertia*(final_speed-initial_speed)/ramp_time+load_torque)/gear_efficiency/gear_ratio"
+      },
+      {
+        "key": "armature_current",
+        "label": "Required armature current during ramp",
+        "unit": "A",
+        "expression": "motor_torque/motor_constant"
+      },
+      {
+        "key": "motor_final_speed",
+        "label": "Motor speed at ramp end",
+        "unit": "rad/s",
+        "expression": "gear_ratio*final_speed"
+      },
+      {
+        "key": "required_final_voltage",
+        "label": "Required armature voltage just before ramp end",
+        "unit": "V",
+        "expression": "motor_constant*motor_final_speed+armature_resistance*armature_current"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "motor_inertia+load_inertia",
+        "op": ">",
+        "right": "0",
+        "message": "At least one shaft inertia must be positive"
+      },
+      {
+        "left": "final_speed",
+        "op": ">=",
+        "right": "initial_speed",
+        "message": "Final load speed must not be below initial speed in this motoring ramp model"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "motor_inertia": 0.0002,
+        "load_inertia": 0.02,
+        "gear_ratio": 10,
+        "gear_efficiency": 0.9,
+        "load_torque": 0.4,
+        "initial_speed": 0,
+        "final_speed": 20,
+        "ramp_time": 0.5,
+        "motor_constant": 0.08,
+        "armature_resistance": 1
+      },
+      "expected": {
+        "reflected_inertia": 0.0002,
+        "motor_acceleration": 400,
+        "motor_torque": 0.21333333333333335,
+        "armature_current": 2.6666666666666665,
+        "motor_final_speed": 200,
+        "required_final_voltage": 18.666666666666668
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

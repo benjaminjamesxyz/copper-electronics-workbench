@@ -129,3 +129,53 @@ On the right, draw horizontal mechanical-lag and vertical restoring-torque axes 
 **Quantity labels:** `holding_torque` as `Th`, `load_torque` as `Tload`, `load_lag` as `load lag`, `angular_stiffness` as `local stiffness`, `microstep_angle` as `command step`, `incremental_torque` as `Tinc`. `full_steps_per_turn` and `microsteps_per_step` may be left to the legend to avoid crowding. Plain axis endpoint relation: `full-step lag = 2 pi/S`; do not bind this relation to `microstep_angle`.
 
 **Caption:** “Illustrative sinusoidal torque versus rotor lag. Smaller current-vector steps improve command resolution, not guaranteed positioning accuracy. Tinc starts from unloaded alignment; detent torque and friction are omitted.”
+
+## 3. `motors.geared_axis_acceleration`
+
+### Purpose and distinct model
+
+Translate a required mechanical ramp into motor drive current and voltage. The distinguishing laws are two-inertia acceleration, ratio-squared kinetic-energy reflection and lossy transmission torque. This is not an inverse of the steady DC load model: both shaft speeds are prescribed, torque accelerates inertia, and gearbox efficiency acts only across the transmission.
+
+### Equations, signs and validity
+
+Sources: Oriental Motor gearing page 1 and acceleration guide; Auburn equations for current/voltage. Define `n=gear_ratio=omega_motor/omega_load`, positive for the chosen corresponding shaft directions. Gear reversal signs are absorbed in that orientation definition. Let `alpha_load=(final_speed-initial_speed)/ramp_time`.
+
+Kinetic energy of the load is `Jl*(omega_motor/n)^2/2`, so `reflected_inertia=Jl/n^2`. Input rotor acceleration is `motor_acceleration=n*alpha_load`.
+
+Output gear torque must supply `Jl*alpha_load+Tload`. The forward-efficiency relation gives required gear-input torque `(Jl*alpha_load+Tload)/(eta*n)`. Add the motor/input-side inertia torque before the gear:
+
+`motor_torque=Jm*n*alpha_load+(Jl*alpha_load+Tload)/(eta*n)`.
+
+Then `armature_current=motor_torque/K`, `motor_final_speed=n*final_speed`, and `required_final_voltage=K*motor_final_speed+Ra*armature_current`. This is the end-of-ramp voltage immediately before acceleration stops, not after the current demand drops.
+
+Require nonnegative inertias with positive sum; `n>0`; `0<eta<=1`; nonnegative opposing load and initial/final speed; `final_speed>=initial_speed`; positive ramp time, `K` and `Ra`. An ideal equal-speed case is accepted. Efficiency does not alter physical `reflected_inertia`. The motor inertia includes input-referred gear inertia. No backdrive efficiency, compliance, backlash, friction beyond `load_torque`, torque-ripple or transient current-edge voltage is predicted.
+
+### Complete independent example
+
+Inputs: `motor_inertia=0.0002 kg m^2`, `load_inertia=0.02 kg m^2`, `gear_ratio=10`, `gear_efficiency=0.9`, `load_torque=0.4 N m`, `initial_speed=0 rad/s`, `final_speed=20 rad/s`, `ramp_time=0.5 s`, `motor_constant=0.08 N m/A`, `armature_resistance=1 ohm`.
+
+- Load acceleration `(20-0)/0.5=40 rad/s^2`.
+- `reflected_inertia=0.02/10^2=0.0002 kg m^2`.
+- `motor_acceleration=10*40=400 rad/s^2`.
+- Motor-inertia torque `0.0002*400=0.08 N m`.
+- Gear-output demand `0.02*40+0.4=1.2 N m`; input demand `1.2/(0.9*10)=0.13333333333333333 N m`.
+- `motor_torque=0.08+0.13333333333333333=0.21333333333333335 N m`.
+- `armature_current=0.21333333333333335/0.08=2.6666666666666665 A`.
+- `motor_final_speed=10*20=200 rad/s`.
+- `required_final_voltage=0.08*200+1*2.6666666666666665=18.666666666666668 V`.
+
+### Tester cases
+
+- Nominal: all six outputs above. Verify torque on both sides of the gearbox independently.
+- Lossless gear: change only `gear_efficiency=1`; outputs are `reflected_inertia=0.0002`, `motor_acceleration=400`, `motor_torque=0.2`, `armature_current=2.5`, `motor_final_speed=200`, `required_final_voltage=18.5`.
+- Constant speed: set `initial_speed=final_speed=20`; acceleration becomes zero, torque is `0.4/9=0.044444444444444446 N m`, current `0.5555555555555556 A`, end voltage `16.555555555555557 V`; inertia output remains `0.0002`.
+- `gear_ratio=1, gear_efficiency=1` reduces torque to `(Jm+Jl)*alpha_load+Tload`, not to just load torque.
+- Reject a decreasing speed ramp, zero duration, zero ratio, efficiency outside `(0,1]`, negative inertias or two zero inertias. Do not reject a zero load torque or one zero inertia.
+
+### Mandatory diagram
+
+**Energy/mechanical chain:** three blocks across the center: PM motor/input inertia at `(150,130)`, gearbox at `(350,130)`, output inertia/load at `(560,130)`. Shafts/arrows connect block edges, with no electrical-connection implication. A current arrow enters the motor from above; its voltage label sits beside it. The gearbox is labeled with `n` and `eta`, not as a torque multiplier equal to `n` alone. Mark positive acceleration and speed arrows above both shafts. A smaller lower-left annotation shows `Jl/n^2` reflected to the motor shaft with a dashed arrow, not a second physical inertia component.
+
+**Quantity labels:** `armature_current` as `I`, `required_final_voltage` as `V end`, `motor_inertia` as `Jm`, `gear_ratio` as `n`, `gear_efficiency` as `eta`, `load_inertia` as `Jl`, `load_torque` as `Tload`, `motor_torque` as `Tm`, `reflected_inertia` as `J reflected`. Use a plain relation `omega_m = n omega_l`; bind `motor_final_speed` and `final_speed` to their own short speed labels if space permits.
+
+**Caption:** “Forward motoring ramp through a fixed gear. Reflected inertia scales as 1/n²; output acceleration and load torque cross the efficiency boundary. Voltage is evaluated before the ramp ends and excludes current-edge inductive voltage.”
