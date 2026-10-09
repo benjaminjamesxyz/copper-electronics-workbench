@@ -545,3 +545,61 @@ All input values for this independent example are `{"c_one":0.0001,"c_two":0.000
 | `total_loss` | J | 0.0012 | `equivalent_capacitance*(v_one-v_two)^2/2` |
 | `dissipated_energy` | J | 0.0010375976601160648 | `total_loss*(-expm1(-2*time/tau))` |
 
+
+## `transients.rc_ramp_source` — capacitor tracking of a ramped source
+
+**Level:** intermediate. **Design purpose:** predict startup lag and current when the source ramps at finite slope; distinguish voltage-ramp excitation from an imposed constant capacitor current. Sources: [MIT Rowell equations 21, 30 and 32](https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf), [MIT RC governing law](https://circuits.mit.edu/F25/psets/05/rc_tutorial).
+
+### Derivation
+
+For `Vs(t)=Vs0+mt`, solve `tau dvC/dt+vC=Vs0+mt`. The particular solution is `Vs0+m(t−tau)`. Adding the homogeneous term and imposing `vC(0)=V0` gives
+
+`vC(t)=Vs0+m(t−tau)+(V0−Vs0+m tau)exp(−t/tau)`.
+
+The source-minus-capacitor tracking error can be evaluated without subtracting two very large ramp voltages:
+
+`Verror=m tau+(Vs0−V0−m tau)exp(−t/tau)`.
+
+Then `iC=Verror/R`. Long after startup, current approaches `Cm` and lag approaches `m tau`; initial current remains `(Vs0−V0)/R`, not necessarily `Cm`.
+
+### Domain and limitations
+
+`R,C>0`, `t>=0`; `m`, `Vs0` and `V0` may be signed. The source must continue to follow the ramp over the entire selected interval. Ramp stopping/clipping and nonlinear load/current limits are not represented. The promoted implementation isolates the second-order ramp term using the shared stable expm1mx primitive, preserving the researched short-time domain; absolute nonzero voltages still have ordinary machine-spacing limitations. This is neither amplifier slew-rate design nor a frequency-domain filter calculation.
+
+### Independent worked example
+
+`R=1 kohm`, `C=1 microF`, `Vs0=V0=0`, `m=1000 V/s`, `t=2 ms`.
+
+- `tau=0.001 s`; `Vs=1000×0.002=2 V`.
+- `vC=1000[0.002−0.001+0.001 exp(−2)]=1.135335283236613 V`.
+- Tracking error `=1−exp(−2)=0.8646647167633873 V`.
+- Current `=0.8646647167633873/1000=0.0008646647167633873 A`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `r` | ohm | 1000.0 | [0.001, 1000000000.0] |
+| `c` | F | 1e-06 | [1e-15, 1.0] |
+| `v_source_initial` | V | 0.0 | [-1000000.0, 1000000.0] |
+| `v_initial` | V | 0.0 | [-1000000.0, 1000000.0] |
+| `slope` | V/s | 1000.0 | [-1000000000.0, 1000000000.0] |
+| `time` | s | 0.002 | [0.0, 1000000000.0] |
+
+The identity `t−tau[1−exp(−t/tau)]=tau*expm1mx(−t/tau)` isolates the quadratic startup term. The parent-owned primitive `expm1mx(x)=exp(x)−1−x` computes this same scalar analytic quantity stably near zero. The executable voltage is `V0 exp(−x)+Vs0[−expm1(−x)]+m*tau*expm1mx(−x)`, where `x=t/tau`; tracking error is independently `(Vs0−V0)exp(−x)+m*tau[−expm1(−x)]`, avoiding subtraction of large absolute ramp voltages. At t=0 the capacitor retains V0 exactly, and arbitrary signed or zero slopes remain admissible. With default components and t=1e-20 s, the independent leading term is `m*t²/(2*tau)=5e-35 V`, not zero. Positive R/C protect divisions; no extra short-time guard or seed output is introduced. Very small increments to a nonzero absolute voltage may necessarily round away.
+
+No additional relational constraint is needed: positive component minima protect divisors, time is nonnegative, and any logarithm has an explicit positive tolerance bound. Signed excitations and valid zero boundaries are not rejected.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"r":1000.0,"c":1e-06,"v_source_initial":0.0,"v_initial":0.0,"slope":1000.0,"time":0.002}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `tau` | s | 0.001 | `r*c` |
+| `source_voltage` | V | 2.0 | `v_source_initial+slope*time` |
+| `capacitor_voltage` | V | 1.1353352832366128 | `v_initial*exp(-time/tau)+v_source_initial*(-expm1(-time/tau))+slope*tau*expm1mx(-time/tau)` |
+| `tracking_error` | V | 0.8646647167633873 | `(v_source_initial-v_initial)*exp(-time/tau)+slope*tau*(-expm1(-time/tau))` |
+| `capacitor_current` | A | 0.0008646647167633873 | `tracking_error/r` |
+

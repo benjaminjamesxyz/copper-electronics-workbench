@@ -1024,5 +1024,130 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "transients.rc_ramp_source",
+    "title": "RC tracking of a finite-slope voltage ramp",
+    "category": "Passive transients",
+    "level": "intermediate",
+    "description": "Predict capacitor voltage, charging current and tracking lag when the source voltage changes linearly rather than instantaneously.",
+    "formula": "Vs(t)=Vs0+mt; tau=RC; vC=Vs0+m(t-tau)+(V0-Vs0+m tau)exp(-t/tau); iC=Cm+(Vs0-V0-m tau)exp(-t/tau)/R",
+    "assumptions": [
+      "A linear capacitor is driven through constant positive R by an ideal voltage source whose specified ramp persists throughout the selected elapsed time.",
+      "Source-ramp slope is not imposed capacitor current: current starts according to initial conditions and approaches C times the ramp slope.",
+      "Supports signed slopes and arbitrary initial capacitor voltage; no limiter or piecewise ramp-end response is modeled.",
+      "This is time-domain startup tracking, not op-amp slew-rate or frequency-domain filter design. The shared Rust expm1mx(x) primitive evaluates exp(x)-1-x accurately near zero, preserving arbitrarily short-time quadratic ramp startup without new time exclusions. Initial-state and source terms use separately conditioned exp/expm1 factors; adding a tiny contribution to a nonzero absolute voltage remains subject to machine resolution."
+    ],
+    "references": [
+      {
+        "title": "MIT D. Rowell: Review of First- and Second-Order System Response, equations 21, 30 and 32",
+        "url": "https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf"
+      },
+      {
+        "title": "MIT 6.200: RC governing differential equation",
+        "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r",
+        "label": "Series resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 0.001,
+        "max": 1000000000.0
+      },
+      {
+        "key": "c",
+        "label": "Capacitance",
+        "unit": "F",
+        "default": 1e-06,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "v_source_initial",
+        "label": "Source voltage at ramp start",
+        "unit": "V",
+        "default": 0.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "v_initial",
+        "label": "Initial capacitor voltage",
+        "unit": "V",
+        "default": 0.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "slope",
+        "label": "Source ramp slope",
+        "unit": "V/s",
+        "default": 1000.0,
+        "min": -1000000000.0,
+        "max": 1000000000.0
+      },
+      {
+        "key": "time",
+        "label": "Elapsed time within ramp",
+        "unit": "s",
+        "default": 0.002,
+        "min": 0.0,
+        "max": 1000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "tau",
+        "label": "Time constant",
+        "unit": "s",
+        "expression": "r*c"
+      },
+      {
+        "key": "source_voltage",
+        "label": "Source voltage at t",
+        "unit": "V",
+        "expression": "v_source_initial+slope*time"
+      },
+      {
+        "key": "capacitor_voltage",
+        "label": "Capacitor voltage at t",
+        "unit": "V",
+        "expression": "v_initial*exp(-time/tau)+v_source_initial*(-expm1(-time/tau))+slope*tau*expm1mx(-time/tau)"
+      },
+      {
+        "key": "tracking_error",
+        "label": "Source minus capacitor voltage",
+        "unit": "V",
+        "expression": "(v_source_initial-v_initial)*exp(-time/tau)+slope*tau*(-expm1(-time/tau))"
+      },
+      {
+        "key": "capacitor_current",
+        "label": "Capacitor charging current",
+        "unit": "A",
+        "expression": "tracking_error/r"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "r": 1000.0,
+        "c": 1e-06,
+        "v_source_initial": 0.0,
+        "v_initial": 0.0,
+        "slope": 1000.0,
+        "time": 0.002
+      },
+      "expected": {
+        "tau": 0.001,
+        "source_voltage": 2.0,
+        "capacitor_voltage": 1.1353352832366128,
+        "tracking_error": 0.8646647167633873,
+        "capacitor_current": 0.0008646647167633873
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
