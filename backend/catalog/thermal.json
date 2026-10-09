@@ -812,5 +812,147 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "thermal.resistor_tcr_drift",
+    "title": "Resistor resistance drift from temperature",
+    "category": "Thermal and reliability design",
+    "level": "basic",
+    "description": "Estimate signed resistor drift using a constant component-level TCR over its explicitly entered validated interval.",
+    "formula": "dR/R_ref=TCR_ppm*1e-6*(T-T_ref); R(T)=R_ref[1+dR/R_ref]",
+    "assumptions": [
+      "Constant signed component-level TCR approximation within the supplied temperature interval; actual curves can be nonlinear and datasheet \u00b1TCR values are limits, not a known signed slope.",
+      "Operating temperature is resistor element temperature, including any self-heating, not automatically ambient temperature.",
+      "No aging, overload damage, humidity, voltage coefficient, thermoelectric offsets or terminal/contact corrections.",
+      "For a \u00b1TCR limit, calculate both positive and negative slopes separately to obtain a bound rather than treating the sign as known."
+    ],
+    "references": [
+      {
+        "title": "Vishay Dale 30405: Temperature Coefficient of Resistance for Current Sensing, pages 1-2 and 4",
+        "url": "https://www.vishay.com/docs/30405/whitepapertcr.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "reference_resistance",
+        "label": "Resistance at reference temperature",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "tcr_ppm",
+        "label": "Signed component TCR",
+        "unit": "ppm/K",
+        "default": 100
+      },
+      {
+        "key": "reference_temperature",
+        "label": "Reference element temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "operating_temperature",
+        "label": "Operating element temperature",
+        "unit": "K",
+        "default": 358.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_temperature_min",
+        "label": "Minimum validated TCR temperature",
+        "unit": "K",
+        "default": 218.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_temperature_max",
+        "label": "Maximum validated TCR temperature",
+        "unit": "K",
+        "default": 443.15,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "fractional_drift",
+        "label": "Signed fractional resistance change",
+        "unit": "1",
+        "expression": "tcr_ppm*1e-6*(operating_temperature-reference_temperature)"
+      },
+      {
+        "key": "resistance_change",
+        "label": "Signed resistance change",
+        "unit": "ohm",
+        "expression": "reference_resistance*fractional_drift"
+      },
+      {
+        "key": "operating_resistance",
+        "label": "Resistance at operating temperature",
+        "unit": "ohm",
+        "expression": "reference_resistance*(1+fractional_drift)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_temperature_max",
+        "op": ">",
+        "right": "fit_temperature_min",
+        "message": "The validated TCR interval must have positive width."
+      },
+      {
+        "left": "reference_temperature",
+        "op": ">=",
+        "right": "fit_temperature_min",
+        "message": "Reference temperature is below the validated TCR interval."
+      },
+      {
+        "left": "reference_temperature",
+        "op": "<=",
+        "right": "fit_temperature_max",
+        "message": "Reference temperature is above the validated TCR interval."
+      },
+      {
+        "left": "operating_temperature",
+        "op": ">=",
+        "right": "fit_temperature_min",
+        "message": "Operating temperature is below the validated TCR interval."
+      },
+      {
+        "left": "operating_temperature",
+        "op": "<=",
+        "right": "fit_temperature_max",
+        "message": "Operating temperature is above the validated TCR interval."
+      },
+      {
+        "left": "1+tcr_ppm*1e-6*(operating_temperature-reference_temperature)",
+        "op": ">",
+        "right": "0",
+        "message": "Linear TCR extrapolation must leave resistance positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "reference_resistance": 10000,
+        "tcr_ppm": 100,
+        "reference_temperature": 298.15,
+        "operating_temperature": 358.15,
+        "fit_temperature_min": 218.15,
+        "fit_temperature_max": 443.15
+      },
+      "expected": {
+        "fractional_drift": 0.006,
+        "resistance_change": 60,
+        "operating_resistance": 10060
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

@@ -420,3 +420,62 @@ Complete independent example input vector (relative tolerance `1e-6`):
 
 Implementation uses `T_initial exp(-t/tau) + T_inf[-expm1(-t/tau)]`. The complementary weights preserve `T(0)=T_initial` without subtracting a potentially much larger steady temperature and accurately retain the small heating fraction for short times. This is the same closed-form solution, not another model or output.
 
+## `thermal.resistor_tcr_drift` — Resistor resistance drift from temperature
+
+**ID:** `thermal.resistor_tcr_drift`; **level:** basic. **Reference:** 9.
+
+### Model and derivation
+
+Vishay defines signed TCR as `(R−R_ref)/(R_ref (T−T_ref))`, conventionally quoted in ppm per degree. Converting ppm to a dimensionless fraction gives
+
+- `d=(TCR_ppm × 10^-6)(T−T_ref)`;
+- `deltaR=R_ref d`;
+- `R=R_ref(1+d)`.
+
+The formula is evaluated even when temperatures are equal; there is no division by `T−T_ref`.
+
+### Units, domain and limitations
+
+Resistance ohm; temperatures K; signed component TCR ppm/K; drift dimensionless. Reference resistance is positive. Fit interval endpoints are positive and ordered; both reference and operating temperatures must lie in that interval. `1+d>0` rejects a physically invalid nonpositive extrapolated resistance. Negative TCR and cooling are allowed.
+
+The entered temperature is the **element** temperature including self-heating. This model computes drift only, not electrical power or a thermal equilibrium. Datasheet `±100 ppm/K` is a bound, not a measured +100 slope; evaluate both signs for bounds. Vishay warns that terminal contributions matter, TCR curves may be nonlinear, and overload damage is not reversible TCR.
+
+### Independent worked example
+
+Inputs: `R_ref=10000 ohm`, signed TCR `+100 ppm/K`, reference `298.15 K`, operating `358.15 K`, valid interval `[218.15,443.15] K`.
+
+Temperature difference is 60 K. **d=100×10^-6×60=0.006**, **deltaR=60 ohm**, **R=10060 ohm**. The 0.6% change is signed positive, with no need to infer electrical loading.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `reference_resistance` | Resistance at reference temperature | ohm | 10000 | > 0 |
+| `tcr_ppm` | Signed component TCR | ppm/K | 100 | Any finite signed value |
+| `reference_temperature` | Reference element temperature | K | 298.15 | > 0 |
+| `operating_temperature` | Operating element temperature | K | 358.15 | > 0 |
+| `fit_temperature_min` | Minimum validated TCR temperature | K | 218.15 | > 0 |
+| `fit_temperature_max` | Maximum validated TCR temperature | K | 443.15 | > 0 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `fractional_drift` | 1 | `tcr_ppm*1e-6*(operating_temperature-reference_temperature)` | 0.006 |
+| `resistance_change` | ohm | `reference_resistance*fractional_drift` | 60 |
+| `operating_resistance` | ohm | `reference_resistance*(1+fractional_drift)` | 10060 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "reference_resistance": 10000,
+  "tcr_ppm": 100,
+  "reference_temperature": 298.15,
+  "operating_temperature": 358.15,
+  "fit_temperature_min": 218.15,
+  "fit_temperature_max": 443.15
+}
+```
+
