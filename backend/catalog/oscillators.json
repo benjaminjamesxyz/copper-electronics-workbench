@@ -554,5 +554,122 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "oscillators.cross_coupled_lc_startup",
+    "title": "Cross-coupled LC oscillator startup poles",
+    "category": "Oscillator design",
+    "level": "expert",
+    "description": "Compare a differential tank loss against cross-coupled negative conductance and predict small-signal growth or decay.",
+    "formula": "Rneg=-2/gm; gm,critical=2/Rp; alpha=(gm/2-1/Rp)/(2C); omega0=1/sqrt(LC); omega_start=sqrt(omega0^2-alpha^2)",
+    "assumptions": [
+      "L, C and Rp are total two-terminal differential values across the tank, not each half-circuit value. gm is the transconductance of each identical cross-coupled transistor.",
+      "Pair differential resistance is -2/gm; transistor output conductance and all passive losses are included in Rp. Bias network is an AC open circuit in differential mode.",
+      "Linear small-signal constant-gm model only. Positive growth_rate means startup growth; zero is marginal; negative means decay. Noise seed, amplitude limiting, phase noise and final amplitude are not modeled.",
+      "Only the complex-conjugate-pole regime is admitted: abs(gm/2-1/Rp)<2 sqrt(C/L). Device transit time, parasitics and nonquasistatic effects must be negligible at tank frequency."
+    ],
+    "references": [
+      {
+        "title": "Behzad Razavi, UCLA / IEEE Solid-State Circuits Magazine, The Cross-Coupled Pair—Part III, XCP as Negative Resistance and Figure 2(b)",
+        "url": "https://www.seas.ucla.edu/brweb/papers/Journals/BR_Magzine3.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "tank_inductance",
+        "label": "Differential tank inductance",
+        "unit": "H",
+        "default": 1e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "tank_capacitance",
+        "label": "Differential tank capacitance",
+        "unit": "F",
+        "default": 1e-11,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "parallel_loss_resistance",
+        "label": "Differential tank parallel loss Rp",
+        "unit": "ohm",
+        "default": 2000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "transistor_transconductance",
+        "label": "Each transistor transconductance gm",
+        "unit": "S",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "tank_frequency",
+        "label": "Lossless tank frequency",
+        "unit": "Hz",
+        "expression": "1/(2*pi)/sqrt(tank_inductance)/sqrt(tank_capacitance)"
+      },
+      {
+        "key": "negative_resistance",
+        "label": "Pair differential negative resistance",
+        "unit": "ohm",
+        "expression": "-2/transistor_transconductance"
+      },
+      {
+        "key": "critical_transconductance",
+        "label": "Per-transistor marginal gm",
+        "unit": "S",
+        "expression": "2/parallel_loss_resistance"
+      },
+      {
+        "key": "startup_ratio",
+        "label": "Negative-to-loss conductance ratio",
+        "unit": "1",
+        "expression": "transistor_transconductance*parallel_loss_resistance/2"
+      },
+      {
+        "key": "growth_rate",
+        "label": "Signed amplitude exponential growth rate",
+        "unit": "1/s",
+        "expression": "(transistor_transconductance/2-1/parallel_loss_resistance)/tank_capacitance/2"
+      },
+      {
+        "key": "startup_frequency",
+        "label": "Small-signal oscillatory pole frequency",
+        "unit": "Hz",
+        "expression": "tank_frequency*sqrt((1-abs(growth_rate)/(2*pi*tank_frequency))*(1+abs(growth_rate)/(2*pi*tank_frequency)))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "abs(transistor_transconductance/2-1/parallel_loss_resistance)",
+        "op": "<",
+        "right": "2*sqrt(tank_capacitance)/sqrt(tank_inductance)",
+        "message": "This startup-frequency model requires an oscillatory complex pole pair, not real poles."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "tank_inductance": 1e-08,
+        "tank_capacitance": 1e-11,
+        "parallel_loss_resistance": 2000,
+        "transistor_transconductance": 0.002
+      },
+      "expected": {
+        "tank_frequency": 503292121.0448704,
+        "negative_resistance": -1000,
+        "critical_transconductance": 0.001,
+        "startup_ratio": 2,
+        "growth_rate": 25000000,
+        "startup_frequency": 503276392.9203319
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

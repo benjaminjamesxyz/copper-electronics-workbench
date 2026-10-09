@@ -245,3 +245,51 @@ Exact bindings: three C labels `section_capacitance`; all three effective R labe
 
 Caption: “Unbuffered sections load one another. The third R terminates at virtual ground; no extra third-node shunt is fitted. Gain 29 is marginal, not a steady-amplitude guarantee.”
 
+
+## 6. `oscillators.cross_coupled_lc_startup` — expert
+
+### Purpose, novelty and source
+
+Compare a cross-coupled pair's active negative conductance with differential tank losses and predict the startup pole pair. LC Figure 2(b) establishes −2/gm between the two differential terminals; the article describes its oscillator use. The following pole expression is independently derived from KCL, not claimed as a quoted source equation.
+
+Closest old models: `ac.series_resonator_bandwidth` and `ac.lossy_coil_antiresonance` describe passive externally driven resonators. This addition includes the active pair, an oscillation threshold, signed envelope growth and the frequency of growing/decaying natural oscillation. Its supporting tank frequency is not separately counted.
+
+### Model, signs, validity and derivation
+
+Define differential tank voltage `v=Vplus−Vminus`, with passive current positive from plus to minus. L, C and Rp are complete two-terminal differential values. Each matched transistor has gm; the pair's differential resistance is `negative_resistance=−2/gm`. Its negative conductance is −gm/2. Include transistor output conductance and other positive losses in Rp.
+
+Differentiated KCL is `C v''+(1/Rp−gm/2)v'+v/L=0`. Thus poles are `alpha ± j omega_start`, with:
+
+`alpha=(gm/2−1/Rp)/(2C)`, `omega0=1/sqrt(LC)`, `omega_start=sqrt(omega0^2−alpha^2)`.
+
+Outputs: `tank_frequency=omega0/(2pi)`; `critical_transconductance=2/Rp`; `startup_ratio=gm Rp/2`; `growth_rate=alpha`; `startup_frequency=omega_start/(2pi)`. Positive growth is exponential startup, zero is marginal, negative is decay. The formula does not say that negative resistance of larger absolute magnitude is better: **conductance** magnitude must exceed tank loss, equivalently `abs(Rneg)<Rp`.
+
+Strictly positive L,C,Rp,gm are required; gm=0 would make the requested negative-resistance output infinite. The complex-pole condition `abs(gm/2−1/Rp)<2sqrt(C/L)` is enforced. Equality gives real repeated poles and is outside this oscillatory-frequency model; larger magnitude gives real poles. This is a physical pole-domain restriction, not a numerical convenience. Admit decaying underdamped cases rather than hiding failed startup designs.
+
+Bias networks are AC open in differential mode, transistor response is quasistatic, and parasitic C is included in total C. This linear model is local around the bias point: nonlinear gm compression, final amplitude, phase noise, seed level and actual startup time are not supplied. A real oscillator must be biased appropriately and operate below significant device transit-time effects.
+
+### Complete independent example
+
+Inputs: `tank_inductance=1e-8 H`, `tank_capacitance=1e-11 F`, `parallel_loss_resistance=2000 ohm`, `transistor_transconductance=0.002 S`.
+
+`omega0=sqrt(1e19)=3162277660.16837933 rad/s`; tank loss conductance=0.0005 S; negative-conductance magnitude=0.001 S. Therefore `alpha=0.0005/(2e-11)=25000000 1/s`, and `omega_start=sqrt(1e19−6.25e14)`.
+
+| Output key | Derivation | Expected |
+|---|---|---|
+| `tank_frequency` | sqrt(1e19)/(2 pi) | 503292121.0448704 Hz |
+| `negative_resistance` | −2/0.002 | −1000 ohm |
+| `critical_transconductance` | 2/2000 | 0.001 S |
+| `startup_ratio` | 0.002×2000/2 | 2 |
+| `growth_rate` | 0.0005/(2e-11) | 25000000 1/s |
+| `startup_frequency` | sqrt(1e19−6.25e14)/(2 pi) | 503276392.9203319 Hz |
+
+Tester cases: gm=0.001 S gives negative_resistance=−2000 ohm, startup_ratio=1, growth_rate=0, and startup_frequency=tank_frequency. gm=0.0005 S gives −4000 ohm, ratio=0.5 and growth_rate=−12500000 1/s; it is valid but decays. With all inputs `{L:1,C:1,Rp:1,gm:6}`, the complex-pole boundary is exactly reached and must reject; gm=5 is inside it, and gm=7 outside. Use the actual catalog keys when submitting these vectors. Reject nonpositive components or gm. Do not confuse half-circuit gm Rp criteria with this explicitly differential convention.
+
+### Mandatory diagram specification
+
+Draw two identical NMOS devices with joined sources feeding a tail current-source symbol to a lower supply. Drain nodes are Vplus and Vminus; cross-connect each gate to the opposite drain using clearly nonjoining crossings. Draw a center-tapped inductor between the drains, center tap to VDD, with total differential L explicitly labeled; draw C and Rp across the same two drain nodes. A small right inset may replace the active pair with a −2/gm two-terminal element across the differential tank to teach the loss-cancellation criterion. Label differential voltage plus at Vplus, minus at Vminus. Do not use one half-inductor as the full `tank_inductance` binding.
+
+Exact bindings: total L `tank_inductance`; differential C `tank_capacitance`; total Rp `parallel_loss_resistance`; each-device gm `transistor_transconductance`; active-element label `negative_resistance`; criterion legend `critical_transconductance`/`startup_ratio`; envelope-rate legend `growth_rate`; frequency legend `tank_frequency`/`startup_frequency`.
+
+Caption: “L, C and Rp are differential tank values; gm belongs to each transistor. The pair supplies −gm/2 conductance. Positive alpha predicts only small-signal growth, not final amplitude.”
+
