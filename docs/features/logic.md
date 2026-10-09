@@ -283,3 +283,76 @@ Cross-input constraints:
 
 - [Stanford EE183, Ryan Donohue, Synchronization in Digital Logic Circuits: MTBF and synchronizer requirements, pages 1-4](https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf)
 
+## 5. `logic.three_stage_logical_effort` — expert
+
+### Purpose and novelty
+
+Choose two internal gate sizes of a fixed three-stage CMOS path under endpoint capacitance constraints. Nearest baseline: `opamps.dominant_pole_gain_bandwidth` models analog closed-loop bandwidth; `timing.synchronous_setup_slack` consumes a supplied path delay. Neither optimizes CMOS device sizing under gate-topology logical effort. Neighbor `logic.dc_current_fanout` deals with static input current, not capacitance ratios or propagation delay. Oscillator stage-period calculations, if present elsewhere, are not the endpoint-constrained gate-sizing problem here.
+
+### Model and limits
+
+Harris pages 6–9 define normalized stage delay d_i=g_i·h_i+p_i, with electrical effort h_i=Cout_i/Cin_i. Pages 13–16 show that a fixed N-stage path minimizes summed effort delay when each stage effort equals F^(1/N), where F is the product of efforts.
+
+For an unbranched three-stage path, C1 and CL are fixed, while C2 and C3 are free:
+
+- F=g1·g2·g3·CL/C1.
+- `optimal_stage_effort = exp((ln(g1)+ln(g2)+ln(g3)+ln(CL)-ln(C1))/3)`.
+- `second_input_capacitance = C1*optimal_stage_effort/g1`.
+- `third_input_capacitance = CL*g3/optimal_stage_effort`.
+- `normalized_path_delay = 3*optimal_stage_effort + path_parasitic_delay`.
+- `path_delay = normalized_path_delay * process_delay_unit`.
+
+The log-sum expression avoids unnecessary overflow in the full F product. The first and last sizing equations produce the same middle-stage effort by conservation of the endpoint capacitance ratio. Capacitances are F, efforts and normalized delays dimensionless, delay unit and final delay seconds. `path_parasitic_delay` is p1+p2+p3, not a dimensional time.
+
+Exactly three stages, no side branches, no significant wire capacitance, continuously scalable gates, fixed topology and size-independent normalized parasitics. Ordinary static CMOS g≥1 is the explicit domain; exotic dynamic/asymmetric logical-effort variants are not included. Actual gate size floors and discrete libraries can prevent the computed optimum. The calculation cannot validate slew, polarity, functionality, standard-cell availability or PVT. It also does not use the approximate “stage effort four” rule to pretend to solve optimum stage count.
+
+### Complete independent example
+
+Inputs: `first_input_capacitance=3e-15 F`, `final_load_capacitance=144e-15 F`, `first_logical_effort=4/3` (JSON binary64 literal 1.3333333333333333), `second_logical_effort=1`, `third_logical_effort=1`, `path_parasitic_delay=4`, `process_delay_unit=20e-12 s`.
+
+This corresponds to an ordinary NAND2→inverter→inverter path for one sensitized input, with textbook parasitic sum 2+1+1=4.
+
+- F=(4/3)×1×1×144/3=64, hence `optimal_stage_effort=4`.
+- `second_input_capacitance = 3e-15×4/(4/3) = 9e-15 F`.
+- `third_input_capacitance = 144e-15×1/4 = 36e-15 F`.
+- Middle effort: g2·C3/C2=36/9=4, independently confirming equal effort.
+- `normalized_path_delay = 3×4+4 = 16`.
+- `path_delay = 16×20e-12 = 3.2e-10 s`.
+
+### Independent test cases
+
+- Nominal: all five outputs above.
+- All-inverter alternate: C1=1e-15 F, CL=64e-15 F, all g=1, P=3, tau=1e-11 s; f=4, C2=4e-15 F, C3=16e-15 F, D=15, delay=1.5e-10 s.
+- Scale both endpoint capacitances by 1000: internal capacitances also scale by 1000, while effort and both delays remain nominal.
+- Equal loads: C1=CL=1e-15 F, all g=1, P=3 and tau=1e-11 s gives f=1, C2=C3=1e-15 F, D=6 and delay=6e-11 s.
+- Ideal parasitic boundary P=0 is accepted; nominal effort/sizes remain, D=12 and delay=2.4e-10 s.
+- Independent minimization check: perturb either internal capacitance in the alternate all-inverter example and sum g_i·h_i+p_i directly. The sum cannot fall below 15. This tests the physical objective, not a snapshot of the same implementation expression.
+- Invalid: endpoint C≤0, process unit≤0, negative P or any g<1. Nonfinite quantities fail at engine input validation.
+
+### Illustration and accessible quantity bindings
+
+One 700×280 three-stage path diagram. Draw three generic gate blocks in a left-to-right unbranched chain; label “Gate 1”, “Gate 2”, “Gate 3”, rather than hard-coding NAND symbols for all possible input g values. Bound labels above gates: `first_logical_effort`, `second_logical_effort`, `third_logical_effort`. Under each gate's input pin, place its input-capacitance callout: `first_input_capacitance`, `second_input_capacitance`, `third_input_capacitance`. Draw only the actual final load capacitor to reference ground and bind `final_load_capacitance`.
+
+Below the chain, an arrow spanning its full length binds `path_delay`; a separate callout “Equal stage effort” binds `optimal_stage_effort`. Input capacitance callouts describe the respective gate pins and must not be drawn as extra parallel loads added on top of those gate inputs. Keep generic internal capacitance drawings out of the electrical path.
+
+Caption: “Fixed three-stage, unbranched topology. Equal logical stage effort minimizes this linear delay estimate. Input capacitances are gate sizes, not extra discrete capacitors; layout and cell-library timing remain separate.”
+
+### Catalog input units and bounds
+
+| Key | Unit | Default | Bounds |
+|---|---|---|---|
+| `first_input_capacitance` | F | `3e-15` | > 0 |
+| `final_load_capacitance` | F | `1.44e-13` | > 0 |
+| `first_logical_effort` | 1 | `1.3333333333333333` | >= 1 |
+| `second_logical_effort` | 1 | `1` | >= 1 |
+| `third_logical_effort` | 1 | `1` | >= 1 |
+| `path_parasitic_delay` | 1 | `4` | >= 0 |
+| `process_delay_unit` | s | `2e-11` | > 0 |
+
+Cross-input constraints:
+- None beyond input bounds.
+
+### Sources
+
+- [David Harris, Logical Effort, pages 6-9 and 13-16: d=gh+p, equal stage effort and backward sizing](https://bears.ece.ucsb.edu/class/ece224a/Harris_logical_effort.pdf)
+

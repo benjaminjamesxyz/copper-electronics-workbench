@@ -508,5 +508,131 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "logic.three_stage_logical_effort",
+    "title": "Three-stage CMOS logical-effort gate sizing",
+    "category": "Digital logic and interfaces",
+    "level": "expert",
+    "description": "Size the two internal input capacitances of a fixed unbranched three-gate CMOS path for minimum first-order delay, given its endpoint load and gate logical efforts.",
+    "formula": "F = g1*g2*g3*CL/C1; f = F^(1/3); C2 = C1*f/g1; C3 = CL*g3/f; D = 3*f+P; tpath = tau*D",
+    "assumptions": [
+      "Exactly three fixed-topology static CMOS gates with no side branches or significant interconnect capacitance. Logical efforts are relative to an equal-drive reference inverter and are at least one in this ordinary static-CMOS model.",
+      "Gate input capacitance scales continuously with size; parasitic path delay P is the sum of all three normalized gate parasitics and is assumed independent of size. tau is a characterized process delay unit, not an RC component value.",
+      "Equal stage effort minimizes delay in the linear logical-effort model. Actual standard-cell choices, minimum size, asymmetric pin effort, input slew, routing, rise/fall imbalance and PVT require library timing or transistor-level simulation.",
+      "The result sizes gates for an already chosen stage count and logic polarity; it does not choose an optimal integer stage count or verify register setup."
+    ],
+    "references": [
+      {
+        "title": "David Harris, Logical Effort, pages 6-9 and 13-16: d=gh+p, equal stage effort and backward sizing",
+        "url": "https://bears.ece.ucsb.edu/class/ece224a/Harris_logical_effort.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "first_input_capacitance",
+        "label": "Fixed first-stage input capacitance",
+        "unit": "F",
+        "default": 3e-15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "final_load_capacitance",
+        "label": "Third-stage output load capacitance",
+        "unit": "F",
+        "default": 1.44e-13,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "first_logical_effort",
+        "label": "First-stage logical effort",
+        "unit": "1",
+        "default": 1.3333333333333333,
+        "min": 1
+      },
+      {
+        "key": "second_logical_effort",
+        "label": "Second-stage logical effort",
+        "unit": "1",
+        "default": 1,
+        "min": 1
+      },
+      {
+        "key": "third_logical_effort",
+        "label": "Third-stage logical effort",
+        "unit": "1",
+        "default": 1,
+        "min": 1
+      },
+      {
+        "key": "path_parasitic_delay",
+        "label": "Sum of normalized parasitic delays",
+        "unit": "1",
+        "default": 4,
+        "min": 0
+      },
+      {
+        "key": "process_delay_unit",
+        "label": "Characterized process delay unit",
+        "unit": "s",
+        "default": 2e-11,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "optimal_stage_effort",
+        "label": "Equalized stage effort",
+        "unit": "1",
+        "expression": "exp((ln(first_logical_effort)+ln(second_logical_effort)+ln(third_logical_effort)+ln(final_load_capacitance)-ln(first_input_capacitance))/3)"
+      },
+      {
+        "key": "second_input_capacitance",
+        "label": "Optimal second-stage input capacitance",
+        "unit": "F",
+        "expression": "first_input_capacitance*(optimal_stage_effort/first_logical_effort)"
+      },
+      {
+        "key": "third_input_capacitance",
+        "label": "Optimal third-stage input capacitance",
+        "unit": "F",
+        "expression": "final_load_capacitance*(third_logical_effort/optimal_stage_effort)"
+      },
+      {
+        "key": "normalized_path_delay",
+        "label": "Minimum normalized three-stage path delay",
+        "unit": "1",
+        "expression": "3*optimal_stage_effort+path_parasitic_delay"
+      },
+      {
+        "key": "path_delay",
+        "label": "Estimated minimum path delay",
+        "unit": "s",
+        "expression": "normalized_path_delay*process_delay_unit"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "first_input_capacitance": 3e-15,
+        "final_load_capacitance": 1.44e-13,
+        "first_logical_effort": 1.3333333333333333,
+        "second_logical_effort": 1,
+        "third_logical_effort": 1,
+        "path_parasitic_delay": 4,
+        "process_delay_unit": 2e-11
+      },
+      "expected": {
+        "optimal_stage_effort": 4,
+        "second_input_capacitance": 9e-15,
+        "third_input_capacitance": 3.6e-14,
+        "normalized_path_delay": 16,
+        "path_delay": 3.2e-10
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
