@@ -739,5 +739,93 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.terminal_dissipation",
+    "title": "BJT DC terminal power dissipation",
+    "category": "Bipolar transistor design",
+    "level": "basic",
+    "description": "Estimate actual DC transistor dissipation from both collector and base terminal input power, rather than collector power alone.",
+    "formula": "Pcollector=Vce Ic; Pbase=Vbe Ib; Ptotal=Pcollector+Pbase",
+    "assumptions": [
+      "Steady-state conducting NPN with nonnegative collector/base voltage and current referenced to emitter; PNP can use positive magnitudes.",
+      "Includes base-junction input power, not external base-resistor or driver loss.",
+      "Excludes switching/storage loss, leakage and time-varying energy storage; not a thermal-temperature or safe-operating-area calculation."
+    ],
+    "references": [
+      {
+        "title": "onsemi TND6093/D, Board Design: collector-current times saturation-voltage power estimate",
+        "url": "https://www.onsemi.com/download/white-papers/pdf/tnd6093-d.pdf"
+      },
+      {
+        "title": "MIT 6.101 Lecture 3, slide 17: emitter current equals collector plus base current",
+        "url": "https://web.mit.edu/6.101/www/s2019/handouts/L03_4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_ce",
+        "label": "Collector-emitter voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 0
+      },
+      {
+        "key": "i_collector",
+        "label": "Collector current",
+        "unit": "A",
+        "default": 0.02,
+        "min": 0
+      },
+      {
+        "key": "v_be",
+        "label": "Base-emitter voltage",
+        "unit": "V",
+        "default": 0.7,
+        "min": 0
+      },
+      {
+        "key": "i_base",
+        "label": "Base current",
+        "unit": "A",
+        "default": 0.0002,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "p_collector",
+        "label": "Collector terminal dissipation",
+        "unit": "W",
+        "expression": "v_ce*i_collector"
+      },
+      {
+        "key": "p_base",
+        "label": "Base terminal dissipation",
+        "unit": "W",
+        "expression": "v_be*i_base"
+      },
+      {
+        "key": "p_total",
+        "label": "Total transistor DC dissipation",
+        "unit": "W",
+        "expression": "p_collector+p_base"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "v_ce": 5,
+        "i_collector": 0.02,
+        "v_be": 0.7,
+        "i_base": 0.0002
+      },
+      "expected": {
+        "p_collector": 0.1,
+        "p_base": 0.00014,
+        "p_total": 0.10014
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

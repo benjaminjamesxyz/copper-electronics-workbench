@@ -293,3 +293,44 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 | `gain_base` | `-17.55525518208828` | V/V |
 | `gain_source` | `-16.6769508011674` | V/V |
 
+
+## 5. `bjt.terminal_dissipation` — actual DC transistor power
+
+**Level:** basic. **Purpose:** account for base terminal power in addition to the familiar collector dissipation estimate. This produces a power input for thermal design, not a junction-temperature prediction.
+
+### Derivation and units
+
+For currents entering collector and base and leaving emitter,
+
+`P=Vc*Ic+Vb*Ib-Ve*Ie`.
+
+Use `Ie=Ic+Ib` (S1) to regroup:
+
+`P=(Vc-Ve)*Ic+(Vb-Ve)*Ib=Vce*Ic+Vbe*Ib`.
+
+Both terms have units V*A=W. S4's board-design example uses the common collector-only approximation `Vce(sat)*Ic`; the additional base term follows directly from terminal-power conservation, not from an asserted empirical device rule.
+
+### Domain and limitations
+
+Supplied terminal voltages/currents are nonnegative magnitudes for a steady-state conducting device. No active/saturation assumption is needed for the power balance, so Vce below Vbe is not rejected. External base resistor and driver loss are excluded. Time-varying storage/switching loss and device SOA must be evaluated separately; a power number alone is not a safe-operation certificate. Zero power inputs are permitted because this model has no division or logarithm.
+
+### Independent worked example
+
+Inputs: Vce=5 V, Ic=0.02 A, Vbe=0.7 V, Ib=0.0002 A.
+
+- Collector terminal contribution: `5*0.02=0.1 W`.
+- Base contribution: `0.7*0.0002=0.00014 W`.
+- Total: `0.10014 W`.
+
+Independently set Ve=1 V: Vc=6 V, Vb=1.7 V, Ie=0.0202 A. The terminal sum is `6*0.02+1.7*0.0002-1*0.0202=0.10014 W`, confirming reference-voltage independence.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `p_collector` | `0.1` | W |
+| `p_base` | `0.00014` | W |
+| `p_total` | `0.10014` | W |
+
