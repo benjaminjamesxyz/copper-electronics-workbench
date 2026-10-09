@@ -118,3 +118,49 @@ Complex two-by-two inversion, not the Rust expression evaluator, generated the g
 
 Place common source bus x=70, node-one rail y=85, node-two rail y=185. Each rail passes through its own resistor, with wires broken at resistor bodies, to receiver terminals x=570. Connect C1 from node one down to a clearly separate common-return rail; connect C2 from node two to that same return without accidentally shorting the signal rails. Place Cd vertically between node-one and node-two junctions near x=430. Use explicit junction dots for each branch. Route the shunt capacitor returns outside the bridge region, with no ambiguous crossings. Bind `resistance_one`, `resistance_two`, `capacitance_one`, `capacitance_two`, `differential_capacitance`, and `common_mode_rms`. Mark output + at node one and − at node two; bind its magnitude to `differential_rms`. Caption: “Equal source interference becomes differential through RC mismatch; Cd bridges the receiver inputs. Ideal high-impedance receiver.” Do not draw a differential capacitor to ground.
 
+
+## 3. `emc.trapezoid_conducted_harmonic` — intermediate
+
+### Purpose and novelty
+
+Predict a selected spectral line from the actual conducted pulse current entering a known resistive RF termination. Closest baselines: `signals.rise_time_bandwidth` has one edge-time bandwidth heuristic, while `power.buck_input_capacitor_rms` integrates total waveform RMS. Neither resolves a selected harmonic with duty-cycle nulls and the second edge-shape sinc factor. This is a Fourier-generation model, not a renamed single-pole filter.
+
+### Model and conventions
+
+Use switching_frequency fs [Hz], pulse_current Ipk [A], duty_half_height D, equal edge_time tr [s], harmonic_order n, and termination_resistance R [ohm]. A pulse rises linearly from zero to Ipk in tr, remains at Ipk, and falls to zero in tr. D/fs is measured between 50%-height crossings. tr is **full 0–100% transition time**, not 10–90% rise time.
+
+This waveform is the convolution of a rectangular pulse of duration D/fs with a unit-area rectangle of duration tr. Hence the two Fourier sinc factors:
+
+- harmonic_frequency = n fs
+- dc_current = Ipk D
+- harmonic_current_rms = sqrt(2) Ipk |sin(πnD)/(πn)| × |sin(πn fs tr)/(πn fs tr)|
+- termination_voltage_rms = R harmonic_current_rms
+
+TI equation (1) gives real sinusoidal peak harmonic amplitude; divide by sqrt(2) for our RMS output. A complex Fourier coefficient alone would differ by a factor of two. n must be a positive integer, 0<D<1, tr>0, and tr fs<=min(D,1−D). Equality permits triangular pulses or zero low plateau. Ideal instantaneous edges are represented by the limit tr→0+, not by dividing by a zero argument. The positive argument constraint catches underflow before evaluation. No arbitrary minimum edge time is imposed.
+
+The current must actually enter R. Do not feed raw switch current into this model and infer a 50-ohm LISN result without the intervening network. Detector bandwidth, quasi-peak weighting, line overlap, jitter and spread spectrum are absent.
+
+### Complete independent example
+
+Inputs: switching_frequency=100000 Hz; pulse_current=0.001 A; duty_half_height=0.4; edge_time=1e-7 s; harmonic_order=3; termination_resistance=50 ohm.
+
+- harmonic_frequency = **300000 Hz**.
+- dc_current = 0.001×0.4 = **0.0004 A**.
+- Duty angle πnD=1.2π; edge angle πn fs tr=0.03π.
+- Peak line amplitude = 2×0.001×0.4×|sin(1.2π)/(1.2π)|×|sin(0.03π)/(0.03π)|.
+- harmonic_current_rms = peak/sqrt(2) = **0.00008806826043190418 A**.
+- termination_voltage_rms = 50×current = **0.004403413021595208 V**.
+
+### Independent tester cases
+
+- Nominal: all four outputs above at 1e-6 relative tolerance.
+- Triangular endpoint: change D=0.5, tr=5e-6 s, n=1, retain fs=100000, Ipk=0.001, R=50. Expected frequency=100000 Hz, DC=0.0005 A, RMS current=2sqrt(2)×0.001/π²=**0.0002865795841253782 A**, RMS voltage=**0.014328979206268907 V**.
+- For D=0.5 and n=2, the harmonic is analytically zero; an absolute null tolerance scaled to Ipk times floating-point sine error is appropriate. Never compare a numerical sine residual relatively to mathematical zero.
+- Ipk=0 gives zero DC/current/voltage while retaining fn. Complement D with 1−D: harmonic magnitude stays equal, DC changes.
+- As tr→0+, the edge factor tends to one. Small representable arguments must not be clamped to an arbitrary floor.
+- Reject fractional n, n<1, D endpoints/outside, tr<=0, overlapping edges, fs<=0 and R<=0. A nonfinite/underflowed sine denominator must produce an explicit error.
+
+### Mandatory diagram
+
+Use a static current-versus-time sketch in x=55..420, y=45..195 with zero baseline and one trapezoid. Show 50%-height markers and a width bracket between those markers, labeled “D/fs” with separate keys `duty_half_height` and `switching_frequency`; never bind a duration directly to the dimensionless duty key. Label the full rising-edge bracket `edge_time` and plateau `pulse_current`. At right, show a current arrow into a resistor to return, labeling `termination_resistance` and RMS result `termination_voltage_rms`. Put one conceptual spectral line inset labeled `harmonic_frequency` and `harmonic_current_rms`; do not plot computed line height. Caption: “Illustrative symmetric full-edge trapezoid; the selected Fourier line is RMS. Current is assumed delivered to the RF termination, not inferred from a switch node.”
+

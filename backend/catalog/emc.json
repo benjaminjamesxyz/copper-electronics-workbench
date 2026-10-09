@@ -219,5 +219,139 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "emc.trapezoid_conducted_harmonic",
+  "title": "Trapezoidal conducted-current harmonic",
+  "category": "EMC design",
+  "level": "intermediate",
+  "description": "Estimate one conducted harmonic from a symmetric-edge switching-current pulse train and its known resistive termination voltage. Not a receiver compliance reading.",
+  "formula": "fn=n fs; Idc=Ipk D; In,rms=sqrt(2) Ipk |sin(pi n D)/(pi n)| |sin(pi n fs tr)/(pi n fs tr)|; Vn,rms=R In,rms",
+  "assumptions": [
+    "Periodic unipolar trapezoid has equal linear 0-to-100% rise and fall times tr, not oscilloscope 10-to-90% times.",
+    "D is pulse width between the half-amplitude crossings divided by period. tr<=min(D,1-D)/fs prevents overlapping edges.",
+    "Input current is the actual current delivered to a purely resistive RF termination, not an unfiltered switch current assumed to reach a LISN.",
+    "No frequency modulation, ringing, nonlinear load, spectral detector, resolution bandwidth or LISN transfer model is included.",
+    "Harmonic RMS amplitude estimate only; never a peak/quasi-peak compliance prediction. Analytic harmonic nulls may leave floating-point sine residuals."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments, Rice/Gehrke/Segal, Understanding Noise-Spreading Techniques, section IV equation 1 and Figure 2",
+      "url": "https://www.ti.com/download/trng/docs/seminar/Topic_2_Rice_Gehrke_Segal.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "switching_frequency",
+      "label": "Pulse repetition frequency",
+      "unit": "Hz",
+      "default": 100000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "pulse_current",
+      "label": "Plateau current above zero baseline",
+      "unit": "A",
+      "default": 0.001,
+      "min": 0
+    },
+    {
+      "key": "duty_half_height",
+      "label": "Half-height pulse duty",
+      "unit": "1",
+      "default": 0.4,
+      "min": 0,
+      "max": 1,
+      "exclusive_min": true,
+      "exclusive_max": true
+    },
+    {
+      "key": "edge_time",
+      "label": "Equal full rise and fall time",
+      "unit": "s",
+      "default": 1e-07,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "harmonic_order",
+      "label": "Positive integer harmonic order",
+      "unit": "1",
+      "default": 3,
+      "min": 1
+    },
+    {
+      "key": "termination_resistance",
+      "label": "RF termination resistance",
+      "unit": "ohm",
+      "default": 50,
+      "min": 0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "harmonic_frequency",
+      "label": "Selected harmonic frequency",
+      "unit": "Hz",
+      "expression": "harmonic_order*switching_frequency"
+    },
+    {
+      "key": "dc_current",
+      "label": "Mean pulse current",
+      "unit": "A",
+      "expression": "pulse_current*duty_half_height"
+    },
+    {
+      "key": "harmonic_current_rms",
+      "label": "Harmonic sinusoidal RMS current",
+      "unit": "A",
+      "expression": "sqrt(2)*pulse_current*abs(sin(pi*harmonic_order*duty_half_height)/(pi*harmonic_order))*abs(sin(pi*harmonic_frequency*edge_time)/(pi*harmonic_frequency*edge_time))"
+    },
+    {
+      "key": "termination_voltage_rms",
+      "label": "Harmonic termination RMS voltage",
+      "unit": "V",
+      "expression": "harmonic_current_rms*termination_resistance"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "harmonic_order",
+      "op": "==",
+      "right": "floor(harmonic_order)",
+      "message": "Harmonic order must be a positive integer."
+    },
+    {
+      "left": "edge_time*switching_frequency",
+      "op": "<=",
+      "right": "min(duty_half_height,1-duty_half_height)",
+      "message": "Full rise and fall edges must fit the high and low intervals."
+    },
+    {
+      "left": "pi*harmonic_order*switching_frequency*edge_time",
+      "op": ">",
+      "right": "0",
+      "message": "The positive edge-to-period argument must be representable."
+    }
+  ],
+  "example": {
+    "inputs": {
+      "switching_frequency": 100000,
+      "pulse_current": 0.001,
+      "duty_half_height": 0.4,
+      "edge_time": 1e-07,
+      "harmonic_order": 3,
+      "termination_resistance": 50
+    },
+    "expected": {
+      "harmonic_frequency": 300000,
+      "dc_current": 0.0004,
+      "harmonic_current_rms": 8.806826043190418e-05,
+      "termination_voltage_rms": 0.004403413021595208
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]
