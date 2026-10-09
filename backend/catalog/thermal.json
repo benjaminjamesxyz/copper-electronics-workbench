@@ -954,5 +954,147 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "thermal.free_linear_expansion",
+    "title": "Free linear thermal expansion",
+    "category": "Thermal and reliability design",
+    "level": "basic",
+    "description": "Estimate a freely expanding hardware member's length change with a constant directional coefficient of thermal expansion.",
+    "formula": "strain=alpha(T_final-T_initial); dL=L_initial strain; L_final=L_initial+dL",
+    "assumptions": [
+      "Uniform temperature and an unconstrained member; this computes free dimensional change, not thermal stress, warpage or solder fatigue.",
+      "The input is the directional linear coefficient, not volumetric expansion. For anisotropic boards choose the coefficient along the length being analyzed.",
+      "Constant mean coefficient is valid only over the entered material interval; phase changes, glass transition and large temperature-dependent CTE variations require another model.",
+      "The first-order linear approximation is restricted to absolute thermal strain at most 0.01. Positive or negative CTE and heating or cooling are supported."
+    ],
+    "references": [
+      {
+        "title": "NIST Journal of Research 100(2), Smith and Fickett: Low-Temperature Properties of Silver, section 2.3.3 defines linear expansion coefficient",
+        "url": "https://nvlpubs.nist.gov/nistpubs/jres/100/2/j12smi.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "initial_length",
+        "label": "Length at initial temperature",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "expansion_coefficient",
+        "label": "Directional mean linear expansion coefficient",
+        "unit": "1/K",
+        "default": 2.3e-05
+      },
+      {
+        "key": "initial_temperature",
+        "label": "Initial member temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "final_temperature",
+        "label": "Final member temperature",
+        "unit": "K",
+        "default": 378.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_temperature_min",
+        "label": "Minimum validated CTE temperature",
+        "unit": "K",
+        "default": 273.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_temperature_max",
+        "label": "Maximum validated CTE temperature",
+        "unit": "K",
+        "default": 423.15,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "thermal_strain",
+        "label": "Free thermal strain",
+        "unit": "1",
+        "expression": "expansion_coefficient*(final_temperature-initial_temperature)"
+      },
+      {
+        "key": "length_change",
+        "label": "Signed length change",
+        "unit": "m",
+        "expression": "initial_length*thermal_strain"
+      },
+      {
+        "key": "final_length",
+        "label": "Length at final temperature",
+        "unit": "m",
+        "expression": "initial_length+length_change"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_temperature_max",
+        "op": ">",
+        "right": "fit_temperature_min",
+        "message": "The validated CTE interval must have positive width."
+      },
+      {
+        "left": "initial_temperature",
+        "op": ">=",
+        "right": "fit_temperature_min",
+        "message": "Initial temperature is below the validated CTE interval."
+      },
+      {
+        "left": "initial_temperature",
+        "op": "<=",
+        "right": "fit_temperature_max",
+        "message": "Initial temperature is above the validated CTE interval."
+      },
+      {
+        "left": "final_temperature",
+        "op": ">=",
+        "right": "fit_temperature_min",
+        "message": "Final temperature is below the validated CTE interval."
+      },
+      {
+        "left": "final_temperature",
+        "op": "<=",
+        "right": "fit_temperature_max",
+        "message": "Final temperature is above the validated CTE interval."
+      },
+      {
+        "left": "abs(expansion_coefficient*(final_temperature-initial_temperature))",
+        "op": "<=",
+        "right": "0.01",
+        "message": "Thermal strain must not exceed 1 percent for this small-strain model."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "initial_length": 0.1,
+        "expansion_coefficient": 2.3e-05,
+        "initial_temperature": 298.15,
+        "final_temperature": 378.15,
+        "fit_temperature_min": 273.15,
+        "fit_temperature_max": 423.15
+      },
+      "expected": {
+        "thermal_strain": 0.00184,
+        "length_change": 0.000184,
+        "final_length": 0.100184
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

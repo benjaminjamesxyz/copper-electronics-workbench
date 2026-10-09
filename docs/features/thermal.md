@@ -479,3 +479,62 @@ Complete independent example input vector (relative tolerance `1e-6`):
 }
 ```
 
+## `thermal.free_linear_expansion` — Free linear thermal expansion
+
+**ID:** `thermal.free_linear_expansion`; **level:** basic. **Reference:** 10.
+
+### Model and derivation
+
+The directional linear expansion coefficient is the normalized change of length with temperature. With a constant mean coefficient and small strain, integrate the first-order relation relative to initial length:
+
+- `epsilon=alpha(T_final−T_initial)`;
+- `deltaL=L_initial epsilon`;
+- `L_final=L_initial+deltaL`.
+
+For a differential coefficient normalized to instantaneous length, the exact constant-coefficient solution is exponential; the catalog intentionally uses the ordinary **first-order small-strain engineering approximation**. A supplied mean engineering coefficient over the interval directly supports the linear form.
+
+### Units, domain and limitations
+
+Lengths m, temperature K, directional coefficient 1/K, strain dimensionless. Initial length positive, temperatures positive, validated interval ordered and both temperatures inside it. Signed CTE, heating and cooling are supported. The domain guard **abs(alpha deltaT)<=0.01** limits the first-order model to at most 1% strain; it is a declared approximation threshold, not a material standard. This bound also guarantees positive final length.
+
+The member is unconstrained and uniformly heated. No stress, curvature, differential-material warpage or solder-fatigue life is inferred. For PCB anisotropy use the coefficient along the modeled length. Do not apply a constant coefficient across glass transition, phase change, or a region with strong coefficient variation without appropriate characterization.
+
+### Independent worked example
+
+Inputs: `L_initial=0.1 m`, illustrative `alpha=23×10^-6/K`, initial `298.15 K`, final `378.15 K`, fit interval `[273.15,423.15] K`.
+
+Temperature difference is 80 K. **epsilon=0.00184**, **deltaL=0.000184 m** (0.184 mm), and **L_final=0.100184 m**. The 0.184% free strain meets the declared 1% approximation limit. The coefficient is an illustrative input, not a value attributed to the silver reference.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `initial_length` | Length at initial temperature | m | 0.1 | > 0 |
+| `expansion_coefficient` | Directional mean linear expansion coefficient | 1/K | 2.3e-05 | Any finite signed value |
+| `initial_temperature` | Initial member temperature | K | 298.15 | > 0 |
+| `final_temperature` | Final member temperature | K | 378.15 | > 0 |
+| `fit_temperature_min` | Minimum validated CTE temperature | K | 273.15 | > 0 |
+| `fit_temperature_max` | Maximum validated CTE temperature | K | 423.15 | > 0 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `thermal_strain` | 1 | `expansion_coefficient*(final_temperature-initial_temperature)` | 0.00184 |
+| `length_change` | m | `initial_length*thermal_strain` | 0.000184 |
+| `final_length` | m | `initial_length+length_change` | 0.100184 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "initial_length": 0.1,
+  "expansion_coefficient": 2.3e-05,
+  "initial_temperature": 298.15,
+  "final_temperature": 378.15,
+  "fit_temperature_min": 273.15,
+  "fit_temperature_max": 423.15
+}
+```
+
