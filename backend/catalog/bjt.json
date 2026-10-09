@@ -1,0 +1,125 @@
+[
+  {
+    "id": "bjt.saturated_switch_drive",
+    "title": "Saturated BJT switch base-drive sizing",
+    "category": "Bipolar transistor design",
+    "level": "basic",
+    "description": "Choose the maximum base resistor for a specified collector current and datasheet-supported forced beta, including driver series resistance and current capability.",
+    "formula": "Ib=Ic/beta_forced; Rb_max=(Vdrive_min-Vbe_sat_max)/Ib-Rdriver; Prb=Ib^2 Rb_max",
+    "assumptions": [
+      "Low-side NPN with emitter grounded and no base-emitter shunt resistor.",
+      "Use a forced beta tied to a guaranteed Vce(sat) specification at the intended collector current and temperature, not typical forward-active hFE.",
+      "Driver voltage is its guaranteed minimum Thevenin source voltage; series resistance is modeled separately.",
+      "Choose a real resistor no larger than the calculated limit, then check maximum-drive current, tolerances, turn-off storage time and driver ratings separately."
+    ],
+    "references": [
+      {
+        "title": "onsemi AND9129/D: Understanding a Digital Transistor Datasheet, saturation test conditions and drive-current equations",
+        "url": "https://www.onsemi.com/download/application-notes/pdf/and9129-d.pdf"
+      },
+      {
+        "title": "onsemi TND6093/D: Low VCE(sat) BJTs in Automotive Applications, base-drive capability",
+        "url": "https://www.onsemi.com/download/white-papers/pdf/tnd6093-d.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "i_collector",
+        "label": "Required on-state collector current",
+        "unit": "A",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta_forced",
+        "label": "Datasheet-supported forced beta",
+        "unit": "1",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_drive_min",
+        "label": "Minimum driver source voltage",
+        "unit": "V",
+        "default": 3.3,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "vbe_sat_max",
+        "label": "Maximum on-state base-emitter voltage",
+        "unit": "V",
+        "default": 0.9,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_driver",
+        "label": "Driver series resistance",
+        "unit": "ohm",
+        "default": 20,
+        "min": 0
+      },
+      {
+        "key": "i_driver_max",
+        "label": "Available driver source current",
+        "unit": "A",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "i_base_required",
+        "label": "Required base current",
+        "unit": "A",
+        "expression": "i_collector/beta_forced"
+      },
+      {
+        "key": "r_base_max",
+        "label": "Maximum external base resistance",
+        "unit": "ohm",
+        "expression": "(v_drive_min-vbe_sat_max)/i_base_required-r_driver"
+      },
+      {
+        "key": "p_base_resistor",
+        "label": "External resistor dissipation at minimum drive",
+        "unit": "W",
+        "expression": "i_base_required^2*r_base_max"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_drive_min-vbe_sat_max",
+        "op": ">",
+        "right": "i_collector*r_driver/beta_forced",
+        "message": "Driver must have enough voltage headroom for a positive external resistor."
+      },
+      {
+        "left": "i_collector/beta_forced",
+        "op": "<=",
+        "right": "i_driver_max",
+        "message": "Required base current exceeds the driver source-current capability."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "i_collector": 0.1,
+        "beta_forced": 10,
+        "v_drive_min": 3.3,
+        "vbe_sat_max": 0.9,
+        "r_driver": 20,
+        "i_driver_max": 0.02
+      },
+      "expected": {
+        "i_base_required": 0.01,
+        "r_base_max": 220,
+        "p_base_resistor": 0.022
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
