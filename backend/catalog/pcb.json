@@ -451,5 +451,88 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.differential_length_skew",
+    "title": "Differential-pair routed length-mismatch skew",
+    "category": "PCB interconnect and manufacturing",
+    "level": "intermediate",
+    "description": "Calculate signed and magnitude intra-pair timing skew from the two routed lengths and a supplied stackup propagation-delay density.",
+    "formula": "DeltaL = L_positive - L_negative; Delta_t = DeltaL * delay_per_length; skew = abs(Delta_t)",
+    "assumptions": [
+      "Both conductors have the same propagation-delay density, layer structure and reference environment; the supplied density should come from the stackup or extraction.",
+      "Positive signed skew means the positive leg arrives later than the negative leg.",
+      "Default 6.84e-9 s/m is TI's approximate FR-4 scale of 6.84 ps/mm, not a universal FR-4 specification.",
+      "Only routed-length mismatch is modeled; package/connector/via asymmetry, weave-induced dielectric skew, dispersion and tightly coupled serpentine effects are excluded.",
+      "This is not an absolute transmission-line delay or RF-impedance solver; an interface-specific permissible skew is not assumed."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments, Clock Conditioner Owner's Manual SNAA103, Chapter 6, Minimizing Skew",
+        "url": "https://www.ti.com/lit/pdf/snaa103"
+      },
+      {
+        "title": "Texas Instruments SPRACP4A, High-Speed Interface Design Guidelines, section 2.3 Differential Signal Length Matching",
+        "url": "https://www.ti.com/lit/an/spracp4a/spracp4a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "positive_length",
+        "label": "Positive-leg routed length",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0.0
+      },
+      {
+        "key": "negative_length",
+        "label": "Negative-leg routed length",
+        "unit": "m",
+        "default": 0.099,
+        "min": 0.0
+      },
+      {
+        "key": "delay_per_length",
+        "label": "Common stackup propagation-delay density",
+        "unit": "s/m",
+        "default": 6.84e-09,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "signed_length_mismatch",
+        "label": "Positive-minus-negative length",
+        "unit": "m",
+        "expression": "positive_length-negative_length"
+      },
+      {
+        "key": "signed_skew",
+        "label": "Positive-minus-negative arrival delay",
+        "unit": "s",
+        "expression": "signed_length_mismatch*delay_per_length"
+      },
+      {
+        "key": "skew_magnitude",
+        "label": "Intra-pair skew magnitude",
+        "unit": "s",
+        "expression": "abs(signed_skew)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "positive_length": 0.08,
+        "negative_length": 0.0775,
+        "delay_per_length": 6.84e-09
+      },
+      "expected": {
+        "signed_length_mismatch": 0.0025,
+        "signed_skew": 1.71e-11,
+        "skew_magnitude": 1.71e-11
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

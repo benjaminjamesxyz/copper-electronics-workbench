@@ -312,3 +312,58 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `nominal_thickness` | 7e-05 | m |
 | `nominal_thickness_mil` | 2.7559055118110236 | mil |
 
+
+## pcb.differential_length_skew — Differential-pair routed length-mismatch skew
+
+**Level:** intermediate
+
+**Purpose:** Calculate signed and magnitude intra-pair timing skew from the two routed lengths and a supplied stackup propagation-delay density.
+
+**References:** [TI-S](https://www.ti.com/lit/pdf/snaa103), Chapter 6, Minimizing Skew; [TI-D](https://www.ti.com/lit/an/spracp4a/spracp4a.pdf), section 2.3.
+
+For the same propagation-delay density tau_l on both legs, their common delay component cancels in subtraction. The residual intra-pair skew is:
+
+- `signed_length_mismatch = positive_length-negative_length`, m;
+- `signed_skew = signed_length_mismatch*delay_per_length`, s;
+- `skew_magnitude = abs(signed_skew)`, s.
+
+The conversion has units `m*(s/m) = s`. Positive signed skew means the positive trace is longer and arrives later. Providing tau_l as an input avoids inventing a dielectric/impedance solver in this lane. TI's 6.84 ps/mm illustrative scale converts to 6.84e-9 s/m and is the editable default.
+
+**Domain and limitations.** Both lengths can be zero or positive; tau_l must be strictly positive. Equal lengths give exact zero skew. Legs must share the same stackup, material/velocity environment and definition of routed length. Package delay, connector/via asymmetry, layer changes, glass weave, dispersion, velocity mismatch and coupled serpentine shortcuts are excluded. A pair routed in different environments can have nonzero skew even with equal lengths. No universal interface tolerance is imposed, and no absolute transmission-line delay or impedance is computed.
+
+**Independent worked example.** L_positive = 80 mm, L_negative = 77.5 mm and tau_l = 6.84 ps/mm:
+
+1. Mismatch = 80 - 77.5 = 2.5 mm = 0.0025 m.
+2. Signed skew = 2.5 × 6.84 = 17.10 ps = 1.710e-11 s.
+3. Magnitude = 1.710e-11 s.
+
+This example uses millimetres/picoseconds before conversion to SI, independently of the catalog expression units.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `positive_length` | Positive-leg routed length | m | 0.1 | >= 0.0 |
+| `negative_length` | Negative-leg routed length | m | 0.099 | >= 0.0 |
+| `delay_per_length` | Common stackup propagation-delay density | s/m | 6.84e-09 | > 0.0 |
+
+**Input-only guards and error rationale:**
+
+- No additional relational constraints; the scalar ranges enforce this model’s domain.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `positive_length` | 0.08 | m |
+| `negative_length` | 0.0775 | m |
+| `delay_per_length` | 6.84e-09 | s/m |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `signed_length_mismatch` | 0.0025 | m |
+| `signed_skew` | 1.71e-11 | s |
+| `skew_magnitude` | 1.71e-11 | s |
+
