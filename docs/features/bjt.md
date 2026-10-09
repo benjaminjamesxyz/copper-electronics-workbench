@@ -218,3 +218,36 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 | `v_collector` | `7.616666666666667` | V |
 | `v_ce` | `6.412962962962963` | V |
 
+
+## 3. `bjt.hybrid_pi_parameters` — gm and rpi
+
+**Level:** basic. **Purpose:** generate operating-point-dependent incremental BJT parameters, rather than assume an arbitrary transconductance.
+
+### Derivation and units
+
+For a forward-active ideality-one junction, `Ic=Is*exp(Vbe/VT)`. Differentiating at the operating point gives `gm=dIc/dVbe=Ic/VT` in A/V = S. Incremental current gain satisfies `beta_ac=ic/ib=gm*rpi`, hence `rpi=beta_ac/gm` in ohm. `VT=kT/q` has units J/C = V. S1 slides 42 and 46 provide these parameter relationships; S5/S6 provide exact constants. The exponential current law is only a derivation here, not a diode-current calculator.
+
+### Domain and limitations
+
+Ic and beta_ac are strictly positive; T is 200–450 K. These are low-frequency, low-injection, forward-active parameters. The signal variation at the base-emitter junction must be much smaller than VT. Capacitive poles, Early output resistance, self-heating and base spreading resistance are not included. DC beta can differ from beta_ac; consult operating-point data.
+
+### Independent worked example
+
+At T=300 K, Ic=0.002 A and beta_ac=100:
+
+- `VT=(1.380649e-23*300)/(1.602176634e-19)=0.0258519997864355 V`.
+- `gm=0.002/VT=0.0773634541436672 S`.
+- `rpi=100/gm=1292.59998932178 ohm`.
+
+As an independent dimensional and algebraic check, `gm*rpi=100`.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `v_thermal` | `0.02585199978643553` | V |
+| `g_m` | `0.07736345414366722` | S |
+| `r_pi` | `1292.5999893217765` | ohm |
+

@@ -517,5 +517,85 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.hybrid_pi_parameters",
+    "title": "BJT hybrid-pi transconductance and input resistance",
+    "category": "Bipolar transistor design",
+    "level": "basic",
+    "description": "Derive low-frequency small-signal gm and rpi from collector bias, incremental beta and junction temperature.",
+    "formula": "VT=kT/q; gm=Ic/VT; rpi=beta_ac/gm",
+    "assumptions": [
+      "Forward-active, low-injection ideality-one BJT at a stable operating point.",
+      "beta_ac is incremental current gain, not necessarily DC hFE.",
+      "Low frequency; junction capacitance, base spreading resistance and self-heating are excluded.",
+      "Signals must be much smaller than VT at the base-emitter junction; the 200-450 K range is a catalog model envelope, not a device rating."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.101 Lecture 3, slides 42 and 46: hybrid-pi parameters",
+        "url": "https://web.mit.edu/6.101/www/s2019/handouts/L03_4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "i_collector",
+        "label": "Quiescent collector current",
+        "unit": "A",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta_ac",
+        "label": "Incremental current gain",
+        "unit": "1",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature",
+        "label": "Junction temperature",
+        "unit": "K",
+        "default": 300,
+        "min": 200,
+        "max": 450
+      }
+    ],
+    "outputs": [
+      {
+        "key": "v_thermal",
+        "label": "Thermal voltage",
+        "unit": "V",
+        "expression": "1.380649e-23*temperature/1.602176634e-19"
+      },
+      {
+        "key": "g_m",
+        "label": "Transconductance",
+        "unit": "S",
+        "expression": "i_collector/v_thermal"
+      },
+      {
+        "key": "r_pi",
+        "label": "Base-emitter small-signal resistance",
+        "unit": "ohm",
+        "expression": "beta_ac/g_m"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "i_collector": 0.002,
+        "beta_ac": 100,
+        "temperature": 300
+      },
+      "expected": {
+        "v_thermal": 0.02585199978643553,
+        "g_m": 0.07736345414366722,
+        "r_pi": 1292.5999893217765
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
