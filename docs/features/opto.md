@@ -238,3 +238,39 @@ Use a left input-pulse panel x=40..200, a fiber block x=250..440, and right outp
 
 Quantity labels: `T0` → `initial_width`; `C` → `initial_chirp`; `beta2` → `beta_two`; `L` → `fiber_length`; `Tout` → `output_width`; `Ppeak` → `output_peak_power`. Caption: “Illustrative compression case, not a live waveform. Gaussian intensity widths are 1/e half-widths. Linear second-order dispersion conserves pulse energy; chirp sign can reverse initial broadening.”
 
+
+## 7. `opto.sipm_finite_cell_response`
+
+### Purpose, novelty and source
+
+Use this expert model to screen SiPM microcell count and expected output charge for short optical pulses. H2 section V Dynamic range equation 9 gives `Nf=Ncell*(1-exp(-Nph*PDE/Ncell))`. Sections II equations 6–7 give gain in electrons per avalanche and total output charge. A uniform Poisson occupancy derivation yields the same form: the probability a cell receives no detected seed is `exp(-S/Ncell)`.
+
+Closest baseline: `noise.junction_shot` describes current fluctuations without discrete available detection sites. `noise.analog_dynamic_range` compares signal and noise amplitudes; it has no occupancy saturation law. Closest neighboring optical item: unity-gain photodiode current remains proportional to flux within its stated range, whereas this item models finite-cell Geiger-mode saturation and pulsed avalanche charge. Gain is supplied, not a second capacitor-charge calculator.
+
+### Model and physical domain
+
+`seed_count=photon_count*detection_efficiency`; `u=seed_count/cell_count`; `relative_response=exprel(-u)`; `fired_cells=seed_count*relative_response`; `output_charge=q*avalanche_gain*fired_cells`. The equivalent occupancy expression uses `-cell_count*expm1(-u)`. Using the seed-times-exprel form preserves low exposure and the analytic zero limit without dividing by a zero seed count.
+
+Require nonnegative photon mean, `0<=detection_efficiency<=1`, positive gain and an integer cell count at least one. Photon mean need not be integral; mean fired cells need not be integral. Gain/PDE must match overvoltage, temperature and wavelength. Uniform exposure and initially fully recovered cells are required. The pulse must be much shorter than recovery; pulse spacing must permit recovery. Ignore crosstalk, afterpulsing, dark counts and repeated cell firing. PDE excludes those correlated effects.
+
+**Important physical limitation:** H2 explicitly presents measured over-saturation above the model's cell-count limit. Therefore `fired_cells<=cell_count` is a property of this occupancy model, not a guaranteed bound on measured SiPM charge. Do not hide that caveat in implementation documentation or interpret the result as a detector rating.
+
+### Complete independent example
+
+Inputs: `photon_count=2000`, `detection_efficiency=0.4`, `cell_count=1600`, `avalanche_gain=1000000`.
+
+- `seed_count=2000*0.4=800`.
+- `fired_cells=1600*(1-exp(-800/1600))=629.550944459786522234`.
+- `relative_response=fired_cells/800=0.786938680574733152792`.
+- `output_charge=1.602176634e-19*1000000*fired_cells=1.00865181312610171855e-10 C`.
+
+### Tester cases
+
+Assert all four nominal outputs. Zero photon mean or zero PDE yields seed/fired/charge exactly zero and relative response exactly one. For `photon_count=4e-17`, nominal PDE/cells/gain, seed count is `1.6e-17`, fired count approaches `1.6e-17`, response rounds to one and charge approaches `2.5634826144e-30 C`; do not lose the fired count to cancellation. Increasing photons at fixed cells monotonically increases fired count toward cell count but decreases relative response. Doubling gain doubles only charge. `cell_count=1` is valid, while 1.5 is invalid. Reject zero cell count, nonpositive gain, negative photon mean and PDE outside [0,1]. The nominal uniformity/recovery assumptions cannot be inferred from these four scalar inputs; testers must not claim they were validated.
+
+### Mandatory diagram
+
+Draw an array of identical microcell boxes centered around x=320, y=145, with a few visibly marked as fired. Several optical arrows can land on one cell, but only one outgoing contribution is shown for that cell. A collecting output arrow points right to a charge label. Place a small unbound conceptual saturation curve in a separate lower-right panel only if it fits without crowding; it must be labeled illustrative and not contain calculated numeric coordinates. The drawn cell count is a schematic subset, never a literal rendering of the entered integer.
+
+Quantity labels: `Nph` → `photon_count`; `PDE` → `detection_efficiency`; `Ncell` → `cell_count`; `Nf` → `fired_cells`; `Q` → `output_charge`. Caption: “Uniform short-pulse occupancy of recovered microcells; repeated photons on one cell add no second firing in this model. Array and any response curve are illustrative. Crosstalk, recovery and measured over-saturation are excluded.”
+

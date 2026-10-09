@@ -622,5 +622,108 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opto.sipm_finite_cell_response",
+    "title": "SiPM finite-cell short-pulse response",
+    "category": "Optical hardware",
+    "level": "expert",
+    "description": "Estimate mean fired microcells and output charge under uniform short-pulse illumination, including occupancy saturation.",
+    "formula": "S=Nph*PDE; Nf=Ncell*(1-exp(-S/Ncell)); response=exprel(-S/Ncell); Q=q*gain*Nf",
+    "assumptions": [
+      "Uniform Poisson photon exposure over identical fully recovered microcells; photon_count is the incident mean per pulse.",
+      "Optical pulse is much shorter than cell recovery time, each cell fires at most once, and pulses are separated enough for full recovery.",
+      "Detection efficiency excludes afterpulsing and optical crosstalk. Those effects, dark counts, recovery during the pulse and nonuniform illumination are not modeled.",
+      "Gain is electrons per fired cell at the operating overvoltage and temperature; no quenching or readout circuit model.",
+      "The finite-cell occupancy model is a screening estimate. Hamamatsu reports measured over-saturation not explained by it; it is not a device rating or a guaranteed upper bound on measured charge.",
+      "relative_response is the response divided by its unsaturated extrapolation; its analytic value at zero illumination or zero PDE is one."
+    ],
+    "references": [
+      {
+        "title": "Hamamatsu MPPC physics, section V Dynamic range equation 9, section II equations 6-7",
+        "url": "https://hub.hamamatsu.com/us/en/technical-notes/mppc-sipms/physics-and-operation-of-the-MPPC-silicon-photomultiplier.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "photon_count",
+        "label": "Mean incident photons per pulse",
+        "unit": "1",
+        "default": 2000,
+        "min": 0
+      },
+      {
+        "key": "detection_efficiency",
+        "label": "Photon detection efficiency excluding correlated noise",
+        "unit": "1",
+        "default": 0.4,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "cell_count",
+        "label": "Available fully recovered microcells",
+        "unit": "1",
+        "default": 1600,
+        "min": 1
+      },
+      {
+        "key": "avalanche_gain",
+        "label": "Electrons per fired microcell",
+        "unit": "1",
+        "default": 1000000.0,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "seed_count",
+        "label": "Unsaturated mean detection seeds",
+        "unit": "1",
+        "expression": "photon_count*detection_efficiency"
+      },
+      {
+        "key": "fired_cells",
+        "label": "Mean fired microcells",
+        "unit": "1",
+        "expression": "seed_count*exprel(-seed_count/cell_count)"
+      },
+      {
+        "key": "relative_response",
+        "label": "Response relative to unsaturated extrapolation",
+        "unit": "1",
+        "expression": "exprel(-seed_count/cell_count)"
+      },
+      {
+        "key": "output_charge",
+        "label": "Mean pulse output charge magnitude",
+        "unit": "C",
+        "expression": "(1.602176634e-19*avalanche_gain)*fired_cells"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "cell_count",
+        "op": "==",
+        "right": "floor(cell_count)",
+        "message": "Available microcell count must be an integer."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "photon_count": 2000,
+        "detection_efficiency": 0.4,
+        "cell_count": 1600,
+        "avalanche_gain": 1000000.0
+      },
+      "expected": {
+        "seed_count": 800.0,
+        "fired_cells": 629.5509444597865,
+        "relative_response": 0.7869386805747332,
+        "output_charge": 1.0086518131261018e-10
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
