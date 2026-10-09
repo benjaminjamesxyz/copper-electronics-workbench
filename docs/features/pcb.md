@@ -87,3 +87,59 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `resistance` | 0.007285714285714286 | ohm |
 | `voltage_drop` | 0.029142857142857144 | V |
 
+
+## pcb.ipc2221_current_estimate — Legacy IPC-2221 trace current screening estimate
+
+**Level:** expert
+
+**Purpose:** Compute both legacy external- and internal-layer current estimates for a specified trace cross-section and selected temperature rise; this is not a certified current rating.
+
+**References:** [TI-I](https://www.ti.com/lit/ug/tiducs7/tiducs7.pdf), section 3.1.1, Equation 7; [IPC-S public outline](https://www.ipc.org/TOC/IPC-2152.pdf).
+
+TI reproduces the relation DeltaT = `[I/(k A^0.725)]^(1/0.44)`. Solving this one model for current gives I = k DeltaT^0.44 A^0.725. The catalog counts the physical current-screening problem once and displays both layer estimates, not two inversions:
+
+- `area_mil2 = width_mil*thickness_mil`;
+- `external_current = 0.048*temperature_rise^0.44*area_mil2^0.725`;
+- `internal_current = 0.024*temperature_rise^0.44*area_mil2^0.725`.
+
+Width and thickness are **mil**, not metres or millimetres. One mil = 0.001 inch = 25.4 µm. Area is mil², conductor temperature rise is °C, and the fitted coefficients yield amperes. The coefficients carry the necessary empirical unit dependence; this is not a dimensionally universal SI power law.
+
+**Domain and limitations.** Positive width/thickness are required. The catalog imposes a clearly labeled screening policy of 1–100 °C selected rise; it is **not** asserted to be an experimentally certified validity interval. No source-backed universal geometric applicability range was found in the readable TI reproduction; positive values alone do not prove the curve fit applies to arbitrary geometry. The user must not extrapolate it into a guaranteed thermal or safety rating. It omits board thickness, copper planes, laminate conductivity, airflow, ambient conditions, nearby heat sources, neck-downs and transient/fault duration. Neither the numerical output nor the usual internal/external factor of two is guaranteed conservative. This is not an IPC-2152 implementation and does not establish IPC compliance. Board-specific thermal analysis/prototype measurements and electrical-drop checks remain necessary.
+
+**Independent worked example.** w = 40 mil, t = 1.4 mil and selected rise = 20 °C:
+
+1. A = 40 × 1.4 = 56 mil².
+2. ln(I_external) = ln(0.048) + 0.44 ln(20) + 0.725 ln(56).
+3. Exponentiating gives I_external = 3.3199439759510987 A.
+4. I_internal uses half the coefficient and is 1.6599719879755493 A.
+
+The expected values were calculated with independent high-precision decimal arithmetic, not a backend expression evaluator. Expertise here is recognizing the missing thermal physics and the model's non-certifying status, not the arithmetic complexity.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `width_mil` | Finished trace width | mil | 20.0 | > 0.0 |
+| `thickness_mil` | Finished copper thickness | mil | 1.4 | > 0.0 |
+| `temperature_rise` | Selected conductor temperature rise | degC | 10.0 | >= 1.0, <= 100.0 |
+
+**Input-only guards and error rationale:**
+
+- `width_mil*thickness_mil > 0`: Legacy empirical powers require a positive cross-sectional area.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `width_mil` | 40.0 | mil |
+| `thickness_mil` | 1.4 | mil |
+| `temperature_rise` | 20.0 | degC |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `area_mil2` | 56.0 | mil^2 |
+| `external_current` | 3.319943975951099 | A |
+| `internal_current` | 1.6599719879755492 | A |
+

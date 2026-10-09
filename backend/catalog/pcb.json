@@ -102,5 +102,98 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.ipc2221_current_estimate",
+    "title": "Legacy IPC-2221 trace current screening estimate",
+    "category": "PCB interconnect and manufacturing",
+    "level": "expert",
+    "description": "Compute both legacy external- and internal-layer current estimates for a specified trace cross-section and selected temperature rise; this is not a certified current rating.",
+    "formula": "A_mil2 = w_mil t_mil; I_external = 0.048 DeltaT^0.44 A_mil2^0.725; I_internal = 0.024 DeltaT^0.44 A_mil2^0.725",
+    "assumptions": [
+      "Legacy empirical IPC-2221 curve-fit as reproduced by TI, not an IPC-2152 implementation or standards-compliance check.",
+      "Width and thickness are explicitly in mil, area in mil^2, and temperature rise in degrees C; coefficients cannot be applied directly to SI area.",
+      "Screening policy restricts selected temperature rise to 1 through 100 degrees C; this is not a source-certified model validity interval.",
+      "Continuous steady current in a uniform trace; no transient/fault-current, via or connector rating is computed.",
+      "Board stackup, planes, laminate properties, airflow and local hot spots are absent from the equation; the estimate may be inaccurate and is not guaranteed conservative.",
+      "Use finished copper dimensions and verify the actual board thermal environment and voltage-drop requirements separately."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments TIDA-01232, High-Current Low-Noise Parallel LDO Reference Design, section 3.1.1, Equation 7",
+        "url": "https://www.ti.com/lit/ug/tiducs7/tiducs7.pdf"
+      },
+      {
+        "title": "IPC-2152 public scope and table of contents: Standard for Determining Current Carrying Capacity in Printed Board Design",
+        "url": "https://www.ipc.org/TOC/IPC-2152.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "width_mil",
+        "label": "Finished trace width",
+        "unit": "mil",
+        "default": 20.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "thickness_mil",
+        "label": "Finished copper thickness",
+        "unit": "mil",
+        "default": 1.4,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature_rise",
+        "label": "Selected conductor temperature rise",
+        "unit": "degC",
+        "default": 10.0,
+        "min": 1.0,
+        "max": 100.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "area_mil2",
+        "label": "Copper cross-section",
+        "unit": "mil^2",
+        "expression": "width_mil*thickness_mil"
+      },
+      {
+        "key": "external_current",
+        "label": "External-layer current estimate",
+        "unit": "A",
+        "expression": "0.048*temperature_rise^0.44*area_mil2^0.725"
+      },
+      {
+        "key": "internal_current",
+        "label": "Internal-layer current estimate",
+        "unit": "A",
+        "expression": "0.024*temperature_rise^0.44*area_mil2^0.725"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "width_mil*thickness_mil",
+        "op": ">",
+        "right": "0",
+        "message": "Legacy empirical powers require a positive cross-sectional area."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "width_mil": 40.0,
+        "thickness_mil": 1.4,
+        "temperature_rise": 20.0
+      },
+      "expected": {
+        "area_mil2": 56.0,
+        "external_current": 3.319943975951099,
+        "internal_current": 1.6599719879755492
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
