@@ -58,7 +58,7 @@
         "key": "added_phase_lag",
         "label": "Added lag magnitude",
         "unit": "deg",
-        "expression": "360*crossover_frequency*added_delay"
+        "expression": "360*(crossover_frequency*added_delay)"
       },
       {
         "key": "remaining_phase_margin",
@@ -379,7 +379,7 @@
         "key": "proportional_gain",
         "label": "PI proportional gain",
         "unit": "1",
-        "expression": "(2*damping_ratio*natural_frequency*plant_time_constant-1)/plant_gain"
+        "expression": "(2*damping_ratio*(natural_frequency*plant_time_constant)-1)/plant_gain"
       },
       {
         "key": "integral_gain",
@@ -397,12 +397,12 @@
         "key": "zero_frequency",
         "label": "PI zero frequency",
         "unit": "Hz",
-        "expression": "integral_gain/proportional_gain/(2*pi)"
+        "expression": "integral_gain/(proportional_gain*2*pi)"
       }
     ],
     "constraints": [
       {
-        "left": "2*damping_ratio*natural_frequency*plant_time_constant",
+        "left": "2*damping_ratio*(natural_frequency*plant_time_constant)",
         "op": ">",
         "right": "1",
         "message": "The requested pole placement must produce positive proportional gain"
@@ -490,7 +490,7 @@
         "key": "sample_multiplier",
         "label": "Cycle-to-cycle signed perturbation multiplier",
         "unit": "1",
-        "expression": "(ramp_slope-falling_slope)/(rising_slope+ramp_slope)"
+        "expression": "((ramp_slope-falling_slope)/rising_slope)/(1+ramp_slope/rising_slope)"
       },
       {
         "key": "next_perturbation",
@@ -520,7 +520,7 @@
         "key": "steady_duty",
         "label": "Duty implied by periodic current slopes",
         "unit": "1",
-        "expression": "1/(1+rising_slope/falling_slope)"
+        "expression": "falling_slope/(rising_slope+falling_slope)"
       }
     ],
     "constraints": [],
@@ -606,7 +606,7 @@
         "key": "critical_integral_gain",
         "label": "Marginal-stability integral gain",
         "unit": "1/s",
-        "expression": "(1/plant_time_constant+1/sensor_time_constant)/plant_gain"
+        "expression": "(1/plant_time_constant)/plant_gain*(1+(1/sensor_time_constant)/(1/plant_time_constant))"
       },
       {
         "key": "gain_factor_to_boundary",
@@ -624,7 +624,7 @@
         "key": "critical_frequency",
         "label": "Oscillation frequency at marginal stability",
         "unit": "Hz",
-        "expression": "1/(2*pi)/sqrt(plant_time_constant)/sqrt(sensor_time_constant)"
+        "expression": "1/(2*pi*sqrt(plant_time_constant)*sqrt(sensor_time_constant))"
       }
     ],
     "constraints": [],

@@ -62,7 +62,7 @@
       "key": "shielding_db",
       "label": "Slot shielding estimate",
       "unit": "dB",
-      "expression": "20*log10(wavelength/(2*slot_length))"
+      "expression": "20*(log10(wavelength)-log10(2*slot_length))"
     },
     {
       "key": "field_ratio",
@@ -574,6 +574,12 @@
   ],
   "constraints": [
     {
+      "left": "2*pi*original_frequency*sqrt(test_capacitance)*sqrt((loaded_frequency/(original_frequency-loaded_frequency))*(loaded_frequency/(original_frequency+loaded_frequency)))",
+      "op": "<=",
+      "right": "1.3407807929942596e161",
+      "message": "The fitted parasitic inductance must remain representable and positive."
+    },
+    {
       "left": "loaded_frequency",
       "op": "<",
       "right": "original_frequency",
@@ -675,13 +681,13 @@
       "key": "far_field_parameter",
       "label": "Far-zone parameter kr",
       "unit": "1",
-      "expression": "2*pi*frequency*distance/299792458"
+      "expression": "(2*pi*frequency/299792458)*distance"
     },
     {
       "key": "electric_field_rms",
       "label": "Broadside far-field RMS electric field",
       "unit": "V/m",
-      "expression": "2*pi*1e-7*frequency*common_mode_current_rms*(cable_length/distance)"
+      "expression": "2*pi*1e-7*common_mode_current_rms*(cable_length*frequency/distance)"
     }
   ],
   "constraints": [
@@ -692,7 +698,7 @@
       "message": "The uniform-current element must be no longer than one tenth wavelength."
     },
     {
-      "left": "2*pi*frequency*distance/299792458",
+      "left": "(2*pi*frequency/299792458)*distance",
       "op": ">=",
       "right": "10",
       "message": "Far-field estimate requires kr at least 10; near-field terms are not included."
