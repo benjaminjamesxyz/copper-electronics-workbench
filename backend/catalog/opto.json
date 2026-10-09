@@ -407,5 +407,113 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opto.step_index_mode_cutoff",
+    "title": "Step-index fiber mode cutoff",
+    "category": "Optical hardware",
+    "level": "intermediate",
+    "description": "Estimate whether a circular weakly guiding step-index fiber lies below the first higher-order mode cutoff.",
+    "formula": "NA=sqrt((ncore-nclad)*(ncore+nclad)); V=2*pi*a*NA/lambda; lambda_c=2*pi*a*NA/2.405; margin=2.405-V",
+    "assumptions": [
+      "Circular, straight, uniform step-index fiber with ordinary dielectric core and cladding and indices specified at operating wavelength.",
+      "Weak-guidance screening window: (ncore-nclad)/ncore<=0.01. The 2.405 LP11 threshold is approximate, not a measured cable cutoff.",
+      "Positive single_mode_margin indicates V<2.405; zero is the approximate cutoff boundary, not robust single-mode margin.",
+      "cutoff_wavelength holds the entered indices constant; material dispersion can shift the actual spectral cutoff.",
+      "No graded-index, photonic-crystal, polarization-maintaining or bent-fiber model. Numerical aperture is not a single-mode coupling-efficiency prediction."
+    ],
+    "references": [
+      {
+        "title": "Newport Photonics Technical Note 21 Fiber Basics, pages 1-4: NA, V number and cutoff",
+        "url": "https://www.newport.com/medias/sys_master/images/images/hd5/ha2/8797095919646/Fiber-Basics.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "core_index",
+        "label": "Core refractive index",
+        "unit": "1",
+        "default": 1.45,
+        "min": 1
+      },
+      {
+        "key": "cladding_index",
+        "label": "Cladding refractive index",
+        "unit": "1",
+        "default": 1.444,
+        "min": 1
+      },
+      {
+        "key": "core_radius",
+        "label": "Core radius",
+        "unit": "m",
+        "default": 4.1e-06,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "wavelength",
+        "label": "Vacuum operating wavelength",
+        "unit": "m",
+        "default": 1.55e-06,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "numerical_aperture",
+        "label": "Index-derived numerical aperture",
+        "unit": "1",
+        "expression": "sqrt(core_index-cladding_index)*sqrt(core_index+cladding_index)"
+      },
+      {
+        "key": "normalized_frequency",
+        "label": "Fiber V number",
+        "unit": "1",
+        "expression": "2*pi*(core_radius/wavelength)*numerical_aperture"
+      },
+      {
+        "key": "cutoff_wavelength",
+        "label": "Approximate LP11 cutoff wavelength",
+        "unit": "m",
+        "expression": "(2*pi/2.405)*core_radius*numerical_aperture"
+      },
+      {
+        "key": "single_mode_margin",
+        "label": "Margin below LP11 V cutoff",
+        "unit": "1",
+        "expression": "2.405-normalized_frequency"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "core_index",
+        "op": ">",
+        "right": "cladding_index",
+        "message": "Core index must exceed cladding index for this guiding model."
+      },
+      {
+        "left": "(core_index-cladding_index)/core_index",
+        "op": "<=",
+        "right": "0.01",
+        "message": "This LP approximation is restricted to at most 1% relative index contrast."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "core_index": 1.45,
+        "cladding_index": 1.444,
+        "core_radius": 4.1e-06,
+        "wavelength": 1.55e-06
+      },
+      "expected": {
+        "numerical_aperture": 0.13177253128023306,
+        "normalized_frequency": 2.190064550298241,
+        "cutoff_wavelength": 1.411476113497827e-06,
+        "single_mode_margin": 0.21493544970175898
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

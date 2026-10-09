@@ -165,3 +165,37 @@ Draw horizontal optical axis from x=60 to 650 at y=145, waist at x=210 and apert
 
 Quantity labels: `w0` → `waist_radius`; `w(z)` → `beam_radius`; `a` → `aperture_radius`; `z` → `axial_distance`; incoming `P` → `beam_power`; outgoing `Pcap` → `captured_power`; `lambda` → `wavelength`. Caption: “Illustrative 1/e² Gaussian contours; not a live plot or hard beam boundary. Captured power is evaluated at the centered aperture. Post-aperture diffraction is excluded.”
 
+
+## 5. `opto.step_index_mode_cutoff`
+
+### Purpose, novelty and source
+
+Use this intermediate model to screen fiber core/index choices for single-mode operation. N4 pages 3–4 supplies `NA=sqrt(ncore²-nclad²)`, `V=2*pi*a*NA/lambda` and the approximate LP11 cutoff `V=2.405`. Its physical introduction describes approximately 1% core/cladding contrast.
+
+Closest baseline: `signals.coax_impedance` computes quasi-TEM electrical characteristic impedance; it does not solve dielectric waveguide higher-mode eligibility. `signals.line_propagation` has no core or cladding. Unlike the Gaussian aperture model, numerical aperture does not say how much a given optical launch couples into the fundamental mode. No mode-count approximation or inverse mode is added as a separate item.
+
+### Model and physical domain
+
+Compute NA with `sqrt(ncore-nclad)*sqrt(ncore+nclad)` to avoid subtracting nearly equal squares. Compute `normalized_frequency`, `cutoff_wavelength=2*pi*a*NA/2.405`, and `single_mode_margin=2.405-V`. Positive margin indicates a single spatial mode in this approximation; both polarization states can still exist. Negative margin is a valid result indicating higher-mode support, not an input error.
+
+Require ordinary dielectric indices at least one, `ncore>nclad`, positive a and wavelength, and relative index contrast `(ncore-nclad)/ncore<=0.01`. This explicit weak-guidance window limits the LP approximation; it is not a rigorous error bound or a claim that 1.01% contrast physically cannot guide light. The fiber must be circular, uniform and straight with a step-index profile. Holding the indices constant when finding cutoff neglects their wavelength dispersion. Actual cable cutoff and bend loss require manufacturer data. Do not treat NA as guaranteed efficient acceptance for a single-mode launch.
+
+### Complete independent example
+
+Inputs: `core_index=1.45`, `cladding_index=1.444`, `core_radius=4.1e-6`, `wavelength=1.55e-6`.
+
+- `numerical_aperture=sqrt((1.45-1.444)*(1.45+1.444))=sqrt(0.017364)=0.131772531280233059049`.
+- `normalized_frequency=2*pi*4.1e-6*NA/1.55e-6=2.19006455029824100986`.
+- `cutoff_wavelength=2*pi*4.1e-6*NA/2.405=1.41147611349782684627e-6 m`.
+- `single_mode_margin=2.405-2.19006455029824100986=0.214935449701758990144`.
+
+### Tester cases
+
+All four nominal outputs. Doubling core radius doubles V and cutoff wavelength, keeps NA fixed and makes the margin negative; do not reject this physically meaningful multimode result. At a wavelength equal to the independently computed cutoff, V is approximately 2.405 and margin approximately zero; allow subtraction-rounding residual relative to V, not an arbitrary large absolute floor. Increasing cladding index toward core index must reduce positive NA, V and cutoff. Test the 1% contrast endpoint and just above it. Reject equal/reversed indices, either index below one, nonpositive radius/wavelength and contrast beyond the admitted weak-guidance scope.
+
+### Mandatory diagram
+
+Show a longitudinal fiber section with a narrow core stripe x=165..545, y=120..165 and wider cladding y=70..215. Add a small circular cross-section to the right with a center-to-core-edge radius arrow, not an outer-cladding-radius arrow. A single smooth fundamental-mode intensity lobe can appear above the longitudinal section as an unbound conceptual sketch; no zigzag ray is presented as a computed single-mode field. Put `V < 2.405: one spatial mode` in static explanatory text.
+
+Quantity labels: `n1` → `core_index`; `n2` → `cladding_index`; `a` → `core_radius`; `lambda` → `wavelength`; `V` → `normalized_frequency`; `lambda_c` → `cutoff_wavelength`. Caption: “Circular weakly guiding step-index model. The LP11 cutoff is approximately V=2.405; the positive margin indicates single spatial mode, not a measured cable rating or coupling efficiency.”
+
