@@ -726,5 +726,163 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "cores.thin_foil_winding_loss",
+    "title": "Thin-foil multilayer winding AC loss",
+    "category": "Winding and magnetic design",
+    "level": "expert",
+    "description": "Estimate transport plus proximity/skin eddy loss in a series foil winding using the controlled low-frequency Dowell expansion.",
+    "formula": "x=t*sqrt(pi*f*mu0/rho); excess=(5m^2-1)x^4/45; Rdc=rho*m*MLT/(b*t); Rac=Rdc*(1+excess); P=Irms^2*Rac",
+    "assumptions": [
+      "Solid nonmagnetic foil, one turn per layer, integer series layers, equal mean turn length, sinusoidal current, no parallel paths.",
+      "One-dimensional field with zero tangential magnetic field on one side of the winding portion; no interleaving within the portion or gap-fringing/edge field.",
+      "Low-frequency expansion through x^4, where x=foil thickness/skin depth <= 0.5. Foil width >= 20 thicknesses screens the sheet geometry.",
+      "Resistivity is at operating temperature. No round-wire equivalent-foil conversion, litz correction, harmonic summation, dielectric loss or thermal feedback.",
+      "Frequency zero is the analytic DC limit. Excess factor and excess heat are computed separately to retain small positive increments without subtracting nearly equal totals."
+    ],
+    "references": [
+      {
+        "title": "Dowell, 1966: equations (8), (32), (33), thin-layer series derived in research notes",
+        "url": "https://www.cpdee.ufmg.br/~troliveira/docs/aulas/fontes/05247417.pdf"
+      },
+      {
+        "title": "TI SLUP125: sections on multiple-layer windings and winding sections",
+        "url": "https://www.ti.com/lit/ml/slup125/slup125.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Sinusoidal current frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0
+      },
+      {
+        "key": "foil_thickness",
+        "label": "Copper foil thickness",
+        "unit": "m",
+        "default": 5e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "foil_width",
+        "label": "Foil axial width",
+        "unit": "m",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "layers",
+        "label": "Series foil layers",
+        "unit": "layer",
+        "default": 3,
+        "min": 1
+      },
+      {
+        "key": "mean_turn_length",
+        "label": "Mean length per turn",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Foil resistivity at temperature",
+        "unit": "ohm m",
+        "default": 1.72e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "current_rms",
+        "label": "Winding RMS current",
+        "unit": "A",
+        "default": 10,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "thickness_ratio",
+        "label": "Foil thickness to depth ratio",
+        "unit": "1",
+        "expression": "foil_thickness*sqrt(pi*frequency*4*pi*1e-7/resistivity)"
+      },
+      {
+        "key": "resistance_dc",
+        "label": "Geometric DC winding resistance",
+        "unit": "ohm",
+        "expression": "resistivity*layers*mean_turn_length/(foil_width*foil_thickness)"
+      },
+      {
+        "key": "ac_excess_factor",
+        "label": "AC resistance excess over DC",
+        "unit": "1",
+        "expression": "(5*layers^2-1)/45*thickness_ratio^4"
+      },
+      {
+        "key": "resistance_ac",
+        "label": "Approximate AC winding resistance",
+        "unit": "ohm",
+        "expression": "resistance_dc*(1+ac_excess_factor)"
+      },
+      {
+        "key": "winding_loss",
+        "label": "Total winding heat",
+        "unit": "W",
+        "expression": "(current_rms*sqrt(resistance_ac))^2"
+      },
+      {
+        "key": "ac_excess_loss",
+        "label": "Additional AC eddy heat",
+        "unit": "W",
+        "expression": "(current_rms*thickness_ratio*sqrt(resistance_dc)*sqrt((5*layers^2-1)/45)*thickness_ratio)^2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "layers",
+        "op": "==",
+        "right": "floor(layers)",
+        "message": "Foil layer count must be an integer."
+      },
+      {
+        "left": "foil_width",
+        "op": ">=",
+        "right": "20*foil_thickness",
+        "message": "Foil width must be at least twenty thicknesses for the sheet approximation."
+      },
+      {
+        "left": "foil_thickness*sqrt(pi*frequency*4*pi*1e-7/resistivity)",
+        "op": "<=",
+        "right": "0.5",
+        "message": "Thin-foil expansion requires thickness/depth <= 0.5."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 100000,
+        "foil_thickness": 5e-05,
+        "foil_width": 0.02,
+        "layers": 3,
+        "mean_turn_length": 0.1,
+        "resistivity": 1.72e-08,
+        "current_rms": 10
+      },
+      "expected": {
+        "thickness_ratio": 0.23954419411992858,
+        "resistance_dc": 0.00516,
+        "ac_excess_factor": 0.0032194579693949473,
+        "resistance_ac": 0.005176612403122077,
+        "winding_loss": 0.5176612403122077,
+        "ac_excess_loss": 0.0016612403122077928
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

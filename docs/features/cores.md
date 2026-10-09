@@ -263,3 +263,68 @@ Substitution: `x=0.0002*sqrt(pi*50*4*pi*1e-7*1000/5e-7)=0.12566370614359174`, sa
 
 Show a three-sheet insulated lamination stack in perspective at x=45–370,y=60–205. Bind a metal-only thickness bracket to `lamination_thickness`; insulation gaps are shown but never included in that bracket. In-plane sinusoidal B arrow binds `flux_peak`; use two opposite induced-current arrows at positive/negative sheet-depth positions to demonstrate circulating eddies with zero transport current. Right inset is one sheet thickness section with centre coordinate y=0, faces y=±t/2, and qualitative antisymmetric J arrows. A heat arrow binds `eddy_loss`; labels bind `penetration_ratio` and `eddy_loss_density`. A stack-metal-only callout binds `metal_volume`. Caption: “Parallel flux penetrates each electrically isolated thin sheet. Current density changes sign across its midplane; only classical eddy heat is estimated. Insulation volume is excluded.”
 
+## `cores.thin_foil_winding_loss`
+
+**Purpose and novelty.** Estimate layer-dependent copper AC heat for a thin series foil winding. Closest old item is skin depth; it does not model current redistribution, series layers, winding resistance or loss. Closest new neighbor is magnetic-sheet eddy heating, where no transport current exists and the material is ferromagnetic. Here the winding carries current, and its self/proximity field grows through successive layers.
+
+**Source-backed derivation.** Dowell appendix equations (32), (33) define `M=z*coth(z)`, `D=2z*tanh(z/2)`. Equation (8), divided by the geometric DC winding resistance, gives `Rac/Rdc=Re[M+(m²-1)*D/3]`, with porosity one for solid foil, `z=(1+j)*x`, `x=t/depth=t*sqrt(pi*f*mu0/rho)`.
+
+Expand analytically rather than subtract nearly equal hyperbolic functions:
+
+- `M=1+z²/3-z⁴/45+2z⁶/945-z⁸/4725+...`.
+- `D=z²-z⁴/12+z⁶/120-17z⁸/20160+...`.
+- Therefore `Re(M)=1+4x⁴/45-16x⁸/4725+...` and `Re(D)=x⁴/3-17x⁸/1260+...`.
+- Keeping through `x⁴` gives `excess=(5m²-1)*x⁴/45`, `Rac=Rdc*(1+excess)`.
+- `Rdc=rho*m*MLT/(b*t)` for one foil turn per layer. Total heat is `I_rms²*Rac`; additional AC heat is `I_rms²*Rdc*excess`.
+
+This calculator is explicitly the **thin-foil asymptotic model**, not the full high-frequency Dowell formula with a hidden numerical cutoff. The physical thin-layer premise comes from Dowell; the specific `x<=0.5` screen is chosen from the truncation analysis here. The first neglected term is `-[16/4725+17(m²-1)/3780]*x⁸`. At `x=0.5`, the retained total ratio versus the independently evaluated full expression is: one layer 1.0055555556 versus 1.0055423618; three layers 1.0611111111 versus 1.0609577347; ten layers 1.6930555556 versus 1.6913076020. These examples quantify truncation only, not real-winding accuracy. Do not imply a universal measured-error guarantee.
+
+**Validity and signs.** Nonmagnetic solid foil, sinusoidal RMS current, one turn per layer, equal approximate mean turn lengths, series layers. The portion has zero tangential magnetic field at one side and monotonically increasing MMF through the layers. No interior interleaving, gap-fringing, parallel current sharing, nearby return-field changes or significant curvature/edge fields. Foil width is at least twenty foil thicknesses as a declared sheet-geometry screen. Round-wire/litz conversion is explicitly excluded: Nan/Sullivan demonstrates potentially large errors there. Resistivity is at operating temperature; thermal rise and harmonics are not modeled. Current is a magnitude; the diagram's dot/cross orientation defines the conceptual field only.
+
+**Numerical implementation.** Compute `x` directly from `sqrt(f)`, never from an infinite DC penetration depth. Admit `f=0` and `I=0`. Keep `ac_excess_factor` separately; do not calculate it by subtracting 1 from a rounded total ratio. Preserve representable dimensional excess heat using `(I*x*sqrt(Rdc)*sqrt((5m²-1)/45)*x)^2`, independently of the possibly underflowed dimensionless excess output. This uses existing primitives and requires no shared helper or frequency floor.
+
+### Complete independent numerical example
+
+Inputs:
+
+```json
+{
+  "frequency": 100000,
+  "foil_thickness": 5e-05,
+  "foil_width": 0.02,
+  "layers": 3,
+  "mean_turn_length": 0.1,
+  "resistivity": 1.72e-08,
+  "current_rms": 10
+}
+```
+
+Expected outputs:
+
+```json
+{
+  "thickness_ratio": 0.23954419411992858,
+  "resistance_dc": 0.00516,
+  "ac_excess_factor": 0.0032194579693949473,
+  "resistance_ac": 0.005176612403122077,
+  "winding_loss": 0.5176612403122077,
+  "ac_excess_loss": 0.0016612403122077928
+}
+```
+
+Substitution: `x=50e-6*sqrt(pi*100000*4*pi*1e-7/1.72e-8)=0.23954419411992858`; `Rdc=1.72e-8*3*0.1/(0.02*50e-6)=0.00516 ohm`. The coefficient `(5*3²-1)/45=44/45`; `excess=(44/45)*x^4=0.0032194579693949473`. Therefore `Rac=0.00516*(1+excess)=0.005176612403122077 ohm`, total heat `100*Rac=0.5176612403122077 W`, and additional AC heat `100*0.00516*excess=0.0016612403122077928 W`.
+
+### Independent test scenarios
+
+- Nominal: complete vector above.
+- DC limit, `frequency=0`, other inputs nominal: `thickness_ratio=0`, `resistance_dc=resistance_ac=0.00516 ohm`, `ac_excess_factor=0`, `winding_loss=0.516 W`, `ac_excess_loss=0`.
+- Zero current at nominal frequency leaves all resistance/ratio outputs unchanged and both heat outputs zero.
+- Halving only frequency divides excess factor by four. Increasing layer count increases both geometric Rdc and proximity coefficient; do not replace the coefficient with an isolated-foil skin term.
+- Thin-limit frequency is about `435681.0896620524 Hz` for the nominal material/thickness. `500000 Hz` must reject; test the exact defining boundary separately. `foil_width=20*foil_thickness` is an inclusive geometry screen.
+- Invalid: fractional/zero layer count; nonpositive thickness, width, length or resistivity; negative current/frequency; width below twenty thicknesses.
+- Pure numerical conditioning probe, not a realizable hardware operating point: set `frequency=1e-170 Hz` and `current_rms=1e100 A`, leaving every other nominal input unchanged. Decimal derivation gives `x=7.5750525368848788e-89`, true dimensionless excess `3.2194579693949486e-353` (correctly rounds to zero in binary64), but additional AC heat `1.6612403122077935e-155 W` remains representable and must not be lost. `Rdc=Rac=0.00516 ohm` to binary64 precision and total heat is approximately `5.16e197 W`. This distinguishes permissible rounding of the ratio from premature loss of the dimensional result.
+
+### Mandatory physical-geometry diagram
+
+Left x=55–320,y=55–220: three separated solid foil layers, one turn per layer, shown as axial-width strips with thin insulation gaps. Bracket total layer count with `layers`; individual metal thickness binds `foil_thickness`; strip axial width binds `foil_width`. A side inset shows a single wrap and its centreline path bracket `mean_turn_length`. Put equal-direction current dots in the foil cross sections and a separate opposite return winding outside the modeled portion; annotate the left boundary “H=0” and a rising conceptual MMF staircase across the three series layers. This is not a parallel-foil connection. Bind the current magnitude arrow to `current_rms`. Right/lower result labels bind `ac_excess_factor`, `resistance_ac`, `winding_loss`, and `ac_excess_loss`; other quantities remain in the legend. Caption: “One series turn per solid-foil layer; one-dimensional field starts at zero on one side. Thin-foil expansion only (t/depth ≤ 0.5); current redistribution is schematic, not a live field solution.”
+
