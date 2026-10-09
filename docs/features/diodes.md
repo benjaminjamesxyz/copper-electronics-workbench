@@ -212,3 +212,43 @@ The readable formula uses ttriangle consistently with input `triangle_duration`;
 
 - `commutation_frequency*triangle_duration <= 0.1` — Recovery duration exceeds 10 percent of the commutation interval.
 
+## 3. `diodes.bridge_conduction_loss` — intermediate
+
+**Purpose:** Determine waveform-dependent dissipation in a complete four-junction bridge; it is not just generic DC resistor heating.
+
+Approximate one junction's forward drop as Vf(i) = V0 + rd·i. Instantaneous power in two conducting junctions is 2V0·i + 2rd·i². Time averaging over a full period gives Pbridge = 2[V0·Iavg + rd·Irms²]. For symmetric alternate pairs, each of four diodes dissipates Pbridge/4. Peak conducting-path drop is 2[V0 + rd·Ipeak].
+
+**Units:** V0 V, rd ohm; rectified-path average, RMS and peak currents A; loss W and drop V. **Domain:** Nonnegative parameters and currents; Iavg ≤ Irms ≤ Ipeak and Irms² ≤ Ipeak·Iavg. The last follows pointwise from 0 ≤ i ≤ Ipeak, so i² ≤ Ipeak·i; it also rejects impossible nonzero RMS with zero average. The zero-current case is permitted.
+
+**Limits:** Enter **whole-period rectified-path** statistics, not per-diode or on-time statistics. For capacitor-input rectifiers, reservoir charging pulses can make Irms much larger than DC load current. Parameters are fitted for operating temperature/current; symmetric current is required for equal per-diode loss. Recovery, reverse leakage and thermal rise are not included. Sources S4–S5; averaging derivation above is explicit.
+
+**Independent example (also defaults):** V0 = 0.7 V, rd = 0.08 ohm, Iavg = 1 A, Irms = 1.5 A, Ipeak = 3 A. Irms² = 2.25 A² ≤ 3 A². Loss = 2(0.7 + 0.08·2.25) = **1.76 W**; **0.44 W per diode**. Peak path drop = 2(0.7 + 0.08·3) = **1.88 V**.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `threshold_voltage` | Fitted diode threshold voltage | V | 0.7 | [0, 10] |
+| `slope_resistance` | Fitted diode slope resistance | ohm | 0.08 | [0, 1000] |
+| `path_current_avg` | Average rectified-path current | A | 1 | [0, 10000] |
+| `path_current_rms` | RMS rectified-path current | A | 1.5 | [0, 10000] |
+| `path_current_peak` | Peak rectified-path current | A | 3 | [0, 10000] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `bridge_power` | Total bridge conduction loss | W | `2*(threshold_voltage*path_current_avg+slope_resistance*path_current_rms^2)` | 1.76 |
+| `power_per_diode` | Average loss per diode under symmetry | W | `bridge_power/4` | 0.44 |
+| `peak_path_drop` | Peak two-diode conducting-path drop | V | `2*(threshold_voltage+slope_resistance*path_current_peak)` | 1.88 |
+
+### Constraint/error rationale and implementation limits
+
+The average/RMS/peak relations follow from nonnegative waveform statistics, including i² ≤ Ipeak·i before averaging. Every inequality is inclusive, allowing constant currents and the all-zero waveform. With zero path current the conduction losses vanish; `peak_path_drop` is the affine two-junction conducting-path characteristic evaluated at the entered peak, not a prediction of terminal voltage for an open/nonconducting bridge.
+
+- `path_current_rms >= path_current_avg` — RMS current cannot be less than average nonnegative current.
+- `path_current_peak >= path_current_rms` — Peak current cannot be less than RMS current.
+- `path_current_rms^2 <= path_current_peak*path_current_avg` — For a nonnegative waveform, RMS squared cannot exceed peak times average current.
+

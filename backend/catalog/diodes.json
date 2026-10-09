@@ -593,5 +593,127 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "diodes.bridge_conduction_loss",
+    "title": "Bridge rectifier waveform-dependent conduction loss",
+    "category": "Diodes, LEDs and rectification",
+    "level": "intermediate",
+    "description": "Estimate loss in a four-diode bridge using average and RMS rectified-path current and an affine diode forward model.",
+    "formula": "VF(i) = V0 + rd i; Pbridge = 2(V0 Iavg + rd Irms^2); Pdiode = Pbridge/4",
+    "assumptions": [
+      "Two diodes carry rectified-path current at a time; positive and negative half-cycles are symmetric.",
+      "Iavg and Irms refer to the complete rectified conducting-path waveform over a full period, not a single diode or only its on-time.",
+      "V0 and rd are fitted at operating junction temperature and current range; use charging-pulse RMS current for a capacitor-input bridge.",
+      "Excludes reverse leakage, reverse recovery, thermal resistance and transformer losses; equal per-diode loss assumes symmetry.",
+      "Vishay affine-loss application-note evidence was search-supported; PDF extraction failed during research. The time-averaged expression is derived from the declared affine model, not claimed as a verbatim fully inspected source equation."
+    ],
+    "references": [
+      {
+        "title": "Vishay VS-KBPC1/VS-KBPC6 full-bridge configuration and per-diode forward voltage",
+        "url": "https://www.vishay.com/docs/93585/vs-kbpc1series.pdf"
+      },
+      {
+        "title": "Vishay How to Calculate Power Losses in Gen 5 Diodes (affine conduction-loss model)",
+        "url": "https://www.vishay.com/docs/98280/howtocalculatepowerlossesingen5diodes.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "threshold_voltage",
+        "label": "Fitted diode threshold voltage",
+        "unit": "V",
+        "default": 0.7,
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "slope_resistance",
+        "label": "Fitted diode slope resistance",
+        "unit": "ohm",
+        "default": 0.08,
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "path_current_avg",
+        "label": "Average rectified-path current",
+        "unit": "A",
+        "default": 1,
+        "min": 0,
+        "max": 10000
+      },
+      {
+        "key": "path_current_rms",
+        "label": "RMS rectified-path current",
+        "unit": "A",
+        "default": 1.5,
+        "min": 0,
+        "max": 10000
+      },
+      {
+        "key": "path_current_peak",
+        "label": "Peak rectified-path current",
+        "unit": "A",
+        "default": 3,
+        "min": 0,
+        "max": 10000
+      }
+    ],
+    "outputs": [
+      {
+        "key": "bridge_power",
+        "label": "Total bridge conduction loss",
+        "unit": "W",
+        "expression": "2*(threshold_voltage*path_current_avg+slope_resistance*path_current_rms^2)"
+      },
+      {
+        "key": "power_per_diode",
+        "label": "Average loss per diode under symmetry",
+        "unit": "W",
+        "expression": "bridge_power/4"
+      },
+      {
+        "key": "peak_path_drop",
+        "label": "Peak two-diode conducting-path drop",
+        "unit": "V",
+        "expression": "2*(threshold_voltage+slope_resistance*path_current_peak)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "path_current_rms",
+        "op": ">=",
+        "right": "path_current_avg",
+        "message": "RMS current cannot be less than average nonnegative current."
+      },
+      {
+        "left": "path_current_peak",
+        "op": ">=",
+        "right": "path_current_rms",
+        "message": "Peak current cannot be less than RMS current."
+      },
+      {
+        "left": "path_current_rms^2",
+        "op": "<=",
+        "right": "path_current_peak*path_current_avg",
+        "message": "For a nonnegative waveform, RMS squared cannot exceed peak times average current."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "threshold_voltage": 0.7,
+        "slope_resistance": 0.08,
+        "path_current_avg": 1,
+        "path_current_rms": 1.5,
+        "path_current_peak": 3
+      },
+      "expected": {
+        "bridge_power": 1.76,
+        "power_per_diode": 0.44,
+        "peak_path_drop": 1.88
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
