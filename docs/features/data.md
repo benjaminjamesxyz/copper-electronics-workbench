@@ -147,3 +147,24 @@ At this time the remaining full-scale error fraction is exp(−ln(8192))=1/8192,
 | `rate_ratio` | 48000/(2×20000) | 1.2 |
 
 **Parent verification scenarios (not exercised here):** example; f_s below/equal/above 2 f_max gives negative/zero/positive margin; doubling both frequencies preserves rate_ratio and doubles margin; reject nonpositive/out-of-range frequencies.
+
+## `data.tone_alias_frequency` — Sampled tone alias frequency
+
+**Level/purpose:** Intermediate. Fold a specified nonnegative analog tone into the first real-sampling Nyquist zone; this diagnoses an alias, rather than imposing a no-alias inequality.
+
+**Derivation/units:** Adding integer k times f_s to a tone shifts sample-n phase by `2 pi k n`, leaving the sampled sequence unchanged. Real-valued spectra identify negative-frequency magnitudes. Choose `nearest_sample_multiple=k=floor(f_in/f_s+1/2)` [count], then `alias_frequency=abs(f_in−k f_s)` [Hz], using the earlier k output. The centered remainder lies in [−f_s/2,f_s/2), so its mathematical magnitude is in [0,f_s/2]. S5 §§3–4 supports spectral replication/folding; the nearest-integer formula is a derived closed form. Half-integer ties choose the higher k without changing alias magnitude.
+
+**Assumptions:** Single tone, exact fixed uniform sampling, real first-zone magnitude. No phase or spectral-inversion direction, anti-alias attenuation, aperture behavior or ADC input bandwidth is computed. An alias result does not establish that hardware acquires the analog tone. The input is a nonnegative magnitude; real spectra would reflect a negative tone to its positive magnitude.
+
+**Domain/error rationale:** `input_frequency` ∈ [0,1e12] Hz, `sample_rate` ∈ [1e-9,1e12] Hz; require `input_frequency/sample_rate <=1e9`. DC input is admitted and f_s must be positive for division. The ratio cap limits subtraction precision loss at large multiples rather than asserting exact relative accuracy for aliases approaching zero. Near fold boundaries, binary64 rounding can perturb tie selection or the remainder by the original-frequency arithmetic scale; hardware frequency uncertainty is not modeled.
+
+**Independent example/default:** `input_frequency=173000 Hz`, `sample_rate=48000 Hz`.
+
+| Output | Worked substitution | Expected |
+|---|---|---|
+| `nearest_sample_multiple` | floor(173000/48000+0.5)=floor(4.1041666…) | 4 count |
+| `alias_frequency` | abs(173000−4×48000) | 19000 Hz |
+
+The alias lies below 24000 Hz Nyquist. An exact integer-rate tone aliases to DC; `(k+1/2)f_s` aliases to Nyquist, including the half-rate case.
+
+**Parent verification scenarios (not exercised here):** example; zero input; integer-rate DC aliases; half-integer Nyquist aliases and either side of a fold; added integer sample-rate multiples preserve alias magnitude; ratio=1e9 boundary and larger-ratio rejection; nonpositive sample-rate rejection. Near-zero assertions should use frequency-scale-aware absolute tolerance, not a blanket 1e-6 Hz or relative-only criterion.

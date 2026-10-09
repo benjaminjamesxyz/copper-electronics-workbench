@@ -219,5 +219,38 @@
       "expected": {"nyquist_frequency": 24000, "frequency_margin": 4000, "rate_ratio": 1.2},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.tone_alias_frequency",
+    "title": "Sampled tone alias frequency",
+    "category": "ADC DAC and sampled systems",
+    "level": "intermediate",
+    "description": "Fold a nonnegative analog tone frequency into the first Nyquist zone of a real-valued sampled sequence.",
+    "formula": "k = floor(f_in/f_s + 1/2); f_alias = abs(f_in - k f_s)",
+    "assumptions": [
+      "A single tone is uniformly sampled at an exact fixed sample rate; real-valued first-zone alias magnitude is reported in [0, f_s/2].",
+      "Frequencies differing by an integer sample-rate multiple are indistinguishable; negative frequencies are reflected to their positive magnitudes.",
+      "No phase, spectral inversion direction, anti-alias attenuation or converter input bandwidth is modeled. A computed alias does not establish that the ADC can acquire the analog tone.",
+      "The input-to-sample-rate ratio is capped at 1e9 to limit loss of floating-point precision in subtracting large sample-rate multiples."
+    ],
+    "references": [
+      {"title": "Texas Instruments AN-236/SNAA079C, An Introduction to the Sampling Theorem, spectrum replication and folding in sections 3 and 4", "url": "https://www.ti.com/lit/an/snaa079c/snaa079c.pdf"}
+    ],
+    "inputs": [
+      {"key": "input_frequency", "label": "Analog tone frequency", "unit": "Hz", "default": 173000, "min": 0, "max": 1e12},
+      {"key": "sample_rate", "label": "Sample rate", "unit": "Hz", "default": 48000, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "nearest_sample_multiple", "label": "Nearest sample-rate multiple", "unit": "count", "expression": "floor(input_frequency/sample_rate+0.5)"},
+      {"key": "alias_frequency", "label": "First-zone alias frequency", "unit": "Hz", "expression": "abs(input_frequency-nearest_sample_multiple*sample_rate)"}
+    ],
+    "constraints": [
+      {"left": "input_frequency/sample_rate", "op": "<=", "right": "1e9", "message": "Input frequency must not exceed one billion times the sample rate for this numerical model."}
+    ],
+    "example": {
+      "inputs": {"input_frequency": 173000, "sample_rate": 48000},
+      "expected": {"nearest_sample_multiple": 4, "alias_frequency": 19000},
+      "relative_tolerance": 0.000001
+    }
   }
 ]
