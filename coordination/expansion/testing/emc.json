@@ -1,0 +1,1107 @@
+{
+  "lane": "emc",
+  "base": "4c46fa1",
+  "file": "backend/tests/emc.rs",
+  "authored_tests": 23,
+  "behaviors_covered": {
+    "emc.thin_slot_shielding": [
+      "All-output independent binary-ratio oracle",
+      "L=lambda/20 and t=L/10 inclusive; t=0; length scaling",
+      "All scalar/coupled bounds and recovery",
+      "Representable tiny ratio/log-overflow regression"
+    ],
+    "emc.rc_common_mode_conversion": [
+      "All-output complex two-node oracle, bridging and uncoupled branches",
+      "Signed branch swap, unequal-component RC balance, DC and zero source",
+      "Passive bounds, nonfinite intermediates and recovery"
+    ],
+    "emc.trapezoid_conducted_harmonic": [
+      "All-output independent quarter-duty Fourier integral",
+      "Triangular edge equality, duty complement, analytic harmonic null, zero current",
+      "Tiny edge and tiny current preserve nonzero quantities",
+      "Integer order, duty/edge/termination bounds, sine denominator underflow and recovery"
+    ],
+    "emc.sinusoidal_dither_occupancy": [
+      "All-output independent band endpoints with negative gap",
+      "Exact touching and both sides, n=1 endpoint, small modulation and frequency scaling",
+      "Carrier/deviation/rate relations and integer order rejection/recovery"
+    ],
+    "emc.ringing_rc_snubber": [
+      "All-output independent two-frequency LC inversion",
+      "Damping/capacitance endpoints, zero swing, doubled Ctest and reconstructed frequencies",
+      "Near-equal ringing frequencies retain small difference",
+      "Measurement/design domain rejection and recovery",
+      "Positive-inductance underflow rejection regression"
+    ],
+    "emc.short_cable_radiation": [
+      "All-output Hertzian current-moment oracle",
+      "Inverse-distance law, zero current, inclusive electrical-length and kr limits",
+      "Scalar and far-field domain rejection/recovery",
+      "Representable field despite length/distance underflow"
+    ]
+  },
+  "oracle_provenance": {
+    "method": "Independent arithmetic only; no production evaluator/process used. Nodal phasors, special-angle Fourier integration, band endpoints, LC resonance, and Hertzian current moment derive non-default oracles.",
+    "research": "research/expansion/emc.md and emc.json; docs/features/emc.md; coordination/expansion/BACKLOG.md:1180-1325",
+    "source_limits": "Primary references inherited from research, not independently re-fetched by tester. Models are engineering estimates, not hardware validation.",
+    "tolerances": "Rust 1e-12 relative with zero absolute floor; process 1e-11. Only trigonometric analytic null uses 8*epsilon*Ipk and load-scaled absolute roundoff limits."
+  },
+  "verification": {
+    "executed": false,
+    "detail": "No build, tests, lint, formatter, production process, native launch or screenshot inspection. Independent Python arithmetic used only to derive numerical scenario values. Main must execute all authored checks."
+  },
+  "untested_gaps": [
+    "Compilation and Rust execution remain Main-owned.",
+    "Actual JSON-lines recovery and six-model native UI journeys remain Main-owned.",
+    "Desktop images are V2EmcRun-owned; tester makes no pixel approval claim.",
+    "Three source-derived regressions remain unexecuted and require Main disposition.",
+    "Physical enclosure, receiver, converter, snubber and cable calibration remain outside ideal-model assertions."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "emc.thin_slot_shielding",
+      "location": "backend/catalog/emc.json:65",
+      "inputs": {
+        "frequency": 299792458,
+        "slot_length": 1e-310,
+        "slot_width": 1e-311,
+        "shield_thickness": 0
+      },
+      "expected_outputs": {
+        "wavelength": 1,
+        "shielding_db": 6193.9794000867205,
+        "field_ratio": 2e-310
+      },
+      "finding": "Representable logarithmic shielding is rejected because wavelength/(2*slot_length) overflows.",
+      "minimal_correction": "Compute shielding in the log domain without the overflowing quotient.",
+      "evidence": "Independent source/arithmetic analysis only; failing success assertion authored, not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "emc.short_cable_radiation",
+      "location": "backend/catalog/emc.json:684",
+      "inputs": {
+        "frequency": 1e+100,
+        "cable_length": 1e-200,
+        "common_mode_current_rms": 1,
+        "distance": 1e+200
+      },
+      "expected_outputs": {
+        "electrical_length": 3.3356409519815207e-109,
+        "far_field_parameter": 2.0958450219516817e+292,
+        "electric_field_rms": 6.283185307179585e-307
+      },
+      "finding": "cable_length/distance underflows to zero before multiplication; finite nonzero electric field is silently lost.",
+      "minimal_correction": "Use range-safe current-length/frequency/distance product ordering; preserve representable final fields.",
+      "evidence": "Independent source/arithmetic analysis; counterpart V2EmcRun found another decisive vector. Failing strict relative assertion authored, not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "emc.ringing_rc_snubber",
+      "location": "backend/catalog/emc.json:554-560; backend/src/checked.rs:49",
+      "inputs": {
+        "original_frequency": 1e+160,
+        "loaded_frequency": 5e+159,
+        "test_capacitance": 30000000000.0,
+        "damping_target": 0.5,
+        "capacitance_multiplier": 3,
+        "voltage_swing": 1,
+        "switching_frequency": 1
+      },
+      "expected_ok": false,
+      "finding": "Squaring positive reciprocal underflows Lp to zero; Rs then becomes zero and all finite-output checks accept false component values.",
+      "minimal_correction": "Reject zero-underflow of physically positive identified components without arbitrary practical input bounds.",
+      "evidence": "Source/arithmetic analysis only. Research emc.md:242,292 requires explicit arithmetic failure. Failing rejection assertion authored, not executed."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "For every owned ID, enter the independent non-default success vector and check every output against this receipt; inspect units and captions.",
+    "Slot: enter width=length and then correct; confirm stale results clear. Exercise t=0 and L=lambda/20.",
+    "RC: switch Cd between zero and 1e-9, then balance unequal R/C time constants; preserve zero conversion and signed mismatch.",
+    "Harmonic: display triangle/full-edge equality, analytic even-order null and fractional-order rejection; then restore valid non-default vector.",
+    "Dither: enter fs=275999,276000,276001 with remaining DITHER inputs; show negative/zero/positive gap without invalidating overlap.",
+    "Snubber: equalize measured frequencies for error, then recover. Display zero swing and near-equal frequency result without claiming exact damping.",
+    "Cable: reject kr<10, recover; zero common-mode current remains valid. Show tiny nonzero field without rounding it into a false exact zero."
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "independent-thin_slot_shielding",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.0625,
+          "slot_width": 0.005,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Wavelength is 4 m and slot field ratio is 1/32; convert field amplitude, not power, to dB.",
+      "expected_outputs": {
+        "wavelength": 4,
+        "shielding_db": 30.10299956639812,
+        "field_ratio": 0.03125
+      }
+    },
+    {
+      "name": "independent-rc_common_mode_conversion",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 1e-09,
+          "frequency": 159154.94309189534,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Solve normalized complex nodal matrix [[1+2j,-j],[-2j,1+4j]] against equal unit drives; scale its voltage difference by 0.4 Vrms.",
+      "expected_outputs": {
+        "mismatch_time": 1e-06,
+        "conversion_gain": 0.12803687993289595,
+        "differential_rms": 0.05121475197315838
+      }
+    },
+    {
+      "name": "independent-trapezoid_conducted_harmonic",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 200000,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 6.25e-07,
+          "harmonic_order": 2,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Full-edge Fourier integral at quarter duty, n=2 and edge fraction 1/8 simplifies to 2 Ipk/pi^2 RMS.",
+      "expected_outputs": {
+        "harmonic_frequency": 400000,
+        "dc_current": 0.003,
+        "harmonic_current_rms": 0.002431708407416107,
+        "termination_voltage_rms": 0.182378130556208
+      }
+    },
+    {
+      "name": "independent-sinusoidal_dither_occupancy",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Compute adjacent Carson interval endpoints [1551000,1809000] and [1773000,2067000]; preserve negative overlap.",
+      "expected_outputs": {
+        "harmonic_modulation_index": 42,
+        "occupied_bandwidth": 258000,
+        "next_harmonic_gap": -36000
+      }
+    },
+    {
+      "name": "independent-ringing_rc_snubber",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Frequency ratio 5/4 implies Ctest/Cp=9/16; independently recover LC resonance and full-cycle charge/discharge energy.",
+      "expected_outputs": {
+        "parasitic_capacitance": 1.6e-09,
+        "parasitic_inductance": 3.9578587360288194e-08,
+        "snubber_resistance": 4.973591971621729,
+        "snubber_capacitance": 6.4e-09,
+        "snubber_power": 0.9216
+      }
+    },
+    {
+      "name": "independent-short_cable_radiation",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 149896229,
+          "cable_length": 0.125,
+          "common_mode_current_rms": 3.2e-05,
+          "distance": 8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Hertzian moment I*l=4e-6 A m, wavelength=2 m, eta=mu0*c; E=eta*k*moment/(4*pi*r), without ground-image or peak/RMS factors.",
+      "expected_outputs": {
+        "electrical_length": 0.0625,
+        "far_field_parameter": 25.132741228718345,
+        "electric_field_rms": 4.709128918272133e-05
+      }
+    },
+    {
+      "name": "invalid-1",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.0625,
+          "slot_width": 0.0625,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Slot width equals length; thin-slot geometry excludes this."
+    },
+    {
+      "name": "recover-1",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.0625,
+          "slot_width": 0.005,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Wavelength is 4 m and slot field ratio is 1/32; convert field amplitude, not power, to dB.",
+      "expected_outputs": {
+        "wavelength": 4,
+        "shielding_db": 30.10299956639812,
+        "field_ratio": 0.03125
+      }
+    },
+    {
+      "name": "invalid-2",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.0625,
+          "slot_width": 0.005,
+          "shield_thickness": 0.00625001
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Thickness exceeds length/10."
+    },
+    {
+      "name": "recover-2",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.0625,
+          "slot_width": 0.005,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Wavelength is 4 m and slot field ratio is 1/32; convert field amplitude, not power, to dB.",
+      "expected_outputs": {
+        "wavelength": 4,
+        "shielding_db": 30.10299956639812,
+        "field_ratio": 0.03125
+      }
+    },
+    {
+      "name": "invalid-3",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.2000001,
+          "slot_width": 0.005,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Slot exceeds wavelength/20."
+    },
+    {
+      "name": "recover-3",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.0625,
+          "slot_width": 0.005,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Wavelength is 4 m and slot field ratio is 1/32; convert field amplitude, not power, to dB.",
+      "expected_outputs": {
+        "wavelength": 4,
+        "shielding_db": 30.10299956639812,
+        "field_ratio": 0.03125
+      }
+    },
+    {
+      "name": "invalid-4",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 0,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 1e-09,
+          "frequency": 159154.94309189534,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Passive shunt capacitance must be positive."
+    },
+    {
+      "name": "recover-4",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 1e-09,
+          "frequency": 159154.94309189534,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Solve normalized complex nodal matrix [[1+2j,-j],[-2j,1+4j]] against equal unit drives; scale its voltage difference by 0.4 Vrms.",
+      "expected_outputs": {
+        "mismatch_time": 1e-06,
+        "conversion_gain": 0.12803687993289595,
+        "differential_rms": 0.05121475197315838
+      }
+    },
+    {
+      "name": "invalid-5",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 1e-09,
+          "frequency": 1e+200,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Nonfinite angular-frequency square must fail explicitly, not hide in a zero gain."
+    },
+    {
+      "name": "recover-5",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 1e-09,
+          "frequency": 159154.94309189534,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Solve normalized complex nodal matrix [[1+2j,-j],[-2j,1+4j]] against equal unit drives; scale its voltage difference by 0.4 Vrms.",
+      "expected_outputs": {
+        "mismatch_time": 1e-06,
+        "conversion_gain": 0.12803687993289595,
+        "differential_rms": 0.05121475197315838
+      }
+    },
+    {
+      "name": "invalid-6",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 200000,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 1.250001e-06,
+          "harmonic_order": 2,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Full edges overlap quarter-duty high interval."
+    },
+    {
+      "name": "recover-6",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 200000,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 6.25e-07,
+          "harmonic_order": 2,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Full-edge Fourier integral at quarter duty, n=2 and edge fraction 1/8 simplifies to 2 Ipk/pi^2 RMS.",
+      "expected_outputs": {
+        "harmonic_frequency": 400000,
+        "dc_current": 0.003,
+        "harmonic_current_rms": 0.002431708407416107,
+        "termination_voltage_rms": 0.182378130556208
+      }
+    },
+    {
+      "name": "invalid-7",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 200000,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 6.25e-07,
+          "harmonic_order": 1.5,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Fractional Fourier harmonic order is invalid."
+    },
+    {
+      "name": "recover-7",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 200000,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 6.25e-07,
+          "harmonic_order": 2,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Full-edge Fourier integral at quarter duty, n=2 and edge fraction 1/8 simplifies to 2 Ipk/pi^2 RMS.",
+      "expected_outputs": {
+        "harmonic_frequency": 400000,
+        "dc_current": 0.003,
+        "harmonic_current_rms": 0.002431708407416107,
+        "termination_voltage_rms": 0.182378130556208
+      }
+    },
+    {
+      "name": "invalid-8",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 1e-200,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 1e-200,
+          "harmonic_order": 2,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Sine denominator underflows to zero; no fabricated edge factor."
+    },
+    {
+      "name": "recover-8",
+      "request": {
+        "command": "calculate",
+        "id": "emc.trapezoid_conducted_harmonic",
+        "inputs": {
+          "switching_frequency": 200000,
+          "pulse_current": 0.012,
+          "duty_half_height": 0.25,
+          "edge_time": 6.25e-07,
+          "harmonic_order": 2,
+          "termination_resistance": 75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Full-edge Fourier integral at quarter duty, n=2 and edge fraction 1/8 simplifies to 2 Ipk/pi^2 RMS.",
+      "expected_outputs": {
+        "harmonic_frequency": 400000,
+        "dc_current": 0.003,
+        "harmonic_current_rms": 0.002431708407416107,
+        "termination_voltage_rms": 0.182378130556208
+      }
+    },
+    {
+      "name": "invalid-9",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 240000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Instantaneous switching reaches zero at peak deviation equal to carrier."
+    },
+    {
+      "name": "recover-9",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Compute adjacent Carson interval endpoints [1551000,1809000] and [1773000,2067000]; preserve negative overlap.",
+      "expected_outputs": {
+        "harmonic_modulation_index": 42,
+        "occupied_bandwidth": 258000,
+        "next_harmonic_gap": -36000
+      }
+    },
+    {
+      "name": "invalid-10",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 240000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Switching-dither interpretation excludes modulation equal to carrier."
+    },
+    {
+      "name": "recover-10",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Compute adjacent Carson interval endpoints [1551000,1809000] and [1773000,2067000]; preserve negative overlap.",
+      "expected_outputs": {
+        "harmonic_modulation_index": 42,
+        "occupied_bandwidth": 258000,
+        "next_harmonic_gap": -36000
+      }
+    },
+    {
+      "name": "invalid-11",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 2.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Order must be integral."
+    },
+    {
+      "name": "recover-11",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 240000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Compute adjacent Carson interval endpoints [1551000,1809000] and [1773000,2067000]; preserve negative overlap.",
+      "expected_outputs": {
+        "harmonic_modulation_index": 42,
+        "occupied_bandwidth": 258000,
+        "next_harmonic_gap": -36000
+      }
+    },
+    {
+      "name": "invalid-12",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 20000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "No measured frequency shift cannot identify finite positive parasitics."
+    },
+    {
+      "name": "recover-12",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Frequency ratio 5/4 implies Ctest/Cp=9/16; independently recover LC resonance and full-cycle charge/discharge energy.",
+      "expected_outputs": {
+        "parasitic_capacitance": 1.6e-09,
+        "parasitic_inductance": 3.9578587360288194e-08,
+        "snubber_resistance": 4.973591971621729,
+        "snubber_capacitance": 6.4e-09,
+        "snubber_power": 0.9216
+      }
+    },
+    {
+      "name": "invalid-13",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 16000000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Switching rate must remain below measured ringing."
+    },
+    {
+      "name": "recover-13",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Frequency ratio 5/4 implies Ctest/Cp=9/16; independently recover LC resonance and full-cycle charge/discharge energy.",
+      "expected_outputs": {
+        "parasitic_capacitance": 1.6e-09,
+        "parasitic_inductance": 3.9578587360288194e-08,
+        "snubber_resistance": 4.973591971621729,
+        "snubber_capacitance": 6.4e-09,
+        "snubber_power": 0.9216
+      }
+    },
+    {
+      "name": "invalid-14",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 1.0001,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "First-pass damping target is outside source-qualified range."
+    },
+    {
+      "name": "recover-14",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Frequency ratio 5/4 implies Ctest/Cp=9/16; independently recover LC resonance and full-cycle charge/discharge energy.",
+      "expected_outputs": {
+        "parasitic_capacitance": 1.6e-09,
+        "parasitic_inductance": 3.9578587360288194e-08,
+        "snubber_resistance": 4.973591971621729,
+        "snubber_capacitance": 6.4e-09,
+        "snubber_power": 0.9216
+      }
+    },
+    {
+      "name": "invalid-15",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 149896229,
+          "cable_length": 0.125,
+          "common_mode_current_rms": 3.2e-05,
+          "distance": 3.183098861519597
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Observation fails kr>=10."
+    },
+    {
+      "name": "recover-15",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 149896229,
+          "cable_length": 0.125,
+          "common_mode_current_rms": 3.2e-05,
+          "distance": 8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Hertzian moment I*l=4e-6 A m, wavelength=2 m, eta=mu0*c; E=eta*k*moment/(4*pi*r), without ground-image or peak/RMS factors.",
+      "expected_outputs": {
+        "electrical_length": 0.0625,
+        "far_field_parameter": 25.132741228718345,
+        "electric_field_rms": 4.709128918272133e-05
+      }
+    },
+    {
+      "name": "invalid-16",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 149896229,
+          "cable_length": 0.2000001,
+          "common_mode_current_rms": 3.2e-05,
+          "distance": 8
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Current element exceeds lambda/10."
+    },
+    {
+      "name": "recover-16",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 149896229,
+          "cable_length": 0.125,
+          "common_mode_current_rms": 3.2e-05,
+          "distance": 8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately following rejected request, verify all independently derived outputs in same process. Hertzian moment I*l=4e-6 A m, wavelength=2 m, eta=mu0*c; E=eta*k*moment/(4*pi*r), without ground-image or peak/RMS factors.",
+      "expected_outputs": {
+        "electrical_length": 0.0625,
+        "far_field_parameter": 25.132741228718345,
+        "electric_field_rms": 4.709128918272133e-05
+      }
+    },
+    {
+      "name": "slot-small-aperture-endpoint",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 74948114.5,
+          "slot_length": 0.2,
+          "slot_width": 0.005,
+          "shield_thickness": 0.001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive L=lambda/20 boundary.",
+      "expected_outputs": {
+        "wavelength": 4,
+        "shielding_db": 20,
+        "field_ratio": 0.1
+      }
+    },
+    {
+      "name": "rc-uncoupled",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 0,
+          "frequency": 159154.94309189534,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Subtract independent branch voltages (0.5-0.5j)-(0.2-0.4j).",
+      "expected_outputs": {
+        "mismatch_time": 1e-06,
+        "conversion_gain": 0.31622776601683794,
+        "differential_rms": 0.1264911064067352
+      }
+    },
+    {
+      "name": "rc-dc",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000,
+          "resistance_two": 2000,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 1e-09,
+          "differential_capacitance": 1e-09,
+          "frequency": 0,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "DC eliminates capacitive conversion without erasing signed time mismatch.",
+      "expected_outputs": {
+        "mismatch_time": 1e-06,
+        "conversion_gain": 0,
+        "differential_rms": 0
+      }
+    },
+    {
+      "name": "dither-touching-bands",
+      "request": {
+        "command": "calculate",
+        "id": "emc.sinusoidal_dither_occupancy",
+        "inputs": {
+          "switching_frequency": 276000,
+          "peak_deviation": 18000,
+          "modulation_frequency": 3000,
+          "harmonic_order": 7
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Touching interval edges remain valid, not a domain failure.",
+      "expected_outputs": {
+        "harmonic_modulation_index": 42,
+        "occupied_bandwidth": 258000,
+        "next_harmonic_gap": 0
+      }
+    },
+    {
+      "name": "cable-zero-current",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 149896229,
+          "cable_length": 0.125,
+          "common_mode_current_rms": 0,
+          "distance": 8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "No radiating current gives exactly zero field and unchanged geometry.",
+      "expected_outputs": {
+        "electrical_length": 0.0625,
+        "far_field_parameter": 25.132741228718345,
+        "electric_field_rms": 0
+      }
+    },
+    {
+      "name": "regression-slot-finite-log-with-overflowing-reciprocal",
+      "request": {
+        "command": "calculate",
+        "id": "emc.thin_slot_shielding",
+        "inputs": {
+          "frequency": 299792458,
+          "slot_length": 1e-310,
+          "slot_width": 1e-311,
+          "shield_thickness": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "All final outputs are representable; evaluate logarithm as a difference rather than forming reciprocal of tiny field ratio.",
+      "expected_outputs": {
+        "wavelength": 1,
+        "shielding_db": 6193.9794000867205,
+        "field_ratio": 2e-310
+      }
+    },
+    {
+      "name": "regression-cable-representable-field",
+      "request": {
+        "command": "calculate",
+        "id": "emc.short_cable_radiation",
+        "inputs": {
+          "frequency": 1e+100,
+          "cable_length": 1e-200,
+          "common_mode_current_rms": 1,
+          "distance": 1e+200
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Length/distance underflows alone but total field remains representable; preserve positive field with relative-only tolerance.",
+      "expected_outputs": {
+        "electrical_length": 3.3356409519815207e-109,
+        "far_field_parameter": 2.0958450219516817e+292,
+        "electric_field_rms": 6.283185307179585e-307
+      }
+    },
+    {
+      "name": "regression-snubber-unrepresentable-inductance",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 1e+160,
+          "loaded_frequency": 5e+159,
+          "test_capacitance": 30000000000.0,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 3,
+          "voltage_swing": 1,
+          "switching_frequency": 1
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Cp=1e10 but Lp\u22482.533e-332 is below binary64 range. Reject arithmetic failure; never return zero inductance/resistance."
+    },
+    {
+      "name": "recover-after-snubber-underflow",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4,
+          "voltage_swing": 24,
+          "switching_frequency": 250000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Same-process recovery after invalid unrepresentable component.",
+      "expected_outputs": {
+        "parasitic_capacitance": 1.6e-09,
+        "parasitic_inductance": 3.9578587360288194e-08,
+        "snubber_resistance": 4.973591971621729,
+        "snubber_capacitance": 6.4e-09,
+        "snubber_power": 0.9216
+      }
+    }
+  ]
+}
