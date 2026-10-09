@@ -63,3 +63,34 @@ Nominal: assert all four outputs. With all other inputs unchanged, double power:
 Draw an optical power arrow from left to a rectangular P/depletion/N semiconductor section centered around x=330, y=130. Mark P/anode below-left and N/cathode below-right. A short arrow inside the section points from cathode/N to anode/P and is explicitly labeled generated conventional current, not electron flow. No amplifier or external bias circuit is implied.
 
 Quantity labels: incoming `P` → `optical_power`; incoming `lambda` → `wavelength`; conversion `eta` → `quantum_efficiency`; outgoing magnitude `Iph` → `photocurrent`; optional unconnected conversion legend `R` → `responsivity`. Caption: “Monochromatic light generates reverse photocurrent; external quantum efficiency includes optical and collection losses. Unity gain; dark current and readout circuitry omitted.”
+
+## 2. `opto.lambertian_target_irradiance`
+
+### Purpose, novelty and source
+
+Use this basic model to position an illumination source and orient a target surface. Closest baseline: `diodes.led_series_resistor` sets electrical drive only. This model instead integrates an angular radiometric distribution and applies a receiving-plane projection. It is not an RF antenna/link budget: no wavelength-dependent antenna aperture or received-radio-power equation is used.
+
+N1 and N2 give `I(theta)=I0*cos(theta)` and inverse-square irradiance. Integrate over the forward hemisphere: `Phi=2*pi*I0*integral[0..pi/2](cos(theta)*sin(theta))dtheta=pi*I0`. The target projected differential area gives the independent `cos(phi)` factor. Therefore `E=Phi*cos(theta)*cos(phi)/(pi*r²)`.
+
+### Model and physical domain
+
+Outputs are `axial_intensity=Phi/pi`, `directional_intensity=I0*cos(theta)` and `target_irradiance=I(theta)*cos(phi)/r²`. Flux is total optical W, not electrical input W or lumen. `distance>0`, both angles lie in `[0,pi/2]`, and flux is nonnegative. The source must be small relative to distance and genuinely Lambertian; packaged LEDs with secondary optics often are not. This is irradiance at a point, not integrated power over a large target. Ignore atmospheric attenuation, occlusion and reflected light. The incidence normal points from the target toward the source; its angle is not measured from the forward-going propagation vector.
+
+### Complete independent example
+
+Inputs: `radiant_flux=0.1`, `distance=0.2`, `emission_angle=0.5235987755982989`, `incidence_angle=0.7853981633974483`. The intended angles are pi/6 and pi/4; the stored floating-point values differ only at rounding precision.
+
+- `axial_intensity=0.1/pi=0.0318309886183790671538 W/sr`.
+- `directional_intensity=(0.1/pi)*(sqrt(3)/2)=0.0275664447710896024756 W/sr`.
+- `target_irradiance=(0.1/pi)*(sqrt(3)/2)*(1/sqrt(2))/0.2²=0.487310500771047567441 W/m²`.
+
+### Tester cases
+
+Nominal: all three outputs. Both angles zero at the same distance gives `target_irradiance=0.795774715459476678844 W/m²`. Doubling distance quarters only irradiance. Zero flux makes all outputs zero. Grazing source or receiver orientation tends to zero; allow the machine cosine residual at represented pi/2, scaled to flux/distance², rather than asserting mathematically exact floating-point zero. Reject negative angles, angles exceeding pi/2, nonpositive distance and negative flux. Close-but-positive distances remain mathematical inputs, but a real extended source at that distance violates the stated point-source assumption.
+
+### Mandatory diagram
+
+Place a small flat emitter near (95,95) with its normal pointing right; draw a ray down-right to a tilted target centered around (525,180). Add a source-normal dotted reference and a source angular arc `theta`. Draw the target normal pointing back toward the source, with angle `phi` between that normal and the back-directed source line. Draw a separate dimension line parallel to the connecting ray for `r`, avoiding the two angle labels.
+
+Quantity labels: `Phi` → `radiant_flux`; `theta` → `emission_angle`; `phi` → `incidence_angle`; `r` → `distance`; `E` next to the target → `target_irradiance`. Caption: “Ideal Lambertian source in the far field. Source emission and receiver projected area contribute separate cosine factors; E is local irradiance, not total collected power.”
+

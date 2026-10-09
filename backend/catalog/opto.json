@@ -88,5 +88,108 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opto.lambertian_target_irradiance",
+    "title": "Lambertian source target irradiance",
+    "category": "Optical hardware",
+    "level": "basic",
+    "description": "Estimate irradiance at a target point from hemisphere flux, source orientation and receiving-plane tilt.",
+    "formula": "I0=Phi/pi; I(theta)=I0*cos(theta); E=I(theta)*cos(phi)/r^2",
+    "assumptions": [
+      "Ideal Lambertian emitter radiates the entered total optical flux into one unobstructed hemisphere.",
+      "Point-source/far-field approximation: source dimensions must be much smaller than source-to-target distance.",
+      "Angles in radians are measured from source normal and the target normal pointing toward the source; both are within the forward hemisphere.",
+      "Target irradiance is a local value, not total intercepted power for an extended surface. No lens, reflection, absorption or photometric lux conversion."
+    ],
+    "references": [
+      {
+        "title": "Newport Laws of Radiation, Lambert law",
+        "url": "https://www.newport.com/t/laws-of-radiation/"
+      },
+      {
+        "title": "Newport Oriel Spectral Irradiance, units and distance scaling pages 2 and 5",
+        "url": "https://www.newport.com/medias/sys_master/images/images/hfb/hdf/8797196451870/Light-Sources.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "radiant_flux",
+        "label": "Forward hemisphere radiant flux",
+        "unit": "W",
+        "default": 0.1,
+        "min": 0
+      },
+      {
+        "key": "distance",
+        "label": "Source to target distance",
+        "unit": "m",
+        "default": 0.2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "emission_angle",
+        "label": "Source normal to outgoing ray angle",
+        "unit": "rad",
+        "default": 0.5235987755982989,
+        "min": 0
+      },
+      {
+        "key": "incidence_angle",
+        "label": "Target normal to source direction angle",
+        "unit": "rad",
+        "default": 0.7853981633974483,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "axial_intensity",
+        "label": "On-axis radiant intensity",
+        "unit": "W/sr",
+        "expression": "radiant_flux/pi"
+      },
+      {
+        "key": "directional_intensity",
+        "label": "Radiant intensity toward target",
+        "unit": "W/sr",
+        "expression": "axial_intensity*cos(emission_angle)"
+      },
+      {
+        "key": "target_irradiance",
+        "label": "Local target irradiance",
+        "unit": "W/m^2",
+        "expression": "directional_intensity*cos(incidence_angle)/distance/distance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "emission_angle",
+        "op": "<=",
+        "right": "pi/2",
+        "message": "Emission angle must lie in the forward hemisphere."
+      },
+      {
+        "left": "incidence_angle",
+        "op": "<=",
+        "right": "pi/2",
+        "message": "Receiving surface must face the source."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "radiant_flux": 0.1,
+        "distance": 0.2,
+        "emission_angle": 0.5235987755982989,
+        "incidence_angle": 0.7853981633974483
+      },
+      "expected": {
+        "axial_intensity": 0.03183098861837907,
+        "directional_intensity": 0.0275664447710896,
+        "target_irradiance": 0.4873105007710476
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
