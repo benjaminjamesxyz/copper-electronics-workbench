@@ -93,3 +93,31 @@ Independent cases: Vpk=0 gives both fields=0, unchanged voltage_limit, margin=8e
 ### Mandatory diagram
 
 Concentric cross-section centered near (190,140): filled inner disk radius 35, outer conductor ring inner radius 90. Clearly distinguish b as the shield **inner** surface. Two radius arrows in different angular directions bind `conductor_radius` as a and `shield_inner_radius` as b. Inner conductor marked +Vpk and shield 0; bind `peak_voltage`. Draw three radial outward E arrows in insulation. Right side x≈370 shows a qualitative decreasing 1/r curve from a to b, with endpoint labels bound to `inner_surface_field` and `outer_surface_field`; axis ticks a/b are explanatory. Separate legend binds `allowable_field` and `voltage_limit`. Caption: “Ideal concentric insulation: peak stress occurs at the inner conductor. The 1/r curve is illustrative; voltage is peak, not RMS. Voids and ends are excluded.”
+
+## 4. `cables.hertz_holm_contact` — expert
+
+### Physical model and units
+
+S4 gives two-body Hertz contact; take one curvature radius to infinity and identical material properties to obtain `E*=E/[2(1-nu²)]`. A spherical connector tip of curvature R under compressive force F produces `a=[3 F R/(4 E*)]^(1/3)` and center pressure `p0=3F/(2*pi*a²)`. S5 equation 3 then gives `Rc=rho/(2a)` for identical clean metals. Relative elastic approach is `a²/R`.
+
+Inputs F [N], R [m], E [Pa], nu dimensionless, rho [ohm m], electron_mean_free_path [m], elastic_pressure_limit [Pa]. All except nu are positive; -1<nu<0.5. The factor `(1-nu)*(1+nu)` avoids endpoint cancellation in `1-nu²`. Elastic-pressure validity is checked before outputs using the input-only expanded expression.
+
+Model screens: a/R<=0.1 and a/mean_free_path>=10. These are explicitly conservative engineering separation-of-scale screens, not sourced exact 10% accuracy guarantees. S4 requires contact small relative to bodies; S6 shows why finite mean free path adds ballistic resistance. A qualified p0 limit is required; uniaxial yield strength cannot be silently substituted. No oxide, plating, rough multi-spot interaction, bulk path or self-heating is included. This is a clean-contact lower-complexity estimate, not total measured connector resistance.
+
+### Complete worked example
+
+Inputs: F=0.01 N, R=0.002 m, E=110e9 Pa, nu=0.34, rho=1.7e-8 ohm m, mean_free_path=4e-8 m, elastic_pressure_limit=3e8 Pa.
+
+- `effective_modulus = 110e9/[2*(1-0.34²)] = 62189054726.368164 Pa`.
+- `contact_radius = [3*0.01*0.002/(4*effective_modulus)]^(1/3) = 6.22480523898329e-6 m`.
+- `maximum_pressure = 3*0.01/(2*pi*contact_radius²) = 123222453.18016359 Pa`.
+- `constriction_resistance = 1.7e-8/(2*contact_radius) = 0.0013655045698085684 ohm`.
+- `indentation = contact_radius²/0.002 = 1.9374100131636908e-8 m`.
+
+The example has a/R≈0.0031124, a/mean_free_path≈155.62, p0<300 MPa, so all physical screens pass.
+
+Independent cases: F=0.08 N scales a by 2, p0 by 2, Rc by 1/2 and approach by 4, retaining the nominal material/geometry. Expected a=`1.244961047796658e-5 m`, p0=`246444906.36032718 Pa`, Rc=`0.0006827522849042842 ohm`, indentation=`7.749640052654763e-8 m`; E* unchanged. F approaches zero only until the diffusive lower-size screen fails; do not imply a zero-force closed metallic connection. Invalid F=0, nu=-1 or 0.5, pressure limit=1e8 Pa with nominal mechanics, mean_free_path=1e-6 m with nominal mechanics, or geometry causing a/R>0.1. Equality on the defined screening boundaries is permitted.
+
+### Mandatory diagram
+
+Draw a rounded upper contact resting on a thick lower flat, interface around y=145 and x=180. Force arrow points downward into the upper sphere, labeled `normal_force`. Curvature arrow binds `sphere_radius`, explicitly “R, tip curvature”. Contact patch shown by a short interface segment with dimension `2a`; bind `contact_radius` with text “a; spot width 2a”, never label the full diameter as a. Current streamlines narrow through the patch and spread into the lower electrode. Right inset: equivalent single constriction resistor labeled `constriction_resistance`, separate from any unmodeled leads. Lower legend binds `maximum_pressure`, `effective_modulus`, `indentation`. Mark both bodies “same metal, E / nu / rho” with bindings `young_modulus`, `poisson_ratio`, `resistivity` if space permits. Caption: “One clean elastic spherical contact on a flat. Current constricts through radius a; oxide, rough multi-spot and bulk lead resistance are excluded.”

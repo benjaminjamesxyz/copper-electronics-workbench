@@ -354,5 +354,165 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "cables.hertz_holm_contact",
+    "title": "Elastic rounded-contact constriction resistance",
+    "category": "Cables and connectors",
+    "level": "expert",
+    "description": "Couple Hertz contact mechanics to Holm current constriction for one clean, elastic, spherical connector contact on a flat of the same metal.",
+    "formula": "E* = E/[2(1-nu²)]; a = [3 F R/(4 E*)]^(1/3); p0 = 3F/(2 pi a²); Rc = rho/(2a); indentation = a²/R",
+    "assumptions": [
+      "One smooth spherical contact on a thick flat; identical homogeneous isotropic metal on both sides, frictionless nonadhesive elastic contact.",
+      "Holm resistance is only the constriction contribution. Oxides, contamination, plating interfaces, rough multiple asperities, bulk lead resistance and temperature rise are excluded.",
+      "Contact radius must not exceed one tenth of sphere radius, a conservative small-contact screening criterion rather than a universal Hertz error bound.",
+      "Contact radius must be at least ten electron mean free paths, a conservative diffusive-transport screening criterion; nanocontacts need ballistic/quantum models.",
+      "User supplies a material/application-qualified maximum elastic Hertz pressure; a uniaxial yield strength is not automatically this pressure limit."
+    ],
+    "references": [
+      {
+        "title": "University of Utah ME EN 7960 Topic 7, slides 7-5 and 7-6: Hertz sphere/flat contact",
+        "url": "https://www.mech.utah.edu/~me7960/lectures/Topic7-ContactStressesAndDeformations.pdf"
+      },
+      {
+        "title": "Auburn University, Jackson et al., A Simplified Model of Multiscale Electrical Contact Resistance, equation 3: Holm single-spot resistance",
+        "url": "https://www.eng.auburn.edu/~jacksr7/SimplifiedModelofMultiscaleECRJacksonMalucciAngadiPolchow.pdf"
+      },
+      {
+        "title": "NTU, Made et al., ECS Transactions 33(12), equation 4: diffusive versus ballistic constriction",
+        "url": "https://dr.ntu.edu.sg/server/api/core/bitstreams/f6cee9fd-a286-4c14-ac2c-4b32c161afae/content"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "normal_force",
+        "label": "Compressive normal force",
+        "unit": "N",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "sphere_radius",
+        "label": "Rounded contact curvature radius",
+        "unit": "m",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "young_modulus",
+        "label": "Metal Young modulus",
+        "unit": "Pa",
+        "default": 110000000000.0,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "poisson_ratio",
+        "label": "Metal Poisson ratio",
+        "unit": "1",
+        "default": 0.34,
+        "min": -1,
+        "max": 0.5,
+        "exclusive_min": true,
+        "exclusive_max": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Metal resistivity at operating temperature",
+        "unit": "ohm m",
+        "default": 1.7e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "electron_mean_free_path",
+        "label": "Electron mean free path",
+        "unit": "m",
+        "default": 4e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "elastic_pressure_limit",
+        "label": "Qualified elastic Hertz pressure limit",
+        "unit": "Pa",
+        "default": 300000000.0,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "effective_modulus",
+        "label": "Two-body effective modulus",
+        "unit": "Pa",
+        "expression": "young_modulus/(2*(1-poisson_ratio)*(1+poisson_ratio))"
+      },
+      {
+        "key": "contact_radius",
+        "label": "Circular contact spot radius",
+        "unit": "m",
+        "expression": "(3*normal_force*sphere_radius/(4*effective_modulus))^(1/3)"
+      },
+      {
+        "key": "maximum_pressure",
+        "label": "Maximum Hertz contact pressure",
+        "unit": "Pa",
+        "expression": "3*normal_force/(2*pi*contact_radius^2)"
+      },
+      {
+        "key": "constriction_resistance",
+        "label": "Single-spot constriction resistance",
+        "unit": "ohm",
+        "expression": "resistivity/(2*contact_radius)"
+      },
+      {
+        "key": "indentation",
+        "label": "Mutual elastic approach",
+        "unit": "m",
+        "expression": "contact_radius*(contact_radius/sphere_radius)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "(3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3)",
+        "op": "<=",
+        "right": "0.1*sphere_radius",
+        "message": "Hertz small-contact screen requires contact radius no greater than 0.1 curvature radius."
+      },
+      {
+        "left": "(3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3)",
+        "op": ">=",
+        "right": "10*electron_mean_free_path",
+        "message": "Diffusive Holm screen requires contact radius at least ten electron mean free paths."
+      },
+      {
+        "left": "3*normal_force/(2*pi*((3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3))^2)",
+        "op": "<=",
+        "right": "elastic_pressure_limit",
+        "message": "Maximum contact pressure exceeds the qualified elastic Hertz limit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "normal_force": 0.01,
+        "sphere_radius": 0.002,
+        "young_modulus": 110000000000.0,
+        "poisson_ratio": 0.34,
+        "resistivity": 1.7e-08,
+        "electron_mean_free_path": 4e-08,
+        "elastic_pressure_limit": 300000000.0
+      },
+      "expected": {
+        "effective_modulus": 62189054726.368164,
+        "contact_radius": 6.22480523898329e-06,
+        "maximum_pressure": 123222453.18016359,
+        "constriction_resistance": 0.0013655045698085684,
+        "indentation": 1.9374100131636908e-08
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
