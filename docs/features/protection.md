@@ -65,3 +65,45 @@ The 4 ms pulse has effective squared-current duration `0.002+0.002/3 = 0.0026666
 ### Mandatory diagram
 
 Canvas 700×280. Left panel x=24–360: horizontal time axis y=208 and positive current axis x=50; trapezoid starts at zero, rises, has a plateau, and falls to zero. Bind `peak_current` to the plateau height label; put nonoverlapping duration brackets below the three segments using `rise_time`, `hold_time`, `fall_time`. Shade/outline the conceptual integral region with an annotation `integral i² dt` bound to `pulse_i2t`, explicitly not geometric area under `i(t)` itself. Right panel x=390–674: a series chain of labeled source, fuse and semiconductor blocks, current arrow pointing source→fuse→device. Label fuse pre-arcing `pre_arcing_i2t`, total clearing `clearing_i2t`, and device `device_withstand_i2t`. Do not bind an area under `i(t)` directly to I²t. Caption: “Illustrative trapezoidal inrush; square-current integration checks pulse survival. Fault clearing uses separate manufacturer pre-arcing plus arcing data.”
+
+## 2. `protection.tvs_surge_load_line` — intermediate
+
+### Purpose and novelty
+
+Find actual clamp stress when source impedance and finite TVS avalanche slope interact. Closest baseline models are `diodes.biased_two_sided_clipper` and `diodes.zener_shunt_resistor_window`. Those use fixed clipping/shunt levels. Here the nonlinear-device avalanche branch is locally affine, so surge current changes clamp voltage and must be solved simultaneously with source impedance. This is a transient-rating/load-line design problem, not another zener resistor inverse. Neighbor MOV uses a multiplicative power law and imposed pulse current, not this affine source intersection.
+
+### Derivation and limits
+
+P2 gives `Vclamp=Vb+rd I`. KVL gives `Vs=Rs I+Vclamp`. Subtraction yields:
+
+`I=(Vs−Vb)/(Rs+rd)`; `Vclamp=Vb+rd I`; `Ppeak=Vclamp I`.
+
+Voltage margin is `protected_voltage_limit−Vclamp`; current margin is `rated_pulse_current−I`. SI units: V, A, ohm, W. The source top node and protected node are positive relative to return; TVS avalanche current flows from its cathode at the protected node to its anode at return. This is the positive-surge branch only.
+
+`Rs>0`, `rd>=0`, `Vb>0`, and the solved current must lie in the supplied positive characterized interval. The independent pulse-current rating may be lower than the characterized upper fit point, so a negative rating margin remains reportable. The fit and ratings must match waveform and temperature. Loading, lead inductance, time-dependent heating, negative-polarity operation and normal standoff selection are not solved.
+
+### Complete independent example
+
+Inputs: `surge_voltage=100 V`, `source_resistance=2 ohm`, `breakdown_intercept=30 V`, `dynamic_resistance=0.5 ohm`, `fit_current_min=1 A`, `fit_current_max=100 A`, `rated_pulse_current=35 A`, `protected_voltage_limit=60 V`.
+
+`I=(100−30)/2.5=28 A` is within `[1,100] A`.
+
+| Output key | Independent result |
+|---|---:|
+| `surge_current` | `28 A` |
+| `clamp_voltage` | `30+0.5×28=44 V` |
+| `peak_power` | `44×28=1232 W` |
+| `voltage_margin` | `60−44=16 V` |
+| `current_margin` | `35−28=7 A` |
+
+### Tester cases
+
+- Nominal above; verify source KVL `100 = 2×28+44` independently.
+- Ideal-slope limit `dynamic_resistance=0`: `I=35 A`, `V=30 V`, `P=1050 W`, voltage margin `30 V`, current margin zero.
+- Fit endpoints: source `32.5 V` gives `1 A` and `30.5 V`; source `280 V` gives `100 A` and `80 V`. Both valid; the latter returns negative protection margins.
+- Lower `protected_voltage_limit=40` gives `voltage_margin=−4`, not a domain error.
+- Reject zero source resistance, negative slope, reversed/equal fit limits, or source levels producing current outside the fit interval. `surge_voltage=30` is off-avalanche and must reject rather than produce a fabricated clamp result.
+
+### Mandatory diagram
+
+Left x=24–390: source `surge_voltage`, series `source_resistance`, protected-node dot, and shunt block “TVS avalanche” to common return. Mark cathode K at positive node, anode A at return; do not draw the ordinary forward diode in the wrong direction. Draw downward arrow `surge_current`; bracket protected-node-to-return `clamp_voltage`. Right x=430–674: conceptual V-horizontal/I-vertical graph with descending source line and ascending avalanche line; label its voltage intercept `breakdown_intercept` and slope relation `dV/dI = rd` bound to `dynamic_resistance`. Intersection is explanatory, not a live computed plot. Caption identifies negligible load and inductance, positive avalanche operation and waveform-specific affine fit.

@@ -154,5 +154,162 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "protection.tvs_surge_load_line",
+    "title": "TVS avalanche surge load line",
+    "category": "Protection",
+    "level": "intermediate",
+    "description": "Solve the intersection of a resistive surge source and the finite-slope avalanche characteristic of a TVS.",
+    "formula": "I = (Vs-Vb)/(Rs+rd); Vclamp = Vb+rd I; Ppk = Vclamp I",
+    "assumptions": [
+      "Positive avalanche polarity, a resistive Thevenin surge source, negligible protected-load current, and negligible interconnect inductance.",
+      "Breakdown intercept and dynamic resistance are an affine fit at the applicable waveform and temperature, not a universal DC-to-surge conversion.",
+      "Calculated current must remain inside the supplied characterized fit-current interval. The pulse-current rating is separately supplied for that exact waveform, duration and temperature.",
+      "Peak power is instantaneous, not absorbed energy or a repetitive thermal rating. Negative voltage/current margins are useful failed-design results.",
+      "Normal-operation standoff/leakage, negative surges, parasitic overshoot, capacitance, tolerance corners and hardware validation remain separate. No safety or EMC certification is implied."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLVAE37, sections 2.3 and 2.4, Figure 3",
+        "url": "https://www.ti.com/lit/an/slvae37/slvae37.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "surge_voltage",
+        "label": "Open-circuit surge peak",
+        "unit": "V",
+        "default": 100,
+        "min": 0
+      },
+      {
+        "key": "source_resistance",
+        "label": "Surge source resistance",
+        "unit": "ohm",
+        "default": 2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "breakdown_intercept",
+        "label": "Avalanche fit voltage intercept",
+        "unit": "V",
+        "default": 30,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "dynamic_resistance",
+        "label": "TVS dynamic resistance",
+        "unit": "ohm",
+        "default": 0.5,
+        "min": 0
+      },
+      {
+        "key": "fit_current_min",
+        "label": "Characterized fit minimum current",
+        "unit": "A",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_current_max",
+        "label": "Characterized fit maximum current",
+        "unit": "A",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rated_pulse_current",
+        "label": "Applicable derated pulse-current rating",
+        "unit": "A",
+        "default": 35,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "protected_voltage_limit",
+        "label": "Protected circuit voltage limit",
+        "unit": "V",
+        "default": 60,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "surge_current",
+        "label": "TVS surge current",
+        "unit": "A",
+        "expression": "(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)"
+      },
+      {
+        "key": "clamp_voltage",
+        "label": "Protected node clamp voltage",
+        "unit": "V",
+        "expression": "breakdown_intercept+dynamic_resistance*surge_current"
+      },
+      {
+        "key": "peak_power",
+        "label": "TVS instantaneous peak power",
+        "unit": "W",
+        "expression": "clamp_voltage*surge_current"
+      },
+      {
+        "key": "voltage_margin",
+        "label": "Protected voltage headroom",
+        "unit": "V",
+        "expression": "protected_voltage_limit-clamp_voltage"
+      },
+      {
+        "key": "current_margin",
+        "label": "Pulse-current headroom",
+        "unit": "A",
+        "expression": "rated_pulse_current-surge_current"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_current_max",
+        "op": ">",
+        "right": "fit_current_min",
+        "message": "The characterized current interval must have positive width"
+      },
+      {
+        "left": "(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)",
+        "op": ">=",
+        "right": "fit_current_min",
+        "message": "Surge current is below the characterized avalanche-fit interval"
+      },
+      {
+        "left": "(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)",
+        "op": "<=",
+        "right": "fit_current_max",
+        "message": "Surge current exceeds the characterized avalanche-fit interval"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "surge_voltage": 100,
+        "source_resistance": 2,
+        "breakdown_intercept": 30,
+        "dynamic_resistance": 0.5,
+        "fit_current_min": 1,
+        "fit_current_max": 100,
+        "rated_pulse_current": 35,
+        "protected_voltage_limit": 60
+      },
+      "expected": {
+        "surge_current": 28,
+        "clamp_voltage": 44,
+        "peak_power": 1232,
+        "voltage_margin": 16,
+        "current_margin": 7
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
