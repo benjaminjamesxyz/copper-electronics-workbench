@@ -1,0 +1,107 @@
+[
+  {
+    "id": "measurement.dmm_accuracy_bound",
+    "title": "DMM reading-plus-range accuracy bound",
+    "category": "Hardware measurement and metrology",
+    "level": "basic",
+    "description": "Convert a manufacturer's DC voltage accuracy specification into separate gain and range contributions and a worst-case reading interval.",
+    "formula": "E_read = abs(V_read) a/100; E_range = V_range b/100; E = E_read + E_range; V_low,high = V_read +/- E",
+    "assumptions": [
+      "The specification uses percent of reading plus percent of the selected positive full-scale range, not percent of the bipolar span or display counts.",
+      "The stated coefficients apply at the actual temperature, calibration age, integration setting and measurement function. Additional specified errors must already be accounted for.",
+      "The interval is a specification error bound, not a confidence interval or standard uncertainty. Loading and lead errors are excluded."
+    ],
+    "references": [
+      {
+        "title": "Keithley E-Handbook to Understanding Electrical Test and Measurement, Step 2: Accuracy and Instrumentation error",
+        "url": "https://www.tek.com/en/documents/fact-sheet/e-handbook-understanding-electrical-test-and-measurement"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "reading",
+        "label": "Signed DC reading",
+        "unit": "V",
+        "default": 0.5
+      },
+      {
+        "key": "range_value",
+        "label": "Selected full-scale range",
+        "unit": "V",
+        "default": 2.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "reading_percent",
+        "label": "Reading accuracy coefficient",
+        "unit": "%",
+        "default": 0.003,
+        "min": 0.0
+      },
+      {
+        "key": "range_percent",
+        "label": "Range accuracy coefficient",
+        "unit": "%",
+        "default": 0.001,
+        "min": 0.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "reading_error_bound",
+        "label": "Reading-dependent error bound",
+        "unit": "V",
+        "expression": "abs(reading)*(reading_percent/100)"
+      },
+      {
+        "key": "range_error_bound",
+        "label": "Range-dependent error bound",
+        "unit": "V",
+        "expression": "range_value*(range_percent/100)"
+      },
+      {
+        "key": "total_error_bound",
+        "label": "Total absolute error bound",
+        "unit": "V",
+        "expression": "reading_error_bound+range_error_bound"
+      },
+      {
+        "key": "lower_bound",
+        "label": "Lower reading interval endpoint",
+        "unit": "V",
+        "expression": "reading-total_error_bound"
+      },
+      {
+        "key": "upper_bound",
+        "label": "Upper reading interval endpoint",
+        "unit": "V",
+        "expression": "reading+total_error_bound"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "abs(reading)",
+        "op": "<=",
+        "right": "range_value",
+        "message": "Reading must lie within the selected full-scale range; overrange specifications are outside this model"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "reading": 0.5,
+        "range_value": 2.0,
+        "reading_percent": 0.003,
+        "range_percent": 0.001
+      },
+      "expected": {
+        "reading_error_bound": 1.5e-05,
+        "range_error_bound": 2e-05,
+        "total_error_bound": 3.5e-05,
+        "lower_bound": 0.499965,
+        "upper_bound": 0.500035
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]

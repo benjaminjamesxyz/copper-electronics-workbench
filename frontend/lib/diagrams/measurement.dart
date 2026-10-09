@@ -1,0 +1,38 @@
+import 'primitives.dart';
+
+const measurementDiagrams = <String, CalculatorDiagram>{
+  'measurement.dmm_accuracy_bound': CalculatorDiagram(
+    title: 'Reading and range errors add to a specification bound',
+    caption: 'The reading term grows with signal magnitude; the range term remains at zero input. This is a specification bound, not a statistical confidence interval. Interval geometry is illustrative, not a live scale.',
+    marks: [
+      Label(22, 20, 'DC DUT'),
+      Wire([55, 70, 135, 70, 135, 105, 170, 105]),
+      Dot(55, 70),
+      Part(CircuitPart.block, 205, 125, width: 70, height: 80),
+      Label(185, 116, 'DMM'),
+      Label(149, 83, '+'),
+      Label(149, 143, '−'),
+      Wire([170, 145, 135, 145, 135, 190, 55, 190]),
+      Part(CircuitPart.ground, 55, 202, width: 24, height: 24),
+      Label(22, 222, 'Reading', quantity: 'reading'),
+      Label(140, 222, 'Range', quantity: 'range_value'),
+      Label(285, 20, 'Reading interval (not to scale)'),
+      Wire([320, 108, 635, 108]),
+      Wire([320, 98, 320, 118]),
+      Wire([635, 98, 635, 118]),
+      Dot(475, 108, ink: DiagramInk.output),
+      Label(295, 129, 'Lower', quantity: 'lower_bound'),
+      Label(450, 129, 'Reading', quantity: 'reading'),
+      Label(600, 129, 'Upper', quantity: 'upper_bound'),
+      Wire([475, 82, 475, 72, 635, 72, 635, 82], ink: DiagramInk.output),
+      Label(490, 47, 'Total bound', quantity: 'total_error_bound'),
+      Wire([300, 180, 440, 180], arrow: true, ink: DiagramInk.input),
+      Wire([470, 180, 640, 180], arrow: true, ink: DiagramInk.input),
+      Label(448, 170, '+'),
+      Label(297, 194, 'Reading term', quantity: 'reading_error_bound'),
+      Label(483, 194, 'Range term', quantity: 'range_error_bound'),
+      Label(285, 239, 'Reading %', quantity: 'reading_percent'),
+      Label(490, 239, 'Range %', quantity: 'range_percent'),
+    ],
+  ),
+};
