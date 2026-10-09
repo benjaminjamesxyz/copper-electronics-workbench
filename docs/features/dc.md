@@ -138,3 +138,27 @@ Collect terms: `G = 1/R1+1/R2+1/Rl`, `Vnode = (V1/R1+V2/R2)/G`; then `I1 = (V1-V
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 2. `dc.resistor_dissipation` — Steady resistor dissipation (basic)
+
+**Design question:** How much electrical power must one resistor dissipate at its specified steady current?
+
+**Derivation:** Electrical work transferred per charge is voltage, so `P = V I`. Combining with `V = I R` gives `P = I^2 R`. This is an energy-transfer calculation distinct from merely finding current; changing current sign cannot make passive dissipation negative. Source: S2, equations 9.12–9.13.
+
+**Inputs:** `current` (A), `resistance` (ohm). **Output:** `power` (W).
+
+**Domain and limitations:** `resistance > 0`; signed current, including zero, is accepted. This provides a power figure only. A nominal resistor wattage is not automatically a safe allowance; package temperature, ambient conditions, pulse overload and voltage ratings are excluded and belong to other models.
+
+**Independent example/default:** `I = 0.012 A = 12/1000 A`, `R = 680 ohm`.
+
+`P = (12/1000)^2 × 680 = 97920/1000000 = 0.09792 W`.
+
+An independent energy-flow cross-check gives a voltage drop of `0.012 × 680 = 8.16 V`, and `8.16 × 0.012 = 0.09792 W`.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `power` | `0.09792` | W |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+

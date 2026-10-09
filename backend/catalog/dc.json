@@ -331,5 +331,68 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "dc.resistor_dissipation",
+    "title": "Steady resistor dissipation",
+    "category": "DC circuits and resistor networks",
+    "level": "basic",
+    "description": "Calculate the electrical power dissipated by a resistor carrying a specified steady current.",
+    "formula": "P = I^2 R",
+    "assumptions": [
+      "Steady DC and constant positive ohmic resistance.",
+      "This calculates dissipation only; it does not select a safe package, predict temperature, or apply thermal derating or pulse ratings.",
+      "Numerical envelope: abs(I) <= 1e6 A and 1e-9 <= R <= 1e12 ohm; component ratings must be checked separately."
+    ],
+    "references": [
+      {
+        "title": "OpenStax, University Physics Volume 2, 9.5 Electrical Energy and Power",
+        "url": "https://openstax.org/books/university-physics-volume-2/pages/9-5-electrical-energy-and-power"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "current",
+        "label": "Signed steady current",
+        "unit": "A",
+        "default": 0.012,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "resistance",
+        "label": "Resistance",
+        "unit": "ohm",
+        "default": 680.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "power",
+        "label": "Dissipated power",
+        "unit": "W",
+        "expression": "current^2*resistance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "resistance",
+        "op": ">",
+        "right": "0",
+        "message": "Resistance must be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "current": 0.012,
+        "resistance": 680.0
+      },
+      "expected": {
+        "power": 0.09792
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
