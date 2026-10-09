@@ -1,0 +1,112 @@
+[
+  {
+    "id": "thermal.resistor_power_derating",
+    "title": "Linear resistor power derating",
+    "category": "Thermal and reliability design",
+    "level": "basic",
+    "description": "Interpolate a specified flat-then-linear resistor rating curve and compare actual dissipation with the resulting permissible power.",
+    "formula": "f=min(1,max(0,(T_zero-Ta)/(T_zero-T_rated))); P_allowed=P_rated f; margin=P_allowed-P_actual",
+    "assumptions": [
+      "The part datasheet specifies full rated power through T_rated followed by a straight line to zero power at T_zero; parameters are not universal resistor values.",
+      "Ta means the datasheet's specified rating reference temperature, ambient for this model. Do not substitute solder-pad temperature unless the curve is defined that way.",
+      "Actual dissipation is supplied independently; only continuous power is compared. Pulse overload, limiting voltage, PCB temperature and mounting restrictions still apply.",
+      "No power uprating below the full-rating breakpoint. Temperatures above T_zero are rejected rather than described as safe at zero dissipation. Negative power margin signals overload."
+    ],
+    "references": [
+      {
+        "title": "Vishay Sfernice 53048: existing derating curves and mounting limitations, sections D-E",
+        "url": "https://www.vishay.com/docs/53048/pprachp.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "rated_power",
+        "label": "Full continuous power rating",
+        "unit": "W",
+        "default": 0.25,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rated_temperature",
+        "label": "Full-rating temperature breakpoint",
+        "unit": "K",
+        "default": 343.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "zero_power_temperature",
+        "label": "Zero-power temperature endpoint",
+        "unit": "K",
+        "default": 428.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "ambient_temperature",
+        "label": "Datasheet ambient reference temperature",
+        "unit": "K",
+        "default": 373.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "actual_power",
+        "label": "Actual continuous resistor dissipation",
+        "unit": "W",
+        "default": 0.12,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "rating_fraction",
+        "label": "Available full-rating fraction",
+        "unit": "1",
+        "expression": "min(1,max(0,(zero_power_temperature-ambient_temperature)/(zero_power_temperature-rated_temperature)))"
+      },
+      {
+        "key": "allowed_power",
+        "label": "Derated continuous power allowance",
+        "unit": "W",
+        "expression": "rated_power*rating_fraction"
+      },
+      {
+        "key": "power_margin",
+        "label": "Power allowance minus actual dissipation",
+        "unit": "W",
+        "expression": "allowed_power-actual_power"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "zero_power_temperature",
+        "op": ">",
+        "right": "rated_temperature",
+        "message": "The zero-power endpoint must exceed the full-rating breakpoint."
+      },
+      {
+        "left": "ambient_temperature",
+        "op": "<=",
+        "right": "zero_power_temperature",
+        "message": "Ambient is above the rating curve's maximum temperature endpoint."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "rated_power": 0.25,
+        "rated_temperature": 343.15,
+        "zero_power_temperature": 428.15,
+        "ambient_temperature": 373.15,
+        "actual_power": 0.12
+      },
+      "expected": {
+        "rating_fraction": 0.6470588235294118,
+        "allowed_power": 0.16176470588235295,
+        "power_margin": 0.04176470588235294
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
