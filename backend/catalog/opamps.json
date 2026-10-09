@@ -1,0 +1,149 @@
+[
+  {
+    "id": "opamps.inverting_stage",
+    "title": "Inverting amplifier with reference bias",
+    "category": "Operational amplifier stages",
+    "level": "basic",
+    "description": "Calculate signed voltage gain and output for a resistive inverting stage referred to a fixed noninverting-input voltage.",
+    "formula": "G = -Rf/Rin; Vo = Vref + G(Vin - Vref)",
+    "assumptions": [
+      "Ideal, stable negative feedback; negligible offset and input bias currents.",
+      "Voltages are DC or sufficiently slow that finite bandwidth and slew rate are negligible.",
+      "Source resistance is included in Rin; output load remains within the selected device's drive capability.",
+      "Entered output and input common-mode limits are device operating limits at the actual supply, load and temperature, not necessarily supply rails."
+    ],
+    "references": [
+      {
+        "title": "TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 18-19",
+        "url": "https://www.ti.com/lit/an/sboa092b/sboa092b.pdf"
+      },
+      {
+        "title": "TI SLOA011B: Understanding Operational Amplifier Specifications, sections 3, 5.4 and 5.6",
+        "url": "https://www.ti.com/lit/an/sloa011b/sloa011b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_in",
+        "label": "Total input resistance",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_feedback",
+        "label": "Feedback resistance",
+        "unit": "ohm",
+        "default": 47000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_in",
+        "label": "Input voltage",
+        "unit": "V",
+        "default": 0.2
+      },
+      {
+        "key": "v_reference",
+        "label": "Noninverting reference voltage",
+        "unit": "V",
+        "default": 0.0
+      },
+      {
+        "key": "v_out_min",
+        "label": "Minimum linear output voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_out_max",
+        "label": "Maximum linear output voltage",
+        "unit": "V",
+        "default": 10.0
+      },
+      {
+        "key": "v_cm_min",
+        "label": "Minimum input common-mode voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_cm_max",
+        "label": "Maximum input common-mode voltage",
+        "unit": "V",
+        "default": 10.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "gain",
+        "label": "Signed signal gain",
+        "unit": "V/V",
+        "expression": "-r_feedback/r_in"
+      },
+      {
+        "key": "v_out",
+        "label": "Output voltage",
+        "unit": "V",
+        "expression": "v_reference+gain*(v_in-v_reference)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_out_min",
+        "op": "<",
+        "right": "v_out_max",
+        "message": "Output limits must be ordered."
+      },
+      {
+        "left": "v_cm_min",
+        "op": "<",
+        "right": "v_cm_max",
+        "message": "Input common-mode limits must be ordered."
+      },
+      {
+        "left": "v_reference",
+        "op": ">=",
+        "right": "v_cm_min",
+        "message": "Reference is below the input common-mode range."
+      },
+      {
+        "left": "v_reference",
+        "op": "<=",
+        "right": "v_cm_max",
+        "message": "Reference is above the input common-mode range."
+      },
+      {
+        "left": "v_reference-r_feedback/r_in*(v_in-v_reference)",
+        "op": ">=",
+        "right": "v_out_min",
+        "message": "Predicted output is below the linear output range."
+      },
+      {
+        "left": "v_reference-r_feedback/r_in*(v_in-v_reference)",
+        "op": "<=",
+        "right": "v_out_max",
+        "message": "Predicted output is above the linear output range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_in": 10000.0,
+        "r_feedback": 47000.0,
+        "v_in": 0.2,
+        "v_reference": 0.0,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_cm_max": 10.0
+      },
+      "expected": {
+        "gain": -4.7,
+        "v_out": -0.94
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
