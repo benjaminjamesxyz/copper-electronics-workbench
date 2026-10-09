@@ -554,5 +554,165 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "motors.salient_pmsm_dq_operating_point",
+    "title": "Salient PMSM steady dq torque and voltage",
+    "category": "Electromechanical drives",
+    "level": "expert",
+    "description": "Find the torque, phase current and required phase voltage of a sinusoidal permanent-magnet machine, including saliency and cross-axis back EMF.",
+    "formula": "we=p wm; vd=Rs id-we Lq iq; vq=Rs iq+we(Ld id+psi); Te=1.5 p [psi+(Ld-Lq)id]iq; Pconv=Te wm; Pcu=1.5 Rs(id^2+iq^2)",
+    "assumptions": [
+      "Balanced sinusoidal three-phase windings with zero zero-sequence current; amplitude-invariant 2/3 Park transform aligned to rotor permanent-magnet flux.",
+      "d_current and q_current are peak-equivalent dq quantities, not phase RMS values. Inductances and resistance are per-phase quantities in the same convention; magnet_flux is peak permanent-magnet flux linkage.",
+      "Steady dq currents and speed; neglect current derivatives, saturation, cross saturation, iron loss, mechanical drag, harmonics and inverter switching/dead time.",
+      "Signed speed and currents are allowed, including generating operation. Negative d current can weaken flux, but magnet demagnetization/current/speed limits require manufacturer data; this calculator does not certify feasibility.",
+      "phase_voltage_peak is winding phase-to-neutral fundamental peak, not line-to-line RMS or DC-link voltage. No inverter-modulation assumption is made."
+    ],
+    "references": [
+      {
+        "title": "MathWorks PMSM (DQ0), Equations and original non-orthogonal Park transform",
+        "url": "https://www.mathworks.com/help/simscape-electrical/ref/pmsmdq0.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "pole_pairs",
+        "label": "Rotor pole pairs",
+        "unit": "1",
+        "default": 4,
+        "min": 1
+      },
+      {
+        "key": "mechanical_speed",
+        "label": "Signed mechanical angular speed",
+        "unit": "rad/s",
+        "default": 100
+      },
+      {
+        "key": "stator_resistance",
+        "label": "Per-phase stator resistance",
+        "unit": "ohm",
+        "default": 0.2,
+        "min": 0
+      },
+      {
+        "key": "d_inductance",
+        "label": "Direct-axis inductance",
+        "unit": "H",
+        "default": 0.0005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "q_inductance",
+        "label": "Quadrature-axis inductance",
+        "unit": "H",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "magnet_flux",
+        "label": "Peak permanent-magnet flux linkage",
+        "unit": "Wb",
+        "default": 0.05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "d_current",
+        "label": "Signed direct-axis current",
+        "unit": "A",
+        "default": -5
+      },
+      {
+        "key": "q_current",
+        "label": "Signed quadrature-axis current",
+        "unit": "A",
+        "default": 10
+      }
+    ],
+    "outputs": [
+      {
+        "key": "electrical_speed",
+        "label": "Signed electrical angular speed",
+        "unit": "rad/s",
+        "expression": "pole_pairs*mechanical_speed"
+      },
+      {
+        "key": "d_voltage",
+        "label": "Required direct-axis voltage",
+        "unit": "V",
+        "expression": "stator_resistance*d_current-electrical_speed*q_inductance*q_current"
+      },
+      {
+        "key": "q_voltage",
+        "label": "Required quadrature-axis voltage",
+        "unit": "V",
+        "expression": "stator_resistance*q_current+electrical_speed*(d_inductance*d_current+magnet_flux)"
+      },
+      {
+        "key": "phase_voltage_peak",
+        "label": "Required phase-to-neutral fundamental peak voltage",
+        "unit": "V",
+        "expression": "hypot(d_voltage,q_voltage)"
+      },
+      {
+        "key": "phase_current_peak",
+        "label": "Phase current peak",
+        "unit": "A",
+        "expression": "hypot(d_current,q_current)"
+      },
+      {
+        "key": "electromagnetic_torque",
+        "label": "Signed electromagnetic torque",
+        "unit": "N m",
+        "expression": "1.5*pole_pairs*(magnet_flux+(d_inductance-q_inductance)*d_current)*q_current"
+      },
+      {
+        "key": "converted_power",
+        "label": "Signed electromechanical conversion power",
+        "unit": "W",
+        "expression": "electromagnetic_torque*mechanical_speed"
+      },
+      {
+        "key": "stator_copper_loss",
+        "label": "Three-phase stator copper loss",
+        "unit": "W",
+        "expression": "1.5*stator_resistance*phase_current_peak^2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "pole_pairs",
+        "op": "==",
+        "right": "floor(pole_pairs)",
+        "message": "Pole pairs must be an integer"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "pole_pairs": 4,
+        "mechanical_speed": 100,
+        "stator_resistance": 0.2,
+        "d_inductance": 0.0005,
+        "q_inductance": 0.001,
+        "magnet_flux": 0.05,
+        "d_current": -5,
+        "q_current": 10
+      },
+      "expected": {
+        "electrical_speed": 400,
+        "d_voltage": -5,
+        "q_voltage": 21,
+        "phase_voltage_peak": 21.587033144922902,
+        "phase_current_peak": 11.180339887498949,
+        "electromagnetic_torque": 3.15,
+        "converted_power": 315,
+        "stator_copper_loss": 37.5
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

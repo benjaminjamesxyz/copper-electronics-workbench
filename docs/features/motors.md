@@ -234,3 +234,61 @@ Inputs: `inertia=0.002 kg m^2`, `armature_resistance=1 ohm`, `brake_resistance=3
 **Quantity labels:** `initial_speed` as `omega0`, `inertia` as `J`, `speed` as `omega(t)`, `electromagnetic_torque` as `Te < 0`, `braking_current` as `Ig`, `armature_resistance` as `Ra`, `brake_resistance` as `Rb`, `winding_energy` as `Ea`, `brake_energy` as `Eb`. Place heat labels under their respective resistors, not on the supply. A plain note `tau = J(Ra+Rb)/K²` may be replaced with `mechanical_tau` bound to `tau`.
 
 **Caption:** “Kinetic energy drives generator current into Ra and Rb; torque opposes positive rotation. This reduced model neglects the initial electrical transient and mechanical drag. No energy returns to a supply.”
+
+## 5. `motors.salient_pmsm_dq_operating_point`
+
+### Purpose and distinct model
+
+Compute a salient three-phase machine operating point from d/q current commands. The distinguishing physics is the interaction of permanent flux, current-generated saliency flux and cross-axis speed EMF. Neither AC impedance nor the DC torque-speed line models this. This is not field-oriented controller synthesis, MTPA optimization or inverter-modulation sizing.
+
+### Equations, normalization and limits
+
+Source: MathWorks PMSM (DQ0), the explicitly displayed amplitude-invariant `2/3` Park transform. The d-axis points along permanent-magnet flux; the q-axis is 90 electrical degrees ahead. Currents and voltages are peak-equivalent dq components, with zero zero-sequence. `p=pole_pairs`, `omega_e=p*omega_m`.
+
+Set both current derivatives to zero in the source equations:
+
+`vd=Rs*id-omega_e*Lq*iq`
+
+`vq=Rs*iq+omega_e*(Ld*id+psi)`
+
+`Te=(3/2)*p*(psi+(Ld-Lq)*id)*iq`.
+
+Outputs are `phase_voltage_peak=hypot(vd,vq)`, `phase_current_peak=hypot(id,iq)`, `converted_power=Te*omega_m`, and `stator_copper_loss=(3/2)*Rs*(id^2+iq^2)`. The catalog reuses the current magnitude for that last sum. Independent power check: `(3/2)*(vd*id+vq*iq)=converted_power+stator_copper_loss`.
+
+Pole pairs must be a positive integer. `Rs>=0`, `Ld>0`, `Lq>0`, and positive permanent flux are required. Signed currents and speed are intentional; generating torque/power must remain signed. There is no artificial `id<=0` restriction, and no false assumption that all IPM designs have one saliency sign. For `Ld=Lq`, reluctance torque vanishes exactly.
+
+The model requires constant unsaturated parameters and sinusoidal balanced windings. Phase-to-neutral peak voltage is not line-to-line RMS and is not bus voltage. No inverter topology is assumed. Actual speed/current/voltage envelopes and irreversible magnet demagnetization limits must come from manufacturer data. Gross converted mechanical power is not net shaft power if friction/core losses matter.
+
+### Complete independent example
+
+Inputs: `pole_pairs=4`, `mechanical_speed=100 rad/s`, `stator_resistance=0.2 ohm`, `d_inductance=0.0005 H`, `q_inductance=0.001 H`, `magnet_flux=0.05 Wb`, `d_current=-5 A`, `q_current=10 A`.
+
+- `electrical_speed=4*100=400 rad/s`.
+- `d_voltage=0.2*(-5)-400*0.001*10=-5 V`.
+- `q_voltage=0.2*10+400*(0.0005*(-5)+0.05)=21 V`.
+- `phase_voltage_peak=sqrt(25+441)=sqrt(466)=21.587033144922902 V`.
+- `phase_current_peak=sqrt(25+100)=sqrt(125)=11.180339887498949 A`.
+- Effective torque-producing flux `0.05+(0.0005-0.001)*(-5)=0.0525 Wb`.
+- `electromagnetic_torque=1.5*4*0.0525*10=3.15 N m`.
+- `converted_power=3.15*100=315 W`.
+- `stator_copper_loss=1.5*0.2*125=37.5 W`.
+- Independent input power `1.5*((-5)*(-5)+21*10)=352.5 W =315+37.5`.
+
+### Tester cases
+
+- Nominal: all eight outputs, plus the power identity above.
+- Surface-magnet limit: set `d_inductance=q_inductance`; torque becomes `1.5*p*psi*iq`, independent of d current, while voltage and losses retain d-current effects.
+- Zero speed: speed voltage terms vanish, so `vd=Rs*id`, `vq=Rs*iq`, and converted power is zero even if torque is nonzero.
+- Generating case: keep nominal inputs except `q_current=-10`. Then `electrical_speed=400`, `d_voltage=3`, `q_voltage=17`, `phase_voltage_peak=sqrt(298)=17.26267650163207`, `phase_current_peak=sqrt(125)`, torque `-3.15`, converted power `-315`, copper loss `37.5`; terminal electrical power is `-277.5 W`.
+- `d_current=q_current=0` yields zero torque/current/copper loss; rotating magnets still require `vq=omega_e*psi`, not zero voltage.
+- Reject fractional/nonpositive pole pairs, nonpositive inductances/flux and negative stator resistance. Accept zero resistance as the ideal lossless limit; do not reject negative d/q currents or speed.
+
+### Mandatory diagram
+
+**Geometry and flow:** left rotor-oriented d/q axes centered near `(175,160)`, d to the right and q upward, with a permanent-flux arrow on positive d. Show an illustrative current vector in quadrant II (negative d, positive q), with dashed projections onto both axes. This matches nominal sign convention but must be captioned as illustrative rather than an input-dependent vector.
+
+On the right, place two stacked equation blocks within `(350,65)`–`(660,165)`: `vd = Rs id - we Lq iq` and `vq = Rs iq + we(Ld id + psi)`. Below them place an electrical-to-mechanical conversion arrow with `Te` and `Pconv`; use a side loss arrow for stator copper heat. These are equation/energy arrows, not circuit wires.
+
+**Quantity labels:** `d_current` as `id`, `q_current` as `iq`, `magnet_flux` as `psi`, `d_voltage` as `vd`, `q_voltage` as `vq`, `electrical_speed` as `we`, `electromagnetic_torque` as `Te`, `converted_power` as `Pconv`, `stator_copper_loss` as `Pcu`. The full equation text is unbound; place the corresponding exact quantity label separately. If the layout needs less text, keep both voltage equations in the caption and retain the vector geometry.
+
+**Caption:** “Illustrative rotor dq frame with amplitude-invariant peak quantities. Cross-axis speed EMF and saliency couple voltage and torque. Negative converted power denotes generation; phase voltage is not DC-link voltage.”
