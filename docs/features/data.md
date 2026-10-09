@@ -113,3 +113,17 @@ At a=1 and B=f_s/2 the equation reduces to ideal full-Nyquist sine SNR. The exam
 At this time the remaining full-scale error fraction is exp(−ln(8192))=1/8192, exactly the 12-bit half-LSB target.
 
 **Parent verification scenarios (not exercised here):** example; half-scale/full-scale logarithmic factors; either resistance zero with the other positive; capacitance/resistance scaling; initial-error ratio equal/below one rejection; zero total R and fractional bits rejection.
+
+## `data.dynamic_enob` — Dynamic ENOB from measured SINAD
+
+**Level/purpose:** Intermediate. Convert a real ADC's measured combined noise-and-distortion performance into a continuous equivalent ideal full-scale sine resolution. Unlike nominal bandlimited quantization SNR, this consumes a measurement and does not predict noise-only performance or offer another nominal-resolution sizing mode.
+
+**Derivation/units:** Equate measured full-Nyquist SINAD [dB] to the ideal full-scale sine result, `SINAD=20 log10(2)*N_eff+10 log10(3/2)`. Therefore `enob_bits=(sinad_db−10 log10(1.5))/(20 log10(2))` [bit]. The exact constants are 6.020599913279624 dB/bit and 1.760912590556812 dB. S3 A.1.3.5 equation 4 supports dynamic ENOB and distinguishes precision-ADC DC noise-based resolution; S4 gives the familiar rounded relation.
+
+**Assumptions:** An independently measured pure full-scale sine, excluding DC but including harmonics/noise in the declared Nyquist measurement band. Sub-full-scale SINAD needs external amplitude normalization; none is added here. Narrowband/noise-shaped measurements are not directly comparable. This figure separates neither noise from distortion nor predicts DC accuracy, static linearity or noise-free resolution.
+
+**Domain/error rationale:** `sinad_db` ∈ [0,200] dB. There is no integer-bit constraint on the output: ENOB is continuous and can be negative even within this admitted SINAD range. At 0 dB, ENOB is `−ln(1.5)/(2 ln(2))`, approximately −0.29248 bit; it is not clamped. The fixed positive logarithm arguments and nonzero constant denominator need no additional relational guard.
+
+**Independent example/default:** `sinad_db=68 dB`; `enob_bits=(68−1.760912590556812)/6.020599913279624=11.002074272256452 bit`. This is the sole expected output at relative tolerance 1e-6.
+
+**Parent verification scenarios (not exercised here):** example; ideal-sine SINAD for an independently selected integer N recovers N; +20 log10(2) dB increases ENOB by one; zero SINAD yields negative ENOB; out-of-range/nonfinite SINAD rejection.

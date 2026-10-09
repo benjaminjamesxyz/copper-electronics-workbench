@@ -156,5 +156,36 @@
       "expected": {"time_constant_s": 1.53e-8, "required_time_constants": 9.010913347279288, "minimum_acquisition_s": 1.3786697421337312e-7},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.dynamic_enob",
+    "title": "Dynamic ENOB from measured SINAD",
+    "category": "ADC DAC and sampled systems",
+    "level": "intermediate",
+    "description": "Express a real converter's measured noise-plus-distortion performance as the bit resolution of an equivalent ideal full-scale sine converter.",
+    "formula": "ENOB = (SINAD_dB - 10 log10(3/2))/(20 log10(2))",
+    "assumptions": [
+      "SINAD is an independently measured full-scale sine signal-to-noise-and-distortion ratio, excluding DC and including harmonics and noise over the stated Nyquist measurement band.",
+      "Exact logarithmic constants are used rather than the rounded 6.02 and 1.76 constants.",
+      "No amplitude-backoff correction is applied; below-full-scale tests require normalization outside this calculation.",
+      "This is a dynamic figure of merit, not DC noise-free resolution, static accuracy, or a separation of noise from distortion. A narrowband or noise-shaped result is not directly comparable to this full-Nyquist convention.",
+      "ENOB is continuous and may be negative for very poor SINAD; do not clamp or round it to an integer."
+    ],
+    "references": [
+      {"title": "Texas Instruments ADCPro User Guide SBAU128C, appendix A.1.3.5, equation 4: dynamic ENOB versus DC noise-based resolution", "url": "https://www.ti.com/lit/ug/sbau128c/sbau128c.pdf"},
+      {"title": "Texas Instruments SLAP082, Signal Acquisition and Conditioning Seminar section 2, slide 2-15", "url": "https://www.ti.com/lit/ml/slap082/slap082.pdf"}
+    ],
+    "inputs": [
+      {"key": "sinad_db", "label": "Measured full-scale sine SINAD", "unit": "dB", "default": 68, "min": 0, "max": 200}
+    ],
+    "outputs": [
+      {"key": "enob_bits", "label": "Dynamic effective number of bits", "unit": "bit", "expression": "(sinad_db-10*log10(1.5))/(20*log10(2))"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"sinad_db": 68},
+      "expected": {"enob_bits": 11.002074272256452},
+      "relative_tolerance": 0.000001
+    }
   }
 ]
