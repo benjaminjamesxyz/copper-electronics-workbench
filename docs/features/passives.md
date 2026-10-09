@@ -249,3 +249,66 @@ The supply is exactly the sum of the two voltage drops. Increasing supply change
 
 Draw an unloaded vertical divider at x=265: source rail at y=45; high resistor around y=95; output junction at y=155; bottom resistor around y=195; ground at y=245. The upper resistor is explicitly labeled `R_h(V_h)`, not an ideal fixed resistor. Place a positive voltage bracket across its upper-to-lower pins labeled V_h → `high_voltage`. Bind V_s → `supply_voltage`, R_0 → `high_resistance_zero`, k → `vcr_ppm_volt`, R_b → `bottom_resistance`, and V_o → `output_voltage`. To the right, show the symbolic dependency “V_h → R_h(V_h) → voltage division”; this is an explanatory relation, not an extra wire. Caption: “High-side resistance depends on its own voltage; solve the divider self-consistently. Unloaded output, fixed temperature, calibrated negative-VCR fit.”
 
+
+## 6. `passives.nonideal_r2r_ladder` — expert
+
+### Purpose and novelty
+
+Resolve actual component-network bit weights, source impedance and loaded output when switch resistances are unequal. Closest baseline: `data.unipolar_dac_output` assumes an ideal code fraction with supplied gain; no component topology is represented. `dc.two_source_node` is a single node, not a terminated multi-rung ladder. This model solves the complete specified ladder; the ideal DAC formula appears only as a comparison oracle. It is not merely a new bit-width parameterization.
+
+### Topology and algebra
+
+Follow ADI §1.4/Figure 4b's voltage-mode topology. Let node N0 be the LSB end, N1 the middle and N2 the MSB/output end. R connects N0–N1 and N1–N2. N0 has a permanent 2R termination to ground. Each Ni has a branch of `2R+R_on,i` to an ideal source b_i V_ref selected by a switch; b_i is 0 or 1. Load conductance G_load connects N2 to ground. There is no extra horizontal resistor after N2.
+
+For code 0…7, b0=code−2 floor(code/2), b1=floor(code/2)−2 floor(code/4), b2=floor(code/4). All are exact at these small integers. Each R_on input is independent; values represent a measured constant resistance in the selected switch state, not a transistor model.
+
+Successive Thevenin reduction from the LSB end gives:
+
+- B0=2R+R_on,0; `T0=B0||2R`; `E0=b0 V_ref (2R)/(B0+2R)`.
+- B1=2R+R_on,1; `T1=B1||(R+T0)`; `E1=[b1 V_ref(R+T0)+E0 B1]/(B1+R+T0)`.
+- B2=2R+R_on,2; `R_out=B2||(R+T1)`; `V_oc=[b2 V_ref(R+T1)+E1 B2]/(B2+R+T1)`.
+- `V_load=V_oc/(1+G_load R_out)`.
+- `V_ideal=V_ref code/8`; `code_error_lsb=8 V_load/V_ref−code`.
+
+The JSON uses ratio forms rather than unnecessary products of two resistances. All voltages reference ground. Positive V_ref is required because the result includes error in V_ref/8 LSB units. R>0, each R_on≥0, G_load≥0 and code integer 0…7. G_load=0 means open circuit. Fixed resistances imply code-independent R_out; they do not imply ideal binary weights. The error includes gain and loading and is expressly not endpoint-corrected INL. Settling, glitch, switch signal dependence, reference-source impedance and resistor tolerances are not modeled.
+
+### Complete independent example
+
+Inputs: `ladder_resistance=1000 Ω`, `lsb_switch_resistance=100 Ω`, `middle_switch_resistance=200 Ω`, `msb_switch_resistance=300 Ω`, `reference_voltage=5 V`, `code=5` (binary 101), `load_conductance=0.0001 S` (10 kΩ).
+
+Here B0=2100 Ω, B1=2200 Ω, B2=2300 Ω. Independently solve the three-node conductance matrix:
+
+- N0: `(1/2100+1/2000+1/1000)V0−V1/1000=5/2100`.
+- N1: `−V0/1000+(1/2200+2/1000)V1−V2/1000=0`.
+- N2: `−V1/1000+(1/2300+1/1000+1/10000)V2=5/2300`.
+
+Exact rational elimination gives N0=2.2275279487651827 V, N1=2.02106713684548 V, and N2=`1142500/417997 V`=2.733273205310086 V. The actual loaded internal node voltages are NOT the isolated subladder Thevenin voltages below.
+
+| Output key | Independent result | Expected |
+|---|---|---:|
+| `lsb_thevenin_resistance` | 2100||2000 | 1024.3902439024391 Ω |
+| `lsb_thevenin_voltage` | 5×2000/(2100+2000) | 2.4390243902439024 V |
+| `middle_thevenin_resistance` | 2200||(1000+1024.3902439024391) | 1054.2725173210163 Ω |
+| `middle_thevenin_voltage` | E0×2200/(2200+1000+T0) | 1.2702078521939955 V |
+| `output_resistance` | 2300||(1000+T1) | 1085.101304762915 Ω |
+| `open_voltage` | unloaded N2 solution | 3.029861037445635 V |
+| `loaded_voltage` | exact nodal rational 1142500/417997 | 2.733273205310086 V |
+| `ideal_voltage` | 5×5/8 | 3.125 V |
+| `code_error_lsb` | (loaded_voltage−3.125)/(5/8) | −0.6267628715038625 LSB |
+
+### Independent tester cases
+
+- Nominal table; verify loaded node equations independently, not by replaying catalog expressions.
+- All switches zero and G_load=0: T0=T1=R_out=R and V_load=V_ref code/8 for every code 0…7.
+- Same ideal switches with finite G: V_load=V_ref code/[8(1+GR)]. At R=1 kΩ, G=0.001 S and code=4, V_ref=5 V, result is 1.25 V.
+- Code=0 gives all four voltage outputs zero, zero code error, and positive resistance outputs.
+- For fixed switch/load values, compare codes 1,2,4 to isolate the three physical bit weights; their sum must equal code-7 output. Do not impose ideal 1:2:4 weights.
+- With all other inputs unchanged, doubling every resistance and halving G leaves output voltages unchanged and doubles all Thevenin resistances.
+- Reject code −1,8 or fractional 2.5; zero/negative R or V_ref; negative switch resistance or load conductance.
+
+### Mandatory diagram
+
+Use a horizontal ladder with N0 at (150,70), N1 at (335,70), N2 at (520,70). Draw R links between N0/N1 and N1/N2. A 2R termination descends from N0 toward ground through a separate left branch at x=65; do not accidentally put it in series with the LSB switched leg. At each node draw a vertical 2R resistor and a switch-resistance resistor below it, ending in a labeled ideal selected source `b0 V_ref`, `b1 V_ref`, `b2 V_ref`. Ground is common. A load resistor at x=625 connects N2 to ground, labeled `R_L=1/G_L; open if G_L=0`. Output positive polarity is N2 relative to ground.
+
+Bind R → `ladder_resistance` only on an R link; label each 2R leg symbolically. Bind its corresponding switch-resistance labels to `lsb_switch_resistance`, `middle_switch_resistance`, `msb_switch_resistance`. Bind V_ref → `reference_voltage`, code → `code`, G_L → `load_conductance`, and V_out → `loaded_voltage`. The subladder E0/E1 results must NOT label the loaded N0/N1 nodes; they are disconnected-equivalent source voltages, not physical node readings. Caption: “Three voltage-mode rungs, permanent 2R LSB termination, and unequal series switch resistances. Settled DC output; code error includes loading and gain error.”
+

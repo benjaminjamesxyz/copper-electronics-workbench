@@ -563,5 +563,167 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "passives.nonideal_r2r_ladder",
+    "title": "Three-bit R-2R ladder with unequal switch resistance",
+    "category": "Nonideal passive components",
+    "level": "expert",
+    "description": "Solve the component-level Thevenin ladder including independent switch resistances and output loading, rather than assuming ideal binary weights.",
+    "formula": "B_i=2R+R_on,i; T_0=B_0||2R; E_0=b_0 V_ref*2R/(B_0+2R); T_1=B_1||(R+T_0); E_1=[b_1 V_ref(R+T_0)+E_0 B_1]/(B_1+R+T_0); R_out=B_2||(R+T_1); V_oc=[b_2 V_ref(R+T_1)+E_1 B_2]/(B_2+R+T_1); V_load=V_oc/(1+G_load R_out)",
+    "assumptions": [
+      "Exactly three voltage-mode ladder rungs: each switched branch is 2R plus its supplied switch resistance; two horizontal links are R; the LSB end has an unswitched 2R termination to ground.",
+      "Code bits select an ideal low-impedance reference or ground. Switch resistance can differ by bit but is constant with signal, code and temperature.",
+      "Output is at the MSB end with a conductance to ground. Zero load conductance denotes open circuit.",
+      "DC settled solution only. No glitch, settling, reference impedance, resistor tolerance, parasitic capacitance or switch nonlinearity is modeled.",
+      "Reported code error includes loading and gain error; it is NOT endpoint-corrected INL."
+    ],
+    "references": [
+      {
+        "title": "Analog Devices University, Current Steering Digital-to-Analog Converters, section 1.4 R-2R Ladder DACs and Figure 4b",
+        "url": "https://wiki.analog.com/university/courses/tutorials/cmos-dac-chapter"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "ladder_resistance",
+        "label": "Horizontal ladder resistance R",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "lsb_switch_resistance",
+        "label": "LSB switch on-resistance",
+        "unit": "ohm",
+        "default": 100,
+        "min": 0
+      },
+      {
+        "key": "middle_switch_resistance",
+        "label": "Middle-bit switch on-resistance",
+        "unit": "ohm",
+        "default": 200,
+        "min": 0
+      },
+      {
+        "key": "msb_switch_resistance",
+        "label": "MSB switch on-resistance",
+        "unit": "ohm",
+        "default": 300,
+        "min": 0
+      },
+      {
+        "key": "reference_voltage",
+        "label": "Ideal switched reference voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "code",
+        "label": "Unsigned three-bit code",
+        "unit": "count",
+        "default": 5,
+        "min": 0,
+        "max": 7
+      },
+      {
+        "key": "load_conductance",
+        "label": "Output load conductance to ground",
+        "unit": "S",
+        "default": 0.0001,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "lsb_thevenin_resistance",
+        "label": "LSB subladder source resistance",
+        "unit": "ohm",
+        "expression": "(2*ladder_resistance)/(1+2*ladder_resistance/(2*ladder_resistance+lsb_switch_resistance))"
+      },
+      {
+        "key": "lsb_thevenin_voltage",
+        "label": "LSB subladder open voltage",
+        "unit": "V",
+        "expression": "(code-2*floor(code/2))*reference_voltage/(2+lsb_switch_resistance/(2*ladder_resistance))"
+      },
+      {
+        "key": "middle_thevenin_resistance",
+        "label": "Two-rung subladder source resistance",
+        "unit": "ohm",
+        "expression": "(ladder_resistance+lsb_thevenin_resistance)/(1+(ladder_resistance+lsb_thevenin_resistance)/(2*ladder_resistance+middle_switch_resistance))"
+      },
+      {
+        "key": "middle_thevenin_voltage",
+        "label": "Two-rung subladder open voltage",
+        "unit": "V",
+        "expression": "(floor(code/2)-2*floor(code/4))*reference_voltage/(1+(2*ladder_resistance+middle_switch_resistance)/(ladder_resistance+lsb_thevenin_resistance))+lsb_thevenin_voltage/(1+(ladder_resistance+lsb_thevenin_resistance)/(2*ladder_resistance+middle_switch_resistance))"
+      },
+      {
+        "key": "output_resistance",
+        "label": "Complete ladder output resistance",
+        "unit": "ohm",
+        "expression": "(ladder_resistance+middle_thevenin_resistance)/(1+(ladder_resistance+middle_thevenin_resistance)/(2*ladder_resistance+msb_switch_resistance))"
+      },
+      {
+        "key": "open_voltage",
+        "label": "Complete ladder unloaded voltage",
+        "unit": "V",
+        "expression": "floor(code/4)*reference_voltage/(1+(2*ladder_resistance+msb_switch_resistance)/(ladder_resistance+middle_thevenin_resistance))+middle_thevenin_voltage/(1+(ladder_resistance+middle_thevenin_resistance)/(2*ladder_resistance+msb_switch_resistance))"
+      },
+      {
+        "key": "loaded_voltage",
+        "label": "Loaded output voltage",
+        "unit": "V",
+        "expression": "open_voltage/(1+load_conductance*output_resistance)"
+      },
+      {
+        "key": "ideal_voltage",
+        "label": "Ideal unloaded three-bit output",
+        "unit": "V",
+        "expression": "reference_voltage*(code/8)"
+      },
+      {
+        "key": "code_error_lsb",
+        "label": "Uncorrected loaded code error",
+        "unit": "LSB",
+        "expression": "loaded_voltage/reference_voltage*8-code"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "code",
+        "op": "==",
+        "right": "floor(code)",
+        "message": "DAC code must be an integer from zero through seven."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "ladder_resistance": 1000,
+        "lsb_switch_resistance": 100,
+        "middle_switch_resistance": 200,
+        "msb_switch_resistance": 300,
+        "reference_voltage": 5,
+        "code": 5,
+        "load_conductance": 0.0001
+      },
+      "expected": {
+        "lsb_thevenin_resistance": 1024.3902439024391,
+        "lsb_thevenin_voltage": 2.4390243902439024,
+        "middle_thevenin_resistance": 1054.2725173210163,
+        "middle_thevenin_voltage": 1.2702078521939955,
+        "output_resistance": 1085.101304762915,
+        "open_voltage": 3.029861037445635,
+        "loaded_voltage": 2.733273205310086,
+        "ideal_voltage": 3.125,
+        "code_error_lsb": -0.6267628715038625
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
