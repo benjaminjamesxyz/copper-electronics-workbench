@@ -155,3 +155,61 @@ Complete independent example input vector (relative tolerance `1e-6`):
 
 Implementation evaluates equilibrium power directly as `P_ref[1+beta(Ta-T_ref)]/(1-g)`. This follows the same heat balance, but avoids subtracting rounded absolute junction/reference temperatures when evaluating fitted power. No model domain or example oracle changes.
 
+## `thermal.arrhenius_acceleration` — Arrhenius accelerated-life exposure
+
+**ID:** `thermal.arrhenius_acceleration`; **level:** expert. **References:** 6–7.
+
+### Model and derivation
+
+NIST's mechanism-specific life model is `t_f(T)=A exp(Ea/(k_B T))`. Taking the use/test life ratio cancels `A`:
+
+`AF=t_f(T_use)/t_f(T_test)=exp[(Ea/k_B)(1/T_use−1/T_test)]`.
+
+For constant test exposure, **t_equivalent=AF t_test**. The equivalent is an amount of use-temperature exposure under this model, not an observed lifetime.
+
+### Units, domain and limitations
+
+Activation energy eV (explicit non-SI convention), `k_B=8.617333262145e-5 eV/K`, absolute temperatures K and duration s. Positive activation energy and positive temperatures are required; test temperature must be at least use temperature, giving `AF>=1`. Zero-duration exposure is allowed and gives zero equivalent exposure. Equal temperatures give `AF=1`.
+
+Activation energy must be established for the relevant materials and failure mechanism. Raising stress must not create a different failure process; voltage, humidity and mechanical stress are unchanged. The relevant temperatures are at the failure site. This is not a “10 °C doubles aging” heuristic, generic solder fatigue model, MTBF estimator or confidence analysis. The catalog activation-energy maximum of 10 eV is a broad numerical input limit, not a claim of typical mechanism energies.
+
+To prevent numerical overflow, constrain the input-only exponent to `ln(1e300/max(test_duration,1))`; thus both the factor and equivalent seconds remain at most 10^300. This is a computational-domain limit, not a physical acceleration limit. Duration also has a finite broad input maximum of 10^100 s.
+
+### Independent worked example
+
+Inputs: `Ea=0.7 eV`, `T_use=328.15 K` (55 °C), `T_test=398.15 K` (125 °C), test exposure `360000 s` (100 h).
+
+Independent reciprocal-temperature arithmetic gives exponent **4.352152076475486**. Its high-precision exponential is **AF=77.64538204961666**. Consequently **equivalent exposure=27,952,337.537862 s**, or approximately 7764.538205 h. The acceleration means use-temperature exposure is longer, not shorter, than the accelerated-test exposure.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `activation_energy` | Characterized activation energy | eV | 0.7 | > 0; <= 10 |
+| `use_temperature` | Use failure-site temperature | K | 328.15 | > 0 |
+| `test_temperature` | Accelerated-test failure-site temperature | K | 398.15 | > 0 |
+| `test_duration` | Test exposure duration | s | 360000 | >= 0; <= 1e+100 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `acceleration_factor` | 1 | `exp(activation_energy/8.617333262145e-5*((test_temperature-use_temperature)/test_temperature)/use_temperature)` | 77.64538204961666 |
+| `equivalent_use_duration` | s | `test_duration*acceleration_factor` | 27952337.537862 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "activation_energy": 0.7,
+  "use_temperature": 328.15,
+  "test_temperature": 398.15,
+  "test_duration": 360000
+}
+```
+
+### Numerical implementation
+
+Implementation computes the exponent as `(Ea/k_B)*((T_test-T_use)/T_test)/T_use`, algebraically identical to the reciprocal difference. This avoids cancellation between nearly equal reciprocals and retains exact unity at equal temperatures. The input-only overflow guard uses the same expression. No model domain or example oracle changes.
+

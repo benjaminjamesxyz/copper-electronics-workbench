@@ -280,5 +280,107 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "thermal.arrhenius_acceleration",
+    "title": "Arrhenius accelerated-life exposure",
+    "category": "Thermal and reliability design",
+    "level": "expert",
+    "description": "Convert higher-temperature exposure to equivalent use-temperature exposure for a single characterized thermally activated failure mechanism.",
+    "formula": "AF=exp[(Ea/k_B)(1/T_use-1/T_test)]; t_equivalent=AF t_test; k_B=8.617333262145e-5 eV/K",
+    "assumptions": [
+      "The same single thermally activated failure mechanism governs both temperatures, with constant activation energy and unchanged other stresses.",
+      "Temperatures are absolute temperatures at the failure site, not necessarily chamber or ambient temperatures.",
+      "Activation energy is an experimentally characterized material/mechanism parameter; the default 0.7 eV is illustrative, not universal.",
+      "Equivalent exposure is not guaranteed service life, MTBF, or a reliability confidence bound. Not applicable to generic solder fatigue or changing failure mechanisms.",
+      "The logarithmic numerical-domain guard limits factor and equivalent exposure to at most 1e300 to avoid floating-point overflow.",
+      "Evaluate the reciprocal-temperature difference as ((T_test-T_use)/T_test)/T_use to avoid subtracting nearly equal reciprocals; the overflow guard uses this same expression."
+    ],
+    "references": [
+      {
+        "title": "NIST/SEMATECH e-Handbook section 8.1.5.1: Arrhenius model",
+        "url": "https://www.itl.nist.gov/div898/handbook/apr/section1/apr151.htm"
+      },
+      {
+        "title": "NIST CODATA: Boltzmann constant in eV/K",
+        "url": "https://physics.nist.gov/cgi-bin/cuu/Value?kev"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "activation_energy",
+        "label": "Characterized activation energy",
+        "unit": "eV",
+        "default": 0.7,
+        "min": 0,
+        "max": 10,
+        "exclusive_min": true
+      },
+      {
+        "key": "use_temperature",
+        "label": "Use failure-site temperature",
+        "unit": "K",
+        "default": 328.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "test_temperature",
+        "label": "Accelerated-test failure-site temperature",
+        "unit": "K",
+        "default": 398.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "test_duration",
+        "label": "Test exposure duration",
+        "unit": "s",
+        "default": 360000,
+        "min": 0,
+        "max": 1e+100
+      }
+    ],
+    "outputs": [
+      {
+        "key": "acceleration_factor",
+        "label": "Use-to-test time acceleration factor",
+        "unit": "1",
+        "expression": "exp(activation_energy/8.617333262145e-5*((test_temperature-use_temperature)/test_temperature)/use_temperature)"
+      },
+      {
+        "key": "equivalent_use_duration",
+        "label": "Equivalent use-temperature exposure",
+        "unit": "s",
+        "expression": "test_duration*acceleration_factor"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "test_temperature",
+        "op": ">=",
+        "right": "use_temperature",
+        "message": "Accelerated-test temperature must be at least the use temperature."
+      },
+      {
+        "left": "activation_energy/8.617333262145e-5*((test_temperature-use_temperature)/test_temperature)/use_temperature",
+        "op": "<=",
+        "right": "ln(1e300/max(test_duration,1))",
+        "message": "Requested acceleration factor or equivalent exposure exceeds the finite numerical domain."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "activation_energy": 0.7,
+        "use_temperature": 328.15,
+        "test_temperature": 398.15,
+        "test_duration": 360000
+      },
+      "expected": {
+        "acceleration_factor": 77.64538204961666,
+        "equivalent_use_duration": 27952337.537862
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
