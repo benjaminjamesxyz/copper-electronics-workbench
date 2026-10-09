@@ -625,3 +625,88 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 
 - [TI SBOA092B: Handbook of Operational Amplifier Applications, p. 21 and pp. 55-58](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
 
+## 6. `opamps.differentiator_ramp` — intermediate
+
+### Physical problem and connections
+
+Calculate a capacitor-input active differentiator's output **inside** a constant-slope input ramp. `C` is in series between the source and inverting input; `Rf` is feedback; the noninverting input is fixed at `Vref`. Differentiation and integration are different capacitor placements and physical operations, not inverse rearrangements of a scalar gain formula.
+
+### Derivation
+
+The source ramp slope is
+
+\[
+m=\frac{V_{end}-V_{start}}{T}.
+\]
+
+The capacitor injects `I=C m` into the virtual-reference node. Resistor-feedback KCL gives
+
+\[
+V_o=V_{ref}-R_f C m.
+\]
+
+`Rf C` has seconds units, which multiplies the V/s slope to produce volts. H pp. 21–22 provides the capacitor-current derivation and cautions that this is particularly difficult to realize ideally. Practical differentiators/limitations are discussed at pp. 38–39 and 61–62.
+
+### Domain and limitations
+
+`Rf>0`, `C>0`, `T>0`. Ramp endpoints may be increasing, decreasing or equal; only zero duration is forbidden. Validate `Vref` as the pin common-mode voltage and the calculated output as the linear swing. Ideal abrupt ramp corners or input steps would demand transients that this local model does not calculate. Use it only after startup and away from corners where the practical compensated stage approximates differentiation. Necessary bandwidth-limiting components and their synthesis are intentionally outside the model and belong to filter/stability design. No noise output is calculated.
+
+### Independent example — all expected outputs
+
+`Rf=10,000 ohm`, `C=10 nF=1e-8 F`, `Vstart=-0.5 V`, `Vend=0.5 V`, `T=1 ms`, `Vref=0 V`; ranges ±10 V.
+
+- `input_slope = (0.5-(-0.5))/0.001 = 1000 V/s`.
+- Capacitor current is `1e-8*1000 = 10 microA`.
+- `v_out = -10000*(10e-6) = -0.1 V`.
+
+Pin 0 V and output −0.1 V pass. This result describes the interior only; it makes no claim about the waveform at ramp endpoints.
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `r_feedback` | Feedback resistance | ohm | `10000.0` | > 0.0 |
+| `c_input` | Input capacitance | F | `1e-08` | > 0.0 |
+| `v_start` | Ramp starting voltage | V | `-0.5` | Any finite value, subject to relational guards |
+| `v_end` | Ramp ending voltage | V | `0.5` | Any finite value, subject to relational guards |
+| `duration` | Ramp duration | s | `0.001` | > 0.0 |
+| `v_reference` | Noninverting reference voltage | V | `0.0` | Any finite value, subject to relational guards |
+| `v_out_min` | Minimum linear output voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_out_max` | Maximum linear output voltage | V | `10.0` | Any finite value, subject to relational guards |
+| `v_cm_min` | Minimum input common-mode voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_cm_max` | Maximum input common-mode voltage | V | `10.0` | Any finite value, subject to relational guards |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `input_slope` | V/s | `(v_end-v_start)/duration` | `1000.0` |
+| `v_out` | V | `v_reference-r_feedback*c_input*input_slope` | `-0.1` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `v_out_min < v_out_max`: Output limits must be ordered.
+- Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
+- Require `v_reference >= v_cm_min`: Reference is below the input common-mode range.
+- Require `v_reference <= v_cm_max`: Reference is above the input common-mode range.
+- Require `v_reference-r_feedback*c_input*(v_end-v_start)/duration >= v_out_min`: Predicted output is below the linear output range.
+- Require `v_reference-r_feedback*c_input*(v_end-v_start)/duration <= v_out_max`: Predicted output is above the linear output range.
+
+### Catalog model assumptions
+
+- Input capacitor C connects the voltage source to the inverting input; Rf connects output to inverting input; noninverting input is held at constant Vref.
+- A linear input ramp is observed away from its endpoints after startup transients. Abrupt ideal corners or steps are not modeled.
+- Ideal stable feedback and negligible bias/offset. Practical differentiators need bandwidth-limiting compensation; this is a local slope calculation, not a realizable all-frequency response or filter synthesis.
+- Use only when the practical stage approximates ideal differentiation over the input's occupied bandwidth; output load, bandwidth and slew limits require separate device checks.
+- Input-pin common-mode voltage equals Vref; source ramp voltage is not itself the op-amp pin voltage.
+
+### Feature sources
+
+- [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 21-22, 38-39 and 61-62](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
+

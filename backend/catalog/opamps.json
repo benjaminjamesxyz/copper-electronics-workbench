@@ -965,5 +965,165 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opamps.differentiator_ramp",
+    "title": "Differentiator response to an input ramp",
+    "category": "Operational amplifier stages",
+    "level": "intermediate",
+    "description": "Calculate the capacitor-input differentiator's output during the interior of a constant-slope input ramp.",
+    "formula": "m = (Vend-Vstart)/T; Vo = Vref - Rf C m",
+    "assumptions": [
+      "Input capacitor C connects the voltage source to the inverting input; Rf connects output to inverting input; noninverting input is held at constant Vref.",
+      "A linear input ramp is observed away from its endpoints after startup transients. Abrupt ideal corners or steps are not modeled.",
+      "Ideal stable feedback and negligible bias/offset. Practical differentiators need bandwidth-limiting compensation; this is a local slope calculation, not a realizable all-frequency response or filter synthesis.",
+      "Use only when the practical stage approximates ideal differentiation over the input's occupied bandwidth; output load, bandwidth and slew limits require separate device checks.",
+      "Input-pin common-mode voltage equals Vref; source ramp voltage is not itself the op-amp pin voltage."
+    ],
+    "references": [
+      {
+        "title": "TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 21-22, 38-39 and 61-62",
+        "url": "https://www.ti.com/lit/an/sboa092b/sboa092b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_feedback",
+        "label": "Feedback resistance",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "c_input",
+        "label": "Input capacitance",
+        "unit": "F",
+        "default": 1e-08,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_start",
+        "label": "Ramp starting voltage",
+        "unit": "V",
+        "default": -0.5
+      },
+      {
+        "key": "v_end",
+        "label": "Ramp ending voltage",
+        "unit": "V",
+        "default": 0.5
+      },
+      {
+        "key": "duration",
+        "label": "Ramp duration",
+        "unit": "s",
+        "default": 0.001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_reference",
+        "label": "Noninverting reference voltage",
+        "unit": "V",
+        "default": 0.0
+      },
+      {
+        "key": "v_out_min",
+        "label": "Minimum linear output voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_out_max",
+        "label": "Maximum linear output voltage",
+        "unit": "V",
+        "default": 10.0
+      },
+      {
+        "key": "v_cm_min",
+        "label": "Minimum input common-mode voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_cm_max",
+        "label": "Maximum input common-mode voltage",
+        "unit": "V",
+        "default": 10.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "input_slope",
+        "label": "Input ramp slope",
+        "unit": "V/s",
+        "expression": "(v_end-v_start)/duration"
+      },
+      {
+        "key": "v_out",
+        "label": "Output during ramp interior",
+        "unit": "V",
+        "expression": "v_reference-r_feedback*c_input*input_slope"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_out_min",
+        "op": "<",
+        "right": "v_out_max",
+        "message": "Output limits must be ordered."
+      },
+      {
+        "left": "v_cm_min",
+        "op": "<",
+        "right": "v_cm_max",
+        "message": "Input common-mode limits must be ordered."
+      },
+      {
+        "left": "v_reference",
+        "op": ">=",
+        "right": "v_cm_min",
+        "message": "Reference is below the input common-mode range."
+      },
+      {
+        "left": "v_reference",
+        "op": "<=",
+        "right": "v_cm_max",
+        "message": "Reference is above the input common-mode range."
+      },
+      {
+        "left": "v_reference-r_feedback*c_input*(v_end-v_start)/duration",
+        "op": ">=",
+        "right": "v_out_min",
+        "message": "Predicted output is below the linear output range."
+      },
+      {
+        "left": "v_reference-r_feedback*c_input*(v_end-v_start)/duration",
+        "op": "<=",
+        "right": "v_out_max",
+        "message": "Predicted output is above the linear output range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_feedback": 10000.0,
+        "c_input": 1e-08,
+        "v_start": -0.5,
+        "v_end": 0.5,
+        "duration": 0.001,
+        "v_reference": 0.0,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_cm_max": 10.0
+      },
+      "expected": {
+        "input_slope": 1000.0,
+        "v_out": -0.1
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
