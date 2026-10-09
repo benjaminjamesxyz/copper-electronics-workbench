@@ -317,3 +317,60 @@ Exact bindings: N beside Q2 `area_ratio`; R2 `ptat_resistance`; R1 `common_resis
 
 Caption: “The equal-current servo forces a PTAT voltage across R2. R1 carries both emitter currents, so its contribution has a factor of two. Nonzero operating state and large beta are assumed; startup and curvature are not modeled.”
 
+
+## 6. `precision.log114_current_ratio` — basic
+
+### Purpose and novelty
+
+Design nominal electrical current compression around the LOG114 with a resistor-derived reference current. Nearest baseline `noise.decibel_to_linear` is unit/ratio conversion without a circuit; here the device enforces virtual-ground current inputs and generates a logarithmic voltage with current-dependent incremental transimpedance. Nearest new TIA has a linear resistor transfer and bandwidth compensation; this frontend intentionally compresses many decades. No physical light conversion is included.
+
+### Topology, law and limits
+
+Use a LOG114 at +5 V/-5 V and 25 °C. Tie VCM IN, COM and VREF GND to ground. Connect its nominal internal 2.5 V VREF output through `reference_resistance` to I2. Positive signal current enters I1. Observe VLOGOUT directly; unused auxiliary amplifiers are not part of this model. Section 7.2.1 permits either input to be signal/reference; this catalog uses I1 as numerator signal and I2 as denominator reference, even though the source's worked application selects the opposite assignment.
+
+At nominal virtual ground:
+
+- `reference_current = 2.5/reference_resistance`.
+- `current_ratio = signal_current/reference_current`.
+- `log_decades = log10(current_ratio)`.
+- `log_output = 0.375 log_decades`.
+- `local_transimpedance = dVLOGOUT/dI1 = 0.375/[ln(10) signal_current]`.
+
+For near-equal currents, the catalog evaluates the logarithm as `log1p((I1-I2)/I2)/ln(10)` to retain a small ratio departure. The exact equal-current output is zero. The derivative is local sensitivity, not a claim that the entire large-signal transfer is linear.
+
+Signal current is restricted to the specified 100 pA–10 mA input range. Reference current is restricted to 100 pA–2 mA: the upper bound preserves the internal reference's stated ±2 mA loading condition. Therefore `reference_resistance` lies from 1250 ohm through 25 Gohm. These are physical device limits, not arbitrary numerical clamps. The resulting log output remains inside the dual-supply VLOGOUT swing limits.
+
+Nominal 2.5 V and 0.375 V/decade are used, not guaranteed exact values. Reference tolerance, input bias, offset, log conformity, gain error, leakage and temperature drift are excluded. The 100 pA range is especially sensitive to leakage and the typical 5 pA bias; nominal results must not be described as guaranteed accuracy. VLOGOUT load must be at least 10 kohm with no more than 100 pF; maintain the specified rails and grounding. Current-dependent bandwidth means DC logarithmic conversion is not an arbitrary-speed pulse model.
+
+### Complete independent example
+
+Inputs: `signal_current=0.0001`, `reference_resistance=2500000`.
+
+The 2.5 V reference and 2.5 Mohm resistor generate exactly 1 µA nominally. Signal/reference ratio is 100, or two decades. At 0.375 V/decade, VLOGOUT is 0.75 V. Differentiate the logarithmic current transfer at 100 µA for the local sensitivity.
+
+| Output key | Independent value |
+|---|---:|
+| `reference_current` | 0.000001 A |
+| `current_ratio` | 100 |
+| `log_decades` | 2 decades |
+| `log_output` | 0.75 V |
+| `local_transimpedance` | 1628.6043071371942 ohm |
+
+### Tester cases
+
+- Nominal: assert every value.
+- Equal currents: signal=1 µA with nominal reference resistor gives ratio=1, log decades=0 and output=0 exactly; local transimpedance=162860.43071371942 ohm.
+- Range endpoints: signal=100 pA gives -1.5 V and signal=10 mA gives +1.5 V with the nominal 1 µA reference.
+- One-decade increase adds exactly 0.375 V in the nominal model while decreasing local transimpedance tenfold.
+- Reference-resistor boundaries: 1250 ohm gives 2 mA reference current; 25 Gohm gives 100 pA. Both are admitted, subject to all stated external conditions.
+- Near unity: use the next representable current above 1 µA; require a positive log output instead of subtraction-induced zero.
+- Invalid: signal below 100 pA, above 10 mA, zero/negative/nonfinite; resistor outside [1250,25000000000] ohm or nonfinite.
+
+### Mandatory diagram specification
+
+Draw a LOG114 functional IC with labeled I1 and I2 current-input pins, VREF output, VLOGOUT output, COM, VCM IN, VREF GND and ±5 V supply pins. Draw the resistor externally from VREF to I2, not from a fictitious zero-impedance ground source. Signal-current arrow enters I1. Both input nodes have small “virtual ground” labels; ground COM, VCM IN and VREF GND visibly. The internal block may show two log current converters feeding a difference amplifier, explicitly marked “internal”; it is not an optical sensor.
+
+Exact bindings: input arrow `signal_current`; external resistor `reference_resistance`; I2 arrow `reference_current`; VLOGOUT `log_output`; a side slope annotation `local_transimpedance`. Static “2.5 V nominal” labels VREF; static ±5 V labels identify fixed assumptions, not computed outputs. A ratio annotation may bind `current_ratio`, but never display it as a voltage.
+
+Caption: “Positive currents enter I1 and I2. The internal reference and external resistor set I2; VLOGOUT compresses I1/I2 at nominal 0.375 V/decade. Fixed dual supplies and nominal device behavior are assumed.”
+

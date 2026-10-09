@@ -818,5 +818,90 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "precision.log114_current_ratio",
+  "title": "LOG114 resistor-referenced logarithmic front end",
+  "category": "Precision analog front ends",
+  "level": "basic",
+  "description": "Calculate nominal log compression and local current sensitivity for a grounded-input dual-supply LOG114 circuit.",
+  "formula": "I2=2.5/Rref; Vo=0.375 log10(I1/I2); dVo/dI1=0.375/[ln(10) I1]",
+  "assumptions": [
+    "LOG114 on +5 V and -5 V supplies at 25 degrees C; VCM IN, COM and VREF GND at ground; nominal internal 2.5 V reference feeds I2 through reference_resistance; signal current enters I1.",
+    "Positive currents only; modeled device input range 100 pA to 10 mA. Internal reference current is restricted to 2 mA or less, matching its stated load condition.",
+    "Nominal transfer only: reference tolerance, input bias, offset, scale-factor error, log conformity and temperature error are excluded. This does not claim datasheet precision at range extremes.",
+    "VLOGOUT load is at least 10 kohm with no more than 100 pF. No auxiliary amplifier or physical optical transducer is modeled; respect current-dependent bandwidth."
+  ],
+  "references": [
+    {
+      "title": "TI LOG114 SBOS301C: sections 5.5, 7.1.7 and 7.2.1 / Figure 7-8",
+      "url": "https://www.ti.com/lit/ds/symlink/log114.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "signal_current",
+      "label": "Current entering I1",
+      "unit": "A",
+      "default": 0.0001,
+      "min": 1e-10,
+      "max": 0.01
+    },
+    {
+      "key": "reference_resistance",
+      "label": "Internal reference to I2 resistor",
+      "unit": "ohm",
+      "default": 2500000,
+      "min": 1250,
+      "max": 25000000000
+    }
+  ],
+  "outputs": [
+    {
+      "key": "reference_current",
+      "label": "Current entering I2",
+      "unit": "A",
+      "expression": "2.5/reference_resistance"
+    },
+    {
+      "key": "current_ratio",
+      "label": "Signal/reference current ratio",
+      "unit": "1",
+      "expression": "signal_current/reference_current"
+    },
+    {
+      "key": "log_decades",
+      "label": "Signed logarithmic current ratio",
+      "unit": "decade",
+      "expression": "log1p((signal_current-reference_current)/reference_current)/ln(10)"
+    },
+    {
+      "key": "log_output",
+      "label": "Nominal VLOGOUT",
+      "unit": "V",
+      "expression": "0.375*log_decades"
+    },
+    {
+      "key": "local_transimpedance",
+      "label": "Local incremental current sensitivity",
+      "unit": "ohm",
+      "expression": "0.375/ln(10)/signal_current"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "signal_current": 0.0001,
+      "reference_resistance": 2500000
+    },
+    "expected": {
+      "reference_current": 1e-06,
+      "current_ratio": 100.0,
+      "log_decades": 2.0,
+      "log_output": 0.75,
+      "local_transimpedance": 1628.6043071371942
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]
