@@ -177,3 +177,25 @@ Set v(t)=sqrt(2)V cos(omega t), i(t)=sqrt(2)I cos(omega t-phi). Period averaging
 | `power_factor` | 0.8660254037844387 | 1 |
 
 **Parent verification scenarios:** P²+Q²=S², zero phase, negative leading Q, both purely reactive endpoints with scale-aware tolerance, rejected phase outside ±pi/2 and rejected zero amplitudes.
+
+## `ac.shunt_power_factor_correction` — single-phase compensator sizing (intermediate)
+
+**Purpose/topology:** Size an ideal capacitor directly across a single-phase inductive load to raise lagging PF while holding real electrical input power and terminal voltage constant.
+
+For positive lagging PF=cos(phi), tan(phi)=sqrt(1-PF²)/PF. Initial demand is P tan(phi_initial); desired residual is P tan(phi_target). Their difference is the **positive capacitive rating magnitude** Qc=P[sqrt(1-initial_pf²)/initial_pf-sqrt(1-target_pf²)/target_pf]. Capacitor current is omega C V and Qc=omega C V², so C=Qc/(2 pi f V²). Initial/corrected source currents are P/(V initial_pf) and P/(V target_pf); capacitor current=Qc/V. Signed capacitor Q in the load convention is -Qc, not the displayed positive magnitude. Source: [I], slides 47 and 52–58; slide 58 explicitly supplies capacitance. Input P/V/f are W/V RMS/Hz; PF dimensionless; outputs var/F/A RMS.
+
+**Domain/error rationale:** Inclusive P=1e-9…1e12 W, V=1e-9…1e9 V, f=1e-6…1e12 Hz and both PF=1e-9…1 bound arithmetic and prevent zero divisions/negative root arguments. Input-only target_pf>=initial_pf restricts the model to capacitor-only improvement of lagging PF. Equality gives exactly zero required capacitor/current; target=1 is valid with zero residual reactive demand, including initial=target=1.
+
+**Assumptions/limits:** Undistorted sinusoids; both PF values are lagging magnitudes, not arbitrary leading factors. Real power and terminal voltage stay fixed. This is not a delta/wye three-phase bank equation, hardware safety/rating approval, or energy-conversion gain. Harmonic resonance, variable-load overcorrection, switching/discharge provisions and actual capacitor voltage/current limits require separate engineering review.
+
+**Complete independent example inputs:** `real_power=1000 W`, `voltage_rms=230 V`, `frequency=50 Hz`, `initial_pf=0.8`, `target_pf=0.95`. Initial tan(phi)=0.75; target tan(phi)=sqrt(0.0975)/0.95=0.328684105178863. Initial/residual reactive demands are 750/328.684105178863 var; subtract and divide by (2 pi×50×230²) for capacitance. Divide P by V×PF for source currents, Qc by V for capacitor current.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `capacitor_reactive_power` | 421.3158948211366 | var magnitude |
+| `required_capacitance` | 0.000025351420515678246 | F |
+| `initial_source_current` | 5.434782608695652 | A RMS |
+| `corrected_source_current` | 4.576659038901602 | A RMS |
+| `capacitor_current_rms` | 1.8318082383527678 | A RMS |
+
+Capacitance is 25.351420515678246 microfarad. Reactive currents subtract as phasors, not from total current magnitude; real power remains 1000 W. **Parent verification scenarios:** Equal PF including unity, unity target from lagging initial, source-current reduction; reject target<initial, zero/out-of-range PF and zero P/V/f.

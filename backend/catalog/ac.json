@@ -171,5 +171,31 @@
     ],
     "constraints": [{"left": "abs(phase)", "op": "<=", "right": "pi/2", "message": "Passive load phase must be within -pi/2 to +pi/2 radians"}],
     "example": {"inputs": {"voltage_rms": 230.0, "current_rms": 4.0, "phase": 0.5235987755982988}, "expected": {"apparent_power": 920.0, "real_power": 796.7433714816837, "reactive_power": 460.0, "power_factor": 0.8660254037844387}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.shunt_power_factor_correction",
+    "title": "Single-phase shunt capacitor power-factor correction",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Size an ideal shunt capacitor to improve a sinusoidal inductive load from an initial lagging power factor to a target lagging or unity value.",
+    "formula": "Q_C = P(sqrt(1-PF_initial^2)/PF_initial - sqrt(1-PF_target^2)/PF_target); C = Q_C/(2 pi f V_rms^2)",
+    "assumptions": ["Single-phase sinusoidal inductive load; supplied real electrical power and terminal RMS voltage remain constant.", "Both power factors are lagging magnitudes; target is no lower than initial and no greater than unity.", "Capacitor is connected directly across the stated RMS voltage; not a three-phase bank formula.", "Ideal fundamental-frequency estimate only; harmonic resonance, switching transients, discharge provisions, overvoltage and approved capacitor ratings require separate engineering review."],
+    "references": [{"title": "University of Illinois ECE 333, Power System Basics – AC Analysis, slides 47 and 52–58", "url": "https://courses.grainger.illinois.edu/ece333/fa2018/handouts/ECE_333_Lecture%202_Power%20System%20Basics.pdf"}],
+    "inputs": [
+      {"key": "real_power", "label": "Load real electrical power", "unit": "W", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "voltage_rms", "label": "Voltage across shunt capacitor", "unit": "V", "default": 230.0, "min": 1e-9, "max": 1e9},
+      {"key": "frequency", "label": "Supply frequency", "unit": "Hz", "default": 50.0, "min": 0.000001, "max": 1e12},
+      {"key": "initial_pf", "label": "Initial lagging power factor", "unit": "1", "default": 0.8, "min": 1e-9, "max": 1.0},
+      {"key": "target_pf", "label": "Target lagging or unity power factor", "unit": "1", "default": 0.95, "min": 1e-9, "max": 1.0}
+    ],
+    "outputs": [
+      {"key": "capacitor_reactive_power", "label": "Capacitive reactive power magnitude", "unit": "var", "expression": "real_power*(sqrt(1-initial_pf^2)/initial_pf-sqrt(1-target_pf^2)/target_pf)"},
+      {"key": "required_capacitance", "label": "Required shunt capacitance", "unit": "F", "expression": "capacitor_reactive_power/(2*pi*frequency*voltage_rms^2)"},
+      {"key": "initial_source_current", "label": "Initial source RMS current", "unit": "A", "expression": "real_power/(voltage_rms*initial_pf)"},
+      {"key": "corrected_source_current", "label": "Corrected source RMS current", "unit": "A", "expression": "real_power/(voltage_rms*target_pf)"},
+      {"key": "capacitor_current_rms", "label": "Capacitor RMS current", "unit": "A", "expression": "capacitor_reactive_power/voltage_rms"}
+    ],
+    "constraints": [{"left": "target_pf", "op": ">=", "right": "initial_pf", "message": "A shunt capacitor requires target power factor at least equal to initial lagging power factor"}],
+    "example": {"inputs": {"real_power": 1000.0, "voltage_rms": 230.0, "frequency": 50.0, "initial_pf": 0.8, "target_pf": 0.95}, "expected": {"capacitor_reactive_power": 421.3158948211366, "required_capacitance": 0.000025351420515678246, "initial_source_current": 5.434782608695652, "corrected_source_current": 4.576659038901602, "capacitor_current_rms": 1.8318082383527678}, "relative_tolerance": 0.000001}
   }
 ]
