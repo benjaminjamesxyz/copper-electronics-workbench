@@ -1,0 +1,532 @@
+{
+  "lane": "passives",
+  "base": "2cca03e",
+  "file": "backend/tests/passives.rs",
+  "authored_tests": 24,
+  "behaviors_covered": {
+    "passives.mlcc_logarithmic_aging": "Complete independent nondefault and researched numerical outputs; additive noncompounded decades; one-hour anchor; zero rate; adjacent representable age; exhausted-fit strict rejection and recovery; scalar and malformed-input guards.",
+    "passives.dielectric_absorption_recovery": "Complete signed half-charge/half-short/half-recovery oracle and researched timing state evolution; charge conservation; sign reversal; zero excitation/history/observation; long charge, short and recovery; tiny recovered voltage; scalar and malformed-input recovery.",
+    "passives.mlcc_bias_charge_energy": "Complete nondefault and researched outputs by exact trapezoid/Simpson integration; full characterized window and constant-C boundary; energy/charge bounds; adjacent-f64 window; positive fit-endpoint cancellation regression; coupled fit/window rejection and recovery; scalar and malformed-input guards.",
+    "passives.resistor_excess_noise": "Complete outputs at 0, -20, +20 dB from manufacturer normalization and independent PSD integral; one/two/three decades; zero bias, signed bias, empty band, tiny adjacent-frequency interval; probe/band rejection and recovery; scalar and malformed-input guards.",
+    "passives.negative_vcr_divider": "Complete nondefault and researched outputs from monotone KCL bisection independent of catalog quadratic; series current equality and KVL; zero supply/VCR, equal resistors, tiny positive error from negative VCR; full-interval positivity strict boundary; scalar and malformed-input recovery.",
+    "passives.nonideal_r2r_ladder": "Complete nondefault and researched rational nodal outputs; loaded-node KCL distinct from isolated Thevenin voltages; all eight ideal codes with open and finite loading; unequal isolated bit weights and positive/negative code error; superposition; resistance/load scaling; invalid integer codes and subsequent recovery; scalar and malformed-input guards."
+  },
+  "oracle_provenance": "Non-default vectors derived independently with exact rational nodal elimination (arbitrary-precision fractions), quadrature-exact trapezoid/Simpson identities, two-capacitor charge conservation, bisection on the monotone KCL residual, and AVX/TI/ADI/Vishay normalization laws from research/expansion/passives.md. No catalog example outputs loaded as expectations.",
+  "verification": "Not executed. No build, test, lint, formatter, backend/JSON-lines process, or native desktop launch. Independent rational elimination and arithmetic only; test expectations are not observed engine outputs. Main must execute cargo test --manifest-path backend/Cargo.toml --test passives, the integration suite, and this receipt's ordered process scenarios.",
+  "untested_gaps": [
+    "All 24 Rust tests and 19 ordered process scenarios remain unexecuted by this worker.",
+    "Native images and interactive desktop scenarios belong to Main and V2PassivesRun; this tester did not inspect pixels or run the UI.",
+    "Primary-source access is inherited from the supplied research; manufacturer source retrieval was not repeated.",
+    "Empirical aging/bias fits, dielectric multi-time-constant behavior, resistor 1/f bandwidth, high-voltage rating, thermal drift and code-dependent switch resistance require hardware characterization.",
+    "The entire binary64 exponent space is not exhaustively covered; the explicit positive endpoint regression is intentionally retained."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "passives.mlcc_bias_charge_energy",
+      "location": "backend/catalog/passives.json:270",
+      "inputs": {
+        "zero_bias_capacitance": 1e-06,
+        "fit_capacitance": 1e-24,
+        "fit_voltage": 1,
+        "lower_voltage": 0,
+        "upper_voltage": 1
+      },
+      "expected": {
+        "upper_capacitance": 1e-24
+      },
+      "inferred_observation": "Binary64 C0-Cfit rounds to C0; a subtractive interpolation C0-(C0-Cfit)*Vhi/Vfit returns zero, contradicting the strictly positive endpoint.",
+      "evidence_status": "Independent static numerical analysis; not executed. V2PassivesRun independently reported the same vector. RESOLVED at 2cca03e: catalog interpolation is now the endpoint-preserving form Cfit+(C0-Cfit)*((Vfit-Vhi)/Vfit), which returns 1e-24 exactly (verified by static inspection of backend/catalog/passives.json); guard test and process scenario assert the fixed behavior.",
+      "test": "bias_fit_endpoint_preserves_small_positive_capacitance",
+      "minimal_correction": "Keep the endpoint-preserving interpolation Cfit+(C0-Cfit)*((Vfit-Vhi)/Vfit); evaluate charge/energy from positive endpoint capacitances to avoid similar near-fit cancellation.",
+      "production_changed": true
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "passives.mlcc_logarithmic_aging",
+      "scenario": "mlcc_logarithmic_aging_recovery_nondefault",
+      "steps": [
+        "Select the calculator and verify every required input/output quantity remains accessible.",
+        "Enter the matching invalid process vector, calculate, and observe explicit validation rather than stale success.",
+        "Enter the adjacent complete nondefault recovery vector and compare every output with its independent expected map.",
+        "Inspect the actual diagram and quantity legend at narrow width and enlarged text."
+      ],
+      "model_focus": "One-hour anchor, seconds versus hours, and noncompounded aging."
+    },
+    {
+      "id": "passives.dielectric_absorption_recovery",
+      "scenario": "dielectric_absorption_recovery_recovery_nondefault",
+      "steps": [
+        "Select the calculator and verify every required input/output quantity remains accessible.",
+        "Enter the matching invalid process vector, calculate, and observe explicit validation rather than stale success.",
+        "Enter the adjacent complete nondefault recovery vector and compare every output with its independent expected map.",
+        "Inspect the actual diagram and quantity legend at narrow width and enlarged text."
+      ],
+      "model_focus": "Signed polarization voltage, finite charge/short history, and open recovery terminal."
+    },
+    {
+      "id": "passives.mlcc_bias_charge_energy",
+      "scenario": "mlcc_bias_charge_energy_recovery_nondefault",
+      "steps": [
+        "Select the calculator and verify every required input/output quantity remains accessible.",
+        "Enter the matching invalid process vector, calculate, and observe explicit validation rather than stale success.",
+        "Enter the adjacent complete nondefault recovery vector and compare every output with its independent expected map.",
+        "Inspect the actual diagram and quantity legend at narrow width and enlarged text."
+      ],
+      "model_focus": "Differential C versus charge/energy-equivalent C; fitted voltage window."
+    },
+    {
+      "id": "passives.resistor_excess_noise",
+      "scenario": "resistor_excess_noise_recovery_nondefault",
+      "steps": [
+        "Select the calculator and verify every required input/output quantity remains accessible.",
+        "Enter the matching invalid process vector, calculate, and observe explicit validation rather than stale success.",
+        "Enter the adjacent complete nondefault recovery vector and compare every output with its independent expected map.",
+        "Inspect the actual diagram and quantity legend at narrow width and enlarged text."
+      ],
+      "model_focus": "0 dB equals 1 microvolt/volt; zero-band RMS must not erase density."
+    },
+    {
+      "id": "passives.negative_vcr_divider",
+      "scenario": "negative_vcr_divider_recovery_nondefault",
+      "steps": [
+        "Select the calculator and verify every required input/output quantity remains accessible.",
+        "Enter the matching invalid process vector, calculate, and observe explicit validation rather than stale success.",
+        "Enter the adjacent complete nondefault recovery vector and compare every output with its independent expected map.",
+        "Inspect the actual diagram and quantity legend at narrow width and enlarged text."
+      ],
+      "model_focus": "Self-consistent high-side voltage, zero-voltage resistance fit, and positive ratio error."
+    },
+    {
+      "id": "passives.nonideal_r2r_ladder",
+      "scenario": "nonideal_r2r_ladder_recovery_nondefault",
+      "steps": [
+        "Select the calculator and verify every required input/output quantity remains accessible.",
+        "Enter the matching invalid process vector, calculate, and observe explicit validation rather than stale success.",
+        "Enter the adjacent complete nondefault recovery vector and compare every output with its independent expected map.",
+        "Inspect the actual diagram and quantity legend at narrow width and enlarged text."
+      ],
+      "model_focus": "Permanent 2R termination; code-bit weights; Thevenin subladder voltages are not loaded node voltages."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "mlcc_logarithmic_aging_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_logarithmic_aging",
+        "inputs": {
+          "capacitance_one_hour": 2.2e-05,
+          "aging_percent_decade": 100,
+          "age": 36000
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "One elapsed decade at 100% loss leaves zero capacitance; the fit requires positive retained capacitance."
+    },
+    {
+      "name": "mlcc_logarithmic_aging_recovery_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_logarithmic_aging",
+        "inputs": {
+          "capacitance_one_hour": 2.2e-05,
+          "aging_percent_decade": 3,
+          "age": 3600000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Three elapsed decades each lose 3% of the same 22 uF reference; no compounding: 22*(1-0.09)=20.02 uF.",
+      "expected_outputs": {
+        "elapsed_decades": 3,
+        "fractional_loss": 0.09,
+        "aged_capacitance": 2.002e-05
+      }
+    },
+    {
+      "name": "dielectric_absorption_recovery_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "passives.dielectric_absorption_recovery",
+        "inputs": {
+          "main_capacitance": 3e-06,
+          "absorption_capacitance": 1e-06,
+          "absorption_resistance": 2000000.0,
+          "charge_voltage": -12,
+          "charge_time": 1.3862943611198906,
+          "short_time": -1,
+          "recovery_time": 1.0397207708399179
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Short duration cannot be negative; finite-history protocol must reject this request."
+    },
+    {
+      "name": "dielectric_absorption_recovery_recovery_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "passives.dielectric_absorption_recovery",
+        "inputs": {
+          "main_capacitance": 3e-06,
+          "absorption_capacitance": 1e-06,
+          "absorption_resistance": 2000000.0,
+          "charge_voltage": -12,
+          "charge_time": 1.3862943611198906,
+          "short_time": 1.3862943611198906,
+          "recovery_time": 1.0397207708399179
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Ra*Ca=2 s. A 2*ln(2) charge reaches half of -12 V; the same short duration halves memory again to -3 V. Charge sharing across Cm=3Ca gives -0.75 V; recovery at tau*ln(2) gives -0.375 V.",
+      "expected_outputs": {
+        "memory_voltage": -3,
+        "recovery_time_constant": 1.5,
+        "final_recovery_voltage": -0.75,
+        "recovered_voltage": -0.375
+      }
+    },
+    {
+      "name": "mlcc_bias_charge_energy_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_bias_charge_energy",
+        "inputs": {
+          "zero_bias_capacitance": 1.2e-05,
+          "fit_capacitance": 3e-06,
+          "fit_voltage": 6,
+          "lower_voltage": 5,
+          "upper_voltage": 5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Equal lower and upper endpoints have zero usable width and must fail."
+    },
+    {
+      "name": "mlcc_bias_charge_energy_recovery_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_bias_charge_energy",
+        "inputs": {
+          "zero_bias_capacitance": 1.2e-05,
+          "fit_capacitance": 3e-06,
+          "fit_voltage": 6,
+          "lower_voltage": 1,
+          "upper_voltage": 5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "C(V)=12-1.5V uF. Trapezoid integrates C exactly over 1..5 V: Q=30 uC. Simpson integrates V*C exactly: W=82 uJ. Cq=Q/4 and Ce=2W/24.",
+      "expected_outputs": {
+        "upper_capacitance": 4.5e-06,
+        "usable_charge": 3e-05,
+        "usable_energy": 8.2e-05,
+        "charge_equivalent_capacitance": 7.5e-06,
+        "energy_equivalent_capacitance": 6.833333333333334e-06
+      }
+    },
+    {
+      "name": "resistor_excess_noise_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "passives.resistor_excess_noise",
+        "inputs": {
+          "noise_index_db": 0,
+          "dc_voltage": -3,
+          "lower_frequency": 2,
+          "upper_frequency": 200,
+          "probe_frequency": 201
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Probe must stay inside characterized 2..200 Hz band."
+    },
+    {
+      "name": "resistor_excess_noise_recovery_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "passives.resistor_excess_noise",
+        "inputs": {
+          "noise_index_db": 0,
+          "dc_voltage": -3,
+          "lower_frequency": 2,
+          "upper_frequency": 200,
+          "probe_frequency": 8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Vishay 0 dB is 1 uV/V per decade. Two decades have 2*(3 uV)^2 variance; at 8 Hz, PSD is (3 uV)^2/(8 ln 10).",
+      "expected_outputs": {
+        "decade_voltage_ratio": 1e-06,
+        "band_decades": 2,
+        "excess_noise_rms": 4.242640687119286e-06,
+        "excess_noise_density": 6.989859026769842e-07
+      }
+    },
+    {
+      "name": "negative_vcr_divider_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "passives.negative_vcr_divider",
+        "inputs": {
+          "supply_voltage": 1000,
+          "high_resistance_zero": 1000000.0,
+          "bottom_resistance": 100000.0,
+          "vcr_ppm_volt": -1000
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "k=-0.001/V at 1000 V reaches zero fitted high-side resistance at supply; whole-interval positivity is strict."
+    },
+    {
+      "name": "negative_vcr_divider_recovery_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "passives.negative_vcr_divider",
+        "inputs": {
+          "supply_voltage": 600,
+          "high_resistance_zero": 1000000.0,
+          "bottom_resistance": 100000.0,
+          "vcr_ppm_volt": -1000
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Choose Vh=500 V: Rh=1 Mohm*(1-0.001*500)=500 kohm. Series current is 1 mA; bottom drop 100 V, supply 600 V. Ideal ratio 1/11 yields positive 5/6 fractional error.",
+      "expected_outputs": {
+        "high_voltage": 500,
+        "high_resistance": 500000,
+        "output_voltage": 100,
+        "ideal_output_voltage": 54.54545454545455,
+        "fractional_ratio_error": 0.8333333333333334
+      }
+    },
+    {
+      "name": "nonideal_r2r_ladder_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "passives.nonideal_r2r_ladder",
+        "inputs": {
+          "ladder_resistance": 1000,
+          "lsb_switch_resistance": 2000,
+          "middle_switch_resistance": 0,
+          "msb_switch_resistance": 1000,
+          "reference_voltage": 8,
+          "code": 2.5,
+          "load_conductance": 0.0005
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Three-bit code must be an integer, not an interpolated analogue code."
+    },
+    {
+      "name": "nonideal_r2r_ladder_recovery_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "passives.nonideal_r2r_ladder",
+        "inputs": {
+          "ladder_resistance": 1000,
+          "lsb_switch_resistance": 2000,
+          "middle_switch_resistance": 0,
+          "msb_switch_resistance": 1000,
+          "reference_voltage": 8,
+          "code": 3,
+          "load_conductance": 0.0005
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent rational nodal matrix after multiplying KCL by 1 kohm: rows [7/4,-1,0],[-1,5/2,-1],[0,-1,11/6], RHS [2,4,0]. Elimination gives physical nodes [232/71,264/71,144/71] V. Unit-current injection yields Rout=13500/11 ohm. Isolated subladder voltages are not physical loaded nodes.",
+      "expected_outputs": {
+        "lsb_thevenin_resistance": 1333.3333333333333,
+        "lsb_thevenin_voltage": 2.6666666666666665,
+        "middle_thevenin_resistance": 1076.923076923077,
+        "middle_thevenin_voltage": 5.538461538461538,
+        "output_resistance": 1227.2727272727273,
+        "open_voltage": 3.272727272727273,
+        "loaded_voltage": 2.028169014084507,
+        "ideal_voltage": 3,
+        "code_error_lsb": -0.971830985915493
+      }
+    },
+    {
+      "name": "aging_one_hour_reference",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_logarithmic_aging",
+        "inputs": {
+          "capacitance_one_hour": 2.2e-05,
+          "aging_percent_decade": 3,
+          "age": 3600
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "At one hour the logarithmic age ratio is exactly one: zero decades, zero loss, unchanged reference capacitance.",
+      "expected_outputs": {
+        "elapsed_decades": 0,
+        "fractional_loss": 0,
+        "aged_capacitance": 2.2e-05
+      }
+    },
+    {
+      "name": "absorption_tiny_recovery_time",
+      "request": {
+        "command": "calculate",
+        "id": "passives.dielectric_absorption_recovery",
+        "inputs": {
+          "main_capacitance": 3e-06,
+          "absorption_capacitance": 1e-06,
+          "absorption_resistance": 2000000.0,
+          "charge_voltage": -12,
+          "charge_time": 1.3862943611198906,
+          "short_time": 1.3862943611198906,
+          "recovery_time": 1e-20
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Initial slope Va0/(Ra*Cm)=-0.5 V/s. At 1e-20 s higher terms are negligible; preserve -5e-21 V with no absolute floor.",
+      "expected_outputs": {
+        "memory_voltage": -3,
+        "recovery_time_constant": 1.5,
+        "final_recovery_voltage": -0.75,
+        "recovered_voltage": -5e-21
+      }
+    },
+    {
+      "name": "bias_adjacent_voltage_window",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_bias_charge_energy",
+        "inputs": {
+          "zero_bias_capacitance": 1.2e-05,
+          "fit_capacitance": 3e-06,
+          "fit_voltage": 6,
+          "lower_voltage": 3.0,
+          "upper_voltage": 3.0000000000000004
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Adjacent binary64 voltages near 3 V: local differential C=7.5 uF; charge=C*dV, energy=3*C*dV to relative error below 1e-15.",
+      "expected_outputs": {
+        "upper_capacitance": 7.5e-06,
+        "usable_charge": 3.3306690738754697e-21,
+        "usable_energy": 9.99200722162641e-21,
+        "charge_equivalent_capacitance": 7.5e-06,
+        "energy_equivalent_capacitance": 7.5e-06
+      }
+    },
+    {
+      "name": "bias_positive_fit_endpoint_regression",
+      "request": {
+        "command": "calculate",
+        "id": "passives.mlcc_bias_charge_energy",
+        "inputs": {
+          "zero_bias_capacitance": 1e-06,
+          "fit_capacitance": 1e-24,
+          "fit_voltage": 1,
+          "lower_voltage": 0,
+          "upper_voltage": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Admitted positive fit endpoint must survive interpolation. At Vhi=Vfit, Chi=Cfit=1e-24 F exactly; the fixed endpoint-preserving catalog form retains it. Integral contributions below binary64 resolution do not alter rounded Q or W.",
+      "expected_outputs": {
+        "upper_capacitance": 1e-24,
+        "usable_charge": 5e-07,
+        "usable_energy": 1.6666666666666665e-07,
+        "charge_equivalent_capacitance": 5e-07,
+        "energy_equivalent_capacitance": 3.333333333333333e-07
+      }
+    },
+    {
+      "name": "noise_empty_band_finite_density",
+      "request": {
+        "command": "calculate",
+        "id": "passives.resistor_excess_noise",
+        "inputs": {
+          "noise_index_db": 0,
+          "dc_voltage": -3,
+          "lower_frequency": 2,
+          "upper_frequency": 2,
+          "probe_frequency": 2
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "An empty band has zero integrated variance but nonzero spectral density; NI normalization does not change.",
+      "expected_outputs": {
+        "decade_voltage_ratio": 1e-06,
+        "band_decades": 0,
+        "excess_noise_rms": 0,
+        "excess_noise_density": 1.3979718053539684e-06
+      }
+    },
+    {
+      "name": "vcr_tiny_negative_coefficient",
+      "request": {
+        "command": "calculate",
+        "id": "passives.negative_vcr_divider",
+        "inputs": {
+          "supply_voltage": 600,
+          "high_resistance_zero": 1000000.0,
+          "bottom_resistance": 100000.0,
+          "vcr_ppm_volt": -1e-18
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "First-order small-k ratio error is -k*Vs/(1+r)^2=600e-24/1.21, while voltages/resistance round to the ordinary divider. Do not subtract two almost equal gains.",
+      "expected_outputs": {
+        "high_voltage": 545.4545454545455,
+        "high_resistance": 1000000.0,
+        "output_voltage": 54.54545454545455,
+        "ideal_output_voltage": 54.54545454545455,
+        "fractional_ratio_error": 4.958677685950413e-22
+      }
+    },
+    {
+      "name": "ladder_middle_bit_positive_uncorrected_error",
+      "request": {
+        "command": "calculate",
+        "id": "passives.nonideal_r2r_ladder",
+        "inputs": {
+          "ladder_resistance": 1000,
+          "lsb_switch_resistance": 2000,
+          "middle_switch_resistance": 0,
+          "msb_switch_resistance": 1000,
+          "reference_voltage": 8,
+          "code": 2,
+          "load_conductance": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent unloaded nodal solution gives middle-bit weight 28/11 V, not ideal 2 V. Positive error +6/11 LSB is valid; switch mismatch need not yield negative error for each code.",
+      "expected_outputs": {
+        "lsb_thevenin_resistance": 1333.3333333333333,
+        "lsb_thevenin_voltage": 0,
+        "middle_thevenin_resistance": 1076.923076923077,
+        "middle_thevenin_voltage": 4.3076923076923075,
+        "output_resistance": 1227.2727272727273,
+        "open_voltage": 2.5454545454545454,
+        "loaded_voltage": 2.5454545454545454,
+        "ideal_voltage": 2,
+        "code_error_lsb": 0.5454545454545454
+      }
+    }
+  ]
+}
