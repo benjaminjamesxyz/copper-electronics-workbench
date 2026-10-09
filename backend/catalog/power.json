@@ -158,5 +158,32 @@
     ],
     "constraints": [{"left": "vin", "op": ">", "right": "vout", "message": "Buck operation requires input voltage above output voltage."}],
     "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "fs": 500000, "ripple_ratio": 0.3}, "expected": {"duty": 0.4166666666666667, "delta_i": 0.6, "l_min": 0.000009722222222222223, "i_peak": 2.3, "i_valley": 1.7}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.boost_inductor_design",
+    "title": "Boost CCM inductor sizing",
+    "category": "Power conversion and regulation",
+    "level": "intermediate",
+    "description": "Size an ideal boost inductor using ripple relative to average input-inductor current and calculate current stress.",
+    "formula": "D = (Vout-Vin)/Vout; ILavg = Iout Vout/Vin; delta_I = r ILavg; Lmin = Vin D/(fs delta_I); Ipeak,valley = ILavg (1 +/- r/2)",
+    "assumptions": ["Ideal fixed-frequency single-phase boost in steady-state CCM; losses, switch drops and winding resistance are neglected.", "Ripple ratio is relative to average input-inductor current, not output current; 0<r<2 guarantees positive valley.", "Use effective inductance at operating current. Saturation, tolerance, control stability and actual current limits require separate checks."],
+    "references": [{"title": "TI SLVA372D, Basic Calculation of a Boost Converter's Power Stage, sections 2 and 3", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"}, {"title": "TI SLVAFJ5, How to Approach a Power-Supply Design Part 3, ideal boost duty", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_ratio", "label": "Peak-to-peak ripple / average inductor current", "unit": "1", "default": 0.3, "min": 0, "exclusive_min": true, "max": 2, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "(vout-vin)/vout"},
+      {"key": "i_l_avg", "label": "Average input-inductor current", "unit": "A", "expression": "iout*vout/vin"},
+      {"key": "delta_i", "label": "Target peak-to-peak inductor ripple", "unit": "A", "expression": "ripple_ratio*i_l_avg"},
+      {"key": "l_min", "label": "Minimum effective inductance", "unit": "H", "expression": "vin*duty/(fs*delta_i)"},
+      {"key": "i_peak", "label": "Inductor peak current", "unit": "A", "expression": "i_l_avg*(1+ripple_ratio/2)"},
+      {"key": "i_valley", "label": "Inductor valley current", "unit": "A", "expression": "i_l_avg*(1-ripple_ratio/2)"}
+    ],
+    "constraints": [{"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."}],
+    "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "fs": 500000, "ripple_ratio": 0.3}, "expected": {"duty": 0.5833333333333334, "i_l_avg": 1.2, "delta_i": 0.36, "l_min": 0.000016203703703703704, "i_peak": 1.38, "i_valley": 1.02}, "relative_tolerance": 0.000001}
   }
 ]

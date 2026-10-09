@@ -156,3 +156,28 @@ Sequential outputs are `duty=vout/vin`, `delta_i=ripple_ratio*iout`, `l_min=(vin
 | `i_valley` | `2*(1-0.3/2)` | `1.7 A` |
 
 On-time is 0.8333333333 μs; `(Vin-Vout)*ton/Lmin=0.6 A`. Endpoint mean equals 2 A and difference equals 0.6 A. Positive valley and `7D-5(1-D)=0` independently establish the stated ideal operating point.
+
+## `power.boost_inductor_design` — intermediate
+
+**Purpose:** size a boost input-energy inductor and its input-current stress. Unlike buck, load current is not the inductor mean. Sources: S3 sections 2–3 and S5 duty/topology.
+
+Boost on-state voltage is Vin and off-state voltage is Vin−Vout. Volt-second balance gives `D=1-Vin/Vout`. The output path conducts only off-time, so `Iout=(1-D)ILavg`. With `delta_I=r ILavg`, `Lmin=Vin D/(fs delta_I)`.
+
+Sequential outputs: `duty=(vout-vin)/vout`; `i_l_avg=iout*vout/vin`; `delta_i=ripple_ratio*i_l_avg`; `l_min=vin*duty/(fs*delta_i)`; `i_peak=i_l_avg*(1+ripple_ratio/2)`; `i_valley=i_l_avg*(1-ripple_ratio/2)`. Units: `1`, A, A, H, A, A. `V/(Hz A)=H`. Direct mean current avoids division by `1-duty` rounding to zero at high boost ratio, and factored endpoint currents preserve small positive valley near ratio=2. These are equivalent ideal equations, not loss corrections.
+
+**Inputs/defaults:** `vin=5 V`, `vout=12 V`, `iout=0.5 A`, `fs=500000 Hz`, `ripple_ratio=0.3` (unit `1`). Dimensional inputs must be positive; `0<ripple_ratio<2`.
+
+**Model-domain errors:** reject `vout<=vin`, nonpositive fs/load/ripple, and ratio ≥ 2. The ratio denominator is average **input-inductor** current, never output load current; the upper strict bound enforces CCM. Real losses raise current demand. Effective L, saturation rating, tolerances, controller duty/current limits and compensation must be checked separately; no selected IC performance is predicted.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `duty` | `7/12` | `0.5833333333333334` |
+| `i_l_avg` | `0.5*12/5` | `1.2 A` |
+| `delta_i` | `0.3*1.2` | `0.36 A` |
+| `l_min` | `5*(7/12)/(500000*0.36)` | `0.000016203703703703704 H` |
+| `i_peak` | `1.2*(1+0.3/2)` | `1.38 A` |
+| `i_valley` | `1.2*(1-0.3/2)` | `1.02 A` |
+
+Independent ideal-power identity: `Vin*ILavg=5*1.2=6 W=12*0.5=Vout*Iout`. Volt-second identity `5*(7/12)+(5-12)*(5/12)=0` and positive valley validate the mathematical default domain, not real converter sign-off.
