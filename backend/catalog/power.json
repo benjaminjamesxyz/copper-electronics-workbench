@@ -185,5 +185,34 @@
     ],
     "constraints": [{"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."}],
     "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "fs": 500000, "ripple_ratio": 0.3}, "expected": {"duty": 0.5833333333333334, "i_l_avg": 1.2, "delta_i": 0.36, "l_min": 0.000016203703703703704, "i_peak": 1.38, "i_valley": 1.02}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.buck_output_capacitor",
+    "title": "Buck output capacitor with ESR budget",
+    "category": "Power conversion and regulation",
+    "level": "intermediate",
+    "description": "Allocate buck peak-to-peak output ripple between ESR and capacitor charge, then size effective capacitance.",
+    "formula": "Vesr_pp = ESR delta_I; Vcap_budget = Vbudget_pp-Vesr_pp; Cmin = delta_I/(8 fs Vcap_budget)",
+    "assumptions": ["Single-phase CCM buck with triangular inductor ripple and constant load; ESR is resistive at switching frequency and ESL is neglected.", "The sum of capacitive and ESR peak-to-peak ripple is a conservative bound, not an assertion that extrema coincide.", "The ripple budget is at most 10% of output voltage as an explicit catalog small-ripple guard.", "Use effective capacitance after bias, temperature and tolerance derating. Controller stability and load steps can require more capacitance."],
+    "references": [{"title": "TI SLVA477, Basic Calculation of a Buck Converter's Power Stage, section 7 minimum output capacitance and ESR ripple equations", "url": "https://www.ti.com/lit/an/slva477b/slva477b.pdf"}],
+    "inputs": [
+      {"key": "delta_i", "label": "Peak-to-peak inductor ripple", "unit": "A", "default": 0.6, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Nominal output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_budget", "label": "Allowed peak-to-peak output ripple", "unit": "V", "default": 0.02, "min": 0, "exclusive_min": true},
+      {"key": "esr", "label": "Output capacitor equivalent series resistance", "unit": "ohm", "default": 0.01, "min": 0}
+    ],
+    "outputs": [
+      {"key": "ripple_esr", "label": "ESR peak-to-peak ripple bound", "unit": "V", "expression": "esr*delta_i"},
+      {"key": "ripple_cap_budget", "label": "Remaining capacitive ripple budget", "unit": "V", "expression": "ripple_budget-ripple_esr"},
+      {"key": "c_min", "label": "Minimum effective output capacitance", "unit": "F", "expression": "delta_i/(8*fs*ripple_cap_budget)"}
+    ],
+    "constraints": [
+      {"left": "iout", "op": ">", "right": "delta_i/2", "message": "Positive inductor valley current is required for the CCM model."},
+      {"left": "ripple_budget", "op": ">", "right": "esr*delta_i", "message": "ESR ripple must leave a positive capacitive ripple budget."},
+      {"left": "ripple_budget", "op": "<=", "right": "0.1*vout", "message": "This small-ripple sizing model accepts ripple budgets at most 10% of output voltage."}
+    ],
+    "example": {"inputs": {"delta_i": 0.6, "iout": 2, "vout": 5, "fs": 500000, "ripple_budget": 0.02, "esr": 0.01}, "expected": {"ripple_esr": 0.006, "ripple_cap_budget": 0.014, "c_min": 0.000010714285714285714}, "relative_tolerance": 0.000001}
   }
 ]

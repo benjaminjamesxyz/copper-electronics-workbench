@@ -181,3 +181,33 @@ Sequential outputs: `duty=(vout-vin)/vout`; `i_l_avg=iout*vout/vin`; `delta_i=ri
 | `i_valley` | `1.2*(1-0.3/2)` | `1.02 A` |
 
 Independent ideal-power identity: `Vin*ILavg=5*1.2=6 W=12*0.5=Vout*Iout`. Volt-second identity `5*(7/12)+(5-12)*(5/12)=0` and positive valley validate the mathematical default domain, not real converter sign-off.
+
+## `power.buck_output_capacitor` — intermediate
+
+**Purpose:** size effective buck output capacitance by allocating a peak-to-peak ripple budget after ESR. This is the capacitor charge problem, not an inverse inductor-size feature. Source: S2 section 7; section/topic is used because equation numbering varies with revision.
+
+Capacitor current is the inductor AC ripple. Its positive triangle has base half a cycle and height `delta_I/2`, so charge excursion is `delta_Q=delta_I/(8 fs)`. Capacitive ripple is `delta_I/(8 fs C)`; ESR ripple is `ESR delta_I`. Their summed peak-to-peak bound is conservative because extrema need not coincide.
+
+Sequential outputs: `ripple_esr=esr*delta_i`, `ripple_cap_budget=ripple_budget-ripple_esr`, `c_min=delta_i/(8*fs*ripple_cap_budget)`. Units: V, V, F; `A/(Hz V)=F`.
+
+**Inputs/defaults:** `delta_i=0.6 A`, `iout=2 A`, `vout=5 V`, `fs=500000 Hz`, `ripple_budget=0.02 V`, `esr=0.01 ohm`. All except ESR must be positive; ESR may be zero.
+
+**Model-domain errors:** reject `iout<=delta_i/2` because positive-valley CCM is required; reject `ripple_budget<=esr*delta_i` because no positive capacitive budget remains; reject `ripple_budget>0.1*vout` because the catalog assumes small ripple. A zero remaining budget does not receive a fabricated finite C. Constant load, triangular current, resistive ESR at switching frequency and negligible ESL are qualitative assumptions. Bias/temperature/tolerance derating, loop compensation and load-step response can require a larger real capacitor bank.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `ripple_esr` | `0.01*0.6` | `0.006 V` |
+| `ripple_cap_budget` | `0.02-0.006` | `0.014 V` |
+| `c_min` | `0.6/(8*500000*0.014)` | `0.000010714285714285714 F` |
+
+Charge excursion is `0.6/(8*500000)=150 nC`; `150 nC/14 mV=10.714285714285714 μF`. Valley is 1.7 A > 0 and budget 20 mV ≤ 500 mV. At Cmin the analytical conservative ripple bound is 6 mV + 14 mV = 20 mV; at zero ESR the complete budget is available for capacitance.
+
+## Numerical and integration handoff
+
+All eight original IDs, input/output keys, nominal default vectors and complete independent expected maps are preserved. Examples use relative tolerance `1e-6`; tables and identities are mathematical expectations, not observations from the Rust engine. Constraints reference inputs/constants only, while output expressions use inputs and earlier outputs. No second evaluator or frontend math is introduced.
+
+Algebraic conditioning changes preserve the physical domains: direct boost voltage ratios rather than recovering off-fraction from rounded duty; voltage-difference-before-division duty/off-time; factored inductor endpoints near the CCM limit; efficiency loss as `Pout*(1-eta)/eta` rather than near-equal power subtraction. Under extreme magnitudes floating-point overflow/underflow remains possible; the shared engine reports arithmetic errors, and no undocumented physical range restriction or output clamp is added. A duty rounded to one at enormous boost ratio does not authorize reconstructing off-fraction from that displayed value.
+
+No builds, lint, tests, formatters or engine/smoke runs were performed by this lane. Main should exercise every full example, defaults, topology/range/CCM guards, boost-capacitor monotonic-charge equality/rejection, exhausted ESR budgets, 10% boundaries, zero ESR/ripple where admissible, zero LDO load, dropout equality/rejection and unity efficiency. Independent conditioning scenarios should include a high boost ratio, nearly equal voltage rails, ripple ratio just below two, and efficiency just below one; real desktop/protocol acceptance belongs to integration.
