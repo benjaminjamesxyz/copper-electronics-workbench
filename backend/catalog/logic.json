@@ -242,5 +242,136 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "logic.cmos_package_power",
+    "title": "CMOS logic internal and output-load power budget",
+    "category": "Digital logic and interfaces",
+    "level": "intermediate",
+    "description": "Estimate a bank of identical CMOS logic sections using characterized per-section power-dissipation capacitance, separate input/output cycle rates, external loading and whole-package quiescent current.",
+    "formula": "Pstatic = V*Iq; Pinternal = N*Cpd*V^2*fi; Pload = N*CL*V^2*fo; Ptotal = Pstatic+Pinternal+Pload; Iaverage = Ptotal/V",
+    "assumptions": [
+      "Cpd is the manufacturer's characterized equivalent internal power-dissipation capacitance per active section, not the input pin capacitance. It includes internal node charging and through-current under its stated test conditions.",
+      "All active sections share the entered Cpd, external capacitance and cycle rates. Frequencies count full low-high-low cycles per second, equivalently low-to-high charging events, not both edges.",
+      "Rail-to-rail, sufficiently fast transitions; Cpd must match the supply, input slew, temperature, enabled state and switching pattern. Whole-package quiescent current is added once.",
+      "External loads are capacitive and charge fully. Excludes resistive termination power, intermediate input-level extra ICC, power-off injection, and thermal prediction. Ptotal is supply power, not a universal allocation of heat to the package."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SCAA035B, equations 3-10 and Cpd testing considerations",
+        "url": "https://www.ti.com/lit/pdf/scaa035"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "supply_voltage",
+        "label": "Logic supply voltage",
+        "unit": "V",
+        "default": 3.3,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "quiescent_current",
+        "label": "Whole-package quiescent current",
+        "unit": "A",
+        "default": 2e-05,
+        "min": 0
+      },
+      {
+        "key": "active_sections",
+        "label": "Identical active sections",
+        "unit": "count",
+        "default": 8,
+        "min": 1
+      },
+      {
+        "key": "power_capacitance",
+        "label": "Internal Cpd per active section",
+        "unit": "F",
+        "default": 1.5e-11,
+        "min": 0
+      },
+      {
+        "key": "input_cycle_rate",
+        "label": "Input cycles per second per section",
+        "unit": "Hz",
+        "default": 20000000,
+        "min": 0
+      },
+      {
+        "key": "load_capacitance",
+        "label": "External capacitance per output",
+        "unit": "F",
+        "default": 2.5e-11,
+        "min": 0
+      },
+      {
+        "key": "output_cycle_rate",
+        "label": "Output charging cycles per second",
+        "unit": "Hz",
+        "default": 10000000,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "static_power",
+        "label": "Package quiescent supply power",
+        "unit": "W",
+        "expression": "supply_voltage*quiescent_current"
+      },
+      {
+        "key": "internal_power",
+        "label": "Internal switching supply power",
+        "unit": "W",
+        "expression": "active_sections*power_capacitance*input_cycle_rate*supply_voltage*supply_voltage"
+      },
+      {
+        "key": "load_power",
+        "label": "External capacitive-load supply power",
+        "unit": "W",
+        "expression": "active_sections*load_capacitance*output_cycle_rate*supply_voltage*supply_voltage"
+      },
+      {
+        "key": "total_power",
+        "label": "Total estimated supply power",
+        "unit": "W",
+        "expression": "static_power+internal_power+load_power"
+      },
+      {
+        "key": "average_current",
+        "label": "Average estimated supply current",
+        "unit": "A",
+        "expression": "total_power/supply_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "active_sections",
+        "op": "==",
+        "right": "floor(active_sections)",
+        "message": "Active section count must be a whole number"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "supply_voltage": 3.3,
+        "quiescent_current": 2e-05,
+        "active_sections": 8,
+        "power_capacitance": 1.5e-11,
+        "input_cycle_rate": 20000000,
+        "load_capacitance": 2.5e-11,
+        "output_cycle_rate": 10000000
+      },
+      "expected": {
+        "static_power": 6.6e-05,
+        "internal_power": 0.026136,
+        "load_power": 0.02178,
+        "total_power": 0.047982,
+        "average_current": 0.01454
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

@@ -137,3 +137,73 @@ Cross-input constraints:
 - [Texas Instruments SZZA036C, sections 3.3, 4.6.12-4.6.14 and 5: terminal signs, input currents and loading](https://www.ti.com/lit/an/szza036c/szza036c.pdf)
 - [Texas Instruments SCEA046B, Slow or Noisy Edges: heavily loaded output edge-rate limitation](https://www.ti.com/lit/pdf/scea046)
 
+## 3. `logic.cmos_package_power` — intermediate
+
+### Purpose and novelty
+
+Budget the supply demand of CMOS logic using the manufacturer's internal Cpd characterization plus independently switched output loads. Nearest baseline: `mosfet.gate_charge_supply` predicts external gate-drive charge delivery for a power transistor; `mosfet.output_capacitance_hard_turn_on_loss` predicts dissipated Coss energy during hard turn-on. This model instead includes CMOS internal-node/through-current characterization, active logic-section multiplicity, whole-package leakage and different input/output rates. Neither prior model represents this package operating-power budget. It is not converter efficiency or a thermal solver.
+
+### Model and limits
+
+TI SCAA035B equations 3–10 directly supply:
+
+- `static_power = supply_voltage * quiescent_current`.
+- `internal_power = active_sections * power_capacitance * input_cycle_rate * supply_voltage^2`.
+- `load_power = active_sections * load_capacitance * output_cycle_rate * supply_voltage^2`.
+- `total_power = static_power + internal_power + load_power`.
+- `average_current = total_power/supply_voltage`.
+
+Voltage in V, current in A, capacitance in F, rates in cycles/s (Hz), power in W. There is no factor of 1/2 in full-cycle supply energy C·V²: half is dissipated while charging and the stored half is dissipated while discharging. Count low-to-high charging events, not both signal edges.
+
+`power_capacitance` is Cpd **per active section**, not pin capacitance or a package Cpd copied without conversion. Add whole-package leakage only once. Cpd includes internal node charging and transistor through-current under its characterized input slew and pattern. The supplied numeric values illustrate a hypothetical eight-section device and do not claim a particular IC's rating. Slow input edges, intermediate logic levels, resistive loads and large frequency-dependent amplitude loss need additional modeling. Supply power is not always identical to package heat, especially with external series damping or termination.
+
+Zero current, capacitance or activity is valid. Supply must remain positive; active section count is a positive integer. Actual voltage/slew/frequency limits come from the chosen device, not arbitrary catalog bounds.
+
+### Complete independent example
+
+Inputs: `supply_voltage=3.3 V`, `quiescent_current=20e-6 A`, `active_sections=8`, `power_capacitance=15e-12 F`, `input_cycle_rate=20e6 Hz`, `load_capacitance=25e-12 F`, `output_cycle_rate=10e6 Hz`.
+
+Using V²=10.89:
+
+- `static_power = 3.3×20e-6 = 0.000066 W`.
+- `internal_power = 8×15e-12×20e6×10.89 = 0.026136 W`.
+- `load_power = 8×25e-12×10e6×10.89 = 0.02178 W`.
+- `total_power = 0.000066+0.026136+0.02178 = 0.047982 W`.
+- `average_current = 0.047982/3.3 = 0.01454 A`.
+
+### Independent test cases
+
+- Nominal: every output above.
+- Static limit: both rates zero; static=total=66e-6 W, internal=load=0, average current=20e-6 A.
+- No output switching: set output rate zero only; total=0.026202 W, average current=0.00794 A, load=0; internal/static unchanged.
+- No load and no quiescent current: CL=Iq=0; total=internal=0.026136 W, average current=0.00792 A; static/load=0.
+- Doubling both rates doubles internal/load power, not leakage. Doubling supply at fixed characterized parameters multiplies dynamic terms by four and leakage power by two; this is an algebraic sensitivity test, not permission to exceed real device voltage limits.
+- Invalid: zero/negative supply, negative rates/current/capacitance, zero or fractional active sections, nonfinite inputs.
+
+### Illustration and accessible quantity bindings
+
+One 700×280 energy-flow diagram. A top supply arrow enters a central block “N identical CMOS sections”. Bind “VCC” → `supply_voltage`, “N” → `active_sections`, “Input cycles” → `input_cycle_rate`. Inside, show a dashed explanatory equivalent-capacitance label “Internal Cpd” → `power_capacitance`; do not draw Cpd as a real externally wired capacitor. Draw one representative physical output capacitor from output node to ground; bind `load_capacitance`. Label the output path “Output cycles” → `output_cycle_rate`.
+
+Below the central block, three separate accounting arrows lead to callouts: “Quiescent” → `static_power`, “Internal switching” → `internal_power`, “Load cycling” → `load_power`. Keep arrows as energy accounting, not three electrically paralleled voltage sources. A final right-side callout binds `total_power`. Place `average_current` on the supply arrow only if label spacing permits.
+
+Caption: “Cpd is a measured internal power equivalent. Output capacitance is charged once per output cycle; quiescent package current is added once. Supply-power budget, not a thermal simulation.”
+
+### Catalog input units and bounds
+
+| Key | Unit | Default | Bounds |
+|---|---|---|---|
+| `supply_voltage` | V | `3.3` | > 0 |
+| `quiescent_current` | A | `2e-05` | >= 0 |
+| `active_sections` | count | `8` | >= 1 |
+| `power_capacitance` | F | `1.5e-11` | >= 0 |
+| `input_cycle_rate` | Hz | `20000000` | >= 0 |
+| `load_capacitance` | F | `2.5e-11` | >= 0 |
+| `output_cycle_rate` | Hz | `10000000` | >= 0 |
+
+Cross-input constraints:
+- `active_sections == floor(active_sections)` — Active section count must be a whole number.
+
+### Sources
+
+- [Texas Instruments SCAA035B, equations 3-10 and Cpd testing considerations](https://www.ti.com/lit/pdf/scaa035)
+
