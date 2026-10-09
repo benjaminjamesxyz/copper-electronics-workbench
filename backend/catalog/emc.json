@@ -1,0 +1,109 @@
+[
+{
+  "id": "emc.thin_slot_shielding",
+  "title": "Thin-slot shield leakage estimate",
+  "category": "EMC design",
+  "level": "basic",
+  "description": "Estimate the worst-orientation field leakage through one electrically small, thin rectangular slot. Engineering estimate, not enclosure compliance.",
+  "formula": "lambda=c/f; SE=20 log10(lambda/(2L)); E_transmitted/E_incident=2L/lambda",
+  "assumptions": [
+    "One isolated slot in an otherwise highly conducting shield; L>w and L>=10t define the thin-slot geometry used here.",
+    "L<=lambda/20 restricts operation to the manufacturer's electrically small design guideline.",
+    "Worst polarization/orientation estimate; no cavity resonance, seams, multiple apertures, penetrations or near-field magnetic shielding.",
+    "Estimate only, not a certified shielding effectiveness or EMC compliance result."
+  ],
+  "references": [
+    {
+      "title": "Laird technical note 154, Rule-of-Thumb for Calculating Aperture Size, page 1",
+      "url": "http://cdn.lairdtech.com/home/brandworld/files/EMI%20Rule-of-Thumb%20for%20Calculating%20Aperture%20Size%20Technical%20Note%20Download.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "frequency",
+      "label": "Interference frequency",
+      "unit": "Hz",
+      "default": 100000000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "slot_length",
+      "label": "Longest slot dimension",
+      "unit": "m",
+      "default": 0.02,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "slot_width",
+      "label": "Slot width",
+      "unit": "m",
+      "default": 0.002,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "shield_thickness",
+      "label": "Shield thickness",
+      "unit": "m",
+      "default": 0.0005,
+      "min": 0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "wavelength",
+      "label": "Free-space wavelength",
+      "unit": "m",
+      "expression": "299792458/frequency"
+    },
+    {
+      "key": "shielding_db",
+      "label": "Slot shielding estimate",
+      "unit": "dB",
+      "expression": "20*log10(wavelength/(2*slot_length))"
+    },
+    {
+      "key": "field_ratio",
+      "label": "Transmitted-to-incident field ratio",
+      "unit": "1",
+      "expression": "2*slot_length/wavelength"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "slot_length",
+      "op": ">",
+      "right": "slot_width",
+      "message": "The longest dimension must exceed the width; this is a slot, not a round aperture."
+    },
+    {
+      "left": "slot_length",
+      "op": ">=",
+      "right": "10*shield_thickness",
+      "message": "Thin-slot estimate requires length at least ten times shield thickness."
+    },
+    {
+      "left": "slot_length*frequency/299792458",
+      "op": "<=",
+      "right": "0.05",
+      "message": "Slot length must not exceed wavelength/20 for this screening model."
+    }
+  ],
+  "example": {
+    "inputs": {
+      "frequency": 100000000,
+      "slot_length": 0.02,
+      "slot_width": 0.002,
+      "shield_thickness": 0.0005
+    },
+    "expected": {
+      "wavelength": 2.99792458,
+      "shielding_db": 37.495214231999306,
+      "field_ratio": 0.013342563807926084
+    },
+    "relative_tolerance": 1e-06
+  }
+}
+]
