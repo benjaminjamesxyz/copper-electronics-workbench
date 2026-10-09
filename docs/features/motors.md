@@ -292,3 +292,70 @@ On the right, place two stacked equation blocks within `(350,65)`–`(660,165)`:
 **Quantity labels:** `d_current` as `id`, `q_current` as `iq`, `magnet_flux` as `psi`, `d_voltage` as `vd`, `q_voltage` as `vq`, `electrical_speed` as `we`, `electromagnetic_torque` as `Te`, `converted_power` as `Pconv`, `stator_copper_loss` as `Pcu`. The full equation text is unbound; place the corresponding exact quantity label separately. If the layout needs less text, keep both voltage equations in the caption and retain the vector geometry.
 
 **Caption:** “Illustrative rotor dq frame with amplitude-invariant peak quantities. Cross-axis speed EMF and saliency couple voltage and torque. Negative converted power denotes generation; phase voltage is not DC-link voltage.”
+
+## 6. `motors.induction_slip_power`
+
+### Purpose and distinct model
+
+Estimate induction-machine torque and rotor heating from slip and a Thevenin equivalent. The rotor's speed-dependent effective resistance partitions air-gap power between heat and mechanical conversion. Baseline AC impedance calculates only an electrical response; source-matching lacks synchronous speed, rotor slip and electromechanical power conversion. This item is not a DC motor variant or a slip-to-speed unit conversion.
+
+### Equations, conventions and limits
+
+Source: MIT Kirtley notes 10, sections 2–2.2. All impedances are stator-referred, and voltage/current are per-phase RMS. `Vth`, `Rth`, `Xth` already include the stator/magnetizing-network Thevenin reduction; these inputs are not raw terminal line voltage and winding resistance. `X2` is the standstill rotor leakage reactance referred to the stator frequency. `omega_s=2*pi*f/p` is mechanical synchronous speed; rotor speed is `(1-s)*omega_s`.
+
+For positive slip, the standard rotor branch gives:
+
+`I2=Vth/hypot(Rth+R2/s,Xth+X2)`.
+
+Avoid the artificial `s=0` singularity by multiplying numerator and denominator by slip:
+
+`D=hypot(R2+s*Rth,s*(Xth+X2)); I2=Vth*s/D`.
+
+Air-gap power is `3*I2^2*R2/s`, equivalently `3*(Vth/D)^2*R2*s`, which includes exact synchronous zero without division by slip. Torque `Te=Pag/omega_s`; rotor copper power `Pcu2=3*I2^2*R2=s*Pag`; gross mechanical conversion `Pconv=Pag-Pcu2=(1-s)*Pag`. This derives the heat/mechanical partition explicitly.
+
+For fixed frequency and constant equivalent parameters, the peak-torque matching condition is `R2/s_peak=hypot(Rth,Xth+X2)`. Therefore:
+
+`s_peak=R2/hypot(Rth,Xth+X2)`
+
+`T_peak=3*Vth^2/[2*omega_s*(Rth+hypot(Rth,Xth+X2))]`.
+
+Require positive frequency and rotor resistance, integer positive pole pairs, `0<=s<=1`, nonnegative voltage and Thevenin resistance/reactances, and positive total leakage reactance. The entered-slip calculation is motoring only. The unconstrained mathematical peak may have `s_peak>1`; report it honestly as outside the motoring range rather than clipping it. Reactances must correspond to the entered frequency; changing frequency alone without updating them is not a constant-parameter motor sweep. Skin effect, saturation, temperature changes, magnetizing/core loss and mechanical loss are outside this equivalent model. Rotor-branch current is not stator line current.
+
+### Complete independent example
+
+Inputs: `frequency=50 Hz`, `pole_pairs=2`, `slip=0.05`, `thevenin_voltage=220 V RMS per phase`, `thevenin_resistance=0.5 ohm`, `thevenin_reactance=1 ohm`, `rotor_resistance=0.4 ohm`, `rotor_reactance=1 ohm`.
+
+For an independent nominal derivation use the original positive-slip circuit, not the catalog's slip-multiplied form:
+
+- `R2/s=0.4/0.05=8 ohm`; total real impedance `8.5 ohm`; total reactance `2 ohm`.
+- `synchronous_speed=2*pi*50/2=157.07963267948966 rad/s`.
+- `rotor_speed=0.95*157.07963267948966=149.22565104551518 rad/s`.
+- `rotor_current=220/sqrt(8.5^2+2^2)=25.1943267098102 A`.
+- `air_gap_power=3*(220^2/76.25)*8=15234.098360655737 W`.
+- `electromagnetic_torque=15234.098360655737/(50*pi)=96.98328230585997 N m`.
+- `rotor_copper_loss=3*(220^2/76.25)*0.4=761.7049180327869 W`.
+- `converted_power=15234.098360655737-761.7049180327869=14472.39344262295 W`.
+- `hypot(Rth,Xth+X2)=sqrt(0.25+4)=2.0615528128088303 ohm`.
+- `breakdown_slip=0.4/2.0615528128088303=0.19402850002906638`.
+- `breakdown_torque=3*220^2/[2*(50*pi)*(0.5+sqrt(4.25))]=180.43194441580198 N m`.
+
+### Tester cases
+
+- Nominal: all nine outputs. Independently verify `Pconv=Te*rotor_speed` and `Pag=Pcu2+Pconv`.
+- Synchronous limit `slip=0`: rotor current, air-gap power, torque, rotor copper loss and converted power are exactly zero; rotor speed equals synchronous speed. Both breakdown outputs retain their parameter-defined nominal values. No division-by-zero error is allowed.
+- Locked rotor `slip=1`: speed and converted power are zero; current `100.3113655692617 A`, air-gap and rotor copper power `12074.844074844075 W`, torque `76.87084486301274 N m`. Synchronous and breakdown outputs remain unchanged.
+- At `slip=0.19402850002906638`, calculated torque equals the independent peak value. Neighboring slips on both sides give smaller torque for these defaults.
+- With `Rth=0`, analytic checks are `s_peak=R2/(Xth+X2)` and `T_peak=3*Vth^2/[2*omega_s*(Xth+X2)]`.
+- Increasing `rotor_resistance` changes peak slip but not peak torque if other Thevenin quantities remain fixed. A peak slip above one is permitted and clearly labeled as outside the motoring interval.
+- At zero Thevenin voltage, electrical power/current/torque outputs vanish, but synchronous speed and the parameter-defined peak-slip location remain defined.
+- Reject slip below zero or above one, zero frequency/rotor resistance, fractional/nonpositive pole pairs, negative impedances and zero total leakage reactance.
+
+### Mandatory diagram
+
+**Topology plus energy split:** use the upper two-thirds of the canvas for a per-phase Thevenin rotor circuit: vertical AC voltage source near `(65,115)`, then separate series elements along the upper path for `Rth`, `Xth`, `X2`, and effective `R2/s`. The return wire is below the element bodies. Use a current arrow into the rotor branch. Label the last body plainly `R2/s`; put `R2` and `s` quantity labels nearby rather than binding the composite resistance to `rotor_resistance`.
+
+In the lower third, draw an air-gap power arrow into a split dot. One branch goes to a rotor-heat block and the other to a mechanical-output block. These power-flow arrows are spatially separated from the electrical return wire. Plain relations beside the two arrows are `s Pag` and `(1-s) Pag`.
+
+**Quantity labels:** `thevenin_voltage` as `Vth rms`, `thevenin_resistance` as `Rth`, `thevenin_reactance` as `Xth`, `rotor_reactance` as `X2`, `rotor_resistance` as `R2`, `slip` as `s`, `rotor_current` as `I2 rms`, `air_gap_power` as `Pag`, `rotor_copper_loss` as `Pcu2`, `converted_power` as `Pconv`. Leave peak-torque outputs to the legend instead of adding a misleading live curve.
+
+**Caption:** “Stator-referred per-phase rotor circuit and three-phase air-gap power split. I2 is not stator line current. R2/s tends to an open branch at zero slip; the numerical model includes that limit. Mechanical output excludes shaft losses.”

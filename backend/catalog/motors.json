@@ -714,5 +714,182 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "motors.induction_slip_power",
+    "title": "Induction motor slip torque and air-gap power split",
+    "category": "Electromechanical drives",
+    "level": "expert",
+    "description": "Use a stator-referred per-phase Thevenin equivalent to predict induction-motor rotor current, torque, slip heating and breakdown capability.",
+    "formula": "ws=2 pi f/p; D=hypot(R2+s Rth,s(Xth+X2)); I2=Vth s/D; Pag=3(Vth/D)^2 R2 s; Te=Pag/ws; Pcu2=s Pag; Pconv=(1-s)Pag; smax=R2/hypot(Rth,Xth+X2)",
+    "assumptions": [
+      "Balanced sinusoidal three-phase steady state, positive motoring slip from zero through one. Supply frequency is electrical; pole_pairs converts synchronous electrical speed to mechanical speed.",
+      "thevenin_voltage is per-phase RMS voltage seen from the rotor branch after reducing the stator and magnetizing network. All resistances/reactances are stator-referred at the entered frequency.",
+      "rotor_current is the stator-referred rotor-branch RMS current, not stator line current. Rotor skin effect, saturation, core loss and parameter heating are ignored.",
+      "converted_power is gross developed mechanical power before bearing, windage and other shaft losses. Rotor copper loss is only the slip-dependent rotor component, not total machine loss.",
+      "breakdown_slip and breakdown_torque describe the unconstrained positive-slip maximum of this equivalent circuit. If breakdown_slip exceeds one, that maximum lies outside the entered motoring interval; do not treat it as reachable starting torque.",
+      "The slip-multiplied algebra includes the exact synchronous no-torque limit without dividing by slip. This is not a startup transient or a speed-controller stability calculation."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.685 Electric Machines, Kirtley Class Notes 10, sections 2-2.2 equivalent circuit and peak torque",
+        "url": "https://ocw.mit.edu/courses/6-685-electric-machines-fall-2013/d834469bd6c3f56c6bec451d76176156_MIT6_685F13_chapter10.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Electrical supply frequency",
+        "unit": "Hz",
+        "default": 50,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "pole_pairs",
+        "label": "Rotor pole pairs",
+        "unit": "1",
+        "default": 2,
+        "min": 1
+      },
+      {
+        "key": "slip",
+        "label": "Motoring slip",
+        "unit": "1",
+        "default": 0.05,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "thevenin_voltage",
+        "label": "Per-phase Thevenin RMS voltage",
+        "unit": "V",
+        "default": 220,
+        "min": 0
+      },
+      {
+        "key": "thevenin_resistance",
+        "label": "Stator Thevenin resistance",
+        "unit": "ohm",
+        "default": 0.5,
+        "min": 0
+      },
+      {
+        "key": "thevenin_reactance",
+        "label": "Stator Thevenin reactance at supply frequency",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "rotor_resistance",
+        "label": "Stator-referred rotor resistance",
+        "unit": "ohm",
+        "default": 0.4,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rotor_reactance",
+        "label": "Stator-referred rotor leakage reactance",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "synchronous_speed",
+        "label": "Synchronous mechanical angular speed",
+        "unit": "rad/s",
+        "expression": "2*pi*frequency/pole_pairs"
+      },
+      {
+        "key": "rotor_speed",
+        "label": "Rotor mechanical angular speed",
+        "unit": "rad/s",
+        "expression": "(1-slip)*synchronous_speed"
+      },
+      {
+        "key": "rotor_current",
+        "label": "Stator-referred rotor-branch RMS current",
+        "unit": "A",
+        "expression": "thevenin_voltage*(slip/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance)))"
+      },
+      {
+        "key": "air_gap_power",
+        "label": "Three-phase air-gap power",
+        "unit": "W",
+        "expression": "3*(thevenin_voltage/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance)))^2*rotor_resistance*slip"
+      },
+      {
+        "key": "electromagnetic_torque",
+        "label": "Developed electromagnetic torque",
+        "unit": "N m",
+        "expression": "air_gap_power/synchronous_speed"
+      },
+      {
+        "key": "rotor_copper_loss",
+        "label": "Three-phase rotor copper loss",
+        "unit": "W",
+        "expression": "slip*air_gap_power"
+      },
+      {
+        "key": "converted_power",
+        "label": "Gross converted mechanical power",
+        "unit": "W",
+        "expression": "(1-slip)*air_gap_power"
+      },
+      {
+        "key": "breakdown_slip",
+        "label": "Unconstrained peak-torque slip",
+        "unit": "1",
+        "expression": "rotor_resistance/hypot(thevenin_resistance,thevenin_reactance+rotor_reactance)"
+      },
+      {
+        "key": "breakdown_torque",
+        "label": "Unconstrained peak electromagnetic torque",
+        "unit": "N m",
+        "expression": "3*thevenin_voltage^2/(2*synchronous_speed*(thevenin_resistance+hypot(thevenin_resistance,thevenin_reactance+rotor_reactance)))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "pole_pairs",
+        "op": "==",
+        "right": "floor(pole_pairs)",
+        "message": "Pole pairs must be an integer"
+      },
+      {
+        "left": "thevenin_reactance+rotor_reactance",
+        "op": ">",
+        "right": "0",
+        "message": "The induction-machine equivalent circuit requires positive total leakage reactance"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 50,
+        "pole_pairs": 2,
+        "slip": 0.05,
+        "thevenin_voltage": 220,
+        "thevenin_resistance": 0.5,
+        "thevenin_reactance": 1,
+        "rotor_resistance": 0.4,
+        "rotor_reactance": 1
+      },
+      "expected": {
+        "synchronous_speed": 157.07963267948966,
+        "rotor_speed": 149.22565104551518,
+        "rotor_current": 25.1943267098102,
+        "air_gap_power": 15234.098360655737,
+        "electromagnetic_torque": 96.98328230585997,
+        "rotor_copper_loss": 761.7049180327868,
+        "converted_power": 14472.39344262295,
+        "breakdown_slip": 0.19402850002906638,
+        "breakdown_torque": 180.43194441580198
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
