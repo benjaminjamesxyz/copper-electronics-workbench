@@ -350,5 +350,130 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "precision.transimpedance_butterworth",
+  "title": "Finite-GBW transimpedance Butterworth compensation",
+  "category": "Precision analog front ends",
+  "level": "expert",
+  "description": "Choose feedback capacitance for a maximally flat current-to-voltage front end, retaining the finite feedback-capacitance term.",
+  "formula": "wt=2 pi GBW; Cf=sqrt(2 wt Rf Cs-1)/(wt Rf); f3dB=sqrt(wt/[Rf(Cs+Cf)])/(2 pi)",
+  "assumptions": [
+    "Current enters the inverting summing node; noninverting input is grounded; Rf and Cf connect output to summing node; Cs shunts summing node to AC ground.",
+    "Op amp model A(s)=wt/s: infinite DC gain, finite gain-bandwidth, one dominant integrating pole, zero output impedance. This is not a guarantee for a real multipoled amplifier.",
+    "Closed-loop denominator is 1+s(1/wt+Rf Cf)+s^2 Rf(Cs+Cf)/wt. Cf solves Q=1/sqrt(2) exactly within this model.",
+    "2 wt Rf Cs >= 1 permits a nonnegative Butterworth capacitor; equality yields Cf=0. Include device, source and PCB capacitance in Cs.",
+    "Output peak is the low-frequency limit, not the amplitude at f3dB. Verify slew, current drive, parasitic Cf, higher poles and source compliance separately."
+  ],
+  "references": [
+    {
+      "title": "TI SBOA122: Figure 1, equations 2-7 and section 3; integrator-model algebra derived in research",
+      "url": "https://www.ti.com/lit/an/sboa122/sboa122.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "feedback_resistance",
+      "label": "Feedback resistor",
+      "unit": "ohm",
+      "default": 100000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "source_capacitance",
+      "label": "Total summing-node shunt capacitance",
+      "unit": "F",
+      "default": 1e-10,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "gain_bandwidth",
+      "label": "Op-amp gain-bandwidth product",
+      "unit": "Hz",
+      "default": 10000000.0,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "input_peak",
+      "label": "Low-frequency current peak",
+      "unit": "A",
+      "default": 1e-05,
+      "min": 0
+    },
+    {
+      "key": "output_peak_limit",
+      "label": "Guaranteed symmetric output swing",
+      "unit": "V",
+      "default": 4,
+      "min": 0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "feedback_capacitance",
+      "label": "Butterworth feedback capacitance",
+      "unit": "F",
+      "expression": "sqrt(4*pi*gain_bandwidth*feedback_resistance*source_capacitance-1)/(2*pi*gain_bandwidth*feedback_resistance)"
+    },
+    {
+      "key": "butterworth_bandwidth",
+      "label": "Closed-loop minus-3-dB bandwidth",
+      "unit": "Hz",
+      "expression": "sqrt(2*pi*gain_bandwidth/(feedback_resistance*(source_capacitance+feedback_capacitance)))/(2*pi)"
+    },
+    {
+      "key": "dc_transimpedance",
+      "label": "Signed DC transimpedance",
+      "unit": "ohm",
+      "expression": "-feedback_resistance"
+    },
+    {
+      "key": "output_peak",
+      "label": "Low-frequency output peak magnitude",
+      "unit": "V",
+      "expression": "input_peak*feedback_resistance"
+    },
+    {
+      "key": "noise_gain_zero",
+      "label": "Noise-gain zero frequency",
+      "unit": "Hz",
+      "expression": "1/(2*pi*feedback_resistance*(source_capacitance+feedback_capacitance))"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "4*pi*gain_bandwidth*feedback_resistance*source_capacitance",
+      "op": ">=",
+      "right": "1",
+      "message": "A nonnegative Butterworth feedback capacitance requires 2 wt Rf Cs >= 1"
+    },
+    {
+      "left": "input_peak*feedback_resistance",
+      "op": "<=",
+      "right": "output_peak_limit",
+      "message": "Low-frequency output exceeds guaranteed symmetric swing"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "feedback_resistance": 100000,
+      "source_capacitance": 1e-10,
+      "gain_bandwidth": 10000000.0,
+      "input_peak": 1e-05,
+      "output_peak_limit": 4
+    },
+    "expected": {
+      "feedback_capacitance": 5.63965054967668e-12,
+      "butterworth_bandwidth": 388147.3164084609,
+      "dc_transimpedance": -100000.0,
+      "output_peak": 1.0,
+      "noise_gain_zero": 15065.833923508984
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]

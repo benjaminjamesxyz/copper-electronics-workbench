@@ -117,3 +117,71 @@ Exact quantity bindings: first-stage resistors `feedback_resistance`, cross resi
 
 Caption: “Three amplifier outputs need headroom. Input common mode can clip an internal stage even when the final differential output fits. Va/Vb identify branches, not sorted voltages.” Use the full 700×280 surface with clear labels; put gain and limits in the catalog-linked legend rather than crowding the schematic.
 
+
+## 3. `precision.transimpedance_butterworth` — expert
+
+### Purpose and novelty
+
+Choose feedback capacitance for a finite-GBW current-to-voltage front end with input shunt capacitance. Nearest baseline is `opamps.dominant_pole_gain_bandwidth`, which has frequency-independent noise gain and first-order closed-loop voltage response. This circuit's noise gain rises because of source capacitance, creating a second-order response whose damping must be designed. It is not ordinary RC filtering, a generic noise budget or photodiode conversion. Opto explicitly owns the physical photocurrent and confirmed this electronic boundary.
+
+### Topology and derivation
+
+An electrical current source injects current into an op amp's inverting node. `source_capacitance` connects that node to AC ground. The noninverting input is grounded. `feedback_resistance` and the calculated `feedback_capacitance` connect in parallel from output to inverting node.
+
+Let `R=Rf`, `Cs=source_capacitance`, `Cf=feedback_capacitance`, `wt=2π gain_bandwidth`. Adopt the standard large-DC-gain dominant-pole approximation `A(s)=wt/s`, as the integrator limit of SBOA122 equations 2–7. With current entering the summing node, KCL gives
+
+`Vo/Iin = -R / [1 + s(1/wt + R Cf) + s² R(Cs+Cf)/wt]`.
+
+The sign is negative; SBOA122's current-arrow convention may express the opposite sign. This catalog states its own arrow explicitly.
+
+For Butterworth damping, the squared linear denominator coefficient is twice the quadratic coefficient:
+
+`(1 + wt R Cf)² = 2 wt R(Cs+Cf)`.
+
+The linear Cf terms cancel. Therefore
+
+- `Cf = sqrt(2 wt R Cs - 1)/(wt R)`.
+- `butterworth_bandwidth = sqrt(wt/[R(Cs+Cf)])/(2π)`.
+- `dc_transimpedance = -R`.
+- `output_peak = input_peak R`, the low-frequency peak magnitude.
+- `noise_gain_zero = 1/[2π R(Cs+Cf)]`.
+
+The minus-3-dB bandwidth equals the natural frequency only because Q is fixed to `1/sqrt(2)`. The formula retains Cf in the natural frequency instead of silently assuming `Cs >> Cf`. The noise-gain zero is a loop-design frequency, not the closed-loop bandwidth.
+
+### Domain and limits
+
+Require positive R, Cs and GBW; require `2 wt R Cs >= 1`. This is a genuine solvability condition for a nonnegative Butterworth Cf. At equality Cf=0 is allowed, and no output divides by Cf. Require nonnegative input peak and positive guaranteed symmetric output swing; reject `input_peak R` above that swing.
+
+The amplifier model assumes infinite DC gain but finite GBW and one integrating pole. Real secondary poles, package/parasitic feedback capacitance, current-source finite resistance, leakage, bias, noise, slew, output current and source voltage compliance are excluded. A unity-gain-stable label alone is not a stability proof. The user must verify the actual amplifier loop and include all device/PCB/source capacitance in Cs. There is no imposed arbitrary Cs/Cf ratio because the derived model does not need that simplification.
+
+### Complete independent example
+
+Inputs: `feedback_resistance=100000`, `source_capacitance=1e-10`, `gain_bandwidth=1e7`, `input_peak=1e-5`, `output_peak_limit=4`.
+
+`wt=62831853.07179586 rad/s`, `wt R Cs=628.3185307179587`. Insert these in the independently derived quadratic damping equation. The positive capacitor solution is 5.63965054967668 pF. The complete denominator gives the frequency below, not the simplified `sqrt(GBW/(2π R Cs))` approximation.
+
+| Output key | Independent value |
+|---|---:|
+| `feedback_capacitance` | 5.63965054967668e-12 F |
+| `butterworth_bandwidth` | 388147.3164084609 Hz |
+| `dc_transimpedance` | -100000 ohm |
+| `output_peak` | 1 V |
+| `noise_gain_zero` | 15065.833923508984 Hz |
+
+### Tester cases
+
+- Nominal: assert all values and substitute Cf into the damping identity.
+- Zero signal: set `input_peak=0`; output peak is zero, all design outputs remain unchanged.
+- Solvability boundary: with nominal R and Cs, GBW=`1/(4π R Cs)` ≈7957.747154594768 Hz gives Cf=0 and bandwidth≈11253.953951963826 Hz. Construct representable neighboring inputs carefully: a rounded value immediately below the inequality must reject, not be clamped to zero.
+- Invalid solvability: GBW=1000 Hz with nominal R and Cs cannot realize a nonnegative Butterworth Cf; reject.
+- Swing boundary: input peak=40 µA gives exactly 4 V and is accepted; a larger value rejects.
+- Invalid: nonpositive R/Cs/GBW/swing or negative signal amplitude.
+
+### Mandatory diagram specification
+
+Draw the op amp with its plus input grounded. Draw an electrical current-source symbol from ground into the minus node with arrow toward that node. Cs runs from the same node to ground. Draw two separate feedback branches: Rf above the op amp and Cf farther above it, both connecting the exact same summing/output nodes. Mark explicit junctions; never wire through either component body. No photodiode symbol or optical ray appears.
+
+Exact quantity bindings: current source `input_peak`; shunt capacitor `source_capacitance`; resistor `feedback_resistance`; feedback capacitor `feedback_capacitance`; op-amp GBW annotation `gain_bandwidth`; output magnitude bracket `output_peak`; textual minus-3-dB annotation `butterworth_bandwidth`. A static transfer annotation may say “Vo/Iin → -Rf at DC”; it must not label a voltage node with `dc_transimpedance` as though it were volts.
+
+Caption: “Current entering the summing node produces negative output. Cf sets Butterworth damping in the single-integrator op-amp model; the displayed bandwidth is not a measured stability guarantee.” Avoid a fake live frequency plot.
+
