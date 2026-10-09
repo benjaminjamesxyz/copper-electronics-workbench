@@ -605,5 +605,112 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "emc.short_cable_radiation",
+  "title": "Short common-mode cable radiation estimate",
+  "category": "EMC design",
+  "level": "intermediate",
+  "description": "Estimate broadside far-field radiation from a short straight cable carrying a known spatially uniform common-mode current. Free-space estimate, not a chamber result.",
+  "formula": "ell/lambda=ell f/c; kr=2 pi f r/c; E_rms,max=mu0 f Icm,rms ell/(2r)",
+  "assumptions": [
+    "Straight electrically short cable is represented by a uniform in-phase Hertzian current element. Icm is the algebraic sum of conductor currents, not current in each wire.",
+    "User must know the spatially uniform current or its equivalent current-length moment. A feed-point current alone does not establish that distribution.",
+    "ell/lambda<=0.1 and kr>=10 define this far-zone screening domain; observation is broadside, the maximum directional field of this model.",
+    "Free space only: no ground-plane image multiplier, cable return radiator, nearby enclosure, standing wave, dielectric or chamber reflection is included.",
+    "Uses conventional engineering mu0=4 pi 1e-7 H/m and exact c=299792458 m/s. All fields and current use RMS consistently.",
+    "Estimate only, not an intentional antenna design, EMC compliance prediction or bound for an arbitrary cable installation."
+  ],
+  "references": [
+    {
+      "title": "MIT 6.013 Electromagnetics and Applications, Chapter 10, section 10.2.1 equations 10.2.7-10.2.10",
+      "url": "https://ocw.mit.edu/courses/6-013-electromagnetics-and-applications-spring-2009/1b0b8fccbc37c9089f313dc459bf0b14_MIT6_013S09_chap10.pdf"
+    },
+    {
+      "title": "Texas Instruments SLVA790A, section 2.5, unintended common-mode cable radiation context; geometry differs from free-space model",
+      "url": "https://www.ti.com/lit/pdf/slva790"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "frequency",
+      "label": "Common-mode current frequency",
+      "unit": "Hz",
+      "default": 100000000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "cable_length",
+      "label": "Uniform-current cable length",
+      "unit": "m",
+      "default": 0.1,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "common_mode_current_rms",
+      "label": "Total common-mode RMS current",
+      "unit": "A",
+      "default": 1e-05,
+      "min": 0
+    },
+    {
+      "key": "distance",
+      "label": "Broadside observation distance",
+      "unit": "m",
+      "default": 10,
+      "min": 0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "electrical_length",
+      "label": "Cable length divided by wavelength",
+      "unit": "1",
+      "expression": "cable_length*frequency/299792458"
+    },
+    {
+      "key": "far_field_parameter",
+      "label": "Far-zone parameter kr",
+      "unit": "1",
+      "expression": "2*pi*frequency*distance/299792458"
+    },
+    {
+      "key": "electric_field_rms",
+      "label": "Broadside far-field RMS electric field",
+      "unit": "V/m",
+      "expression": "2*pi*1e-7*frequency*common_mode_current_rms*(cable_length/distance)"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "cable_length*frequency/299792458",
+      "op": "<=",
+      "right": "0.1",
+      "message": "The uniform-current element must be no longer than one tenth wavelength."
+    },
+    {
+      "left": "2*pi*frequency*distance/299792458",
+      "op": ">=",
+      "right": "10",
+      "message": "Far-field estimate requires kr at least 10; near-field terms are not included."
+    }
+  ],
+  "example": {
+    "inputs": {
+      "frequency": 100000000,
+      "cable_length": 0.1,
+      "common_mode_current_rms": 1e-05,
+      "distance": 10
+    },
+    "expected": {
+      "electrical_length": 0.03335640951981521,
+      "far_field_parameter": 20.958450219516816,
+      "electric_field_rms": 6.283185307179587e-06
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]

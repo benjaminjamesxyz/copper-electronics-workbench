@@ -160,4 +160,30 @@ const emcDiagrams = <String, CalculatorDiagram>{
       Label(470, 247, 'Cycle loss', quantity: 'snubber_power', ink: DiagramInk.output),
     ],
   ),
+  'emc.short_cable_radiation': CalculatorDiagram(
+    title: 'Unintended radiation from a short common-mode cable',
+    caption: 'Uniform in-phase common-mode current element in free space; broadside far-field '
+        'estimate. Cable return paths and ground reflections are not included. Icm sums conductor '
+        'currents in the same direction. Static geometry; the electric field is parallel to the '
+        'cable and perpendicular to the observation ray.',
+    marks: [
+      Wire([170, 60, 170, 190]),
+      Wire([186, 180, 186, 70], arrow: true, ink: DiagramInk.input),
+      Label(212, 57, 'Icm RMS', quantity: 'common_mode_current_rms'),
+      Wire([130, 60, 130, 190], arrow: true),
+      Wire([122, 60, 150, 60]), Wire([122, 190, 150, 190]),
+      Label(81, 115, 'ℓ', quantity: 'cable_length'),
+      Wire([170, 125, 555, 125], arrow: true, dashed: true, ink: DiagramInk.muted),
+      Label(319, 98, 'r', quantity: 'distance'),
+      Wire([539, 125, 539, 109, 555, 109], ink: DiagramInk.muted),
+      Part(CircuitPart.circle, 555, 125, width: 10, height: 10),
+      Wire([555, 181, 555, 60], arrow: true, ink: DiagramInk.output),
+      Label(578, 64, 'E RMS', quantity: 'electric_field_rms', ink: DiagramInk.output),
+      Label(490, 190, 'Broadside observer'),
+      Label(115, 208, 'Short cable'),
+      Label(30, 246, 'f', quantity: 'frequency'),
+      Label(225, 246, 'ℓ/λ', quantity: 'electrical_length'),
+      Label(445, 246, 'kr', quantity: 'far_field_parameter'),
+    ],
+  ),
 };

@@ -252,3 +252,44 @@ Inputs: original_frequency=30000000 Hz; loaded_frequency=15000000 Hz; test_capac
 
 Draw a switch node with parasitic Cp to power return and a separate shunt branch **Rs in series with Cs** to the same return. Show Lp upstream in the ringing loop, not accidentally in series with the snubber alone. Bind component labels to `parasitic_inductance`, `parasitic_capacitance`, `snubber_resistance`, and `snubber_capacitance`. Place a small left inset showing the temporary Ctest connected across Cp during identification, clearly marked “test only; remove before fitting Rs–Cs.” Bind `test_capacitance`. Add two static ringing sketches labeled `original_frequency` and `loaded_frequency`, with the latter visibly slower and captioned illustrative. Bind voltage swing and cycle-loss labels to `voltage_swing` and `snubber_power`. Caption: “Two-frequency identification of one LC mode; temporary test capacitor is replaced by a series-RC shunt snubber. Component values and loss are starting estimates.” No extra count is assigned to identification versus sizing.
 
+
+## 6. `emc.short_cable_radiation` — intermediate
+
+### Purpose and novelty
+
+Estimate broadside far-field electric interference from an electrically short cable carrying a known uniform in-phase common-mode current. Closest baseline: `signals.line_propagation` predicts propagation delay/wavelength inside an interconnect, not radiated fields. RF explicitly reserves intentional antenna/link calculations and leaves this unintended-emission model to EMC. No cable impedance, skin-depth or antenna gain/radiation-resistance duplicate is added.
+
+### Physical model and limits
+
+MIT equation (10.2.8) gives Eθ=jη0 k I ell exp(−jkr) sinθ/(4πr). At broadside θ=π/2, use η0=μ0 c and k=2πf/c:
+
+- electrical_length = ell f/c
+- far_field_parameter = kr=2πfr/c
+- electric_field_rms = μ0 f Icm,rms ell/(2r), μ0=4π×1e-7 H/m
+
+Icm is the **sum** of simultaneous conductor currents referenced in the same physical direction. Balanced outgoing/return currents cancel in this source moment; it is not the current in one conductor. The uniform current-length product is an input physical assumption. For a nonuniform cable, one must first establish the appropriate integrated current moment; a current clamp at one point alone does not prove it.
+
+The electrically short condition ell/wavelength<=0.1 and kr>=10 are explicit screening cutoffs for the asymptotic model, not standards requirements. At kr=10 the omitted broadside near-zone terms alter ideal Hertzian magnitude by about 0.5%, but real return conductors/ground reflections may produce much larger error. The result is free space with no ground-image multiplier, not TI's different 10 m chamber geometry. No near-field prediction, arbitrary cable resonance or finite antenna current distribution is implied. The stated conventional μ0 has negligible engineering error compared with these assumptions.
+
+### Complete independent example
+
+Inputs: frequency=100000000 Hz; cable_length=0.1 m; common_mode_current_rms=1e-5 A; distance=10 m.
+
+- wavelength=2.99792458 m (derivation intermediate, not an output).
+- electrical_length = 0.1/2.99792458 = **0.03335640951981521**.
+- far_field_parameter = 2π×10/2.99792458 = **20.958450219516816**.
+- electric_field_rms = (4π×1e-7)×1e8×1e-5×0.1/(2×10) = **6.283185307179587e-6 V/m**.
+
+### Independent tester cases
+
+- Nominal: all three outputs above.
+- Double distance to 20 m: electrical_length unchanged; kr doubles; E halves to 3.1415926535897935e-6 V/m.
+- Icm=0: field exactly zero; geometry outputs unchanged.
+- At f=1e8, ell=0.299792458 m gives ell/wavelength=0.1; with r=10 m it is the admitted short-element endpoint.
+- At f=1e8 and nominal ell, r=10×299792458/(2π×1e8) m gives kr=10; a smaller r is rejected, not treated as far field.
+- Reject nonpositive f/ell/r, negative RMS current, ell/wavelength>0.1, kr<10 and nonfinite values. Do not reject zero common-mode current.
+
+### Mandatory diagram
+
+Draw a straight cable segment vertically at x=170, y=60..190 with an arrow along it for the net common-mode current, labeled `common_mode_current_rms`; a parallel dimension line binds `cable_length`. Draw a broadside observation ray from cable center to a receiver marker at x=555, y=125; label `distance`. Draw the electric-field arrow at the observer parallel to the cable and perpendicular to the ray, binding `electric_field_rms`. Bind `frequency`, `electrical_length` and `far_field_parameter` in a separate clear legend. Do not add an earth/ground image, which would change the model. Caption: “Uniform in-phase common-mode current element in free space; broadside far-field estimate. Cable return paths and ground reflections are not included.”
+
