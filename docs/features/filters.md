@@ -138,3 +138,45 @@ Compute δ from the input difference before exponentiation; the original quotien
 | actual_stopband_db | 42.29680198990891 | dB |
 
 **Source/limits:** Gubner Wisconsin ECE431 §7.3/Eqs.7.7–7.10, linked above. Ideal continuous-time response only: no topology, tolerances, parasitics, elliptic zeros or digital prewarp. The stable transformations are algebraically derived implementation improvements, not claimed verbatim source equations.
+
+## `filters.sallen_key_lowpass` — General Sallen-Key low-pass pole, Q and response (expert)
+
+**Purpose/topology:** TI SLOA049D Fig.6-1 labels matter: R1 and R2 are series input resistors; C1 connects the noninverting input to ground; C2 connects the R1/R2 junction to the amplifier output. K=1+R4/R3 is the noninverting amplifier gain; K=1 uses a follower.
+
+\[
+H(s)=\frac{K}{Ps^2+Ds+1},\quad
+P=R_1R_2C_1C_2,\quad D=R_1C_1+R_2C_1+R_1C_2(1-K).
+\]
+
+P has units s² and D units s. Matching the canonical denominator yields f0=1/(2π√P) and Q=√P/D. For x=f/f0,
+
+\[
+|H|=\frac{K}{\sqrt{(1-x^2)^2+(x/Q)^2}},\quad
+G_\mathrm{dB}=20\log_{10}|H|.
+\]
+
+Half-power **relative to DC gain**, not a resonant peak, solves (1−t)²+t/Q²=2, t=x². The rationalized positive root gives
+
+\[
+f_{1/2}=f_0\sqrt{\frac{2}{Q^{-2}-2+\sqrt{(Q^{-2}-2)^2+4}}}.
+\]
+
+The rationalized form avoids low-Q subtractive cancellation; the Q≤50 envelope bounds cancellation in its reciprocal form. Sequential outputs retain dc_gain, pole_hz, section_q, frequency_ratio, voltage_gain, gain_db and half_power_hz.
+
+**Inputs/domain/error rationale:** `r1`,`r2` (ohm) 0.001…1e9; `c1`,`c2` (F) 1e-15…1; `amplifier_gain` (V/V) 1…100; `f` (Hz) 0…1e12. Input-only constraints √P/50≤D≤20√P require positive damping and 0.05≤Q≤50 before computing any output. Nonpositive D is unstable, not merely an output error to hide. Equal R,C give Q=1/(3−K), explaining the rejected high-gain region. DC is admissible and returns gain K. Positive K and bounded x keep gain/logs finite.
+
+**Independent worked substitution/default:** r1=r2=10000 ohm, c1=c2=1e-8 F, amplifier_gain=2, f=1000 Hz. P=1e-8 s², D=1e-4 s and Q=1. Direct complex division uses denominator 1−0.62831853²+j0.62831853:
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| dc_gain | 2.0 | V/V |
+| pole_hz | 1591.5494309189535 | Hz |
+| section_q | 1.0 | 1 |
+| frequency_ratio | 0.6283185307179586 | 1 |
+| voltage_gain | 2.2925435192800947 | V/V |
+| gain_db | 7.206351772370593 | dB |
+| half_power_hz | 2024.482149301843 | Hz |
+
+Gain above K and cutoff above f0 are legitimate Q=1 peaking, not clipping. A unity-gain equal-R Butterworth alternative uses C2=2C1 and Q=1/√2.
+
+**Source/limits:** TI SLOA049D §6/Fig.6-1/Eq.21, with §§11–12 nonideal limitations, linked above. No finite GBW, output impedance, loading, slew, saturation, parasitics or component tolerance effects; stable ideal damping is not hardware stability certification.

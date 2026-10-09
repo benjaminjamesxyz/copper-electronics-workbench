@@ -86,4 +86,37 @@
     ],
     "example": {"inputs": {"passband_edge": 1000.0, "stopband_edge": 4000.0, "passband_loss": 1.0, "stopband_loss": 40.0}, "expected": {"order_bound": 3.8092399086702753, "order": 4.0, "cutoff_min_hz": 1184.003988964071, "cutoff_max_hz": 1264.9268763451062, "actual_passband_db": 1.0, "actual_stopband_db": 42.29680198990891}, "relative_tolerance": 1e-6}
   }
+  ,
+  {
+    "id": "filters.sallen_key_lowpass",
+    "title": "General Sallen-Key low-pass pole, Q and response",
+    "category": "Analog filters",
+    "level": "expert",
+    "description": "Predict the natural frequency, damping Q, transmission and true half-power cutoff of a Sallen-Key low-pass stage from its components and amplifier gain.",
+    "formula": "P=R1*R2*C1*C2; D=R1*C1+R2*C1+R1*C2*(1-K); f0=1/(2*pi*sqrt(P)); Q=sqrt(P)/D; H(s)=K/(P*s^2+D*s+1)",
+    "assumptions": ["Use TI SLOA049D Figure 6-1 labels: R1 and R2 in series, C1 from op-amp noninverting input to ground, C2 from their junction to output.", "K is the ideal noninverting amplifier closed-loop gain, K=1+R4/R3; unity gain uses a follower.", "Positive damping is mandatory; the constrained section-Q envelope is 0.05 through 50.", "No finite gain-bandwidth, output impedance, slew rate, loading, saturation or component-tolerance effects.", "Half-power cutoff is relative to DC gain K, not to any resonant peak; f0 is not generally the cutoff."],
+    "references": [{"title": "Texas Instruments SLOA049D, section 6, Figure 6-1 and equation 21", "url": "https://www.ti.com/lit/an/sloa049d/sloa049d.pdf"}],
+    "inputs": [
+      {"key": "r1", "label": "Series input resistor R1", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "r2", "label": "Series resistor R2 to noninverting input", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c1", "label": "Grounded capacitor C1", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "c2", "label": "Feedback capacitor C2", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "amplifier_gain", "label": "Noninverting amplifier gain K", "unit": "V/V", "default": 2.0, "min": 1.0, "max": 100.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "dc_gain", "label": "DC voltage gain", "unit": "V/V", "expression": "amplifier_gain"},
+      {"key": "pole_hz", "label": "Pole natural frequency", "unit": "Hz", "expression": "1/(2*pi*sqrt(r1*r2*c1*c2))"},
+      {"key": "section_q", "label": "Section Q", "unit": "1", "expression": "sqrt(r1*r2*c1*c2)/(r1*c1+r2*c1+r1*c2*(1-amplifier_gain))"},
+      {"key": "frequency_ratio", "label": "Signal / pole frequency", "unit": "1", "expression": "f/pole_hz"},
+      {"key": "voltage_gain", "label": "Signal-frequency gain magnitude", "unit": "V/V", "expression": "dc_gain/sqrt((1-frequency_ratio^2)^2+(frequency_ratio/section_q)^2)"},
+      {"key": "gain_db", "label": "Absolute voltage gain", "unit": "dB", "expression": "20*log10(voltage_gain)"},
+      {"key": "half_power_hz", "label": "Half-power cutoff relative to DC gain", "unit": "Hz", "expression": "pole_hz*sqrt(2/(1/section_q^2-2+sqrt((1/section_q^2-2)^2+4)))"}
+    ],
+    "constraints": [
+      {"left": "r1*c1+r2*c1+r1*c2*(1-amplifier_gain)", "op": ">=", "right": "sqrt(r1*r2*c1*c2)/50", "message": "Damping must be positive and section Q must not exceed 50."},
+      {"left": "r1*c1+r2*c1+r1*c2*(1-amplifier_gain)", "op": "<=", "right": "20*sqrt(r1*r2*c1*c2)", "message": "Section Q must be at least 0.05."}
+    ],
+    "example": {"inputs": {"r1": 10000.0, "r2": 10000.0, "c1": 1e-8, "c2": 1e-8, "amplifier_gain": 2.0, "f": 1000.0}, "expected": {"dc_gain": 2.0, "pole_hz": 1591.5494309189535, "section_q": 1.0, "frequency_ratio": 0.6283185307179586, "voltage_gain": 2.2925435192800947, "gain_db": 7.206351772370593, "half_power_hz": 2024.482149301843}, "relative_tolerance": 1e-6}
+  }
 ]
