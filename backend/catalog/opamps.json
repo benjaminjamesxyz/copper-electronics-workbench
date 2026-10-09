@@ -466,7 +466,7 @@
     "category": "Operational amplifier stages",
     "level": "basic",
     "description": "Calculate the high-input-impedance noninverting stage's gain and level-shifted output.",
-    "formula": "G = 1 + Rf/Rg; Vo = Vref + G(Vin - Vref)",
+    "formula": "G = 1 + Rf/Rg; Vo = Vin + (Rf/Rg)(Vin - Vref)",
     "assumptions": [
       "Rg connects the inverting node to Vref and Rf connects that node to the output; Vin drives the noninverting input.",
       "Ideal, stable negative feedback; negligible bias current, offset and source loading.",
@@ -547,7 +547,7 @@
         "key": "v_out",
         "label": "Output voltage",
         "unit": "V",
-        "expression": "v_reference+gain*(v_in-v_reference)"
+        "expression": "v_in+(r_feedback/r_ground)*(v_in-v_reference)"
       }
     ],
     "constraints": [
@@ -576,13 +576,13 @@
         "message": "Input is above the common-mode range."
       },
       {
-        "left": "v_reference+(1+r_feedback/r_ground)*(v_in-v_reference)",
+        "left": "v_in+(r_feedback/r_ground)*(v_in-v_reference)",
         "op": ">=",
         "right": "v_out_min",
         "message": "Predicted output is below the linear output range."
       },
       {
-        "left": "v_reference+(1+r_feedback/r_ground)*(v_in-v_reference)",
+        "left": "v_in+(r_feedback/r_ground)*(v_in-v_reference)",
         "op": "<=",
         "right": "v_out_max",
         "message": "Predicted output is above the linear output range."

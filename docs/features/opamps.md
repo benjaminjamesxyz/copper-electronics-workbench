@@ -378,10 +378,17 @@ With `Vminus=Vin`, KCL at the inverting node gives
 \[
 \frac{V_{in}-V_{ref}}{R_g}+\frac{V_{in}-V_o}{R_f}=0,
 \quad
-V_o=V_{ref}+\left(1+\frac{R_f}{R_g}\right)(V_{in}-V_{ref}).
+V_o=V_{in}+\frac{R_f}{R_g}(V_{in}-V_{ref})
+=V_{ref}+\left(1+\frac{R_f}{R_g}\right)(V_{in}-V_{ref}).
 \]
 
 The limiting `Rf=0` case is a unity buffer, permitted by the catalog. The output expression remains finite without evaluating the KCL form's intermediate division by zero. H p. 17 and S section 2 establish the noninverting feedback relationship.
+
+### Unity-follower conditioning and independent regression vector
+
+The executable output and both output-swing guards use `v_in+(r_feedback/r_ground)*(v_in-v_reference)`. Separating the direct input contribution avoids erasing a tiny `Vin` when `Rf=0` and a much larger reference makes `Vin-Vref` round to `-Vref`. The algebraic gain, reference topology and admissible domain are unchanged; no special case or clamp is used.
+
+With `r_ground=10000 ohm`, `r_feedback=0 ohm`, `v_in=1e-17 V`, `v_reference=1 V`, and both common-mode/output limits `[-10,10] V`, the independently exact unity-buffer outputs are `gain=1 V/V` and `v_out=1e-17 V`. Changing only `v_in` to `-1e-17 V` gives `gain=1 V/V` and `v_out=-1e-17 V`. Both pins are at `Vin`; the unrelated divider reference need not equal the pin voltage. These are algebraic regression expectations, not executed results.
 
 ### Domain and limitations
 
@@ -420,7 +427,7 @@ The shared Rust engine evaluates these expressions in the listed order; later ou
 | Output key | Unit | Executable expression | Independent expected value |
 |---|---|---|---|
 | `gain` | V/V | `1+r_feedback/r_ground` | `10.0` |
-| `v_out` | V | `v_reference+gain*(v_in-v_reference)` | `3.1` |
+| `v_out` | V | `v_in+(r_feedback/r_ground)*(v_in-v_reference)` | `3.1` |
 
 ### Input-only relational guards and error rationale
 
@@ -430,8 +437,8 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 - Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
 - Require `v_in >= v_cm_min`: Input is below the common-mode range.
 - Require `v_in <= v_cm_max`: Input is above the common-mode range.
-- Require `v_reference+(1+r_feedback/r_ground)*(v_in-v_reference) >= v_out_min`: Predicted output is below the linear output range.
-- Require `v_reference+(1+r_feedback/r_ground)*(v_in-v_reference) <= v_out_max`: Predicted output is above the linear output range.
+- Require `v_in+(r_feedback/r_ground)*(v_in-v_reference) >= v_out_min`: Predicted output is below the linear output range.
+- Require `v_in+(r_feedback/r_ground)*(v_in-v_reference) <= v_out_max`: Predicted output is above the linear output range.
 
 ### Catalog model assumptions
 
