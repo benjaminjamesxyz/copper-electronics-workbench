@@ -1,0 +1,16 @@
+{
+  "commit": "be647ac",
+  "bundle": "frontend/build/linux/x64/release/bundle (dart run tool/build_desktop.dart, Linux release)",
+  "development_override": "PCB_CALCULATOR_BACKEND unset",
+  "host_display": "Xvfb :199, GDK X11, software GL, 1500x1100",
+  "observed": [
+    "Packaged bundle launched without engine override; header showed '228 calculations · Offline'.",
+    "Catalog search narrowed to 'batteries.peukert_runtime'; model selected by real mouse click.",
+    "New Peukert diagram rendered with caption, log-log illustration and quantity legend.",
+    "'Load worked example' filled inputs 100 Ah, 20 h, 20 A, 1.25 by real mouse.",
+    "Calculate produced 5.000000 A, 3.535534 h, 70.71068 Ah — matching the researched oracle (t=20*(5/20)^1.25, delivered=20*3.535534).",
+    "Window close destroyed the GdkWindow; the process needed SIGTERM to finish. No crash, no stale writes."
+  ],
+  "screenshots": ["/tmp/bundle-step1.png", "/tmp/bundle-step2.png", "/tmp/bundle-step4.png", "/tmp/bundle-result.png"],
+  "limits": "Linux only; Windows/macOS and remote CI not exercised. Window-close required explicit SIGTERM after GTK destroy warning; close-path exit code was not observed as 0."
+}
