@@ -133,6 +133,67 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 7. Bootstrap capacitance from gate and driver charge budget
+
+**ID:** `mosfet.bootstrap_charge_budget` — **expert**. Source: S4 section 3.1 equation 3.
+
+A charged floating supply capacitor supplies the MOSFET gate and high-side driver until the next recharge. S4's detailed convention assigns HB-to-VSS leakage to high-side on time, but conservatively budgets I_hb across a full cycle:
+
+- Q_total = Q_g + I_hbs D_max/f_sw + I_hb/f_sw.
+- V_headroom = V_dd − V_diode − V_min.
+- C_min = Q_total/ΔV.
+
+This follows charge balance ΔQ = C ΔV. The separate high-side quiescent term is deliberately I_hb/f_sw, **not** silently changed to I_hb D_max/f_sw. Driver-family definitions differ and must be read before choosing the input currents.
+
+**Inputs and model domain:** Q_g > 0 C; I_hbs and I_hb ≥ 0 A; f_sw > 0 Hz; 0 < D_max < 1; V_dd > 0 V; V_diode ≥ 0 V; V_min > 0 V; ΔV > 0 V. Constraints require V_headroom > 0 and ΔV ≤ V_headroom, expressed only in input keys. V_min should cover adequate MOSFET gate enhancement as well as UVLO and margin; using UVLO alone does not establish a sufficiently low R_ds_on.
+
+Initial charge is assumed V_dd − V_diode with switch node near ground. The model presumes full recharge once each period. Finite low-side on time, bootstrap resistance, startup, skipped pulses and switch-node undershoot need separate analysis. It is a theoretical **effective** minimum capacitance, not a nominal part recommendation. Account for ceramic DC-bias derating, tolerance, temperature, aging, ESR/ESL and all leakage/level-shifter charges not represented by the selected driver currents. S4's 10× gate-capacitance heuristic is not automatically imposed because this calculator uses the explicit charge and requested-droop budget; no universal safety multiplier is asserted.
+
+**Independent example:** Q_g = 100 nC, I_hbs = 25 µA, I_hb = 500 µA, D_max = 0.8, f_sw = 50 kHz. Period is 20 µs and high-side on time 16 µs. Leakage removes **0.4 nC** and quiescent demand **10 nC**, for Q_total = **110.4 nC**. With V_dd = 15 V, diode = 1 V, V_min = 10 V, available headroom is **4 V**. A requested **0.5 V** droop needs **220.8 nF** effective capacitance, within the headroom condition.
+
+**Defaults:** 50 nC, 10 µA leakage, 200 µA quiescent current, D_max = 0.9, 100 kHz, V_dd = 12 V, diode = 0.7 V, V_min = 8 V, droop = 1 V give **52.09 nC**, **3.3 V headroom**, **52.09 nF** minimum effective capacitance. D_max < 1 supplies a possible refresh interval but does not guarantee adequate recharge through a specific circuit.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `q_g` | High-side MOSFET total gate charge | C | 5e-08 | > 0 |
+| `i_hbs` | HB-to-VSS leakage current | A | 1e-05 | ≥ 0 |
+| `i_hb` | High-side quiescent current | A | 0.0002 | ≥ 0 |
+| `d_max` | Maximum high-side duty fraction | 1 | 0.9 | > 0, < 1 |
+| `f_sw` | Switching and recharge frequency | Hz | 100000 | > 0 |
+| `v_dd` | Gate-driver bias supply voltage | V | 12 | > 0 |
+| `v_diode` | Bootstrap diode forward drop | V | 0.7 | ≥ 0 |
+| `v_min` | Minimum acceptable floating supply voltage | V | 8 | > 0 |
+| `delta_v` | Maximum permitted bootstrap droop | V | 1 | > 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `q_total` | Charge consumed per recharge cycle | C | `q_g+i_hbs*d_max/f_sw+i_hb/f_sw` | 1.104e-07 |
+| `v_headroom` | Available supply-voltage headroom | V | `v_dd-v_diode-v_min` | 4 |
+| `c_min` | Minimum effective bootstrap capacitance | F | `q_total/delta_v` | 2.208e-07 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "q_g": 1e-07,
+  "i_hbs": 2.5e-05,
+  "i_hb": 0.0005,
+  "d_max": 0.8,
+  "f_sw": 50000,
+  "v_dd": 15,
+  "v_diode": 1,
+  "v_min": 10,
+  "delta_v": 0.5
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.

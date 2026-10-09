@@ -170,5 +170,153 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.bootstrap_charge_budget",
+    "title": "Bootstrap capacitance from gate and driver charge budget",
+    "category": "MOSFET and gate drive",
+    "level": "expert",
+    "description": "Find the theoretical minimum effective bootstrap capacitance for a specified droop, accounting for gate charge, high-side leakage and full-cycle quiescent consumption.",
+    "formula": "Q_total = Q_g + I_hbs D_max/f_sw + I_hb/f_sw; V_headroom = V_dd - V_diode - V_min; C_min = Q_total/Delta_V",
+    "assumptions": [
+      "TI SLUA887A charge-budget convention: HB-to-VSS leakage acts for D_max/f_sw; high-side quiescent current is budgeted conservatively over the full 1/f_sw period.",
+      "Floating supply initially charges to approximately V_dd - V_diode; the switch node is near ground during recharge and the capacitor is replenished once each cycle.",
+      "V_min is the larger required floating supply voltage from driver UVLO plus desired margin and MOSFET adequate gate enhancement, entered by the designer.",
+      "Droop must be positive and no larger than V_dd - V_diode - V_min. Duty must be strictly between zero and one; 100 percent duty needs another supply mechanism.",
+      "C_min is effective capacitance at bias and temperature, not the nominal printed value. Add tolerance, aging, DC-bias and transient margin when selecting a real part.",
+      "Driver current definitions vary; use the selected driver's datasheet. Unbudgeted level-shifter charge, gate/capacitor/diode leakage, skipped pulses, recharge impedance, ESR and ESL can require a larger capacitor."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLUA887A Bootstrap Circuitry Selection for Half-Bridge Configurations, section 3.1, equation 3",
+        "url": "https://www.ti.com/lit/an/slua887a/slua887a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "q_g",
+        "label": "High-side MOSFET total gate charge",
+        "unit": "C",
+        "default": 5e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "i_hbs",
+        "label": "HB-to-VSS leakage current",
+        "unit": "A",
+        "default": 1e-05,
+        "min": 0
+      },
+      {
+        "key": "i_hb",
+        "label": "High-side quiescent current",
+        "unit": "A",
+        "default": 0.0002,
+        "min": 0
+      },
+      {
+        "key": "d_max",
+        "label": "Maximum high-side duty fraction",
+        "unit": "1",
+        "default": 0.9,
+        "min": 0,
+        "max": 1,
+        "exclusive_min": true,
+        "exclusive_max": true
+      },
+      {
+        "key": "f_sw",
+        "label": "Switching and recharge frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_dd",
+        "label": "Gate-driver bias supply voltage",
+        "unit": "V",
+        "default": 12,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_diode",
+        "label": "Bootstrap diode forward drop",
+        "unit": "V",
+        "default": 0.7,
+        "min": 0
+      },
+      {
+        "key": "v_min",
+        "label": "Minimum acceptable floating supply voltage",
+        "unit": "V",
+        "default": 8,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "delta_v",
+        "label": "Maximum permitted bootstrap droop",
+        "unit": "V",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "q_total",
+        "label": "Charge consumed per recharge cycle",
+        "unit": "C",
+        "expression": "q_g+i_hbs*d_max/f_sw+i_hb/f_sw"
+      },
+      {
+        "key": "v_headroom",
+        "label": "Available supply-voltage headroom",
+        "unit": "V",
+        "expression": "v_dd-v_diode-v_min"
+      },
+      {
+        "key": "c_min",
+        "label": "Minimum effective bootstrap capacitance",
+        "unit": "F",
+        "expression": "q_total/delta_v"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_dd-v_diode-v_min",
+        "op": ">",
+        "right": "0",
+        "message": "The initial bootstrap voltage must exceed the minimum floating supply voltage."
+      },
+      {
+        "left": "delta_v",
+        "op": "<=",
+        "right": "v_dd-v_diode-v_min",
+        "message": "Allowed droop cannot exceed available supply headroom."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "q_g": 1e-07,
+        "i_hbs": 2.5e-05,
+        "i_hb": 0.0005,
+        "d_max": 0.8,
+        "f_sw": 50000,
+        "v_dd": 15,
+        "v_diode": 1,
+        "v_min": 10,
+        "delta_v": 0.5
+      },
+      "expected": {
+        "q_total": 1.104e-07,
+        "v_headroom": 4,
+        "c_min": 2.208e-07
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
