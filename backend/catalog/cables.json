@@ -623,5 +623,146 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "cables.cantilever_contact_spring",
+    "title": "Cantilever connector-contact spring",
+    "category": "Cables and connectors",
+    "level": "basic",
+    "description": "Size a rectangular connector contact beam from imposed mating deflection, estimating normal force and elastic root bending stress.",
+    "formula": "k = E b t³/(4 L³); F = k delta; sigma_root = 6 F L/(b t²) = 3 E t delta/(2 L²)",
+    "assumptions": [
+      "Straight uniform rectangular beam, perfectly clamped root, normal point load at free end, linear isotropic elasticity.",
+      "Thickness is measured in the bending direction; width is perpendicular to the bending plane. Deflection is nonnegative mating travel.",
+      "Conservative Euler–Bernoulli screening uses L/t >= 10 and delta/L <= 0.1; these are engineering approximation limits, not certification tolerances.",
+      "Calculated root stress must not exceed a supplied allowable elastic stress for the contact material and temperature.",
+      "No root notch stress concentration, prestress, curved beam, friction/insertion-force conversion, creep, stress relaxation, wear or fatigue-life prediction."
+    ],
+    "references": [
+      {
+        "title": "Wright State University ME 499/699 Homework 1, page 3: end-loaded cantilever deflection and rectangular second moment",
+        "url": "https://cecs.wright.edu/~rsrin/Courses/Materials-Selection/ME%20499-699-07/Fall%202006/HW-1-solutions.pdf"
+      },
+      {
+        "title": "MIT, Roylance, Stresses in Beams (2000), equations 5–7: rectangular section and bending stress",
+        "url": "https://web.mit.edu/course/3/3.11/www/modules/bstress.pdf"
+      },
+      {
+        "title": "Materion, What Makes a Good Spring Material? (2024): connector force, stiffness, elasticity and lifetime limitations",
+        "url": "https://www.materion.com/insights/blog/what-makes-a-good-spring-material"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "beam_length",
+        "label": "Free beam length",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beam_width",
+        "label": "Beam width",
+        "unit": "m",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beam_thickness",
+        "label": "Thickness in bending direction",
+        "unit": "m",
+        "default": 0.0002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "young_modulus",
+        "label": "Contact material Young modulus",
+        "unit": "Pa",
+        "default": 130000000000.0,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "tip_deflection",
+        "label": "Mating tip deflection",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0
+      },
+      {
+        "key": "allowable_stress",
+        "label": "Allowable elastic bending stress",
+        "unit": "Pa",
+        "default": 600000000.0,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "spring_rate",
+        "label": "Normal contact spring rate",
+        "unit": "N/m",
+        "expression": "young_modulus*beam_width/4*(beam_thickness/beam_length)^3"
+      },
+      {
+        "key": "normal_force",
+        "label": "Normal tip contact force",
+        "unit": "N",
+        "expression": "spring_rate*tip_deflection"
+      },
+      {
+        "key": "root_stress",
+        "label": "Maximum root bending stress magnitude",
+        "unit": "Pa",
+        "expression": "1.5*young_modulus*(beam_thickness/beam_length)*(tip_deflection/beam_length)"
+      },
+      {
+        "key": "stress_margin",
+        "label": "Allowable minus root stress",
+        "unit": "Pa",
+        "expression": "allowable_stress-root_stress"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "beam_thickness",
+        "op": "<=",
+        "right": "beam_length/10",
+        "message": "Slender-beam screen requires free length at least ten thicknesses."
+      },
+      {
+        "left": "tip_deflection",
+        "op": "<=",
+        "right": "beam_length/10",
+        "message": "Small-deflection screen requires mating travel at most ten percent of free length."
+      },
+      {
+        "left": "1.5*young_modulus*(beam_thickness/beam_length)*(tip_deflection/beam_length)",
+        "op": "<=",
+        "right": "allowable_stress",
+        "message": "Root bending stress exceeds the supplied elastic stress limit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "beam_length": 0.01,
+        "beam_width": 0.002,
+        "beam_thickness": 0.0002,
+        "young_modulus": 130000000000.0,
+        "tip_deflection": 0.0005,
+        "allowable_stress": 600000000.0
+      },
+      "expected": {
+        "spring_rate": 520,
+        "normal_force": 0.26,
+        "root_stress": 195000000,
+        "stress_margin": 405000000
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

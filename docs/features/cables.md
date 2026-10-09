@@ -146,3 +146,26 @@ Independent cases: Vc=0 gives Tm=300 K, rise=0, unchanged voltage limit, margin=
 ### Mandatory diagram
 
 Two metal blocks at x≈75–290 and x≈365–580 connected by a narrow neck at x≈325,y≈130. Current arrow runs left to right. Kelvin voltage taps bracket only the neck; + left and - right, label binding `contact_voltage`. Remote ends both bind `bulk_temperature` and carry “Tbulk”. Hotspot circle at the neck binds `hotspot_temperature`. Heat arrows point away from the hotspot into **both** metal blocks. Lower legend binds `lorenz_number`, `temperature_rise`, `temperature_limit`; use no lumped ambient thermal resistor. Caption: “Steady microscopic contact heating with equal remote metal temperatures. Vc is the constriction drop only; Wiedemann–Franz conduction sets the hotspot, not housing thermal resistance.”
+
+## 6. `cables.cantilever_contact_spring` — basic
+
+### Physical model and units
+
+S7 gives `delta=F L³/(3 E I)` and `I=b t³/12`, hence `k=E b t³/(4 L³)` and `F=k delta`. From S8 with root moment F L and outer fiber t/2, `sigma_root=6 F L/(b t²)=1.5 E (t/L)(delta/L)`. S9 connects these laws to contact normal force and explains why increased yield strength does not by itself increase elastic stiffness.
+
+Inputs L,b,t,delta in m; E and allowable_stress in Pa. F is N; k is N/m. L,b,t,E,allowable_stress>0; delta>=0. Model screens require t<=L/10, delta<=L/10 and calculated stress<=allowable_stress. These 10:1/0.1 screens explicitly operationalize slender-beam/small-rotation assumptions and do not claim universal error limits. Material remains elastic. Width is perpendicular to bending; thickness is in bending direction. A straight, initially unstrained clamped-free beam under a tip normal load is required. Actual contact roots may have stress concentrations, and actual life depends on relaxation/fatigue not included here.
+
+### Complete worked example
+
+Inputs: L=0.01 m, b=0.002 m, t=0.0002 m, E=130e9 Pa, delta=0.0005 m, allowable_stress=600e6 Pa.
+
+- `spring_rate = 130e9*0.002/4*(0.0002/0.01)³ = 520 N/m`.
+- `normal_force = 520*0.0005 = 0.26 N`.
+- `root_stress = 1.5*130e9*(0.0002/0.01)*(0.0005/0.01) = 195000000 Pa`.
+- `stress_margin = 600000000-195000000 = 405000000 Pa`.
+
+Independent cases: delta=0 returns the same spring_rate, normal_force=0, root_stress=0 and stress_margin=600e6 Pa. delta=0.001 m reaches the small-deflection screen exactly: F=0.52 N, sigma=390e6 Pa and margin=210e6 Pa; accepted. Doubling b doubles k and F but leaves stress unchanged at imposed deflection. Invalid: L=0, t>L/10, delta>L/10, or nominal geometry with allowable_stress=100e6 Pa. Test the slenderness boundary separately using delta=0 so an unrelated stress constraint does not hide the geometry result.
+
+### Mandatory diagram
+
+Side view x≈95–405: clamped wall at x=95; undeformed beam horizontal at y=100; a distinct smooth deflected centerline ends near (405,150). Tip mating force arrow downward binds `normal_force`. Vertical tip dimension between original and displaced tips binds `tip_deflection`. Horizontal free-span dimension binds `beam_length`; mark maximum bending stress at the clamped root with `root_stress`. Right inset around x=525,y=100 shows rectangular cross-section with horizontal `beam_width` and vertical `beam_thickness`, explicitly noting bending is vertical. Lower legend binds `young_modulus`, `spring_rate` and `allowable_stress`. Caption: “Straight rectangular connector leaf under imposed tip travel. The deflected shape is illustrative; normal force is not total mating friction force. Elastic small-deflection model only.”
