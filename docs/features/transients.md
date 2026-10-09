@@ -405,3 +405,56 @@ All input values for this independent example are `{"r":10.0,"l":0.01,"v_source"
 | `inductor_voltage` | V | 4.414553294057308 | `(v_source-r*i_initial)*exp(-time/tau)` |
 | `settling_time` | s | 0.004605170185988092 | `-tau*ln(error_fraction)` |
 
+
+## `transients.capacitor_constant_current` — imposed-current ramp and stored energy
+
+**Level:** basic. **Design purpose:** determine charge accumulation and voltage/energy changes under a constant capacitor current. Sources: [MIT capacitor constitutive equation](https://circuits.mit.edu/F25/psets/05/rc_tutorial), [GSU energy law](https://hyperphysics.gsu.edu/hbase/electric/capeng.html).
+
+### Model and derivation
+
+Integrate `i=C dv/dt` with constant signed `I`:
+
+`dv/dt=I/C`, `vC(t)=V0+It/C`, `deltaQ=It`.
+
+The final stored energy is `EC=C vC(t)²/2`; change from the initial state is `deltaE=C[vC(t)²−V0²]/2`. Unlike voltage-driven RC charging, the capacitor current does not exponentially decay. This calculator specifies the excitation and does not design an active current source, op-amp or converter.
+
+### Domain and limitations
+
+`C>0`, `t>=0`; current and initial voltage may be signed. No division by I occurs, so zero current is valid. Current-source compliance, load/leakage and polarized-capacitor allowable voltage must be checked separately. Ideal negative-current discharge may cross zero voltage; the mathematical result must not be interpreted as permission to reverse-bias a polarized capacitor. ESR, ESL, absorption and changing capacitance are excluded.
+
+### Independent worked example
+
+`C=100 microF`, `I=10 mA`, `V0=1 V`, `t=20 ms`.
+
+- `dv/dt=0.01/0.0001=100 V/s`.
+- `vC=1+100×0.02=3 V`.
+- `deltaQ=0.01×0.02=0.0002 C`.
+- `EC=0.0001×9/2=0.00045 J`.
+- `deltaE=0.0001×(9−1)/2=0.0004 J`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `c` | F | 0.0001 | [1e-15, 1.0] |
+| `current` | A | 0.01 | [-1000000.0, 1000000.0] |
+| `v_initial` | V | 1.0 | [-1000000.0, 1000000.0] |
+| `time` | s | 0.02 | [0.0, 1000000000.0] |
+
+All finite signed currents in range, including zero, are accepted; t=0 returns the initial voltage and zero charge/energy change. The executable signed energy change is `deltaQ*(V0+deltaQ/(2C))`, derived by expanding the difference of squares; it does not subtract rounded energies. Negative energy change is a physically valid reduction in stored energy and is not clamped. C is strictly positive through its finite lower bound; no current divisor or target-voltage feasibility constraint is needed.
+
+No additional relational constraint is needed: positive component minima protect divisors, time is nonnegative, and any logarithm has an explicit positive tolerance bound. Signed excitations and valid zero boundaries are not rejected.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"c":0.0001,"current":0.01,"v_initial":1.0,"time":0.02}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `voltage_slope` | V/s | 100.0 | `current/c` |
+| `capacitor_voltage` | V | 3.0 | `v_initial+voltage_slope*time` |
+| `charge_change` | C | 0.0002 | `current*time` |
+| `stored_energy` | J | 0.00045 | `c*capacitor_voltage^2/2` |
+| `energy_change` | J | 0.0004 | `charge_change*(v_initial+charge_change/(2*c))` |
+

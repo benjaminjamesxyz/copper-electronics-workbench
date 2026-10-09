@@ -748,5 +748,113 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "transients.capacitor_constant_current",
+    "title": "Constant-current capacitor ramp and energy",
+    "category": "Passive transients",
+    "level": "basic",
+    "description": "Calculate the voltage and stored-energy change of a capacitor subjected to a constant signed current, without selecting an active current-source circuit.",
+    "formula": "dv/dt=I/C; vC=V0+It/C; deltaQ=It; EC=C vC^2/2; deltaE=C(vC^2-V0^2)/2",
+    "assumptions": [
+      "Ideal current excitation of a passive, linear capacitor; current-source compliance, load and leakage must be checked externally.",
+      "Positive current enters the positive voltage terminal; a negative current describes discharge and may cross zero voltage mathematically.",
+      "This is not op-amp slew-rate design or switch-mode converter sizing. Polarized capacitor voltage limits are not modeled.",
+      "No ESR voltage step, ESL, dielectric absorption or voltage-dependent capacitance is included.",
+      "Energy change uses deltaQ*(V0+deltaQ/(2C)), algebraically identical to the difference of squared voltages, to avoid subtracting rounded stored energies for a small charge increment."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.200: Capacitor constitutive equation i=C dv/dt",
+        "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"
+      },
+      {
+        "title": "Georgia State University HyperPhysics: Energy Stored on a Capacitor",
+        "url": "https://hyperphysics.gsu.edu/hbase/electric/capeng.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "c",
+        "label": "Capacitance",
+        "unit": "F",
+        "default": 0.0001,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "current",
+        "label": "Constant signed capacitor current",
+        "unit": "A",
+        "default": 0.01,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "v_initial",
+        "label": "Initial capacitor voltage",
+        "unit": "V",
+        "default": 1.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "time",
+        "label": "Current application duration",
+        "unit": "s",
+        "default": 0.02,
+        "min": 0.0,
+        "max": 1000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "voltage_slope",
+        "label": "Capacitor voltage slope",
+        "unit": "V/s",
+        "expression": "current/c"
+      },
+      {
+        "key": "capacitor_voltage",
+        "label": "Final capacitor voltage",
+        "unit": "V",
+        "expression": "v_initial+voltage_slope*time"
+      },
+      {
+        "key": "charge_change",
+        "label": "Signed charge change",
+        "unit": "C",
+        "expression": "current*time"
+      },
+      {
+        "key": "stored_energy",
+        "label": "Final stored energy",
+        "unit": "J",
+        "expression": "c*capacitor_voltage^2/2"
+      },
+      {
+        "key": "energy_change",
+        "label": "Signed stored-energy change",
+        "unit": "J",
+        "expression": "charge_change*(v_initial+charge_change/(2*c))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "c": 0.0001,
+        "current": 0.01,
+        "v_initial": 1.0,
+        "time": 0.02
+      },
+      "expected": {
+        "voltage_slope": 100.0,
+        "capacitor_voltage": 3.0,
+        "charge_change": 0.0002,
+        "stored_energy": 0.00045,
+        "energy_change": 0.0004
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
