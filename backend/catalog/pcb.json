@@ -1,0 +1,106 @@
+[
+  {
+    "id": "pcb.trace_resistance_drop",
+    "title": "PCB trace DC resistance and voltage drop",
+    "category": "PCB interconnect and manufacturing",
+    "level": "basic",
+    "description": "Estimate the DC resistance and voltage-drop magnitude of one uniform rectangular copper trace from its finished geometry.",
+    "formula": "A = w t; R = rho L / A; V_drop = I R",
+    "assumptions": [
+      "Uniform rectangular finished copper cross-section; resistivity is supplied at the actual conductor temperature.",
+      "DC or sufficiently low frequency for nearly uniform current density; no skin/proximity effect, neck-down, contact, via or spreading resistance.",
+      "Bulk copper example resistivity 1.7e-8 ohm m is taken from the TI 25-degree-C table; plated copper can differ materially.",
+      "One-way conductor resistance, not a complete supply-and-return loop; add the return path separately."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments, Constructing Your Power Supply - Layout Considerations, Topic 4, section II and Table 1",
+        "url": "https://www.ti.com/lit/pdf/slup224"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "length",
+        "label": "Finished trace length",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "width",
+        "label": "Finished trace width",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "thickness",
+        "label": "Finished copper thickness",
+        "unit": "m",
+        "default": 3.5e-05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Copper resistivity at operating temperature",
+        "unit": "ohm m",
+        "default": 1.7e-08,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "current",
+        "label": "DC current magnitude",
+        "unit": "A",
+        "default": 1.0,
+        "min": 0.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "cross_section",
+        "label": "Copper cross-sectional area",
+        "unit": "m^2",
+        "expression": "width*thickness"
+      },
+      {
+        "key": "resistance",
+        "label": "Trace resistance",
+        "unit": "ohm",
+        "expression": "resistivity*length/cross_section"
+      },
+      {
+        "key": "voltage_drop",
+        "label": "One-way voltage drop",
+        "unit": "V",
+        "expression": "current*resistance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "width*thickness",
+        "op": ">",
+        "right": "0",
+        "message": "The finished trace must have a positive copper cross-section."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "length": 0.06,
+        "width": 0.002,
+        "thickness": 7e-05,
+        "resistivity": 1.7e-08,
+        "current": 4.0
+      },
+      "expected": {
+        "cross_section": 1.4e-07,
+        "resistance": 0.007285714285714286,
+        "voltage_drop": 0.029142857142857144
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
