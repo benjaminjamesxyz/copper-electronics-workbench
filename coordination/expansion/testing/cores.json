@@ -1,0 +1,689 @@
+{
+  "lane": "cores",
+  "base": "2cca03e",
+  "file": "backend/tests/cores.rs",
+  "authored_tests": 28,
+  "behaviors_covered": {
+    "cores.single_layer_air_solenoid": "Complete inch-unit Wheeler oracle (0.25*625/29 microhenries) with three-decade geometric scaling proving linear-not-quadratic L scaling; doubled turn density, inclusive length=radius, pitch=radius/5 and pitch=diameter boundaries; every scalar invalid boundary with full recovery; conditioning regression requiring representable L when turns^2=1e320 overflows. Every NaN/+Inf/-Inf input rejected with fully asserted valid recovery.",
+    "cores.square_planar_spiral": "Complete three-turn Mohan square-sheet oracle (di=128um, davg=192um, fill=1/3, independently evaluated ln(6.21)+0.06+0.13/9 bracket) with three-decade scaling; single-turn case proving the (N-1)*spacing gap term drops identically at two spacings; binary-exact 2^-40 opening with inclusive spacing=3*width screen; every scalar invalid boundary including zero and negative opening with recovery. Every NaN/+Inf/-Inf input rejected with recovery.",
+    "cores.bobbin_layer_fit": "Complete binary-exact (1/1024 m grid) discrete oracle: q=8, 17 turns need 8+8+1 positions, build 5/1024, fill 17*pi/384; half/double scaling keeps counts invariant and lengths linear; partial-layer jumps 8/16/17 with interlayer-only tape and exact pi/384-fill identities; exact radial fit giving zero margin, zero-tape single-layer pi/4 case; every scalar invalid boundary including infeasible width/height and copper>finished with recovery. Every NaN/+Inf/-Inf input rejected with recovery.",
+    "cores.sinusoidal_steinmetz_loss": "Complete fractional-exponent oracle 36k*(1/4)^1.5*4^2.5=144 kW/m^3 with volume extensivity down to 1e-200 m^3; reference identity plus both inclusive fit-rectangle corners (2^-7 and 5^4/8 scaling products); exhaustive per-key zero/negative rejection, unordered limits and all four out-of-range operating/reference combinations with recovery; balanced-power conditioning regression (f^2*B^2=1) requiring finite pv from 1e160 Hz and 1e-160 T. Every NaN/+Inf/-Inf input rejected with recovery.",
+    "cores.lamination_eddy_loss": "Complete Faraday/Joule sheet oracle from the mean-square motional field <E^2>=(omega*B*t)^2/24, which equals the catalog (pi*f*B*t)^2/(6*rho) and is not an RMS-B shortcut; thickness/frequency/flux/resistivity/permeability/volume scaling exponents 1/2,1,2,-1,-1/2,1 asserted; DC and zero-flux admitted zeros, inclusive flux-limit and ratio=0.3 penetration boundary reconstructed from inputs, mu=1 invariance of loss; every scalar invalid boundary with recovery; dimensional-heat conditioning regression where density underflows below subnormal range yet density*volume=6.66e-238 W stays representable. Every NaN/+Inf/-Inf input rejected with recovery.",
+    "cores.thin_foil_winding_loss": "Complete four-layer oracle derived by summing per-layer mean-square MMF fields (1/3,7/3,19/3,37/3)/12 giving coefficient 16/9-1/45=79/45, not the single-layer 4/45; DC and zero-current rows preserve resistances while zeroing heat; frequency, current and series-layer (1,8) scaling including exact 4/79 and 319/79 coefficient ratios; inclusive width=20t and x=1/2 boundaries reconstructed from inputs; subnormal-excess regression where x^4 underflows to zero yet I^2*Rdc*x^4 heat 3.28e-145 W survives via the separately computed excess expression; every scalar invalid boundary with recovery. Every NaN/+Inf/-Inf input rejected with recovery."
+  },
+  "oracle_provenance": "All oracles derived independently outside the implementation: inch-unit Wheeler with explicit 1e-6/0.0254 conversion; Mohan current-sheet bracket evaluated from ln(2.07/fill) with published 1.27/2 and 0.18/0.13 coefficients; discrete 1/1024 m binary-exact bobbin packing with exact power-of-two arithmetic; Steinmetz products evaluated as exact powers of two and four ((1/4)^1.5=1/8, 4^2.5=32, 2^-7, 5^4/8); lamination loss from Faraday <E^2>=(omega*B*t)^2/24 sheet integration; foil coefficient from layer-indexed MMF sums sum((j-1)^2+(j-1)+1/3). Verified with binary64 arithmetic and 60-digit Decimal cross-checks; no catalog example outputs are loaded anywhere in the suite.",
+  "verification": "Not executed. No builds, tests, lint, formatter, backend process or native launches. Independent binary64/Decimal arithmetic only; all 28 Rust tests and 21 flat process scenarios await Main. Three conditioning regressions are expected to expose current source defects, not observed failures.",
+  "untested_gaps": [
+    "Main must compile and run backend tests for this worktree and the full integrated suite.",
+    "Main must run flat scenarios in one real JSON-lines process; the three conditioning regressions are expected to fail against current catalog expressions until the reported defects are closed.",
+    "Wheeler and Mohan fits remain empirical screens; no physical prototype, measurement or accuracy guarantee is exercised.",
+    "No exhaustive binary64 domain sweep; physically unrepresentable extremes differ from avoidable intermediate failures."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "cores.single_layer_air_solenoid",
+      "location": "backend/catalog/cores.json:63",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "radius": 1e-100,
+        "length": 1e-100,
+        "turns": 1e+160,
+        "wire_diameter": 1e-261
+      },
+      "expected_outputs": {
+        "inductance": 2.0721094073767093e+214,
+        "turn_pitch": 1e-260
+      },
+      "contradiction": "L=(1e-6/0.0254)*r*N^2/19 with r=1e-100 m and N=1e160 is exactly representable (2.07e214 H, pitch 1e-260 m), but the catalog expression squares turns first: N^2=1e320 overflows binary64 and the engine rejects the non-finite intermediate although the final value is finite.",
+      "minimal_correction": "Reorder to keep intermediates in range, e.g. (1e-6/0.0254)*radius*turns*(turns/(9+10*length/radius)), or evaluate with scale-aware multiplication; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "cores.sinusoidal_steinmetz_loss",
+      "location": "backend/catalog/cores.json:504",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "frequency": 1e+160,
+        "flux_peak": 1e-160,
+        "reference_frequency": 1.0,
+        "reference_flux_peak": 1.0,
+        "reference_loss_density": 3.0,
+        "frequency_exponent": 2.0,
+        "flux_exponent": 2.0,
+        "core_volume": 2.0,
+        "fit_frequency_min": 1.0,
+        "fit_frequency_max": 1e+160,
+        "fit_flux_min": 1e-160,
+        "fit_flux_max": 1.0
+      },
+      "expected_outputs": {
+        "loss_density": 3.0,
+        "core_loss": 6.0,
+        "energy_per_cycle": 6e-160
+      },
+      "contradiction": "Arithmetic conditioning probe: f^2=1e320 overflows before multiplication by B^2=1e-320, though the exact product reference*(f/fref)^alpha*(B/Bref)^beta is 3 W/m^3 and all three outputs are representable.",
+      "minimal_correction": "Evaluate power products with normalized log-space ratios (exp(alpha*ln(f/fref)+beta*ln(B/Bref))) or scale-aware multiplication; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "cores.lamination_eddy_loss",
+      "location": "backend/catalog/cores.json:695",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "frequency": 120.0,
+        "flux_peak": 1e-170,
+        "lamination_thickness": 0.00015,
+        "resistivity": 8e-07,
+        "relative_permeability": 400.0,
+        "metal_volume": 1e+100,
+        "linear_flux_limit": 0.9
+      },
+      "expected_outputs": {
+        "penetration_ratio": 0.07300401616752501,
+        "eddy_loss_density": 0.0,
+        "eddy_loss": 6.661982970735316e-238
+      },
+      "contradiction": "The exact density 6.66e-338 W/m^3 lies below the smallest binary64 subnormal and rightly rounds to zero, but the dimensional product density*volume=6.66e-238 W is representable; computing heat as density*metal_volume after the density output underflowed zeroes representable heat, a loss of a physically meaningful result to expression ordering.",
+      "minimal_correction": "Compute eddy_loss from a non-underflowing arrangement such as q*(q*metal_volume)/(6*resistivity) with q=pi*frequency*flux_peak*lamination_thickness, or evaluate with scale-aware multiplication; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "cores.single_layer_air_solenoid",
+      "inputs": {
+        "radius": 0.02,
+        "length": 0.06,
+        "turns": 30.0,
+        "wire_diameter": 0.0012
+      },
+      "expected_outputs": {
+        "inductance": 1.8170805572380375e-05,
+        "turn_pitch": 0.002
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise wire_diameter=0.0025 (overlapping insulated turns) then restore inputs without reopening app. Inspect exact geometry labels, pitch meaning and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cores.square_planar_spiral",
+      "inputs": {
+        "outer_side": 0.0004,
+        "turns": 4.0,
+        "trace_width": 0.00002,
+        "spacing": 0.00001
+      },
+      "expected_outputs": {
+        "inner_side": 0.00017999999999999998,
+        "average_side": 0.00029,
+        "fill_ratio": 0.37931034482758624,
+        "inductance": 6.6050958361063545e-09
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise spacing=0.0002 (beyond three widths) then restore inputs without reopening app. Inspect inner/average side labels, micrometre-scale display and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cores.bobbin_layer_fit",
+      "inputs": {
+        "window_width": 0.018,
+        "window_height": 0.006,
+        "end_margin": 0.0015,
+        "wire_diameter": 0.0009,
+        "copper_diameter": 0.0007,
+        "tape_thickness": 0.0002,
+        "turns": 50.0
+      },
+      "expected_outputs": {
+        "turns_per_layer": 16.0,
+        "layers_required": 4.0,
+        "radial_build": 0.0042,
+        "height_margin": 0.0018000000000000004,
+        "copper_fill": 0.2138028333693054
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise window_height=0.003 (does not fit) then restore inputs without reopening app. Inspect layer/build/fill labels and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cores.sinusoidal_steinmetz_loss",
+      "inputs": {
+        "frequency": 120000.0,
+        "flux_peak": 0.12,
+        "reference_frequency": 100000.0,
+        "reference_flux_peak": 0.1,
+        "reference_loss_density": 250000.0,
+        "frequency_exponent": 1.3,
+        "flux_exponent": 2.1,
+        "core_volume": 4e-06,
+        "fit_frequency_min": 40000.0,
+        "fit_frequency_max": 300000.0,
+        "fit_flux_min": 0.02,
+        "fit_flux_max": 0.3
+      },
+      "expected_outputs": {
+        "loss_density": 464682.4229948702,
+        "core_loss": 1.858729691979481,
+        "energy_per_cycle": 1.548941409982901e-05
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise frequency=500000 (above calibrated fit range) then restore inputs without reopening app. Inspect density/heat/energy labels and units and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cores.lamination_eddy_loss",
+      "inputs": {
+        "frequency": 400.0,
+        "flux_peak": 0.5,
+        "lamination_thickness": 0.0001,
+        "resistivity": 5e-07,
+        "relative_permeability": 1000.0,
+        "metal_volume": 0.0005,
+        "linear_flux_limit": 1.0
+      },
+      "expected_outputs": {
+        "penetration_ratio": 0.17771531752633465,
+        "eddy_loss_density": 1315.947253478581,
+        "eddy_loss": 0.6579736267392905
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise flux_peak=1.2 (above the supplied linear limit) then restore inputs without reopening app. Inspect penetration ratio and density labels and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cores.thin_foil_winding_loss",
+      "inputs": {
+        "frequency": 50000.0,
+        "foil_thickness": 0.0001,
+        "foil_width": 0.025,
+        "layers": 2.0,
+        "mean_turn_length": 0.12,
+        "resistivity": 2.3e-08,
+        "current_rms": 20.0
+      },
+      "expected_outputs": {
+        "thickness_ratio": 0.29295502550049285,
+        "resistance_dc": 0.002208,
+        "ac_excess_factor": 0.0031098890647276553,
+        "resistance_ac": 0.0022148666350549186,
+        "winding_loss": 0.8859466540219676,
+        "ac_excess_loss": 0.002746654021967466
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise frequency=200000 (thickness ratio above 0.5) then restore inputs without reopening app. Inspect DC/AC resistance and excess-heat labels and scrolling at narrow width and large text."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "solenoid_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cores.single_layer_air_solenoid",
+        "inputs": {
+          "radius": 0.02,
+          "length": 0.06,
+          "turns": 30.0,
+          "wire_diameter": 0.0012
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent inch-unit Wheeler evaluation; not an implementation example.",
+      "expected_outputs": {
+        "inductance": 1.8170805572380375e-05,
+        "turn_pitch": 0.002
+      }
+    },
+    {
+      "name": "solenoid_invalid_overlapping_turns",
+      "request": {
+        "command": "calculate",
+        "id": "cores.single_layer_air_solenoid",
+        "inputs": {
+          "radius": 0.02,
+          "length": 0.06,
+          "turns": 30.0,
+          "wire_diameter": 0.0025
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Insulated turns would overlap (pitch 0.002 < 0.0025); reject without terminating the process."
+    },
+    {
+      "name": "solenoid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cores.single_layer_air_solenoid",
+        "inputs": {
+          "radius": 0.02,
+          "length": 0.06,
+          "turns": 30.0,
+          "wire_diameter": 0.0012
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "inductance": 1.8170805572380375e-05,
+        "turn_pitch": 0.002
+      }
+    },
+    {
+      "name": "solenoid_turn_square_overflow_regression",
+      "request": {
+        "command": "calculate",
+        "id": "cores.single_layer_air_solenoid",
+        "inputs": {
+          "radius": 1e-100,
+          "length": 1e-100,
+          "turns": 1e+160,
+          "wire_diameter": 1e-261
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conditioning regression encoding suspected defect backend/catalog/cores.json:63; expected to fail until Main closes the turns^2 intermediate overflow. All inputs satisfy every catalog constraint and both outputs are representable.",
+      "expected_outputs": {
+        "inductance": 2.0721094073767093e+214,
+        "turn_pitch": 1e-260
+      }
+    },
+    {
+      "name": "spiral_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cores.square_planar_spiral",
+        "inputs": {
+          "outer_side": 0.0004,
+          "turns": 4.0,
+          "trace_width": 0.00002,
+          "spacing": 0.00001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent Mohan current-sheet evaluation; not an implementation example.",
+      "expected_outputs": {
+        "inner_side": 0.00017999999999999998,
+        "average_side": 0.00029,
+        "fill_ratio": 0.37931034482758624,
+        "inductance": 6.6050958361063545e-09
+      }
+    },
+    {
+      "name": "spiral_invalid_excess_spacing",
+      "request": {
+        "command": "calculate",
+        "id": "cores.square_planar_spiral",
+        "inputs": {
+          "outer_side": 0.0004,
+          "turns": 4.0,
+          "trace_width": 0.00002,
+          "spacing": 0.0002
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Spacing exceeds three trace widths, outside the published fit population; reject without terminating the process."
+    },
+    {
+      "name": "spiral_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cores.square_planar_spiral",
+        "inputs": {
+          "outer_side": 0.0004,
+          "turns": 4.0,
+          "trace_width": 0.00002,
+          "spacing": 0.00001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "inner_side": 0.00017999999999999998,
+        "average_side": 0.00029,
+        "fill_ratio": 0.37931034482758624,
+        "inductance": 6.6050958361063545e-09
+      }
+    },
+    {
+      "name": "bobbin_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cores.bobbin_layer_fit",
+        "inputs": {
+          "window_width": 0.018,
+          "window_height": 0.006,
+          "end_margin": 0.0015,
+          "wire_diameter": 0.0009,
+          "copper_diameter": 0.0007,
+          "tape_thickness": 0.0002,
+          "turns": 50.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent discrete packing evaluation with partial fourth layer; not an implementation example.",
+      "expected_outputs": {
+        "turns_per_layer": 16.0,
+        "layers_required": 4.0,
+        "radial_build": 0.0042,
+        "height_margin": 0.0018000000000000004,
+        "copper_fill": 0.2138028333693054
+      }
+    },
+    {
+      "name": "bobbin_invalid_height",
+      "request": {
+        "command": "calculate",
+        "id": "cores.bobbin_layer_fit",
+        "inputs": {
+          "window_width": 0.018,
+          "window_height": 0.003,
+          "end_margin": 0.0015,
+          "wire_diameter": 0.0009,
+          "copper_diameter": 0.0007,
+          "tape_thickness": 0.0002,
+          "turns": 50.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Required build 0.0042 m exceeds the 0.003 m radial height; reject without terminating the process."
+    },
+    {
+      "name": "bobbin_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cores.bobbin_layer_fit",
+        "inputs": {
+          "window_width": 0.018,
+          "window_height": 0.006,
+          "end_margin": 0.0015,
+          "wire_diameter": 0.0009,
+          "copper_diameter": 0.0007,
+          "tape_thickness": 0.0002,
+          "turns": 50.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "turns_per_layer": 16.0,
+        "layers_required": 4.0,
+        "radial_build": 0.0042,
+        "height_margin": 0.0018000000000000004,
+        "copper_fill": 0.2138028333693054
+      }
+    },
+    {
+      "name": "steinmetz_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cores.sinusoidal_steinmetz_loss",
+        "inputs": {
+          "frequency": 120000.0,
+          "flux_peak": 0.12,
+          "reference_frequency": 100000.0,
+          "reference_flux_peak": 0.1,
+          "reference_loss_density": 250000.0,
+          "frequency_exponent": 1.3,
+          "flux_exponent": 2.1,
+          "core_volume": 4e-06,
+          "fit_frequency_min": 40000.0,
+          "fit_frequency_max": 300000.0,
+          "fit_flux_min": 0.02,
+          "fit_flux_max": 0.3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent fractional-exponent scaling inside a non-default fit rectangle; not an implementation example.",
+      "expected_outputs": {
+        "loss_density": 464682.4229948702,
+        "core_loss": 1.858729691979481,
+        "energy_per_cycle": 1.548941409982901e-05
+      }
+    },
+    {
+      "name": "steinmetz_invalid_above_fit_range",
+      "request": {
+        "command": "calculate",
+        "id": "cores.sinusoidal_steinmetz_loss",
+        "inputs": {
+          "frequency": 500000.0,
+          "flux_peak": 0.12,
+          "reference_frequency": 100000.0,
+          "reference_flux_peak": 0.1,
+          "reference_loss_density": 250000.0,
+          "frequency_exponent": 1.3,
+          "flux_exponent": 2.1,
+          "core_volume": 4e-06,
+          "fit_frequency_min": 40000.0,
+          "fit_frequency_max": 300000.0,
+          "fit_flux_min": 0.02,
+          "fit_flux_max": 0.3
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Operating frequency lies above the calibrated fit rectangle; reject without terminating the process."
+    },
+    {
+      "name": "steinmetz_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cores.sinusoidal_steinmetz_loss",
+        "inputs": {
+          "frequency": 120000.0,
+          "flux_peak": 0.12,
+          "reference_frequency": 100000.0,
+          "reference_flux_peak": 0.1,
+          "reference_loss_density": 250000.0,
+          "frequency_exponent": 1.3,
+          "flux_exponent": 2.1,
+          "core_volume": 4e-06,
+          "fit_frequency_min": 40000.0,
+          "fit_frequency_max": 300000.0,
+          "fit_flux_min": 0.02,
+          "fit_flux_max": 0.3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "loss_density": 464682.4229948702,
+        "core_loss": 1.858729691979481,
+        "energy_per_cycle": 1.548941409982901e-05
+      }
+    },
+    {
+      "name": "steinmetz_balanced_power_overflow_regression",
+      "request": {
+        "command": "calculate",
+        "id": "cores.sinusoidal_steinmetz_loss",
+        "inputs": {
+          "frequency": 1e+160,
+          "flux_peak": 1e-160,
+          "reference_frequency": 1.0,
+          "reference_flux_peak": 1.0,
+          "reference_loss_density": 3.0,
+          "frequency_exponent": 2.0,
+          "flux_exponent": 2.0,
+          "core_volume": 2.0,
+          "fit_frequency_min": 1.0,
+          "fit_frequency_max": 1e+160,
+          "fit_flux_min": 1e-160,
+          "fit_flux_max": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conditioning regression encoding suspected defect backend/catalog/cores.json:504; expected to fail until Main closes the f^alpha intermediate overflow. Every input satisfies the declared ranges and all outputs are representable.",
+      "expected_outputs": {
+        "loss_density": 3.0,
+        "core_loss": 6.0,
+        "energy_per_cycle": 6e-160
+      }
+    },
+    {
+      "name": "lamination_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cores.lamination_eddy_loss",
+        "inputs": {
+          "frequency": 400.0,
+          "flux_peak": 0.5,
+          "lamination_thickness": 0.0001,
+          "resistivity": 5e-07,
+          "relative_permeability": 1000.0,
+          "metal_volume": 0.0005,
+          "linear_flux_limit": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent Faraday/Joule sheet integration; not an implementation example.",
+      "expected_outputs": {
+        "penetration_ratio": 0.17771531752633465,
+        "eddy_loss_density": 1315.947253478581,
+        "eddy_loss": 0.6579736267392905
+      }
+    },
+    {
+      "name": "lamination_invalid_flux_above_limit",
+      "request": {
+        "command": "calculate",
+        "id": "cores.lamination_eddy_loss",
+        "inputs": {
+          "frequency": 400.0,
+          "flux_peak": 1.2,
+          "lamination_thickness": 0.0001,
+          "resistivity": 5e-07,
+          "relative_permeability": 1000.0,
+          "metal_volume": 0.0005,
+          "linear_flux_limit": 1.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Peak flux exceeds the supplied linear-model limit; reject without terminating the process."
+    },
+    {
+      "name": "lamination_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cores.lamination_eddy_loss",
+        "inputs": {
+          "frequency": 400.0,
+          "flux_peak": 0.5,
+          "lamination_thickness": 0.0001,
+          "resistivity": 5e-07,
+          "relative_permeability": 1000.0,
+          "metal_volume": 0.0005,
+          "linear_flux_limit": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "penetration_ratio": 0.17771531752633465,
+        "eddy_loss_density": 1315.947253478581,
+        "eddy_loss": 0.6579736267392905
+      }
+    },
+    {
+      "name": "lamination_density_underflow_regression",
+      "request": {
+        "command": "calculate",
+        "id": "cores.lamination_eddy_loss",
+        "inputs": {
+          "frequency": 120.0,
+          "flux_peak": 1e-170,
+          "lamination_thickness": 0.00015,
+          "resistivity": 8e-07,
+          "relative_permeability": 400.0,
+          "metal_volume": 1e+100,
+          "linear_flux_limit": 0.9
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conditioning regression encoding suspected defect backend/catalog/cores.json:695; expected to fail until Main closes the density-underflow heat loss. Exact density is below subnormal range (admitted zero) while the dimensional heat 6.66e-238 W is representable.",
+      "expected_outputs": {
+        "penetration_ratio": 0.07300401616752501,
+        "eddy_loss_density": 0.0,
+        "eddy_loss": 6.661982970735316e-238
+      }
+    },
+    {
+      "name": "foil_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cores.thin_foil_winding_loss",
+        "inputs": {
+          "frequency": 50000.0,
+          "foil_thickness": 0.0001,
+          "foil_width": 0.025,
+          "layers": 2.0,
+          "mean_turn_length": 0.12,
+          "resistivity": 2.3e-08,
+          "current_rms": 20.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent Dowell thin-layer expansion with two series layers; not an implementation example.",
+      "expected_outputs": {
+        "thickness_ratio": 0.29295502550049285,
+        "resistance_dc": 0.002208,
+        "ac_excess_factor": 0.0031098890647276553,
+        "resistance_ac": 0.0022148666350549186,
+        "winding_loss": 0.8859466540219676,
+        "ac_excess_loss": 0.002746654021967466
+      }
+    },
+    {
+      "name": "foil_invalid_ratio_above_half",
+      "request": {
+        "command": "calculate",
+        "id": "cores.thin_foil_winding_loss",
+        "inputs": {
+          "frequency": 200000.0,
+          "foil_thickness": 0.0001,
+          "foil_width": 0.025,
+          "layers": 2.0,
+          "mean_turn_length": 0.12,
+          "resistivity": 2.3e-08,
+          "current_rms": 20.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Thickness/depth ratio 0.586 exceeds the 0.5 thin-foil expansion screen; reject without terminating the process."
+    },
+    {
+      "name": "foil_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cores.thin_foil_winding_loss",
+        "inputs": {
+          "frequency": 50000.0,
+          "foil_thickness": 0.0001,
+          "foil_width": 0.025,
+          "layers": 2.0,
+          "mean_turn_length": 0.12,
+          "resistivity": 2.3e-08,
+          "current_rms": 20.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "thickness_ratio": 0.29295502550049285,
+        "resistance_dc": 0.002208,
+        "ac_excess_factor": 0.0031098890647276553,
+        "resistance_ac": 0.0022148666350549186,
+        "winding_loss": 0.8859466540219676,
+        "ac_excess_loss": 0.002746654021967466
+      }
+    }
+  ]
+}
