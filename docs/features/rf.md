@@ -132,3 +132,74 @@ Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outpu
 
 The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
 
+## 3. `rf.free_space_link_budget`
+
+### Purpose, novelty and evidence
+
+The nearest baseline `noise.friis_three_stage` concerns amplifier **noise factors**, not electromagnetic propagation; the common historical surname is not the same physical equation. `signals.line_propagation` predicts guided-line delay and wavelength, not antenna spatial spreading. This item calculates received radio power and sensitivity headroom. S3 supplies free-space loss; S7's radiation density and effective aperture supply the directional-gain extension.
+
+### Equations, references and physical limits
+
+`FSPL = 20 log10(4 pi d f/c)` dB.
+`received_power_dbm = transmit_power_dbm + transmit_gain_dbi + receive_gain_dbi - total_loss_db - FSPL`.
+`link_margin_db = received_power_dbm - sensitivity_dbm`.
+
+The catalog sums logarithms instead of first forming a large `d*f` product. Gains are in dBi in the relevant direction. Loss is a nonnegative total additive budget, not a second subtraction of loss already included in gain. Sensitivity is the actual receiver's threshold for the modulation, rate and error criterion used.
+
+Positive frequency, separation and maximum antenna dimension are required. With `D = antenna_max_dimension`, enforce `distance >= max(10c/f, 2D^2 f/c)`. The aperture term comes from S8. The `10 lambda` term is a disclosed conservative screen for the electrically-small-antenna case where the aperture term alone could lie in the near field. It makes `kr >= 20 pi`; it is not a universal proof of far-field accuracy. The complete path must also be clear and polarization matched. Numerical checks cannot infer terrain or actual patterns from these inputs. Free-space power does not establish regulatory permission, link availability or interference tolerance.
+
+### Complete independent example
+
+Inputs: `frequency=2400000000 Hz`, `distance=1000 m`, `antenna_max_dimension=0.1 m`, `transmit_power_dbm=20`, `transmit_gain_dbi=2`, `receive_gain_dbi=2`, `total_loss_db=2`, `sensitivity_dbm=-90`.
+
+`lambda = 0.12491352416666667 m`; the aperture screen is `0.160110765695113 m` and `10 lambda = 1.2491352416666667 m`; the 1000 m separation passes.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `free_space_loss_db` | `20 log10(4 pi * 1000 / 0.12491352416666667)` | `100.0520080561155 dB` |
+| `received_power_dbm` | `20 + 2 + 2 - 2 - 100.0520080561155` | `-78.0520080561155 dBm` |
+| `link_margin_db` | `-78.0520080561155 - (-90)` | `11.947991943884503 dB` |
+
+### Nominal, limiting and invalid cases
+
+- Keep all nominal values but double distance: loss=`106.07260796939512 dB`, receive=`-84.07260796939512 dBm`, margin=`5.927392030604879 dB`. This is the independent inverse-square law.
+- Increase either gain by 3 dB: receive and margin rise 3 dB; path loss does not change.
+- Set sensitivity equal to the calculated received power: zero margin is valid. A higher sensitivity threshold produces a valid negative margin.
+- `total_loss_db=0` is valid. Negative directional dBi is valid and must not be clamped.
+- Test exact far-field-screen equality and one representable step below; reject only the latter. Reject nonpositive frequency/distance/dimension, negative loss and nonfinite inputs.
+
+### Catalog inputs and bounds
+
+| Key | Meaning | Unit | Default | Bounds |
+|---|---|---|---|---|
+| `frequency` | Carrier frequency | Hz | 2400000000.0 | > 0.0 |
+| `distance` | Antenna separation | m | 1000.0 | > 0.0 |
+| `antenna_max_dimension` | Largest dimension of either antenna | m | 0.1 | > 0.0 |
+| `transmit_power_dbm` | Equipment transmit power | dBm | 20.0 | Any finite value |
+| `transmit_gain_dbi` | Transmit antenna directional gain | dBi | 2.0 | Any finite value |
+| `receive_gain_dbi` | Receive antenna directional gain | dBi | 2.0 | Any finite value |
+| `total_loss_db` | Total additional link loss | dB | 2.0 | >= 0.0 |
+| `sensitivity_dbm` | Receiver sensitivity | dBm | -90.0 | Any finite value |
+
+All inputs must be finite. Constraints run before outputs; invalid domains return errors, not clamps.
+
+- `distance >= max(10*299792458/frequency,2*antenna_max_dimension*(antenna_max_dimension*frequency/299792458))`: Separation must meet the documented far-field screen for frequency and antenna size.
+
+### Executable output sequence
+
+| Key | Unit | Expression |
+|---|---|---|
+| `free_space_loss_db` | dB | `20*(log10(4*pi)+log10(distance)+log10(frequency)-log10(299792458))` |
+| `received_power_dbm` | dBm | `transmit_power_dbm+transmit_gain_dbi+receive_gain_dbi-total_loss_db-free_space_loss_db` |
+| `link_margin_db` | dB | `received_power_dbm-sensitivity_dbm` |
+
+Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outputs require an absolute tolerance. All defaults equal the full worked-example inputs above.
+
+### Sources and illustration
+
+- [Wurth Elektronik ANR010 Range Estimator v1.1, section 4.1, equations 4-7](https://www.we-online.com/components/media/o164527v410%20ANR010_Range_Estimation.pdf)
+- [MIT Lincoln Laboratory, Introduction to Radar Systems: The Radar Equation, slides 5-8 (gain and effective aperture)](https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf)
+- [Amrita Virtual Lab, Antenna Gain Measurement, procedure 1 (2D squared over wavelength)](https://vlab.amrita.edu/?brch=180&cnt=1&sim=307&sub=3)
+
+The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
+

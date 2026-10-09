@@ -156,5 +156,137 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "rf.free_space_link_budget",
+    "title": "Free-space radio link budget",
+    "category": "RF networks, antennas and links",
+    "level": "basic",
+    "description": "Estimate received power and sensitivity margin for an unobstructed far-field RF link with directional antenna gains and explicit lumped losses.",
+    "formula": "FSPL=20 log10(4 pi d f/c); Pr=Pt+Gt+Gr-L-FSPL; margin=Pr-Srx; c=299792458 m/s",
+    "assumptions": [
+      "Unobstructed free space; antennas are aligned and polarization matched. Gains are dBi toward the opposite endpoint, not dBd.",
+      "Transmit power and receiver sensitivity are referenced to their equipment ports. Total loss includes feedlines and other known losses not already included in the antenna gains.",
+      "The largest antenna dimension is the maximum dimension across either endpoint antenna.",
+      "A conservative far-field screen enforces d >= max(10 wavelengths, 2 Dmax^2/wavelength). The 10-wavelength term is an explicit engineering screen, not a universal certification boundary.",
+      "No multipath, ground reflection, atmospheric absorption, obstruction, fading or interference model; a positive margin does not guarantee a working link."
+    ],
+    "references": [
+      {
+        "title": "Wurth Elektronik ANR010 Range Estimator v1.1, section 4.1, equations 4-7",
+        "url": "https://www.we-online.com/components/media/o164527v410%20ANR010_Range_Estimation.pdf"
+      },
+      {
+        "title": "MIT Lincoln Laboratory, Introduction to Radar Systems: The Radar Equation, slides 5-8 (gain and effective aperture)",
+        "url": "https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf"
+      },
+      {
+        "title": "Amrita Virtual Lab, Antenna Gain Measurement, procedure 1 (2D squared over wavelength)",
+        "url": "https://vlab.amrita.edu/?brch=180&cnt=1&sim=307&sub=3"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Carrier frequency",
+        "unit": "Hz",
+        "default": 2400000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "distance",
+        "label": "Antenna separation",
+        "unit": "m",
+        "default": 1000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "antenna_max_dimension",
+        "label": "Largest dimension of either antenna",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "transmit_power_dbm",
+        "label": "Equipment transmit power",
+        "unit": "dBm",
+        "default": 20.0
+      },
+      {
+        "key": "transmit_gain_dbi",
+        "label": "Transmit antenna directional gain",
+        "unit": "dBi",
+        "default": 2.0
+      },
+      {
+        "key": "receive_gain_dbi",
+        "label": "Receive antenna directional gain",
+        "unit": "dBi",
+        "default": 2.0
+      },
+      {
+        "key": "total_loss_db",
+        "label": "Total additional link loss",
+        "unit": "dB",
+        "default": 2.0,
+        "min": 0.0
+      },
+      {
+        "key": "sensitivity_dbm",
+        "label": "Receiver sensitivity",
+        "unit": "dBm",
+        "default": -90.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "free_space_loss_db",
+        "label": "Free-space path loss",
+        "unit": "dB",
+        "expression": "20*(log10(4*pi)+log10(distance)+log10(frequency)-log10(299792458))"
+      },
+      {
+        "key": "received_power_dbm",
+        "label": "Received equipment-port power",
+        "unit": "dBm",
+        "expression": "transmit_power_dbm+transmit_gain_dbi+receive_gain_dbi-total_loss_db-free_space_loss_db"
+      },
+      {
+        "key": "link_margin_db",
+        "label": "Margin above receiver sensitivity",
+        "unit": "dB",
+        "expression": "received_power_dbm-sensitivity_dbm"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "distance",
+        "op": ">=",
+        "right": "max(10*299792458/frequency,2*antenna_max_dimension*(antenna_max_dimension*frequency/299792458))",
+        "message": "Separation must meet the documented far-field screen for frequency and antenna size."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 2400000000.0,
+        "distance": 1000.0,
+        "antenna_max_dimension": 0.1,
+        "transmit_power_dbm": 20.0,
+        "transmit_gain_dbi": 2.0,
+        "receive_gain_dbi": 2.0,
+        "total_loss_db": 2.0,
+        "sensitivity_dbm": -90.0
+      },
+      "expected": {
+        "free_space_loss_db": 100.0520080561155,
+        "received_power_dbm": -78.0520080561155,
+        "link_margin_db": 11.947991943884503
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
