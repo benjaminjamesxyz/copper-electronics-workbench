@@ -499,5 +499,110 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "batteries.intercalation_regular_solution",
+    "title": "Single-phase intercalation voltage and chemical capacitance",
+    "category": "Battery design",
+    "level": "expert",
+    "description": "Estimate the nonlinear equilibrium voltage, slope and differential charge capacity of a lithium insertion electrode with pair interactions.",
+    "formula": "V = Vmid-[RT ln(x/(1-x))+Omega(1-2x)]/F; dV/dx = -RT/[F x(1-x)]+2Omega/F; Cchem = Qmax F x(1-x)/[RT-2Omega x(1-x)]",
+    "assumptions": [
+      "One electron transfers per inserted lithium ion. Filling fraction x is electrode site occupancy, not automatically full-cell SOC.",
+      "The regular-solution free energy is RT[x ln x+(1-x)ln(1-x)]+Omega x(1-x); Omega is molar interaction energy in J/mol.",
+      "Use the globally single-phase domain Omega<2RT. The two-phase miscibility gap, common-tangent voltage plateau and critical point require another model.",
+      "Voltage is relative to the same fixed lithium reference used to define midpoint voltage; electrolyte activity is fixed.",
+      "Quasi-equilibrium, uniform composition and constant temperature; no hysteresis, ohmic loss, kinetics, stress or double-layer capacitance.",
+      "Chemical capacitance is positive -dQ/dV for inserted charge Q=Qmax x, not an electrostatic energy-storage capacitor. R=8.31446261815324 J/(mol K), F=96485.33212 C/mol."
+    ],
+    "references": [
+      {
+        "title": "MIT 10.626 Lithium ion batteries, Regular solution model and Faradaic capacitance, pages 6-8",
+        "url": "https://ocw.mit.edu/courses/10-626-electrochemical-energy-systems-spring-2014/e87e16b891cb649be6032e375c30e322_MIT10_626S14_Lec13_Lithi.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "midpoint_voltage",
+        "label": "Half-filled electrode voltage vs reference",
+        "unit": "V",
+        "default": 3.5
+      },
+      {
+        "key": "temperature",
+        "label": "Absolute electrode temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "interaction_energy",
+        "label": "Molar pair interaction energy",
+        "unit": "J/mol",
+        "default": 3000
+      },
+      {
+        "key": "filling_fraction",
+        "label": "Lithium site filling fraction",
+        "unit": "1",
+        "default": 0.3,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1,
+        "exclusive_max": true
+      },
+      {
+        "key": "full_insertion_charge",
+        "label": "Charge for all insertion sites",
+        "unit": "C",
+        "default": 10800,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "equilibrium_voltage",
+        "label": "Equilibrium electrode voltage",
+        "unit": "V",
+        "expression": "midpoint_voltage-(8.31446261815324*temperature*(ln(filling_fraction)-log1p(-filling_fraction))+interaction_energy*(1-2*filling_fraction))/96485.33212"
+      },
+      {
+        "key": "voltage_slope",
+        "label": "Voltage slope per filling fraction",
+        "unit": "V",
+        "expression": "-(8.31446261815324*temperature/(filling_fraction*(1-filling_fraction))-2*interaction_energy)/96485.33212"
+      },
+      {
+        "key": "chemical_capacitance",
+        "label": "Positive differential chemical capacitance",
+        "unit": "F",
+        "expression": "full_insertion_charge*96485.33212*filling_fraction*(1-filling_fraction)/(8.31446261815324*temperature-2*interaction_energy*filling_fraction*(1-filling_fraction))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "interaction_energy",
+        "op": "<",
+        "right": "2*8.31446261815324*temperature",
+        "message": "The single-phase model requires interaction energy below the critical 2RT value"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "midpoint_voltage": 3.5,
+        "temperature": 298.15,
+        "interaction_energy": 3000,
+        "filling_fraction": 0.3,
+        "full_insertion_charge": 10800
+      },
+      "expected": {
+        "equilibrium_voltage": 3.5093321437299303,
+        "voltage_slope": -0.06015999692680433,
+        "chemical_capacitance": 179521.28576635703
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

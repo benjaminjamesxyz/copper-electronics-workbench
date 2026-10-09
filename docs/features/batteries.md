@@ -172,3 +172,53 @@ Nominal: assert all three values. With only `pulse_current=0`, expect `available
 
 Two chemical wells exchange charge through a passage. Only the available well feeds the load. The equalization rate is λ, not the original well conductance k; levels are symbolic.
 
+## 5. `batteries.intercalation_regular_solution` — expert
+
+### Purpose and novelty
+
+Estimate an insertion electrode's equilibrium potential and local differential charge capacity, including pair interactions among occupied and vacant sites. The closest baseline is `diodes.shockley_forward_current`, an exponential carrier-transport law; this is a lattice free-energy equilibrium law. The closest new sensor is hydrogen-activity Nernst transduction, but the battery model adds occupancy/vacancy entropy, pair interaction energy, global phase stability and a charge-versus-voltage derivative. The sensor researcher confirmed this boundary.
+
+### Equation, convention and physical limits
+
+MIT notes pages 6–7 give a regular-solution free energy per site and its derivative. Expressing interaction energy per mole rather than per particle:
+
+`g=RT[x ln x+(1-x)ln(1-x)]+Omega x(1-x)+mu0 x`.
+
+For monovalent insertion relative to a fixed reference:
+
+`V=Vmid-[RT ln(x/(1-x))+Omega(1-2x)]/F`.
+
+Differentiate directly:
+
+`dV/dx=-(RT/[x(1-x)]-2Omega)/F`;
+
+`Cchem=-dQ/dV=Qmax F x(1-x)/[RT-2Omega x(1-x)]`, where inserted charge `Q=Qmax x`.
+
+`Vmid` includes the chemical reference offset and equals voltage at half filling. `Omega` is J/mol and may be negative. `T` is K. `x` is lithium occupancy, which can increase on discharge at a positive insertion electrode; do not equate it with pack SOC without a chemistry-specific mapping. Slope unit V means volts per dimensionless filling fraction. Chemical capacitance is in C/V=F and is positive by the specified minus sign.
+
+Guard `0<x<1`, `T>0`, `Qmax>0`, and **globally** `Omega<2RT`. Since `x(1-x)<=1/4`, this guarantees positive curvature everywhere and excludes the critical point and all two-phase miscibility. Merely checking local curvature would admit metastable branches inside a miscibility gap; that weaker guard is intentionally not used. At stronger attraction, common-tangent phase equilibrium is required, not an unphysical rising voltage segment.
+
+The fixed-reference, homogeneous, quasi-equilibrium model ignores kinetic/ohmic overpotential, stress, electrolyte-activity changes, hysteresis and double-layer charge. It is not a calibrated universal lithium-ion OCV curve, and especially not the real two-phase LiFePO4 plateau. Use `ln(x)-log1p(-x)` to avoid constructing an unnecessarily extreme occupancy ratio. Endpoint singularities are physically outside the finite-occupancy model and are rejected.
+
+### Complete independent example
+
+Inputs: `midpoint_voltage=3.5 V`, `temperature=298.15 K`, `interaction_energy=3000 J/mol`, `filling_fraction=.3`, `full_insertion_charge=10800 C`.
+
+`RT=2478.957029602388 J/mol`; `2RT=4957.914059204776 J/mol`, so 3000 is globally single-phase. `x(1-x)=.21`, `ln(.3/.7)=-.8472978603872037`, interaction term `3000(1-.6)=1200 J/mol`.
+
+- `equilibrium_voltage=3.5-[2478.957029602388×(-.8472978603872037)+1200]/96485.33212=3.5093321437299303 V`.
+- `voltage_slope=-[2478.957029602388/.21-6000]/96485.33212=-.06015999692680433 V`.
+- `chemical_capacitance=-10800/(-.06015999692680433)=179521.28576635703 F`.
+
+The independent derivative, not an ideal-solution capacitance expression, supplies the oracle.
+
+### Independent tester cases
+
+Nominal: assert all outputs. At `x=.5`, voltage equals `midpoint_voltage` exactly; slope is `-(4RT-2Omega)/F` and capacitance `Qmax F/(4RT-2Omega)`. At `Omega=0`, recover the ideal lattice entropy model. For complementary fillings `.3` and `.7`, voltage deviations from midpoint reverse sign; slope and capacitance match. Negative Omega is valid and lowers differential capacitance. As Omega approaches `2RT` from below at half filling, capacitance diverges; reject equality and above rather than clamping. Reject zero/one occupancy, nonpositive temperature/charge. Positive finite physical values close to endpoints remain mathematically admissible; nonfinite arithmetic is an engine error, not grounds for an invented cutoff.
+
+### Sources and illustration
+
+- [MIT 10.626 Lithium ion batteries, Regular solution model and Faradaic capacitance, pages 6-8](https://ocw.mit.edu/courses/10-626-electrochemical-energy-systems-spring-2014/e87e16b891cb649be6032e375c30e322_MIT10_626S14_Lec13_Lithi.pdf)
+
+Occupied and vacant sites illustrate insertion with separate ion and electron paths, a pair-interaction bracket, and a schematic single-phase voltage curve and tangent. Occupancy is not pack SOC.
+
