@@ -1,0 +1,871 @@
+{
+  "lane": "batteries",
+  "base": "2cca03e",
+  "file": "backend/tests/batteries.rs",
+  "authored_tests": 32,
+  "behaviors_covered": {
+    "batteries.series_weakest_cell": "Complete nondefault all-output charge budget; equal extracted charge; all limiting-cell permutations; tiny capacity scaling; tied and exact floor/zero/full endpoints; scalar and coupled rejection/recovery.",
+    "batteries.coulomb_state_cycle": "Complete independent Ah balance; nonunit retention; unity efficiency; zero currents/times; exactly empty and full states; intermediate exhaustion despite eventual recovery; overcharge and scalar rejection.",
+    "batteries.peukert_runtime": "Complete radical nondefault oracle; I^n*t invariant; load scaling; rated point for several exponents; n=1 ideal law; invalid/recovery; two intentionally failing finite-output underflow regressions.",
+    "batteries.kinetic_charge_recovery": "Complete independent imbalance ODE oracle; charge conservation; interval composition; rest recovery without total-charge creation; zero rate/time; equilibrium; inclusive available exhaustion with stranded bound charge; tiny nonzero transfer; capacity/height guards; finite-output overflow regression.",
+    "batteries.intercalation_regular_solution": "Complete differentiated free-energy oracle; negative interaction; complementary occupancy; midpoint/ideal lattice; centered derivative and charge-response identities; near-critical and near-full occupancy; global versus local phase guard; finite-output tiny-filling and large-charge regressions.",
+    "batteries.sand_depletion_limit": "Complete independently inverted boundary diffusion solution; current/concentration/diffusivity/transference scaling; zero and near-one transference; tiny nonzero representable length; scalar rejection/recovery.",
+    "shared": "Every input of every ID tested against NaN and both infinities, followed by valid same-thread Engine recovery. Shared common helper only. All parent JSON scenarios are flat ordered complete requests."
+  },
+  "verification": "NOT EXECUTED: no builds, tests, lint, formatters, backend processes or native launches. Only source inspection and independent Python arithmetic used to author oracles and re-derive every expected value, including the five defect vectors, against backend/src/checked.rs token-level finiteness semantics. Authored on worktree branch test/expand-batteries at HEAD c1834b5, whose backend/catalog and backend/src trees are byte-identical to 2cca03e (only sibling lanes' test files differ, verified via git diff). Main must execute Rust tests and parent process scenarios at integration HEAD.",
+  "untested_gaps": [
+    "32 authored tests and 29 parent process scenarios remain unexecuted by this worker.",
+    "Five admitted-domain numerical regressions intentionally retain correct expectations; release remains blocked pending Main execution/fixes.",
+    "No native image approval claimed by tester; V2BatteriesRun owns six-image review.",
+    "Physical hardware calibration, battery chemistry/temperature/aging, two-phase electrochemistry and finite-cell transport applicability remain outside these closed-form models.",
+    "No exhaustive binary64 search or cross-platform runtime claim."
+  ],
+  "suspected_defects": [
+    {
+      "code": "BAT-N1",
+      "severity": "medium",
+      "id": "batteries.peukert_runtime",
+      "location": "backend/catalog/batteries.json:338",
+      "inputs": {
+        "rated_capacity": 1.0,
+        "rated_duration": 1e+200,
+        "load_current": 1e+200,
+        "peukert_exponent": 1.0
+      },
+      "expected_outputs": {
+        "rated_current": 1e-200,
+        "runtime": 1e-200,
+        "delivered_capacity": 1.0
+      },
+      "evidence": "rated_current/load_current is 1e-400 and rounds to zero before multiplication by rated_duration. At n=1 the independent runtime C/I is 1e-200 h.",
+      "minimal_correction": "Compute runtime using a scale-safe relation to delivered capacity rather than underflowing the current ratio.",
+      "verification": "Source/independent-arithmetic inference only; no engine execution. Regression intentionally asserts correct results."
+    },
+    {
+      "code": "BAT-N2",
+      "severity": "medium",
+      "id": "batteries.peukert_runtime",
+      "location": "backend/catalog/batteries.json:338",
+      "inputs": {
+        "rated_capacity": 1.0,
+        "rated_duration": 1e+200,
+        "load_current": 1.0,
+        "peukert_exponent": 2.0
+      },
+      "expected_outputs": {
+        "rated_current": 1e-200,
+        "runtime": 1e-200,
+        "delivered_capacity": 1e-200
+      },
+      "evidence": "Squaring current ratio 1e-200 underflows although rated_duration times the square is 1e-200 h. Reviewer independently reported this vector.",
+      "minimal_correction": "Reorder output evaluation and use runtime=delivered_capacity/load_current for this case; preserve arbitrary exponent domain.",
+      "verification": "Source/independent-arithmetic inference only; no engine execution. Regression intentionally asserts correct results."
+    },
+    {
+      "code": "BAT-N3",
+      "severity": "medium",
+      "id": "batteries.kinetic_charge_recovery",
+      "location": "backend/catalog/batteries.json:450",
+      "inputs": {
+        "maximum_charge": 1e+201,
+        "available_fraction": 0.5,
+        "available_initial": 2e+200,
+        "bound_initial": 2e+200,
+        "equalization_rate": 1e+200,
+        "pulse_current": 1e+200,
+        "pulse_duration": 1.0
+      },
+      "expected_outputs": {
+        "available_final": 1.5e+200,
+        "bound_final": 1.5e+200,
+        "total_final": 3e+200
+      },
+      "evidence": "Bound-well depletion multiplies I(1-c)t by lambda*t before multiplying its compensating ratio, causing intermediate overflow. Reviewer reported this vector.",
+      "minimal_correction": "Evaluate the dimensionless (lambda*t)*expm1mx_ratio(-lambda*t) factor before applying pulse charge; preserve its tiny-x limit.",
+      "verification": "Source/independent-arithmetic inference only; no engine execution. Regression intentionally asserts correct results."
+    },
+    {
+      "code": "BAT-N4",
+      "severity": "medium",
+      "id": "batteries.intercalation_regular_solution",
+      "location": "backend/catalog/batteries.json:575",
+      "inputs": {
+        "midpoint_voltage": 0.0,
+        "temperature": 300.0,
+        "interaction_energy": 0.0,
+        "filling_fraction": 1e-307,
+        "full_insertion_charge": 1.0
+      },
+      "expected_outputs": {
+        "equilibrium_voltage": 18.27461380565276,
+        "voltage_slope": -2.5851999787322405e+305,
+        "chemical_capacitance": 3.86817270705066e-306
+      },
+      "evidence": "RT/[x(1-x)] overflows before division by F; (RT/F)/[x(1-x)] and every requested output remain finite.",
+      "minimal_correction": "Scale RT by F before dividing by x(1-x), retaining interaction contribution and negative slope.",
+      "verification": "Source/independent-arithmetic inference only; no engine execution. Regression intentionally asserts correct results."
+    },
+    {
+      "code": "BAT-N5",
+      "severity": "medium",
+      "id": "batteries.intercalation_regular_solution",
+      "location": "backend/catalog/batteries.json:581",
+      "inputs": {
+        "midpoint_voltage": 0.2,
+        "temperature": 320.0,
+        "interaction_energy": -1200.0,
+        "filling_fraction": 0.25,
+        "full_insertion_charge": 1e+305
+      },
+      "expected_outputs": {
+        "equilibrium_voltage": 0.2365133080905016,
+        "voltage_slope": -0.17194340152153895,
+        "chemical_capacitance": 5.815867263011732e+305
+      },
+      "evidence": "Qmax*F overflows before subsequent divisions; -Qmax/voltage_slope remains finite. Reviewer identified mechanism; regression uses independent nondefault electrode.",
+      "minimal_correction": "Use chemical_capacitance=-full_insertion_charge/voltage_slope after conditioned slope evaluation.",
+      "verification": "Source/independent-arithmetic inference only; no engine execution. Regression intentionally asserts correct results."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "batteries.series_weakest_cell",
+      "inputs": {
+        "capacity_one": 4.0,
+        "capacity_two": 2.0,
+        "capacity_three": 8.0,
+        "soc_one": 0.75,
+        "soc_two": 0.875,
+        "soc_three": 0.5,
+        "soc_floor": 0.25
+      },
+      "expected_outputs": {
+        "usable_charge": 1.25,
+        "end_soc_one": 0.4375,
+        "end_soc_two": 0.25,
+        "end_soc_three": 0.34375
+      },
+      "action": "Select calculator in native desktop, enter all nondefault fields, calculate, inspect each result and exact-key diagram legend.",
+      "rationale": "Independent cell margins 2, 1.25, 2 Ah; extract 1.25 Ah through every cell."
+    },
+    {
+      "id": "batteries.coulomb_state_cycle",
+      "inputs": {
+        "full_capacity": 8.0,
+        "initial_soc": 0.75,
+        "discharge_current": 3.0,
+        "discharge_time": 2400.0,
+        "charge_current": 4.0,
+        "charge_time": 1800.0,
+        "charge_efficiency": 0.75
+      },
+      "expected_outputs": {
+        "discharged_soc": 0.5,
+        "stored_charge": 1.5,
+        "final_soc": 0.6875
+      },
+      "action": "Select calculator in native desktop, enter all nondefault fields, calculate, inspect each result and exact-key diagram legend.",
+      "rationale": "Start with 6 Ah; remove 2 Ah; retain 1.5 of 2 Ah recharge. Final charge is 5.5 Ah."
+    },
+    {
+      "id": "batteries.peukert_runtime",
+      "inputs": {
+        "rated_capacity": 72.0,
+        "rated_duration": 12.0,
+        "load_current": 24.0,
+        "peukert_exponent": 1.5
+      },
+      "expected_outputs": {
+        "rated_current": 6.0,
+        "runtime": 1.5,
+        "delivered_capacity": 36.0
+      },
+      "action": "Select calculator in native desktop, enter all nondefault fields, calculate, inspect each result and exact-key diagram legend.",
+      "rationale": "Conserved I^(3/2)*t: fourfold current gives one-eighth rated duration and half capacity."
+    },
+    {
+      "id": "batteries.kinetic_charge_recovery",
+      "inputs": {
+        "maximum_charge": 200.0,
+        "available_fraction": 0.25,
+        "available_initial": 20.0,
+        "bound_initial": 120.0,
+        "equalization_rate": 0.5,
+        "pulse_current": 2.0,
+        "pulse_duration": 2.0
+      },
+      "expected_outputs": {
+        "available_final": 26.585446705942694,
+        "bound_final": 109.4145532940573,
+        "total_final": 136.0
+      },
+      "action": "Select calculator in native desktop, enter all nondefault fields, calculate, inspect each result and exact-key diagram legend.",
+      "rationale": "Independent imbalance ODE: delta=q1-cQ, delta prime=-lambda*delta-(1-c)I; Q=136 and delta=-3-12/e."
+    },
+    {
+      "id": "batteries.intercalation_regular_solution",
+      "inputs": {
+        "midpoint_voltage": 0.2,
+        "temperature": 320.0,
+        "interaction_energy": -1200.0,
+        "filling_fraction": 0.25,
+        "full_insertion_charge": 2400.0
+      },
+      "expected_outputs": {
+        "equilibrium_voltage": 0.2365133080905016,
+        "voltage_slope": -0.17194340152153895,
+        "chemical_capacitance": 13958.081431228156
+      },
+      "action": "Select calculator in native desktop, enter all nondefault fields, calculate, inspect each result and exact-key diagram legend.",
+      "rationale": "At x=1/4 entropy derivative is -RT ln 3; interaction derivative -600. Curvature RT(4+4/3)+2400 sets slope and capacitance."
+    },
+    {
+      "id": "batteries.sand_depletion_limit",
+      "inputs": {
+        "salt_diffusivity": 2e-10,
+        "salt_concentration": 800.0,
+        "plating_current_density": 160.0,
+        "cation_transference": 0.25
+      },
+      "expected_outputs": {
+        "sand_time": 64.99200739336196,
+        "sand_areal_charge": 10398.721182937914,
+        "diffusion_length": 0.00011401053231466114
+      },
+      "action": "Select calculator in native desktop, enter all nondefault fields, calculate, inspect each result and exact-key diagram legend.",
+      "rationale": "Boundary flux J=120/F mol/(m\u00b2 s); solve c_surface=800-2J sqrt(t/(pi D))=0, then integrate current and diffusion length."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "series_weakest_cell_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.series_weakest_cell",
+        "inputs": {
+          "capacity_one": 4.0,
+          "capacity_two": 2.0,
+          "capacity_three": 8.0,
+          "soc_one": 0.75,
+          "soc_two": 0.875,
+          "soc_three": 0.5,
+          "soc_floor": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent cell margins 2, 1.25, 2 Ah; extract 1.25 Ah through every cell.",
+      "expected_outputs": {
+        "usable_charge": 1.25,
+        "end_soc_one": 0.4375,
+        "end_soc_two": 0.25,
+        "end_soc_three": 0.34375
+      }
+    },
+    {
+      "name": "coulomb_state_cycle_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.coulomb_state_cycle",
+        "inputs": {
+          "full_capacity": 8.0,
+          "initial_soc": 0.75,
+          "discharge_current": 3.0,
+          "discharge_time": 2400.0,
+          "charge_current": 4.0,
+          "charge_time": 1800.0,
+          "charge_efficiency": 0.75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Start with 6 Ah; remove 2 Ah; retain 1.5 of 2 Ah recharge. Final charge is 5.5 Ah.",
+      "expected_outputs": {
+        "discharged_soc": 0.5,
+        "stored_charge": 1.5,
+        "final_soc": 0.6875
+      }
+    },
+    {
+      "name": "peukert_runtime_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.peukert_runtime",
+        "inputs": {
+          "rated_capacity": 72.0,
+          "rated_duration": 12.0,
+          "load_current": 24.0,
+          "peukert_exponent": 1.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conserved I^(3/2)*t: fourfold current gives one-eighth rated duration and half capacity.",
+      "expected_outputs": {
+        "rated_current": 6.0,
+        "runtime": 1.5,
+        "delivered_capacity": 36.0
+      }
+    },
+    {
+      "name": "kinetic_charge_recovery_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 200.0,
+          "available_fraction": 0.25,
+          "available_initial": 20.0,
+          "bound_initial": 120.0,
+          "equalization_rate": 0.5,
+          "pulse_current": 2.0,
+          "pulse_duration": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent imbalance ODE: delta=q1-cQ, delta prime=-lambda*delta-(1-c)I; Q=136 and delta=-3-12/e.",
+      "expected_outputs": {
+        "available_final": 26.585446705942694,
+        "bound_final": 109.4145532940573,
+        "total_final": 136.0
+      }
+    },
+    {
+      "name": "intercalation_regular_solution_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.intercalation_regular_solution",
+        "inputs": {
+          "midpoint_voltage": 0.2,
+          "temperature": 320.0,
+          "interaction_energy": -1200.0,
+          "filling_fraction": 0.25,
+          "full_insertion_charge": 2400.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "At x=1/4 entropy derivative is -RT ln 3; interaction derivative -600. Curvature RT(4+4/3)+2400 sets slope and capacitance.",
+      "expected_outputs": {
+        "equilibrium_voltage": 0.2365133080905016,
+        "voltage_slope": -0.17194340152153895,
+        "chemical_capacitance": 13958.081431228156
+      }
+    },
+    {
+      "name": "sand_depletion_limit_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.sand_depletion_limit",
+        "inputs": {
+          "salt_diffusivity": 2e-10,
+          "salt_concentration": 800.0,
+          "plating_current_density": 160.0,
+          "cation_transference": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Boundary flux J=120/F mol/(m\u00b2 s); solve c_surface=800-2J sqrt(t/(pi D))=0, then integrate current and diffusion length.",
+      "expected_outputs": {
+        "sand_time": 64.99200739336196,
+        "sand_areal_charge": 10398.721182937914,
+        "diffusion_length": 0.00011401053231466114
+      }
+    },
+    {
+      "name": "series_weakest_cell_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.series_weakest_cell",
+        "inputs": {
+          "capacity_one": 4.0,
+          "capacity_two": 2.0,
+          "capacity_three": 8.0,
+          "soc_one": 0.75,
+          "soc_two": 0.125,
+          "soc_three": 0.5,
+          "soc_floor": 0.25
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reject initial state below common floor without clamping."
+    },
+    {
+      "name": "series_weakest_cell_valid_after_error",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.series_weakest_cell",
+        "inputs": {
+          "capacity_one": 4.0,
+          "capacity_two": 2.0,
+          "capacity_three": 8.0,
+          "soc_one": 0.75,
+          "soc_two": 0.875,
+          "soc_three": 0.5,
+          "soc_floor": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follow preceding invalid request in the same parent process; Independent cell margins 2, 1.25, 2 Ah; extract 1.25 Ah through every cell.",
+      "expected_outputs": {
+        "usable_charge": 1.25,
+        "end_soc_one": 0.4375,
+        "end_soc_two": 0.25,
+        "end_soc_three": 0.34375
+      }
+    },
+    {
+      "name": "coulomb_state_cycle_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.coulomb_state_cycle",
+        "inputs": {
+          "full_capacity": 8.0,
+          "initial_soc": 0.75,
+          "discharge_current": 3.0,
+          "discharge_time": 8000.0,
+          "charge_current": 4.0,
+          "charge_time": 7200.0,
+          "charge_efficiency": 0.75
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reject intermediate exhaustion even though later recharge produces positive final SOC."
+    },
+    {
+      "name": "coulomb_state_cycle_valid_after_error",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.coulomb_state_cycle",
+        "inputs": {
+          "full_capacity": 8.0,
+          "initial_soc": 0.75,
+          "discharge_current": 3.0,
+          "discharge_time": 2400.0,
+          "charge_current": 4.0,
+          "charge_time": 1800.0,
+          "charge_efficiency": 0.75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follow preceding invalid request in the same parent process; Start with 6 Ah; remove 2 Ah; retain 1.5 of 2 Ah recharge. Final charge is 5.5 Ah.",
+      "expected_outputs": {
+        "discharged_soc": 0.5,
+        "stored_charge": 1.5,
+        "final_soc": 0.6875
+      }
+    },
+    {
+      "name": "peukert_runtime_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.peukert_runtime",
+        "inputs": {
+          "rated_capacity": 72.0,
+          "rated_duration": 12.0,
+          "load_current": 24.0,
+          "peukert_exponent": 0.99
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reject exponent below one."
+    },
+    {
+      "name": "peukert_runtime_valid_after_error",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.peukert_runtime",
+        "inputs": {
+          "rated_capacity": 72.0,
+          "rated_duration": 12.0,
+          "load_current": 24.0,
+          "peukert_exponent": 1.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follow preceding invalid request in the same parent process; Conserved I^(3/2)*t: fourfold current gives one-eighth rated duration and half capacity.",
+      "expected_outputs": {
+        "rated_current": 6.0,
+        "runtime": 1.5,
+        "delivered_capacity": 36.0
+      }
+    },
+    {
+      "name": "kinetic_charge_recovery_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 200.0,
+          "available_fraction": 0.25,
+          "available_initial": 20.0,
+          "bound_initial": 30.0,
+          "equalization_rate": 0.5,
+          "pulse_current": 2.0,
+          "pulse_duration": 2.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reject reversed initial well heights: available height 80 exceeds bound height 40."
+    },
+    {
+      "name": "kinetic_charge_recovery_valid_after_error",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 200.0,
+          "available_fraction": 0.25,
+          "available_initial": 20.0,
+          "bound_initial": 120.0,
+          "equalization_rate": 0.5,
+          "pulse_current": 2.0,
+          "pulse_duration": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follow preceding invalid request in the same parent process; Independent imbalance ODE: delta=q1-cQ, delta prime=-lambda*delta-(1-c)I; Q=136 and delta=-3-12/e.",
+      "expected_outputs": {
+        "available_final": 26.585446705942694,
+        "bound_final": 109.4145532940573,
+        "total_final": 136.0
+      }
+    },
+    {
+      "name": "intercalation_regular_solution_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.intercalation_regular_solution",
+        "inputs": {
+          "midpoint_voltage": 0.2,
+          "temperature": 320.0,
+          "interaction_energy": 6000.0,
+          "filling_fraction": 0.01,
+          "full_insertion_charge": 2400.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reject globally two-phase interaction even where local curvature is positive."
+    },
+    {
+      "name": "intercalation_regular_solution_valid_after_error",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.intercalation_regular_solution",
+        "inputs": {
+          "midpoint_voltage": 0.2,
+          "temperature": 320.0,
+          "interaction_energy": -1200.0,
+          "filling_fraction": 0.25,
+          "full_insertion_charge": 2400.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follow preceding invalid request in the same parent process; At x=1/4 entropy derivative is -RT ln 3; interaction derivative -600. Curvature RT(4+4/3)+2400 sets slope and capacitance.",
+      "expected_outputs": {
+        "equilibrium_voltage": 0.2365133080905016,
+        "voltage_slope": -0.17194340152153895,
+        "chemical_capacitance": 13958.081431228156
+      }
+    },
+    {
+      "name": "sand_depletion_limit_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.sand_depletion_limit",
+        "inputs": {
+          "salt_diffusivity": 2e-10,
+          "salt_concentration": 800.0,
+          "plating_current_density": 160.0,
+          "cation_transference": 1.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reject singular unit transference; no finite depletion time exists."
+    },
+    {
+      "name": "sand_depletion_limit_valid_after_error",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.sand_depletion_limit",
+        "inputs": {
+          "salt_diffusivity": 2e-10,
+          "salt_concentration": 800.0,
+          "plating_current_density": 160.0,
+          "cation_transference": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follow preceding invalid request in the same parent process; Boundary flux J=120/F mol/(m\u00b2 s); solve c_surface=800-2J sqrt(t/(pi D))=0, then integrate current and diffusion length.",
+      "expected_outputs": {
+        "sand_time": 64.99200739336196,
+        "sand_areal_charge": 10398.721182937914,
+        "diffusion_length": 0.00011401053231466114
+      }
+    },
+    {
+      "name": "cycle_overcharge",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.coulomb_state_cycle",
+        "inputs": {
+          "full_capacity": 8.0,
+          "initial_soc": 0.75,
+          "discharge_current": 3.0,
+          "discharge_time": 2400.0,
+          "charge_current": 4.0,
+          "charge_time": 7200.0,
+          "charge_efficiency": 0.75
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Retaining 6 Ah after discharge leaves 10 Ah in an 8 Ah battery; reject overcharge."
+    },
+    {
+      "name": "cycle_recovery_after_overcharge",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.coulomb_state_cycle",
+        "inputs": {
+          "full_capacity": 8.0,
+          "initial_soc": 0.75,
+          "discharge_current": 3.0,
+          "discharge_time": 2400.0,
+          "charge_current": 4.0,
+          "charge_time": 1800.0,
+          "charge_efficiency": 0.75
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Same-process valid recovery after overcharge.",
+      "expected_outputs": {
+        "discharged_soc": 0.5,
+        "stored_charge": 1.5,
+        "final_soc": 0.6875
+      }
+    },
+    {
+      "name": "kinetic_available_exhaustion",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 200.0,
+          "available_fraction": 0.25,
+          "available_initial": 20.0,
+          "bound_initial": 120.0,
+          "equalization_rate": 0.0,
+          "pulse_current": 10.0,
+          "pulse_duration": 2.0001
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Bound well remains charged but cannot feed disconnected available well; reject exhausted interval."
+    },
+    {
+      "name": "kinetic_exact_exhaustion_endpoint",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 200.0,
+          "available_fraction": 0.25,
+          "available_initial": 20.0,
+          "bound_initial": 120.0,
+          "equalization_rate": 0.0,
+          "pulse_current": 10.0,
+          "pulse_duration": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately recover to inclusive q1=0 endpoint; binary inputs give exact zero without an absolute allowance.",
+      "expected_outputs": {
+        "available_final": 0.0,
+        "bound_final": 120.0,
+        "total_final": 120.0
+      }
+    },
+    {
+      "name": "kinetic_tiny_rest_transfer",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 200.0,
+          "available_fraction": 0.25,
+          "available_initial": 0.0,
+          "bound_initial": 80.0,
+          "equalization_rate": 1e-18,
+          "pulse_current": 0.0,
+          "pulse_duration": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Taylor solution q1=20(x-x\u00b2/2+...) at x=1e-18 retains nonzero available charge, with no absolute floor.",
+      "expected_outputs": {
+        "available_final": 2e-17,
+        "bound_final": 80.0,
+        "total_final": 80.0
+      }
+    },
+    {
+      "name": "sand_tiny_diffusivity",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.sand_depletion_limit",
+        "inputs": {
+          "salt_diffusivity": 1e-300,
+          "salt_concentration": 800.0,
+          "plating_current_density": 160.0,
+          "cation_transference": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Numerical-domain probe: time and length scale linearly with diffusivity; D*t underflows but sqrt(D*t) is representable.",
+      "expected_outputs": {
+        "sand_time": 3.2496003696680983e-289,
+        "sand_areal_charge": 5.199360591468957e-287,
+        "diffusion_length": 5.700526615733057e-295
+      }
+    },
+    {
+      "name": "BAT-N1_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.peukert_runtime",
+        "inputs": {
+          "rated_capacity": 1.0,
+          "rated_duration": 1e+200,
+          "load_current": 1e+200,
+          "peukert_exponent": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Expected success; source-inferred failure, NOT executed. rated_current/load_current is 1e-400 and rounds to zero before multiplication by rated_duration. At n=1 the independent runtime C/I is 1e-200 h. Numerical-domain stress, not a calibrated hardware claim.",
+      "expected_outputs": {
+        "rated_current": 1e-200,
+        "runtime": 1e-200,
+        "delivered_capacity": 1.0
+      }
+    },
+    {
+      "name": "BAT-N2_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.peukert_runtime",
+        "inputs": {
+          "rated_capacity": 1.0,
+          "rated_duration": 1e+200,
+          "load_current": 1.0,
+          "peukert_exponent": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Expected success; source-inferred failure, NOT executed. Squaring current ratio 1e-200 underflows although rated_duration times the square is 1e-200 h. Reviewer independently reported this vector. Numerical-domain stress, not a calibrated hardware claim.",
+      "expected_outputs": {
+        "rated_current": 1e-200,
+        "runtime": 1e-200,
+        "delivered_capacity": 1e-200
+      }
+    },
+    {
+      "name": "BAT-N3_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.kinetic_charge_recovery",
+        "inputs": {
+          "maximum_charge": 1e+201,
+          "available_fraction": 0.5,
+          "available_initial": 2e+200,
+          "bound_initial": 2e+200,
+          "equalization_rate": 1e+200,
+          "pulse_current": 1e+200,
+          "pulse_duration": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Expected success; source-inferred failure, NOT executed. Bound-well depletion multiplies I(1-c)t by lambda*t before multiplying its compensating ratio, causing intermediate overflow. Reviewer reported this vector. Numerical-domain stress, not a calibrated hardware claim.",
+      "expected_outputs": {
+        "available_final": 1.5e+200,
+        "bound_final": 1.5e+200,
+        "total_final": 3e+200
+      }
+    },
+    {
+      "name": "BAT-N4_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.intercalation_regular_solution",
+        "inputs": {
+          "midpoint_voltage": 0.0,
+          "temperature": 300.0,
+          "interaction_energy": 0.0,
+          "filling_fraction": 1e-307,
+          "full_insertion_charge": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Expected success; source-inferred failure, NOT executed. RT/[x(1-x)] overflows before division by F; (RT/F)/[x(1-x)] and every requested output remain finite. Numerical-domain stress, not a calibrated hardware claim.",
+      "expected_outputs": {
+        "equilibrium_voltage": 18.27461380565276,
+        "voltage_slope": -2.5851999787322405e+305,
+        "chemical_capacitance": 3.86817270705066e-306
+      }
+    },
+    {
+      "name": "BAT-N5_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "batteries.intercalation_regular_solution",
+        "inputs": {
+          "midpoint_voltage": 0.2,
+          "temperature": 320.0,
+          "interaction_energy": -1200.0,
+          "filling_fraction": 0.25,
+          "full_insertion_charge": 1e+305
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Expected success; source-inferred failure, NOT executed. Qmax*F overflows before subsequent divisions; -Qmax/voltage_slope remains finite. Reviewer identified mechanism; regression uses independent nondefault electrode. Numerical-domain stress, not a calibrated hardware claim.",
+      "expected_outputs": {
+        "equilibrium_voltage": 0.2365133080905016,
+        "voltage_slope": -0.17194340152153895,
+        "chemical_capacitance": 5.815867263011732e+305
+      }
+    }
+  ],
+  "tolerance_policy": "Relative tolerance 1e-12 and no absolute floor for process scenarios. Exact binary zero endpoints are exact. Rust centered finite-difference test uses 1e-8 relative to cover O(h\u00b2) truncation; near-critical subtraction uses 1e-10 relative. Numerical stress vectors are mathematical conditioning tests, not realistic hardware ratings.",
+  "sources": [
+    "research/expansion/batteries.md and .json",
+    "docs/features/batteries.md",
+    "coordination/expansion/BACKLOG.md items 029-034",
+    "backend/catalog/batteries.json unchanged from 4c46fa1 through 2cca03e",
+    "backend/tests/common/mod.rs",
+    "backend/tests/magnetics.rs"
+  ]
+}
