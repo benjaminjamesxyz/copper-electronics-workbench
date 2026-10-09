@@ -232,5 +232,156 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "timing.uart_sampling_margin",
+    "title": "UART baud mismatch and stop-sample margin",
+    "category": "Digital interfaces",
+    "level": "expert",
+    "description": "Estimate the worst first-stop-bit sampling margin from independent transmitter and receiver baud rates, frame length and start-edge quantization.",
+    "formula": "n = 1 + data_bits + parity_bits + 0.5; early = n/B_rx - (n-0.5)/B_tx - guard; late = (n+0.5)/B_tx - n/B_rx - 1/(S B_rx) - guard",
+    "assumptions": [
+      "One start bit and one stop bit, independent constant baud clocks, ideal bit boundaries, and sample times centered relative to the detected start edge.",
+      "Start-edge detection is delayed by between zero and one oversample tick; no early-detection offset or mid-frame resynchronization.",
+      "A single center sample is modeled; majority voting, receiver-specific filters, fractional dividers and exact manufacturer tolerance tables are not modeled.",
+      "The optional guard subtracts additional settling/jitter allowance at each stop-bit boundary.",
+      "Positive minimum margin is only a necessary timing-budget result for this simplified receiver model, not proof of communication reliability. Negative margin identifies a possible framing failure."
+    ],
+    "references": [
+      {
+        "title": "Microchip USART: Asynchronous Receiver, oversampling and stop-bit sampling",
+        "url": "https://onlinedocs.microchip.com/oxy/GUID-4D282FC5-82FC-4934-8BAD-D4A5D8422E6C-en-US-7/GUID-D742E4B3-493C-4FD7-8A7C-DE55893B1017.html"
+      },
+      {
+        "title": "Microchip AVR USART: Asynchronous Data Reception, center-sample majority voting",
+        "url": "https://onlinedocs.microchip.com/oxy/GUID-0EC909F9-8FB7-46B2-BF4B-05290662B5C3-en-US-12.1.1/GUID-694A5C41-8200-43BB-94E7-D49D1E6F1E43.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "baud_tx",
+        "label": "Actual transmitter baud rate",
+        "unit": "baud",
+        "default": 9600,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "baud_rx",
+        "label": "Actual receiver baud rate",
+        "unit": "baud",
+        "default": 9700,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "data_bits",
+        "label": "Data bits per frame",
+        "unit": "1",
+        "default": 8,
+        "min": 5,
+        "max": 9
+      },
+      {
+        "key": "parity_bits",
+        "label": "Parity bit count",
+        "unit": "1",
+        "default": 0,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "oversample",
+        "label": "Receiver oversampling factor",
+        "unit": "1",
+        "default": 16,
+        "min": 8,
+        "max": 16
+      },
+      {
+        "key": "guard_time",
+        "label": "Additional bit-boundary timing guard",
+        "unit": "s",
+        "default": 0,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "mismatch_percent",
+        "label": "Receiver baud error relative to transmitter",
+        "unit": "%",
+        "expression": "100*(baud_rx/baud_tx-1)"
+      },
+      {
+        "key": "stop_center_time",
+        "label": "Nominal first-stop-bit sample time",
+        "unit": "s",
+        "expression": "(1+data_bits+parity_bits+0.5)/baud_rx"
+      },
+      {
+        "key": "sync_quantization",
+        "label": "Maximum start-edge detection delay",
+        "unit": "s",
+        "expression": "1/(oversample*baud_rx)"
+      },
+      {
+        "key": "early_margin",
+        "label": "Worst margin after stop-bit beginning",
+        "unit": "s",
+        "expression": "stop_center_time-(1+data_bits+parity_bits)/baud_tx-guard_time"
+      },
+      {
+        "key": "late_margin",
+        "label": "Worst margin before stop-bit ending",
+        "unit": "s",
+        "expression": "(2+data_bits+parity_bits)/baud_tx-stop_center_time-sync_quantization-guard_time"
+      },
+      {
+        "key": "minimum_margin",
+        "label": "Minimum stop-sample margin (negative means risk)",
+        "unit": "s",
+        "expression": "min(early_margin,late_margin)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "data_bits",
+        "op": "==",
+        "right": "floor(data_bits)",
+        "message": "Data bit count must be an integer."
+      },
+      {
+        "left": "parity_bits",
+        "op": "==",
+        "right": "floor(parity_bits)",
+        "message": "Parity bit count must be zero or one."
+      },
+      {
+        "left": "(oversample-8)*(oversample-16)",
+        "op": "==",
+        "right": "0",
+        "message": "This model supports 8x or 16x oversampling."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "baud_tx": 9600,
+        "baud_rx": 9700,
+        "data_bits": 8,
+        "parity_bits": 0,
+        "oversample": 16,
+        "guard_time": 0
+      },
+      "expected": {
+        "mismatch_percent": 1.0416666666666667,
+        "stop_center_time": 0.000979381443298969,
+        "sync_quantization": 6.443298969072165e-06,
+        "early_margin": 4.188144329896905e-05,
+        "late_margin": 5.5841924398625466e-05,
+        "minimum_margin": 4.188144329896905e-05
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

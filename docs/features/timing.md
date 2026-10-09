@@ -119,3 +119,62 @@ Cross-input/model constraints (evaluated before outputs):
 | `peak_excursion` | Peak victim voltage excursion | V | `0.6321205588285577` | `c_mutual/(c_mutual+c_victim)*voltage_swing*(-expm1(-edge_time/victim_time_constant)/(edge_time/victim_time_constant))` |
 | `fast_edge_limit` | Capacitive-divider fast-edge limit | V | `1` | `c_mutual/(c_mutual+c_victim)*voltage_swing` |
 
+## 4. UART baud mismatch and stop-sample margin — expert
+
+**ID:** `timing.uart_sampling_margin`
+
+**Purpose:** Expose accumulated transmitter/receiver baud mismatch over a frame and estimate whether the first stop-bit center sample can leave the ideal stop-bit interval.
+
+**Derivation:** With one start bit, D data bits, P parity bits and one stop bit, the transmitter stop bit begins at `(1+D+P)/B_tx` and ends at `(2+D+P)/B_tx`. Set `n = 1+D+P+0.5`. The nominal receiver stop sample is `n/B_rx`. If the receiver recognizes a falling start edge on the next oversampling tick, detection delay lies in `[0, 1/(S B_rx)]`. Therefore the earliest sample is `n/B_rx` and latest is `n/B_rx + 1/(S B_rx)`.
+
+Subtract guard G at each boundary:
+
+- `early_margin = n/B_rx - (n-0.5)/B_tx - G`.
+- `late_margin = (n+0.5)/B_tx - n/B_rx - 1/(S B_rx) - G`.
+- `minimum_margin = min(early_margin, late_margin)`.
+- `mismatch_percent = 100(B_rx/B_tx - 1)`.
+
+The first-stop sample is farther from the start than all data/parity center samples; with constant baud mismatch the accumulated drift is largest there. This does not model waveform distortion or a hardware voting algorithm.
+
+**Dimensions/domain:** Actual B_tx/B_rx in baud and strictly positive; D is an integer 5–9; P is 0 or 1; S is 8 or 16; guard nonnegative seconds. All time outputs in s and mismatch in %. Mismatch is signed receiver-relative-to-transmitter, not generator error versus a desired nominal baud. Negative margins intentionally remain valid results.
+
+**Limits:** This is a derived ideal-center sampling budget informed by oversampling receiver descriptions, **not** a manufacturer acceptance-limit formula. Some hardware votes on three central samples, filters start detection, resynchronizes, or has additional fixed offsets. Consult the actual peripheral's tolerance tables. Positive margin does not certify reliable communication; start detection, analog settling/noise, oscillator PVT drift and jitter still matter. For hardware where start phase can be early or exceeds one tick, this particular model does not apply.
+
+**Independent example:** B_tx = 9600 baud, B_rx = 9700 baud, D = 8, P = 0, S = 16, G = 0:
+
+- Mismatch `= 100 × 100/9600 = +1.041666666667%`.
+- Nominal stop center `= 9.5/9700 = 979.381443299 us`.
+- Detection quantization `= 1/155200 = 6.443298969 us`.
+- Transmitter stop begins at `9/9600 = 937.5 us`, ends at `10/9600 = 1041.666666667 us`.
+- Early margin `= 41.881443299 us`; late margin `= 55.841924399 us`.
+- Minimum margin `= 41.881443299 us`.
+
+**Primary sources:** [Microchip USART Asynchronous Receiver](https://onlinedocs.microchip.com/oxy/GUID-4D282FC5-82FC-4934-8BAD-D4A5D8422E6C-en-US-7/GUID-D742E4B3-493C-4FD7-8A7C-DE55893B1017.html), 16x oversampling, mid-bit start recognition and stop-bit sampling; [Microchip AVR Asynchronous Data Reception](https://onlinedocs.microchip.com/oxy/GUID-0EC909F9-8FB7-46B2-BF4B-05290662B5C3-en-US-12.1.1/GUID-694A5C41-8200-43BB-94E7-D49D1E6F1E43.html), majority-vote behavior that motivates the hardware-specific limitation. Manufacturer indexed content was available through web search; direct Microchip HTML retrieval returned HTTP 503 during research.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `baud_tx` | Actual transmitter baud rate | baud | `9600` | > 0 |
+| `baud_rx` | Actual receiver baud rate | baud | `9700` | > 0 |
+| `data_bits` | Data bits per frame | 1 | `8` | >= 5; <= 9 |
+| `parity_bits` | Parity bit count | 1 | `0` | >= 0; <= 1 |
+| `oversample` | Receiver oversampling factor | 1 | `16` | >= 8; <= 16 |
+| `guard_time` | Additional bit-boundary timing guard | s | `0` | >= 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- `data_bits == floor(data_bits)` — Data bit count must be an integer.
+- `parity_bits == floor(parity_bits)` — Parity bit count must be zero or one.
+- `(oversample-8)*(oversample-16) == 0` — This model supports 8x or 16x oversampling.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `mismatch_percent` | Receiver baud error relative to transmitter | % | `1.0416666666666667` | `100*(baud_rx/baud_tx-1)` |
+| `stop_center_time` | Nominal first-stop-bit sample time | s | `0.000979381443298969` | `(1+data_bits+parity_bits+0.5)/baud_rx` |
+| `sync_quantization` | Maximum start-edge detection delay | s | `6.443298969072165e-06` | `1/(oversample*baud_rx)` |
+| `early_margin` | Worst margin after stop-bit beginning | s | `4.188144329896905e-05` | `stop_center_time-(1+data_bits+parity_bits)/baud_tx-guard_time` |
+| `late_margin` | Worst margin before stop-bit ending | s | `5.5841924398625466e-05` | `(2+data_bits+parity_bits)/baud_tx-stop_center_time-sync_quantization-guard_time` |
+| `minimum_margin` | Minimum stop-sample margin (negative means risk) | s | `4.188144329896905e-05` | `min(early_margin,late_margin)` |
+
