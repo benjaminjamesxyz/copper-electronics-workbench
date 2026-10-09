@@ -536,3 +536,92 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 
 - [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 23-24, Scaling Summer](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
 
+## 5. `opamps.integrator_constant_input` — intermediate
+
+### Physical problem and connections
+
+Calculate an active integrator's constant-input output ramp over a finite interval, starting from a known output/capacitor state. The input element is `R`; the feedback element is `C`; the noninverting pin is a constant reference. This is an op-amp computation stage, not passive exponential capacitor charging.
+
+### Derivation
+
+The input current is `(Vin-Vref)/R`. Feedback-capacitor current leaving the summing node is `C d(Vref-Vo)/dt = -C dVo/dt`. KCL therefore gives
+
+\[
+\frac{dV_o}{dt}=-\frac{V_{in}-V_{ref}}{RC}.
+\]
+
+Integrating a constant input over duration `t` gives
+
+\[
+V_o(t)=V_{initial}-\frac{V_{in}-V_{ref}}{RC}t.
+\]
+
+`RC` has seconds units, so the slope is V/s and the endpoint is V. H p. 21 establishes the integrator relation; pp. 55–58 explain practical integrator concerns.
+
+### Domain and limitations
+
+`R>0`, `C>0`, `duration>=0`. Both initial and final output must be within the actual output range. Because the modeled slope is constant, endpoint checks cover the full interval; a zero-duration case is valid. The reference must be inside the input common-mode range. Initial charge/reset must be known. No parallel leakage resistor, capacitor leakage, bias/offset drift, reset transient or arbitrary waveform integration is modeled. A practical integrator may require reset or DC stabilization; adequate slew rate and loop gain are separate prerequisites.
+
+### Independent example — all expected outputs
+
+`R=10,000 ohm`, `C=100 nF=1e-7 F`, `Vin=0.25 V`, `Vref=0 V`, `Vinitial=1 V`, `duration=2 ms=0.002 s`; ranges ±10 V.
+
+`RC=0.001 s`; input current is 25 microA.
+
+- `output_slope = -0.25/0.001 = -250 V/s`.
+- The capacitor receives `25 microA * 2 ms = 50 nC`, corresponding to a 0.5 V change on 100 nF.
+- `v_final = 1-0.5 = 0.5 V`.
+
+Both output endpoints (1 and 0.5 V) and the 0 V pin voltage pass their domains.
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `r_input` | Input resistance | ohm | `10000.0` | > 0.0 |
+| `c_feedback` | Feedback capacitance | F | `1e-07` | > 0.0 |
+| `v_in` | Constant input voltage | V | `0.25` | Any finite value, subject to relational guards |
+| `v_reference` | Noninverting reference voltage | V | `0.0` | Any finite value, subject to relational guards |
+| `v_initial` | Initial output voltage | V | `1.0` | Any finite value, subject to relational guards |
+| `duration` | Integration interval | s | `0.002` | >= 0.0 |
+| `v_out_min` | Minimum linear output voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_out_max` | Maximum linear output voltage | V | `10.0` | Any finite value, subject to relational guards |
+| `v_cm_min` | Minimum input common-mode voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_cm_max` | Maximum input common-mode voltage | V | `10.0` | Any finite value, subject to relational guards |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `output_slope` | V/s | `-(v_in-v_reference)/(r_input*c_feedback)` | `-250.0` |
+| `v_final` | V | `v_initial+output_slope*duration` | `0.5` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `v_out_min < v_out_max`: Output limits must be ordered.
+- Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
+- Require `v_reference >= v_cm_min`: Reference is below the input common-mode range.
+- Require `v_reference <= v_cm_max`: Reference is above the input common-mode range.
+- Require `v_initial >= v_out_min`: Initial output is below the linear output range.
+- Require `v_initial <= v_out_max`: Initial output is above the linear output range.
+- Require `v_initial-(v_in-v_reference)*duration/(r_input*c_feedback) >= v_out_min`: Final output is below the linear output range.
+- Require `v_initial-(v_in-v_reference)*duration/(r_input*c_feedback) <= v_out_max`: Final output is above the linear output range.
+
+### Catalog model assumptions
+
+- R is the input resistor and C is the feedback capacitor; the noninverting input is held at a constant Vref.
+- Input is constant throughout the interval; initial output is set by the capacitor's known initial charge or a reset operation.
+- Ideal stable op amp, lossless capacitor, no parallel bleed resistor, negligible bias current and offset. Real integrators drift or saturate and usually require reset or DC stabilization.
+- The model applies after startup transients while output slew and bandwidth are adequate; it does not predict reset-switch behavior or passive capacitor charging.
+- Both endpoint outputs must be inside the actual linear-swing range. A constant slope makes these endpoint checks sufficient throughout the interval.
+
+### Feature sources
+
+- [TI SBOA092B: Handbook of Operational Amplifier Applications, p. 21 and pp. 55-58](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
+
