@@ -234,3 +234,134 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 
 - [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 24-25 and 74-75](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
 
+## 8. `opamps.dominant_pole_gain_bandwidth` — expert
+
+### Physical problem
+
+Estimate the closed-loop pole, low-frequency gain deficit, and conventional GBW/noise-gain approximation of a resistive-feedback voltage-feedback amplifier. This accounts for finite open-loop gain rather than merely repeating calculator 2's ideal resistor gain.
+
+### Definition of GBW
+
+Use the dominant-pole model
+
+\[
+A(s)=\frac{A_0}{1+s/\omega_p},\quad \omega_p=2\pi f_p.
+\]
+
+Here the entered `gain_bandwidth` is the asymptotic product `A0 fp`. For a single pole,
+
+\[
+|A(j2\pi f)|=\frac{A_0}{\sqrt{1+(f/f_p)^2}},
+\]
+
+so the exact unity-gain crossing is `fp sqrt(A0^2-1)`, **not** exactly `A0 fp`. They approach equality for large A0. S section 5.16 explicitly distinguishes unity-gain bandwidth and GBW. B section 4 uses the conventional high-A0 unity-frequency parameterization; this catalog labels the asymptotic product explicitly so finite-gain algebra stays consistent. No exact unity-crossing result is separately counted as another calculator.
+
+### Derivation
+
+Suppress the independent source to find the resistive feedback factor:
+
+\[
+\beta=\frac{R_g}{R_f+R_g},\qquad N=1/\beta=1+R_f/R_g.
+\]
+
+For the noninverting/noise-path transfer,
+
+\[
+H(s)=\frac{A(s)}{1+\beta A(s)}
+=\frac{A_0}{1+A_0/N+s/\omega_p}.
+\]
+
+Putting this in normalized one-pole form gives
+
+\[
+G_{dc}=\frac{A_0}{1+A_0/N},\qquad
+f_{cl}=f_p(1+A_0/N),\qquad f_p=GBW/A_0.
+\]
+
+The closed-loop bandwidth is the minus-3-dB frequency **relative to its actual finite DC gain**. For large loop gain,
+
+\[
+f_{cl}\approx GBW/N.
+\]
+
+The fractional gain deficit relative to ideal noninverting gain N is
+
+\[
+1-\frac{G_{dc}}{N}=\frac{1}{1+A_0/N}.
+\]
+
+Using this direct reciprocal rather than subtracting two near-equal floats avoids unnecessary numerical cancellation. B section 4 supplies the single-pole conventional feedback derivation; S sections 2.1 and 5.16 establish finite-loop-gain and specification definitions.
+
+For an inverting signal source through `Rg`, the signed DC signal gain is instead
+
+\[
+G_{inv,dc}=-\frac{R_f/R_g}{1+N/A_0},
+\]
+
+while its denominator and bandwidth use the **same noise gain N**. Do not divide GBW by the magnitude of inverting signal gain. `dc_gain` in the catalog is explicitly the noninverting/noise-path gain, not that signed inverting gain.
+
+### Domain and limitations
+
+`Rg>0`, `Rf>=0`, `A0>1`, `GBW>0`. The minimum stable noise gain is entered from the device documentation and must be at least 1; enforce `1+Rf/Rg >= minimum_stable_noise_gain`. Source resistance belongs in `Rg` after independent sources are suppressed.
+
+The finite-gain formulas are exact **within this single-pole model**; the `approximate_bandwidth` output requires high loop gain for accuracy. A low A0/N does not create a division singularity; its large `relative_gain_error` is the appropriate warning. Decompensated amplifiers may require a minimum noise gain. The extra constraint is necessary, not sufficient, for real stability: additional poles, capacitive loading, source/feedback reactance and layout parasitics are not represented. Current-feedback amplifiers, large-signal slew limits and active phase-correction schemes are excluded. A0 and GBW must correspond to compatible supply/load/temperature conditions.
+
+### Independent example — all expected outputs
+
+`Rg=10,000 ohm`, `Rf=90,000 ohm`, `A0=100,000 V/V`, `GBW=10,000,000 Hz`, `minimum_stable_noise_gain=1 V/V`.
+
+- `noise_gain = 1+90000/10000 = 10 V/V`.
+- `open_loop_pole = 10000000/100000 = 100 Hz`.
+- Loop gain at DC is `A0/N=10000`.
+- `dc_gain = 100000/10001 = 9.99900009999 V/V`.
+- `closed_loop_bandwidth = 100*(1+10000) = 1,000,100 Hz`.
+- `approximate_bandwidth = 10000000/10 = 1,000,000 Hz`.
+- `relative_gain_error = 1/10001 = 0.00009999000099990002`, approximately 0.009999%.
+
+The exact DC-gain/pole product is `100000/10001 * (100*10001) = 10,000,000 Hz`, an independent algebraic cross-check. Noise gain 10 exceeds the entered stability minimum 1. All example values are finite and all denominators positive.
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `r_ground` | Resistance to AC ground | ohm | `10000.0` | > 0.0 |
+| `r_feedback` | Feedback resistance | ohm | `90000.0` | >= 0.0 |
+| `open_loop_gain` | DC open-loop voltage gain A0 | V/V | `100000.0` | > 1.0 |
+| `gain_bandwidth` | Dominant-pole asymptotic GBW | Hz | `10000000.0` | > 0.0 |
+| `minimum_stable_noise_gain` | Device minimum stable noise gain | V/V | `1.0` | >= 1.0 |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `noise_gain` | V/V | `1+r_feedback/r_ground` | `10.0` |
+| `open_loop_pole` | Hz | `gain_bandwidth/open_loop_gain` | `100.0` |
+| `dc_gain` | V/V | `open_loop_gain/(1+open_loop_gain/noise_gain)` | `9.99900009999` |
+| `closed_loop_bandwidth` | Hz | `open_loop_pole*(1+open_loop_gain/noise_gain)` | `1000100.0` |
+| `approximate_bandwidth` | Hz | `gain_bandwidth/noise_gain` | `1000000.0` |
+| `relative_gain_error` | 1 | `1/(1+open_loop_gain/noise_gain)` | `9.999000099990002e-05` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `1+r_feedback/r_ground >= minimum_stable_noise_gain`: Feedback noise gain is below the device minimum stable gain.
+
+### Catalog model assumptions
+
+- Voltage-feedback op amp modeled as A(s)=A0/(1+s/(2 pi fp)); purely resistive, frequency-independent feedback factor beta=1/N.
+- GBW denotes the dominant-pole asymptote A0*fp, not the exact unity-gain crossing. Exact single-pole unity crossing is fp*sqrt(A0^2-1). The distinction is negligible at large A0 but remains conceptually important.
+- Gdc is the noninverting/noise-path gain. For an inverting stage, signed DC signal gain is -(Rf/Rg)/(1+N/A0), not Gdc; both stages have the same modeled pole for the same feedback network.
+- Rg is the resistance from the inverting input to AC ground with independent sources suppressed, including source resistance. Purely resistive source/feedback networks only.
+- Single-pole approximation only; additional poles, capacitive loading, feedback parasitics, current-feedback amplifiers and slew limitation are excluded. This is not a stability certification.
+- Minimum stable noise gain is entered from device documentation; the catalog checks N against that requirement. GBW and A0 must be taken at matching supply, load and temperature.
+
+### Feature sources
+
+- [TI SLOA185: Extending Op Amp Bandwidth using Active Feedback Phase Correction, section 4, equations 1-3](https://www.ti.com/lit/an/sloa185/sloa185.pdf)
+- [TI SLOA011B: Understanding Operational Amplifier Specifications, sections 2.1 and 5.16](https://www.ti.com/lit/an/sloa011b/sloa011b.pdf)
+

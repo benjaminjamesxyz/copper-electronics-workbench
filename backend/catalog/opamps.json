@@ -329,5 +329,135 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opamps.dominant_pole_gain_bandwidth",
+    "title": "Finite-gain dominant-pole amplifier bandwidth",
+    "category": "Operational amplifier stages",
+    "level": "expert",
+    "description": "Estimate resistive-feedback bandwidth and finite-open-loop gain error, distinguishing noise gain from inverting signal gain.",
+    "formula": "N = 1+Rf/Rg; fp = GBW/A0; Gdc = A0/(1+A0/N); fcl = fp(1+A0/N); fcl_approx = GBW/N; relative_error = 1/(1+A0/N)",
+    "assumptions": [
+      "Voltage-feedback op amp modeled as A(s)=A0/(1+s/(2 pi fp)); purely resistive, frequency-independent feedback factor beta=1/N.",
+      "GBW denotes the dominant-pole asymptote A0*fp, not the exact unity-gain crossing. Exact single-pole unity crossing is fp*sqrt(A0^2-1). The distinction is negligible at large A0 but remains conceptually important.",
+      "Gdc is the noninverting/noise-path gain. For an inverting stage, signed DC signal gain is -(Rf/Rg)/(1+N/A0), not Gdc; both stages have the same modeled pole for the same feedback network.",
+      "Rg is the resistance from the inverting input to AC ground with independent sources suppressed, including source resistance. Purely resistive source/feedback networks only.",
+      "Single-pole approximation only; additional poles, capacitive loading, feedback parasitics, current-feedback amplifiers and slew limitation are excluded. This is not a stability certification.",
+      "Minimum stable noise gain is entered from device documentation; the catalog checks N against that requirement. GBW and A0 must be taken at matching supply, load and temperature."
+    ],
+    "references": [
+      {
+        "title": "TI SLOA185: Extending Op Amp Bandwidth using Active Feedback Phase Correction, section 4, equations 1-3",
+        "url": "https://www.ti.com/lit/an/sloa185/sloa185.pdf"
+      },
+      {
+        "title": "TI SLOA011B: Understanding Operational Amplifier Specifications, sections 2.1 and 5.16",
+        "url": "https://www.ti.com/lit/an/sloa011b/sloa011b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_ground",
+        "label": "Resistance to AC ground",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_feedback",
+        "label": "Feedback resistance",
+        "unit": "ohm",
+        "default": 90000.0,
+        "min": 0.0
+      },
+      {
+        "key": "open_loop_gain",
+        "label": "DC open-loop voltage gain A0",
+        "unit": "V/V",
+        "default": 100000.0,
+        "min": 1.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gain_bandwidth",
+        "label": "Dominant-pole asymptotic GBW",
+        "unit": "Hz",
+        "default": 10000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "minimum_stable_noise_gain",
+        "label": "Device minimum stable noise gain",
+        "unit": "V/V",
+        "default": 1.0,
+        "min": 1.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "noise_gain",
+        "label": "Ideal noise gain",
+        "unit": "V/V",
+        "expression": "1+r_feedback/r_ground"
+      },
+      {
+        "key": "open_loop_pole",
+        "label": "Open-loop dominant pole",
+        "unit": "Hz",
+        "expression": "gain_bandwidth/open_loop_gain"
+      },
+      {
+        "key": "dc_gain",
+        "label": "Finite noninverting/noise-path DC gain",
+        "unit": "V/V",
+        "expression": "open_loop_gain/(1+open_loop_gain/noise_gain)"
+      },
+      {
+        "key": "closed_loop_bandwidth",
+        "label": "Single-pole closed-loop minus-3-dB bandwidth",
+        "unit": "Hz",
+        "expression": "open_loop_pole*(1+open_loop_gain/noise_gain)"
+      },
+      {
+        "key": "approximate_bandwidth",
+        "label": "High-loop-gain bandwidth approximation",
+        "unit": "Hz",
+        "expression": "gain_bandwidth/noise_gain"
+      },
+      {
+        "key": "relative_gain_error",
+        "label": "Fractional DC gain deficit from ideal",
+        "unit": "1",
+        "expression": "1/(1+open_loop_gain/noise_gain)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "1+r_feedback/r_ground",
+        "op": ">=",
+        "right": "minimum_stable_noise_gain",
+        "message": "Feedback noise gain is below the device minimum stable gain."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_ground": 10000.0,
+        "r_feedback": 90000.0,
+        "open_loop_gain": 100000.0,
+        "gain_bandwidth": 10000000.0,
+        "minimum_stable_noise_gain": 1.0
+      },
+      "expected": {
+        "noise_gain": 10.0,
+        "open_loop_pole": 100.0,
+        "dc_gain": 9.99900009999,
+        "closed_loop_bandwidth": 1000100.0,
+        "approximate_bandwidth": 1000000.0,
+        "relative_gain_error": 9.999000099990002e-05
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
