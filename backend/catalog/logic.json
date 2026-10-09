@@ -634,5 +634,137 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "logic.fifo_envelope_depth",
+    "title": "Hardware FIFO depth from burst and service guarantees",
+    "category": "Digital logic and interfaces",
+    "level": "intermediate",
+    "description": "Size usable FIFO word storage and its bit capacity from a bounded burst/sustained arrival envelope and a guaranteed latency-rate read service; also estimate the FIFO delay bound.",
+    "formula": "alpha(t)=b+r*t; beta(t)=R*max(0,t-T); for R>=r, Bmax=b+r*T; usable_depth=ceil(Bmax); storage_bits=word_bits*usable_depth; delay_bound=T+b/R",
+    "assumptions": [
+      "One initially empty hardware FIFO with fixed-width words and FIFO-ordered service. The arrival bound b+r*t must hold for every time interval, not merely on average.",
+      "Read service must guarantee a rate-latency service curve R*max(0,t-T). service_latency includes all bounded arbitration stalls, CDC/empty-flag delay and one word-service interval for asynchronous completion phase.",
+      "The entered latency is at least 1/service_rate for this whole-word asynchronous service model. Service rate must be at least the sustained arrival rate; otherwise no finite perpetual-depth guarantee exists.",
+      "Calculated depth is a sufficient usable capacity under these envelopes, not necessarily the smallest depth for a known discrete schedule. Add implementation-reserved entries, ECC/metadata and vendor memory granularity separately; no implicit power-of-two rounding.",
+      "This sizes storage, not synchronizer reliability, Gray-pointer correctness, metastability containment or absolute interface timing. Unbounded stalls or an invalid arrival/service guarantee invalidate the result."
+    ],
+    "references": [
+      {
+        "title": "Le Boudec and Thiran, Network Calculus, section 1.4.1, Theorems 1.4.1-1.4.2 and Figure 1.10",
+        "url": "https://leboudec.github.io/netcal/latex/netCalBook.pdf"
+      },
+      {
+        "title": "Stanford EE183, Synchronization in Digital Logic Circuits, pages 5-7: dual-port hardware FIFOs and conservative pointer synchronization",
+        "url": "https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "burst_words",
+        "label": "Arrival-envelope burst allowance",
+        "unit": "word",
+        "default": 64,
+        "min": 1
+      },
+      {
+        "key": "arrival_rate",
+        "label": "Bounded sustained word arrival rate",
+        "unit": "word/s",
+        "default": 25000000,
+        "min": 0
+      },
+      {
+        "key": "service_rate",
+        "label": "Guaranteed read service rate",
+        "unit": "word/s",
+        "default": 50000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "service_latency",
+        "label": "Guaranteed service latency including word phase",
+        "unit": "s",
+        "default": 1e-06,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "word_bits",
+        "label": "Stored bits per word",
+        "unit": "bit/word",
+        "default": 32,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "backlog_bound",
+        "label": "Arrival/service backlog upper bound",
+        "unit": "word",
+        "expression": "burst_words+arrival_rate*service_latency"
+      },
+      {
+        "key": "usable_depth",
+        "label": "Sufficient whole-word usable FIFO depth",
+        "unit": "word",
+        "expression": "ceil(backlog_bound)"
+      },
+      {
+        "key": "storage_bits",
+        "label": "Usable FIFO data storage",
+        "unit": "bit",
+        "expression": "word_bits*usable_depth"
+      },
+      {
+        "key": "delay_bound",
+        "label": "FIFO word delay upper bound",
+        "unit": "s",
+        "expression": "service_latency+burst_words/service_rate"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "burst_words",
+        "op": "==",
+        "right": "floor(burst_words)",
+        "message": "Burst allowance must be a whole number of words"
+      },
+      {
+        "left": "word_bits",
+        "op": "==",
+        "right": "floor(word_bits)",
+        "message": "Word width must be a whole number of bits"
+      },
+      {
+        "left": "service_rate",
+        "op": ">=",
+        "right": "arrival_rate",
+        "message": "Guaranteed service rate must cover the sustained arrival rate"
+      },
+      {
+        "left": "service_latency",
+        "op": ">=",
+        "right": "1/service_rate",
+        "message": "Whole-word asynchronous service latency must include at least one word-service interval"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "burst_words": 64,
+        "arrival_rate": 25000000,
+        "service_rate": 50000000,
+        "service_latency": 1e-06,
+        "word_bits": 32
+      },
+      "expected": {
+        "backlog_bound": 89,
+        "usable_depth": 89,
+        "storage_bits": 2848,
+        "delay_bound": 2.28e-06
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

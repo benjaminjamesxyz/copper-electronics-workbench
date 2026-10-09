@@ -356,3 +356,83 @@ Cross-input constraints:
 
 - [David Harris, Logical Effort, pages 6-9 and 13-16: d=gh+p, equal stage effort and backward sizing](https://bears.ece.ucsb.edu/class/ece224a/Harris_logical_effort.pdf)
 
+## 6. `logic.fifo_envelope_depth` — intermediate
+
+### Purpose and novelty
+
+Size actual on-chip FIFO data storage for a digital interface with bounded burst traffic and delayed guaranteed read service. Nearest baseline: `timing.uart_sampling_margin` checks receiver bit-sampling alignment; timer division checks a generated rate. Neither predicts queue occupancy or memory capacity. New metastability reliability evaluates whether CDC sampling fails; this model instead budgets the backlog created by otherwise correct clock-domain and arbitration latency. It adds a hardware storage design problem, not a different protocol name for a timing-margin calculation.
+
+### Model and limits
+
+Le Boudec–Thiran section 1.4.1 defines backlog as the maximum vertical deviation between arrival and service curves. Figure 1.10 gives the specialization for:
+
+- arrival envelope alpha(t)=b+r·t for every interval of positive duration;
+- service curve beta(t)=R·max(0,t−T);
+- r≤R.
+
+Before T, alpha−beta rises to b+rT. After T its slope is r−R≤0. Thus the maximum is B=b+rT. The horizontal-deviation delay bound is T+b/R.
+
+Catalog outputs:
+
+- `backlog_bound = burst_words + arrival_rate*service_latency` in words;
+- `usable_depth = ceil(backlog_bound)` in whole words;
+- `storage_bits = usable_depth*word_bits` in data bits;
+- `delay_bound = service_latency + burst_words/service_rate` in seconds.
+
+The result is a conservative sufficient capacity, not a claim that a particular discrete clock schedule needs exactly this many entries. Burst and word width are positive whole numbers. Sustained rate may be zero. Guaranteed service is positive and may equal arrival rate. If R<r, perpetual worst-case backlog is unbounded, so reject rather than provide a misleading finite depth.
+
+For this hardware specialization, the service latency must include at least one word-service interval 1/R. A one-word-at-a-time read interface with arbitrary phase cannot guarantee completed-word fluid service from t=0. Include that phase allowance plus worst-case CDC/empty-flag visibility, arbitration and service interruptions in the guaranteed curve. This does not require inventing a universal number of synchronizer stages. T is a service-curve latency valid across busy periods, not just a one-time boot stall or an average observed delay.
+
+Stanford pages 5–7 establish the hardware context: dual-port storage, clock-domain pointers and conservative status. Capacity is **usable** data words. A FIFO implementation that reserves an entry, rounds to a memory primitive, stores ECC or imposes conservative full-flag thresholds must add those implementation costs. No Gray-pointer or synchronizer correctness is certified. A source violating b+rt or a reader with unbounded stalls invalidates the bound. “Average write clock less than read clock” alone is insufficient.
+
+### Complete independent example
+
+Inputs: `burst_words=64`, `arrival_rate=25e6 word/s`, `service_rate=50e6 word/s`, `service_latency=1e-6 s`, `word_bits=32 bit/word`.
+
+R≥r and T≥1/R=20e-9 s.
+
+- `backlog_bound = 64 + 25e6×1e-6 = 89 words`.
+- `usable_depth = ceil(89) = 89 words`.
+- `storage_bits = 89×32 = 2848 bits`.
+- `delay_bound = 1e-6+64/50e6 = 2.28e-6 s`.
+
+89 usable words are the envelope-based data capacity; a chosen 128-word memory primitive is an implementation choice, not another model output.
+
+### Independent test cases
+
+- Nominal: all four outputs above.
+- Equal-rate limit: set arrival rate=service rate=50e6 word/s; backlog=depth=114 words, bits=3648, delay=2.28e-6 s. The backlog stays bounded; do not reject equality.
+- One finite burst: set arrival rate=0; backlog=depth=64, bits=2048, delay=2.28e-6 s.
+- Minimum admitted asynchronous word-phase latency: T=1/50e6=20e-9 s with other nominal inputs gives backlog=64.5, depth=65, bits=2080, delay=1.3e-6 s. The fractional bound rounds upward.
+- Binary-exact rounding example: b=3 words, r=2 word/s, R=4 word/s, T=0.75 s, width=8; backlog=4.5, depth=5, bits=40, delay=1.5 s.
+- Invalid: R<r; R≤0; T<1/R; fractional/zero/negative burst or word width; negative arrival rate; nonfinite inputs. An invalid envelope in real traffic is outside what numerical validation can detect.
+
+### Illustration and accessible quantity bindings
+
+One 700×280 hardware/storage and envelope diagram. Left third: source block “Burst b, sustained r” → FIFO block → reader block “Guaranteed R after T”; label arrows with `arrival_rate` and `service_rate`, and bind `burst_words` to source and `usable_depth` to FIFO. Bind `word_bits` beneath the memory block and `storage_bits` in a separate capacity callout.
+
+Right half: illustrative cumulative-word axes. Show alpha as a line starting at a positive burst intercept, and beta flat until a marked T then rising with slope at least alpha's slope. Bind the T callout to `service_latency`. A vertical brace at T identifies `backlog_bound`; a separate horizontal brace shows the delay concept and binds `delay_bound`. Do not depict actual measured occupancy as alpha or beta. The diagram is a bound construction, not an executed discrete-event trace. If this layout is too dense, retain source/FIFO/reader across the upper half and use a single clear envelope plot below, with secondary capacity values in the existing quantity legend.
+
+Caption: “Storage bound from an arrival envelope and guaranteed read-service curve, not average rates. Curves are illustrative; T includes whole-word phase and bounded interface stalls. Depth is usable data capacity before implementation overhead.”
+
+### Catalog input units and bounds
+
+| Key | Unit | Default | Bounds |
+|---|---|---|---|
+| `burst_words` | word | `64` | >= 1 |
+| `arrival_rate` | word/s | `25000000` | >= 0 |
+| `service_rate` | word/s | `50000000` | > 0 |
+| `service_latency` | s | `1e-06` | > 0 |
+| `word_bits` | bit/word | `32` | >= 1 |
+
+Cross-input constraints:
+- `burst_words == floor(burst_words)` — Burst allowance must be a whole number of words.
+- `word_bits == floor(word_bits)` — Word width must be a whole number of bits.
+- `service_rate >= arrival_rate` — Guaranteed service rate must cover the sustained arrival rate.
+- `service_latency >= 1/service_rate` — Whole-word asynchronous service latency must include at least one word-service interval.
+
+### Sources
+
+- [Le Boudec and Thiran, Network Calculus, section 1.4.1, Theorems 1.4.1-1.4.2 and Figure 1.10](https://leboudec.github.io/netcal/latex/netCalBook.pdf)
+- [Stanford EE183, Synchronization in Digital Logic Circuits, pages 5-7: dual-port hardware FIFOs and conservative pointer synchronization](https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf)
+
