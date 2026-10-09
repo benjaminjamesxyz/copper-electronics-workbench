@@ -314,4 +314,92 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "measurement.sampling_jitter_snr",
+  "title": "Sinusoidal sampling-jitter noise limit",
+  "category": "Hardware measurement and metrology",
+  "level": "intermediate",
+  "description": "Predict input-referred sampling error and jitter-only SNR from analog signal slope and measured total RMS sampling-time uncertainty.",
+  "formula": "sigma_phase=2 pi f sigma_t; Verror_rms=Vpeak sigma_phase/sqrt(2); SNR_jitter=-20 log10(2 pi f sigma_t)",
+  "assumptions": [
+    "Input is a sinusoid and sampling-time error has zero mean, is independent of signal phase, and is represented by total RMS jitter over the relevant measurement bandwidth.",
+    "First-order slope approximation; RMS phase error is at most 0.1 rad. For Gaussian jitter this bounds the RMS-error linearization bias to approximately 0.125 percent.",
+    "Jitter-only SNR excludes quantization, thermal noise, spurs, deterministic coherent timing modulation and analog distortion. Do not substitute peak-to-peak or period jitter for RMS aperture-time uncertainty.",
+    "Frequency, amplitude and jitter are positive because a noise-free or zero-signal SNR is not finite; use the aperture model for deterministic DC response."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments SNAP004, PLL Fundamentals Part 4: PLL Clocking Applications, pages 18-20",
+      "url": "https://www.ti.com/lit/pdf/snap004"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "frequency",
+      "label": "Analog input frequency",
+      "unit": "Hz",
+      "default": 10000000.0,
+      "min": 0.0,
+      "exclusive_min": true
+    },
+    {
+      "key": "timing_jitter",
+      "label": "Total RMS sampling-time jitter",
+      "unit": "s",
+      "default": 2e-12,
+      "min": 0.0,
+      "exclusive_min": true
+    },
+    {
+      "key": "input_peak",
+      "label": "Input sinusoid peak amplitude",
+      "unit": "V",
+      "default": 1.0,
+      "min": 0.0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "phase_jitter",
+      "label": "RMS input phase error",
+      "unit": "rad",
+      "expression": "2*pi*frequency*timing_jitter"
+    },
+    {
+      "key": "error_rms",
+      "label": "Jitter-induced RMS voltage error",
+      "unit": "V",
+      "expression": "(input_peak/sqrt(2))*(2*pi*frequency*timing_jitter)"
+    },
+    {
+      "key": "jitter_snr",
+      "label": "Jitter-only signal-to-noise ratio",
+      "unit": "dB",
+      "expression": "-20*(log10(2*pi)+log10(frequency)+log10(timing_jitter))"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "2*pi*frequency*timing_jitter",
+      "op": "<=",
+      "right": "0.1",
+      "message": "First-order jitter model requires RMS input phase error no greater than 0.1 rad"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "frequency": 10000000.0,
+      "timing_jitter": 2e-12,
+      "input_peak": 1.0
+    },
+    "expected": {
+      "phase_jitter": 0.00012566370614359174,
+      "error_rms": 8.885765876316733e-05,
+      "jitter_snr": 78.01580271955808
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

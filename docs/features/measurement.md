@@ -200,3 +200,43 @@ Time-domain waveform with a highlighted rectangular aperture from `t−T` to t. 
 
 Caption: “Uniform integration reports the aperture average at its end; the average corresponds to its midpoint. Whole-cycle sinusoids cancel, and negative sinc lobes invert the midpoint-referenced signal. Curves are explanatory, not computed.”
 
+
+## `measurement.sampling_jitter_snr`
+
+### Purpose, primary evidence and domain
+
+[Texas Instruments SNAP004, PLL Fundamentals Part 4: PLL Clocking Applications](https://www.ti.com/lit/pdf/snap004), pages 18–20, describes sampling jitter and derives RMS voltage error from the time derivative of a sinusoid. Page 7 also discusses integration bandwidth. The calculation consumes a single total RMS sampling-time uncertainty, not a second generic independent-noise sum.
+
+For `v(t)=A sin(2πft)` and small time error δt, `δv≈2π f A cos(2πft) δt`. With zero-mean jitter independent of phase and RMS σt:
+
+- `phase_jitter = 2π f σt` rad.
+- `error_rms = A*phase_jitter/sqrt(2)` V.
+- `jitter_snr = 20 log10[(A/sqrt(2))/error_rms] = −20 log10(2π f σt)` dB.
+
+The catalog calculates the logarithm as the sum of logarithms, avoiding premature underflow of a positive small product. It does not manufacture a finite SNR at exactly zero frequency, jitter or signal amplitude.
+
+The physical first-order approximation is explicitly bounded here by RMS input phase error ≤0.1 rad. For Gaussian timing error, the exact RMS signal-error ratio is `sqrt(2*(1−exp(−phase_jitter²/2)))`; comparison at 0.1 rad gives linearization overestimate 0.001250260091084865, or about 0.125%. This error estimate is specific to Gaussian jitter, while the linear result only uses the variance. Large rare non-Gaussian excursions may violate the approximation even with a small RMS. The model is not a quantization SNR, ENOB estimate or promise of ADC performance.
+
+### Complete independent example
+
+Inputs: `frequency=10e6 Hz`, `timing_jitter=2e-12 s RMS`, `input_peak=1 V`.
+
+`phase_jitter = 2π*(10e6)*(2e-12) = .00012566370614359174 rad`.
+
+The sinusoid's RMS slope is `2π*10e6/sqrt(2)=44428829.38158366 V/s`; multiplying by 2 ps gives `error_rms=.00008885765876316733 V`. Dividing 1/sqrt(2) V signal RMS by that error and taking 20 log10 gives `jitter_snr=78.01580271955808 dB`.
+
+### Tester handoff
+
+- Nominal: assert all three outputs.
+- Double only frequency to 20 MHz: phase=.0002513274122871835 rad, error=.00017771531752633465 V, SNR=71.99520280627846 dB. Doubling only jitter has the same effect.
+- Double only input amplitude: phase and SNR unchanged, error doubles. This distinguishes jitter SNR from an additive fixed-voltage noise model.
+- At the 0.1-rad boundary: error=A*.1/sqrt(2), SNR=20 dB. Values just above the bound are rejected; values below it remain valid.
+- Positive arbitrarily small jitter is physically admitted; no arbitrary time floor. SNR rises without a hard clamp. Guard against avoidable log-product underflow.
+- Reject frequency ≤0, jitter ≤0, amplitude ≤0, or phase product >0.1. Negative/zero jitter is not a meaningful finite-SNR case.
+
+### Mandatory diagram specification
+
+Draw one increasing portion of a sinusoid with a nominal sample dot. Place a horizontal timing-error bracket centered on the ideal instant, labeled `timing_jitter` with explicit “RMS, not peak-to-peak.” Project nearby sample instants vertically to illustrate corresponding voltage errors. Bind sine amplitude to `input_peak`, sine frequency to `frequency`; bind a separate RMS error annotation to `error_rms`. A slope tangent is labeled `dv/dt`, not numerically equated to `error_rms`. Right-hand equation callout: `σφ=2πfσt` binds `phase_jitter`; lower callout binds `jitter_snr`.
+
+Caption: “Sampling-time variation converts sinusoidal slope into voltage noise. Brackets illustrate uncertainty, not bounded worst-case jitter; the SNR excludes other ADC errors and requires small phase error.”
+
