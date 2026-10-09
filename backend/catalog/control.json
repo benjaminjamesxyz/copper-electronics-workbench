@@ -542,5 +542,106 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "control.integral_two_lag_stability",
+    "title": "Integral-regulator stability limit with plant and sensor lag",
+    "category": "Feedback and control design",
+    "level": "expert",
+    "description": "Find the strict integral-gain stability bound and onset frequency when both a plant pole and a feedback-sensor pole enter a voltage-regulation loop.",
+    "formula": "P(s)=K/(1+s tp); H(s)=1/(1+s ts); C(s)=Ki/s; tp ts s^3+(tp+ts)s^2+s+K Ki=0; Ki_critical=(1/tp+1/ts)/K; f_critical=1/(2 pi sqrt(tp ts))",
+    "assumptions": [
+      "Continuous-time SISO negative feedback; positive voltage-domain plant DC gain, one stable real plant pole and one stable real sensor pole.",
+      "Controller is a pure integrator with positive gain in 1/s; no proportional term, extra zeros, delay, sampling or saturation is included.",
+      "Routh-Hurwitz gives strict stability only when integral gain is below the reported critical gain. Equality gives an imaginary pole pair, not asymptotic stability.",
+      "The reported critical frequency is the oscillation frequency at the gain boundary, not the present loop crossover or an actual observed oscillation.",
+      "Negative Routh reserve and a gain factor below one intentionally expose an unstable proposed design. This bound is specific to the stated two-lag topology."
+    ],
+    "references": [
+      {
+        "title": "University of Illinois ECE486 Lecture 7: Routh-Hurwitz criterion, Example 3 cubic shortcut",
+        "url": "https://courses.physics.illinois.edu/ece486/sp2025/documentation/handbook/lec07.html"
+      },
+      {
+        "title": "Lehigh University ME450 Lecture 5, equations 10-19: feedback characteristic equation",
+        "url": "https://www.lehigh.edu/~eus204/teaching/ME450_SIRC/lectures/lecture05.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "plant_gain",
+        "label": "Plant DC voltage gain",
+        "unit": "1",
+        "default": 2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plant_time_constant",
+        "label": "Plant pole time constant",
+        "unit": "s",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "sensor_time_constant",
+        "label": "Feedback-sensor pole time constant",
+        "unit": "s",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "integral_gain",
+        "label": "Proposed pure-integrator gain",
+        "unit": "1/s",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "critical_integral_gain",
+        "label": "Marginal-stability integral gain",
+        "unit": "1/s",
+        "expression": "(1/plant_time_constant+1/sensor_time_constant)/plant_gain"
+      },
+      {
+        "key": "gain_factor_to_boundary",
+        "label": "Integral-gain factor to stability boundary",
+        "unit": "1",
+        "expression": "critical_integral_gain/integral_gain"
+      },
+      {
+        "key": "routh_reserve",
+        "label": "Normalized Routh reserve",
+        "unit": "1",
+        "expression": "(critical_integral_gain-integral_gain)/critical_integral_gain"
+      },
+      {
+        "key": "critical_frequency",
+        "label": "Oscillation frequency at marginal stability",
+        "unit": "Hz",
+        "expression": "1/(2*pi)/sqrt(plant_time_constant)/sqrt(sensor_time_constant)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "plant_gain": 2,
+        "plant_time_constant": 0.001,
+        "sensor_time_constant": 0.002,
+        "integral_gain": 100
+      },
+      "expected": {
+        "critical_integral_gain": 750,
+        "gain_factor_to_boundary": 7.5,
+        "routh_reserve": 0.8666666666666667,
+        "critical_frequency": 112.53953951963827
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

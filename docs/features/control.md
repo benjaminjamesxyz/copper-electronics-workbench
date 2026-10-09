@@ -296,3 +296,61 @@ Alongside, between x=510 and x=670, draw an artificial sawtooth ramp resetting e
 
 Caption: “The added sense ramp changes the cycle-to-cycle perturbation multiplier. Curves illustrate local CCM peak-current operation; full-period ramp swing is not the comparator ramp at turn-off.”
 
+## 6. `control.integral_two_lag_stability` — expert
+
+### Purpose, novelty and sources
+
+Find how a finite feedback-sensor pole limits a pure integral voltage regulator. The nearest baseline is `opamps.dominant_pole_gain_bandwidth`, but the present characteristic polynomial is cubic, with an independent sensor pole and an integrator-gain instability boundary. It is not another bandwidth calculation, passive cascade response or RLC step. It differs from the PI item in both controller topology and plant/sensor order: here the design question is the permissible gain range, not two-coefficient pole assignment.
+
+Source S gives the feedback characteristic equation. Source R, Example 3, states that a monic cubic `s³+a1s²+a2s+a3` is strictly stable iff all three coefficients are positive and `a1a2>a3`.
+
+### Equations, units, signs and validity
+
+Take voltage-domain `P(s)=K/(1+s tp)`, sensor `H(s)=1/(1+s ts)` and controller `C(s)=Ki/s` in negative feedback. Clearing `1+CPH=0` gives:
+
+`tp ts s³+(tp+ts)s²+s+K Ki=0`.
+
+All coefficients are positive when K, Ki, tp and ts are positive. Cubic Routh then reduces to:
+
+`(tp+ts)>tp ts K Ki`, or `Ki<Ki_critical=(1/tp+1/ts)/K`.
+
+Outputs:
+
+- `critical_integral_gain`: the strict upper boundary, with units 1/s.
+- `gain_factor_to_boundary=Ki_critical/Ki`: factor by which the present integrator gain reaches the boundary.
+- `routh_reserve=(Ki_critical-Ki)/Ki_critical`: signed normalized margin; this form retains nearby subtraction before normalization.
+- At equality, the characteristic polynomial factors as `(tp ts s²+1)(s+(tp+ts)/(tp ts))`. Hence `ωcritical=1/sqrt(tp ts)` and `critical_frequency=ωcritical/(2π)`.
+
+This frequency is a marginal-boundary mode, not the present loop crossover. Evaluate the reciprocal square roots separately to avoid forming an unnecessarily overflowing/underflowing time-constant product. A negative Routh reserve is an allowed diagnostic result. The equality is marginal, not strictly stable. Positive Ki is required because zero gain retains the uncontrolled integrator and gives an undefined gain ratio. The exact two-lag, no-delay topology is mandatory; other poles or sampling require a different analysis.
+
+### Complete independent example
+
+Inputs: `plant_gain=2`, `plant_time_constant=0.001 s`, `sensor_time_constant=0.002 s`, `integral_gain=100 1/s`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `critical_integral_gain` | `(1000+500)/2` | `750 1/s` |
+| `gain_factor_to_boundary` | `750/100` | `7.5` |
+| `routh_reserve` | `(750-100)/750=13/15` | `0.8666666666666667` |
+| `critical_frequency` | `1/(2πsqrt(0.001×0.002))` | `112.53953951963827 Hz` |
+
+Independent Routh arithmetic: the unnormalized cubic is `0.000002s³+0.003s²+s+200`. Its first column is `0.000002`, `0.003`, `(0.003-0.000002×200)/0.003=13/15`, `200`, all positive. At Ki=750, it factors as `(0.000002s²+1)(s+1500)`, yielding an imaginary pair at `±j707.1067811865476 rad/s`.
+
+### Independent test cases
+
+- Nominal: complete vector and independent Routh column above.
+- Ki=750: critical gain `750`, factor `1`, reserve `0`, same critical frequency; return marginal boundary rather than claiming strict stability.
+- Ki=1000: factor `0.75`, reserve `-1/3`, same critical gain/frequency; accepted unstable proposal.
+- Exchange plant and sensor time constants: all four outputs remain unchanged.
+- Set both time constants to `0.001 s`: critical gain `1000 1/s`, factor `10`, reserve `0.9`, critical frequency `1000/(2π) Hz`.
+- As the sensor time constant approaches zero positively, critical gain and boundary frequency grow; exactly zero is outside the two-lag model and must reject.
+- Reject nonpositive K/Ki/tp/ts and nonfinite inputs.
+
+### Mandatory diagram
+
+Reference r enters a plus/minus summer at `(90,80)`. Forward path goes through `Ki/s` at `(180,50)`–`(285,110)`, then plant `K/(1+s tp)` at `(350,50)`–`(520,110)`, then output y at `(660,80)`. Bind Ki to `integral_gain`, K to `plant_gain`, and tp to `plant_time_constant`. Take the feedback pickoff after the plant, route downward to a sensor block `1/(1+s ts)` at `(350,160)`–`(520,215)`, then route its output left into the negative input. The sensor signal travels right-to-left, so its arrow and block ports must agree. Bind ts to `sensor_time_constant`.
+
+In clear lower-left space, state `stable: Ki < Ki,crit`; bind `Ki,crit` to `critical_integral_gain`. A separate label `boundary mode` binds `critical_frequency`. Do not put the sensor pole in the forward plant or label the boundary frequency as present crossover. A small static pair of imaginary-axis crosses can illustrate marginal poles only if captioned “at Ki,crit”; no live root-locus plot is required.
+
+Caption: “A plant pole and a sensor pole make an integral loop cubic. The Routh bound is strict; the reported frequency belongs to the marginal-stability boundary, not the current operating loop.”
+
