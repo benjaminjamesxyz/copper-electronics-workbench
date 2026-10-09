@@ -449,5 +449,177 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "transients.rc_periodic_switching",
+    "title": "Periodic RC charging extrema under two-level excitation",
+    "category": "Passive transients",
+    "level": "intermediate",
+    "description": "Find periodic steady-state capacitor extrema and ripple for alternating source levels with arbitrary high and low durations, including incomplete charging memory between pulses.",
+    "formula": "a=exp(-Th/RC); b=exp(-Tl/RC); Vmin=[Vl(1-b)+b Vh(1-a)]/(1-ab); Vmax=Vmin+(Vh-Vmin)(1-a); Vavg=(VhTh+VlTl)/(Th+Tl)",
+    "assumptions": [
+      "An ideal voltage source switches between Vhigh and Vlow through one unchanged positive R into one linear capacitor; no DC load.",
+      "Periodic steady state is assumed, not the first pulse after startup. Vhigh>=Vlow defines extrema; source levels can be signed.",
+      "No frequency-domain filter synthesis, digital threshold, transistor switching loss or converter sizing is included.",
+      "Both pulse durations divided by RC must be at least 1e-7, retaining the researched conservative numerical domain. Exponential differences use expm1; ripple and edge currents are evaluated directly from the source-level difference rather than subtracting rounded absolute capacitor voltages."
+    ],
+    "references": [
+      {
+        "title": "Colorado State University ECE 202 Experiment 5: Square-wave RC step responses",
+        "url": "https://www.engr.colostate.edu/ECE202/common/LABS/Lab_5.pdf"
+      },
+      {
+        "title": "MIT 6.200: Arbitrary-initial-condition RC step solution",
+        "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r",
+        "label": "Series resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 0.001,
+        "max": 1000000000.0
+      },
+      {
+        "key": "c",
+        "label": "Capacitance",
+        "unit": "F",
+        "default": 1e-06,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "v_high",
+        "label": "High source level",
+        "unit": "V",
+        "default": 5.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "v_low",
+        "label": "Low source level",
+        "unit": "V",
+        "default": 0.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "time_high",
+        "label": "High-level duration",
+        "unit": "s",
+        "default": 0.001,
+        "min": 1e-15,
+        "max": 1000000000.0
+      },
+      {
+        "key": "time_low",
+        "label": "Low-level duration",
+        "unit": "s",
+        "default": 0.001,
+        "min": 1e-15,
+        "max": 1000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "tau",
+        "label": "Time constant",
+        "unit": "s",
+        "expression": "r*c"
+      },
+      {
+        "key": "high_decay",
+        "label": "High-interval decay factor",
+        "unit": "1",
+        "expression": "exp(-time_high/tau)"
+      },
+      {
+        "key": "low_decay",
+        "label": "Low-interval decay factor",
+        "unit": "1",
+        "expression": "exp(-time_low/tau)"
+      },
+      {
+        "key": "voltage_min",
+        "label": "Periodic capacitor minimum",
+        "unit": "V",
+        "expression": "v_low+(v_high-v_low)*low_decay*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))"
+      },
+      {
+        "key": "voltage_max",
+        "label": "Periodic capacitor maximum",
+        "unit": "V",
+        "expression": "v_low+(v_high-v_low)*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))"
+      },
+      {
+        "key": "ripple",
+        "label": "Capacitor peak-to-peak ripple",
+        "unit": "V",
+        "expression": "(v_high-v_low)*(-expm1(-time_high/tau))*(-expm1(-time_low/tau))/(-expm1(-(time_high+time_low)/tau))"
+      },
+      {
+        "key": "average_voltage",
+        "label": "Periodic average capacitor voltage",
+        "unit": "V",
+        "expression": "(v_high*time_high+v_low*time_low)/(time_high+time_low)"
+      },
+      {
+        "key": "high_initial_current",
+        "label": "Current immediately after rising source edge",
+        "unit": "A",
+        "expression": "(v_high-v_low)*(-expm1(-time_low/tau))/(-expm1(-(time_high+time_low)/tau))/r"
+      },
+      {
+        "key": "low_initial_current",
+        "label": "Current immediately after falling source edge",
+        "unit": "A",
+        "expression": "-(v_high-v_low)*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))/r"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_high",
+        "op": ">=",
+        "right": "v_low",
+        "message": "High source level must be at least the low source level."
+      },
+      {
+        "left": "time_high/(r*c)",
+        "op": ">=",
+        "right": "1e-7",
+        "message": "High interval must be at least 1e-7 time constants within the researched numerical domain."
+      },
+      {
+        "left": "time_low/(r*c)",
+        "op": ">=",
+        "right": "1e-7",
+        "message": "Low interval must be at least 1e-7 time constants within the researched numerical domain."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r": 1000.0,
+        "c": 1e-06,
+        "v_high": 5.0,
+        "v_low": 0.0,
+        "time_high": 0.001,
+        "time_low": 0.001
+      },
+      "expected": {
+        "tau": 0.001,
+        "high_decay": 0.36787944117144233,
+        "low_decay": 0.36787944117144233,
+        "voltage_min": 1.3447071068499756,
+        "voltage_max": 3.6552928931500244,
+        "ripple": 2.3105857863000487,
+        "average_voltage": 2.5,
+        "high_initial_current": 0.0036552928931500245,
+        "low_initial_current": -0.0036552928931500245
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

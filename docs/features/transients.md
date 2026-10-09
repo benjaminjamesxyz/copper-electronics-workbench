@@ -269,3 +269,81 @@ All input values for this independent example are `{"r":10.0,"l":0.001,"c":1e-05
 | `peak_voltage` | V | 5.815167674107903 | `v_step*(1+overshoot_fraction)` |
 | `envelope_settling_bound` | s | 0.0009498022444427963 | `ln(1/(error_fraction*sqrt(1-damping_ratio^2)))/alpha` |
 
+
+## `transients.rc_periodic_switching` — incomplete charging in periodic steady state
+
+**Level:** intermediate. **Design purpose:** find ripple and pulse-start currents when a capacitor never fully resets between successive high/low source intervals. Sources: [CSU square-wave RC laboratory](https://www.engr.colostate.edu/ECE202/common/LABS/Lab_5.pdf), [MIT one-interval RC solution](https://circuits.mit.edu/F25/psets/05/rc_tutorial).
+
+### Fixed-point derivation
+
+The same R and C apply in both intervals. Let `Th` and `Tl` be positive durations; define `a=exp(−Th/tau)` and `b=exp(−Tl/tau)`, `tau=RC`. At the beginning of the high interval, capacitor voltage is `Vmin`; at its end it is `Vmax`:
+
+`Vmax=Vh+(Vmin−Vh)a`.
+
+After the low interval, periodicity requires
+
+`Vmin=Vl+(Vmax−Vl)b`.
+
+Solving these **coupled periodic boundary conditions** yields
+
+`Vmin=[Vl(1−b)+b Vh(1−a)]/(1−ab)`,
+
+`Vmax=Vmin+(Vh−Vmin)(1−a)`,
+
+`Vripple=Vmax−Vmin`.
+
+The stable start-of-cycle recurrence has multiplier `ab<1`, which explains why startup conditions are forgotten. Over a whole cycle, integrating `tau dv/dt+v=Vs` makes the derivative integral vanish; therefore
+
+`Vaverage=(Vh Th+Vl Tl)/(Th+Tl)`.
+
+The current immediately after a rising source edge is `(Vh−Vmin)/R`; immediately after a falling edge it is `(Vl−Vmax)/R`. Source voltage jumps but capacitor voltage does not.
+
+### Domain and limitations
+
+`R,C,Th,Tl>0`, `Vh>=Vl`. The high/low names define extrema, not merely labels. Equal source levels give zero ripple. Steady periodic operation is required; this is not the first-pulse trajectory. No load, variable switching resistance or inductive parasitic is included. The catalog requires both durations normalized by RC to be at least `1e-7` as the conservative researched numerical domain; the implementation evaluates exponential differences with `expm1`. This restriction is numerical, not a physical lower bound on pulse width.
+
+### Independent worked example
+
+`R=1 kohm`, `C=1 microF`, `Vh=5 V`, `Vl=0`, `Th=Tl=1 ms`.
+
+- `tau=0.001 s`; `a=b=exp(−1)=0.3678794411714423`.
+- Symmetry simplifies `Vmin=5a/(1+a)=1.344707106849976 V` and `Vmax=5/(1+a)=3.655292893150024 V`.
+- Ripple `=2.310585786300049 V`; average `=2.5 V`.
+- Rising-edge current `=3.6552928931500245 mA`; falling-edge current `=−3.6552928931500245 mA`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `r` | ohm | 1000.0 | [0.001, 1000000000.0] |
+| `c` | F | 1e-06 | [1e-15, 1.0] |
+| `v_high` | V | 5.0 | [-1000000.0, 1000000.0] |
+| `v_low` | V | 0.0 | [-1000000.0, 1000000.0] |
+| `time_high` | s | 0.001 | [1e-15, 1000000000.0] |
+| `time_low` | s | 0.001 | [1e-15, 1000000000.0] |
+
+Let `A=−expm1(−Th/tau)`, `B=−expm1(−Tl/tau)`, `D=−expm1(−(Th+Tl)/tau)`, and `DeltaV=Vh−Vl`. Executable extrema are `Vl+DeltaV*b*A/D` and `Vl+DeltaV*A/D`; ripple is directly `DeltaV*A*B/D`. Currents are directly `DeltaV*B/(R*D)` and `−DeltaV*A/(R*D)`, so adding a tiny ripple to a large DC voltage does not erase ripple/current outputs. These expressions follow by rearranging the fixed point and are not a new model. The researched >=1e-7 interval/tau guards remain explicit conservative representability restrictions despite improved expm1 conditioning. Vh>=Vl defines extrema; equal levels yield exactly zero ripple and edge currents. Average capacitor voltage equals time-weighted source voltage only for this unloaded periodic steady state.
+
+Additional input-only constraints (checked before any output):
+
+- `v_high >= v_low`: High source level must be at least the low source level.
+- `time_high/(r*c) >= 1e-7`: High interval must be at least 1e-7 time constants within the researched numerical domain.
+- `time_low/(r*c) >= 1e-7`: Low interval must be at least 1e-7 time constants within the researched numerical domain.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"r":1000.0,"c":1e-06,"v_high":5.0,"v_low":0.0,"time_high":0.001,"time_low":0.001}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `tau` | s | 0.001 | `r*c` |
+| `high_decay` | 1 | 0.36787944117144233 | `exp(-time_high/tau)` |
+| `low_decay` | 1 | 0.36787944117144233 | `exp(-time_low/tau)` |
+| `voltage_min` | V | 1.3447071068499756 | `v_low+(v_high-v_low)*low_decay*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))` |
+| `voltage_max` | V | 3.6552928931500244 | `v_low+(v_high-v_low)*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))` |
+| `ripple` | V | 2.3105857863000487 | `(v_high-v_low)*(-expm1(-time_high/tau))*(-expm1(-time_low/tau))/(-expm1(-(time_high+time_low)/tau))` |
+| `average_voltage` | V | 2.5 | `(v_high*time_high+v_low*time_low)/(time_high+time_low)` |
+| `high_initial_current` | A | 0.0036552928931500245 | `(v_high-v_low)*(-expm1(-time_low/tau))/(-expm1(-(time_high+time_low)/tau))/r` |
+| `low_initial_current` | A | -0.0036552928931500245 | `-(v_high-v_low)*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))/r` |
+
