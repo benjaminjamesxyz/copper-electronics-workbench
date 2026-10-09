@@ -61,3 +61,36 @@ v_{n,\mathrm{rms}}=\sqrt{4kTRB}=e_n\sqrt B\quad[\mathrm V].
 
 
 **Error rationale:** Reject nonfinite values, nonpositive resistance/absolute temperature/ENBW, and values outside the catalog operating bounds. These restrictions protect the nonnegative square root and meaningful white-noise integration; they cannot certify the qualitative classical or frequency-flat assumptions. Outputs are evaluated in declared order: density first, RMS second.
+
+## Complete non-inverting amplifier white-noise budget
+
+**ID:** `noise.noninverting_amplifier_budget` — **expert**. Purpose: integrate all six uncorrelated white-noise sources in a high-loop-gain non-inverting stage. Sources [S2, equations 1–5 and 11], [S5].
+
+The plus input sees source resistance R_S. R_F joins output to minus input; R_G joins minus input to ground. All resistors share absolute temperature T. Noise gain G_N = 1 + R_F/R_G. The six output-density contributions are:
+
+| Physical source | Output transfer |
+|---|---|
+| Amplifier voltage density e_n | G_N |
+| Plus-input current density i_plus | R_S G_N |
+| Source-resistor voltage density sqrt(4kTR_S) | G_N |
+| Minus-input current density i_minus | R_F |
+| Feedback-resistor voltage density sqrt(4kTR_F) | 1 |
+| Ground-resistor current density sqrt(4kT/R_G) | R_F |
+
+Thus e_o² = (e_n G_N)² + (i_plus R_S G_N)² + 4kTR_S G_N² + (i_minus R_F)² + 4kTR_F + 4kTR_F²/R_G. Combining the last two terms gives 4kTR_F G_N, not an omission of R_G thermal noise. Output RMS v_o = sqrt(e_o²) sqrt(B); input-referred RMS v_in = v_o/G_N.
+
+**Inputs/domain and error rationale:** 0 ≤ R_S ≤ 1e9 ohm; 0 < R_F ≤ 1e9 ohm; 0.001 ≤ R_G ≤ 1e9 ohm. Voltage density e_n is in V/sqrt(Hz); current densities i_plus and i_minus are in A/sqrt(Hz); all are 0 to 0.001. 0 < T ≤ 2000 K and 0 < B ≤ 1e12 Hz. Reject nonfinite/out-of-range values. Positive R_G guards division; G_N ≥ 1 guards input referral; variance terms are nonnegative. R_S = 0 is a valid ideal-source limit; zero amplifier densities are also valid. The operating maxima bound intermediate squares/products and are not hardware ratings.
+
+**Assumptions:** six sources uncorrelated and white, classical thermal approximation, flat resistor values/noise gain, high loop gain and negligible source-specific rolloff in the measurement band. A common downstream filter sets ENBW. Otherwise integrate each actual source-transfer spectrum separately. Excludes flicker/excess noise, output loading noise, EMI and PSRR effects; not stability analysis or gain synthesis.
+
+**Independent worked example:** R_S = 1000 ohm, R_F = 9000 ohm, R_G = 1000 ohm, e_n = 5e-9 V/sqrt(Hz), i_plus = 1e-12 A/sqrt(Hz), i_minus = 2e-12 A/sqrt(Hz), T = 300 K, B = 20000 Hz.
+
+- `noise_gain` = 1 + 9000/1000 = **10 V/V**.
+- Six output spectral variances: 2.5e-15, 1.0e-16, 1.6567788e-15, 3.24e-16, 1.49110092e-16 and 1.341990828e-15 V²/Hz.
+- Sum = 6.07187972e-15 V²/Hz.
+- `output_noise_density` = **7.79222671641425e-8 V/sqrt(Hz)**.
+- `output_noise_rms` = sqrt(6.07187972e-15 × 20000) = **1.1019872703439002e-5 V**.
+- `input_referred_noise_rms` = output RMS/10 = **1.1019872703439002e-6 V**.
+
+Sequential output order is noise gain, output density, output RMS, input-referred RMS; the independent example tolerance is 1e-6.
+

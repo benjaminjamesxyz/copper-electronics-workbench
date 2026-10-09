@@ -79,4 +79,36 @@
       "relative_tolerance": 1e-06
     }
   }
+,
+  {
+    "id": "noise.noninverting_amplifier_budget",
+    "title": "Non-inverting amplifier white-noise budget",
+    "category": "Noise measurement and analog budgets",
+    "level": "expert",
+    "description": "Include both amplifier input current-noise sources and all three resistors in a non-inverting amplifier noise budget.",
+    "formula": "G_N=1+R_F/R_G; e_o^2=(e_n^2+(i_plus R_S)^2+4kTR_S)G_N^2+(i_minus R_F)^2+4kTR_F G_N; v_o=e_o sqrt(B); v_in=v_o/G_N",
+    "assumptions": ["Ideal high-loop-gain non-inverting topology with source resistance R_S, feedback resistance R_F and resistance R_G from the inverting input to ground.", "All six physical sources are uncorrelated and white; R_S, R_F, R_G and noise gain are constant across the band.", "All resistors share the supplied temperature and satisfy the classical thermal-noise approximation h f much smaller than k T.", "A common downstream bandlimit sets B, its equivalent noise bandwidth; amplifier rolloff and source-specific filtering are negligible within that band.", "Input-referred result is referred to the non-inverting signal input. Excludes 1/f noise, excess resistor noise, output loading noise, EMI and power-supply noise; this is not gain synthesis or a stability analysis."],
+    "references": [
+      {"title": "Texas Instruments SBOA066A, equations 1-5 and 11", "url": "https://www.ti.com/lit/an/sboa066a/sboa066a.pdf"},
+      {"title": "NIST CODATA: exact Boltzmann constant", "url": "https://physics.nist.gov/cgi-bin/cuu/Value?k"}
+    ],
+    "inputs": [
+      {"key": "source_resistance", "label": "Source resistance R_S", "unit": "ohm", "default": 1000.0, "min": 0.0, "max": 1000000000.0},
+      {"key": "feedback_resistance", "label": "Feedback resistance R_F", "unit": "ohm", "default": 9000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000.0},
+      {"key": "ground_resistance", "label": "Gain-setting resistance R_G", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "voltage_density", "label": "Amplifier voltage-noise density", "unit": "V/sqrt(Hz)", "default": 5e-9, "min": 0.0, "max": 0.001},
+      {"key": "plus_current_density", "label": "Non-inverting current-noise density", "unit": "A/sqrt(Hz)", "default": 1e-12, "min": 0.0, "max": 0.001},
+      {"key": "minus_current_density", "label": "Inverting current-noise density", "unit": "A/sqrt(Hz)", "default": 2e-12, "min": 0.0, "max": 0.001},
+      {"key": "temperature", "label": "Resistor absolute temperature", "unit": "K", "default": 300.0, "min": 0.0, "exclusive_min": true, "max": 2000.0},
+      {"key": "bandwidth", "label": "Common equivalent noise bandwidth", "unit": "Hz", "default": 20000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000000.0}
+    ],
+    "outputs": [
+      {"key": "noise_gain", "label": "Noise gain", "unit": "V/V", "expression": "1+feedback_resistance/ground_resistance"},
+      {"key": "output_noise_density", "label": "Total output voltage-noise density", "unit": "V/sqrt(Hz)", "expression": "sqrt((voltage_density^2+(plus_current_density*source_resistance)^2+4*1.380649e-23*temperature*source_resistance)*noise_gain^2+(minus_current_density*feedback_resistance)^2+4*1.380649e-23*temperature*feedback_resistance*noise_gain)"},
+      {"key": "output_noise_rms", "label": "Integrated output RMS noise", "unit": "V", "expression": "output_noise_density*sqrt(bandwidth)"},
+      {"key": "input_referred_noise_rms", "label": "Input-referred RMS noise", "unit": "V", "expression": "output_noise_rms/noise_gain"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"source_resistance": 1000.0, "feedback_resistance": 9000.0, "ground_resistance": 1000.0, "voltage_density": 5e-9, "plus_current_density": 1e-12, "minus_current_density": 2e-12, "temperature": 300.0, "bandwidth": 20000.0}, "expected": {"noise_gain": 10.0, "output_noise_density": 7.79222671641425e-8, "output_noise_rms": 1.1019872703439002e-5, "input_referred_noise_rms": 1.1019872703439002e-6}, "relative_tolerance": 0.000001}
+  }
 ]
