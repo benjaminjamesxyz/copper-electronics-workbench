@@ -120,19 +120,19 @@
         "key": "loaded_q",
         "label": "Matching-network loaded Q",
         "unit": "1",
-        "expression": "sqrt((load_resistance-source_resistance)/source_resistance)"
+        "expression": "sqrt(load_resistance-source_resistance)/sqrt(source_resistance)"
       },
       {
         "key": "series_inductance",
         "label": "Series inductance",
         "unit": "H",
-        "expression": "source_resistance*loaded_q/(2*pi*frequency)"
+        "expression": "source_resistance*loaded_q/2/pi/frequency"
       },
       {
         "key": "shunt_capacitance",
         "label": "Load-side shunt capacitance",
         "unit": "F",
-        "expression": "loaded_q/(2*pi*frequency*load_resistance)"
+        "expression": "loaded_q/(2*pi)/frequency/load_resistance"
       }
     ],
     "constraints": [
@@ -373,13 +373,13 @@
       {
         "left": "distance_from_tx",
         "op": ">=",
-        "right": "100*299792458/frequency",
+        "right": "29979245800/frequency",
         "message": "TX-to-obstacle distance must be at least 100 wavelengths for the documented paraxial screen."
       },
       {
         "left": "distance_to_rx",
         "op": ">=",
-        "right": "100*299792458/frequency",
+        "right": "29979245800/frequency",
         "message": "Obstacle-to-RX distance must be at least 100 wavelengths for the documented paraxial screen."
       }
     ],
@@ -461,7 +461,7 @@
         "key": "gain_linear",
         "label": "Boresight power gain over isotropic",
         "unit": "1",
-        "expression": "(sqrt(aperture_efficiency)*pi*(diameter*frequency/299792458))^2"
+        "expression": "(sqrt(aperture_efficiency)*pi/299792458*diameter*frequency)^2"
       },
       {
         "key": "gain_dbi",

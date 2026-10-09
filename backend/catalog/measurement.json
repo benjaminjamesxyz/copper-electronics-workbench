@@ -104,7 +104,7 @@
       "relative_tolerance": 1e-06
     }
   },
-{"id": "measurement.delta_resistance", "title": "Three-point delta resistance and thermal-EMF rejection", "category": "Hardware measurement and metrology", "level": "intermediate", "description": "Recover resistance from equally spaced +I, -I, +I four-wire readings while canceling constant and linearly drifting thermoelectric voltage.", "formula": "V_R = (V1-2 V2+V3)/4; R = V_R/I; E_mid = (V1+2 V2+V3)/4; dE/dt = (V3-V1)/(2 delta_t)", "assumptions": ["The three readings are equally spaced by delta_t, at settled currents +I, -I, +I of equal magnitude. Voltage lead polarity does not reverse.", "DUT is an ohmic, nonnegative resistance with negligible change from self-heating during the cycle; four-wire sensing excludes force-lead drops.", "Thermoelectric EMF is linear over the cycle. Quadratic drift, current mismatch, unsettled switching transients and voltage noise are not canceled."], "references": [{"title": "Keithley Low-Voltage Measurement Techniques, The Delta Method of Measuring Resistance and Equipment Requirements", "url": "https://www.tek.com/en/documents/technical-article/low-voltage-measurement-techniques"}], "inputs": [{"key": "test_current", "label": "Reversing current magnitude", "unit": "A", "default": 0.01, "min": 0.0, "exclusive_min": true}, {"key": "sample_interval", "label": "Equal reading interval", "unit": "s", "default": 0.1, "min": 0.0, "exclusive_min": true}, {"key": "voltage_first", "label": "First reading at positive current", "unit": "V", "default": 0.001012}, {"key": "voltage_second", "label": "Second reading at negative current", "unit": "V", "default": -0.000986}, {"key": "voltage_third", "label": "Third reading at positive current", "unit": "V", "default": 0.001016}], "outputs": [{"key": "resistive_voltage", "label": "Drift-canceled resistive voltage", "unit": "V", "expression": "(voltage_first-voltage_second)/4+(voltage_third-voltage_second)/4"}, {"key": "resistance", "label": "Delta resistance", "unit": "ohm", "expression": "resistive_voltage/test_current"}, {"key": "midpoint_emf", "label": "Thermoelectric EMF at middle reading", "unit": "V", "expression": "(voltage_first+voltage_second)/4+(voltage_third+voltage_second)/4"}, {"key": "emf_drift_rate", "label": "Linear thermoelectric drift rate", "unit": "V/s", "expression": "((voltage_third-voltage_first)/sample_interval)/2"}], "constraints": [{"left": "(voltage_first-voltage_second)/4+(voltage_third-voltage_second)/4", "op": ">=", "right": "0", "message": "Readings must imply a nonnegative ohmic resistance with the stated voltage polarity"}], "example": {"inputs": {"test_current": 0.01, "sample_interval": 0.1, "voltage_first": 0.001012, "voltage_second": -0.000986, "voltage_third": 0.001016}, "expected": {"resistive_voltage": 0.001, "resistance": 0.1, "midpoint_emf": 1.4e-05, "emf_drift_rate": 2e-05}, "relative_tolerance": 1e-06}}
+{"id": "measurement.delta_resistance", "title": "Three-point delta resistance and thermal-EMF rejection", "category": "Hardware measurement and metrology", "level": "intermediate", "description": "Recover resistance from equally spaced +I, -I, +I four-wire readings while canceling constant and linearly drifting thermoelectric voltage.", "formula": "V_R = (V1-2 V2+V3)/4; R = V_R/I; E_mid = (V1+2 V2+V3)/4; dE/dt = (V3-V1)/(2 delta_t)", "assumptions": ["The three readings are equally spaced by delta_t, at settled currents +I, -I, +I of equal magnitude. Voltage lead polarity does not reverse.", "DUT is an ohmic, nonnegative resistance with negligible change from self-heating during the cycle; four-wire sensing excludes force-lead drops.", "Thermoelectric EMF is linear over the cycle. Quadratic drift, current mismatch, unsettled switching transients and voltage noise are not canceled."], "references": [{"title": "Keithley Low-Voltage Measurement Techniques, The Delta Method of Measuring Resistance and Equipment Requirements", "url": "https://www.tek.com/en/documents/technical-article/low-voltage-measurement-techniques"}], "inputs": [{"key": "test_current", "label": "Reversing current magnitude", "unit": "A", "default": 0.01, "min": 0.0, "exclusive_min": true}, {"key": "sample_interval", "label": "Equal reading interval", "unit": "s", "default": 0.1, "min": 0.0, "exclusive_min": true}, {"key": "voltage_first", "label": "First reading at positive current", "unit": "V", "default": 0.001012}, {"key": "voltage_second", "label": "Second reading at negative current", "unit": "V", "default": -0.000986}, {"key": "voltage_third", "label": "Third reading at positive current", "unit": "V", "default": 0.001016}], "outputs": [{"key": "resistive_voltage", "label": "Drift-canceled resistive voltage", "unit": "V", "expression": "((voltage_first+voltage_third)/2-voltage_second)/2"}, {"key": "resistance", "label": "Delta resistance", "unit": "ohm", "expression": "resistive_voltage/test_current"}, {"key": "midpoint_emf", "label": "Thermoelectric EMF at middle reading", "unit": "V", "expression": "(voltage_first+voltage_second)/4+(voltage_third+voltage_second)/4"}, {"key": "emf_drift_rate", "label": "Linear thermoelectric drift rate", "unit": "V/s", "expression": "((voltage_third-voltage_first)/sample_interval)/2"}], "constraints": [{"left": "((voltage_first+voltage_third)/2-voltage_second)/2", "op": ">=", "right": "0", "message": "Readings must imply a nonnegative ohmic resistance with the stated voltage polarity"}], "example": {"inputs": {"test_current": 0.01, "sample_interval": 0.1, "voltage_first": 0.001012, "voltage_second": -0.000986, "voltage_third": 0.001016}, "expected": {"resistive_voltage": 0.001, "resistance": 0.1, "midpoint_emf": 1.4e-05, "emf_drift_rate": 2e-05}, "relative_tolerance": 1e-06}}
 ,
 {
   "id": "measurement.compensated_probe_loading",
@@ -277,7 +277,7 @@
       "key": "midpoint_gain",
       "label": "Signed gain relative to aperture midpoint",
       "unit": "V/V",
-      "expression": "sinc(pi*frequency*aperture_time)"
+      "expression": "sinc(frequency*(pi*aperture_time))"
     },
     {
       "key": "amplitude_ratio",
@@ -365,13 +365,13 @@
       "key": "phase_jitter",
       "label": "RMS input phase error",
       "unit": "rad",
-      "expression": "2*pi*frequency*timing_jitter"
+      "expression": "(2*pi)*(frequency*timing_jitter)"
     },
     {
       "key": "error_rms",
       "label": "Jitter-induced RMS voltage error",
       "unit": "V",
-      "expression": "(input_peak/sqrt(2))*(2*pi*frequency*timing_jitter)"
+      "expression": "(input_peak*timing_jitter*2*pi*frequency)/sqrt(2)"
     },
     {
       "key": "jitter_snr",
@@ -382,9 +382,9 @@
   ],
   "constraints": [
     {
-      "left": "2*pi*frequency*timing_jitter",
+      "left": "(2*pi)*(frequency*timing_jitter)",
       "op": "<=",
-      "right": "0.1",
+      "right": "0.1*(1+2.220446049250313e-16)",
       "message": "First-order jitter model requires RMS input phase error no greater than 0.1 rad"
     }
   ],

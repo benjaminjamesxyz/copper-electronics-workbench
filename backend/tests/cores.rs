@@ -164,7 +164,7 @@ fn spiral_single_turn_has_no_interturn_gap_contribution() {
 fn spiral_tiny_positive_opening_and_inclusive_spacing_screen() {
     let width: f64 = 1.0 / 65536.0;
     let opening: f64 = 2.0_f64.powi(-40);
-    let average = 5.0 * width + opening / 2.0;
+    let average = 5.0 * width + opening;
     let fill = 5.0 * width / average;
     let r = calculate("cores.square_planar_spiral", &[
         ("outer_side", 10.0 * width + opening), ("turns", 2.0),

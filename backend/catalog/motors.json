@@ -65,7 +65,7 @@
         "key": "speed",
         "label": "Steady mechanical angular speed",
         "unit": "rad/s",
-        "expression": "(motor_constant*voltage-armature_resistance*load_torque)/(motor_constant^2+armature_resistance*viscous_drag)"
+        "expression": "(voltage-(armature_resistance/motor_constant)*load_torque)/(motor_constant+(armature_resistance*viscous_drag)/motor_constant)"
       },
       {
         "key": "current",
@@ -186,7 +186,7 @@
         "key": "incremental_torque",
         "label": "One-microstep torque from unloaded alignment",
         "unit": "N m",
-        "expression": "holding_torque*sin(pi/(2*microsteps_per_step))"
+        "expression": "holding_torque*sin(pi/2/microsteps_per_step)"
       },
       {
         "key": "load_lag",
@@ -198,7 +198,7 @@
         "key": "angular_stiffness",
         "label": "Local restoring stiffness at loaded equilibrium",
         "unit": "N m/rad",
-        "expression": "full_steps_per_turn/4*sqrt(holding_torque-load_torque)*sqrt(holding_torque+load_torque)"
+        "expression": "full_steps_per_turn/4*holding_torque*sqrt(1-(load_torque/holding_torque)^2)"
       }
     ],
     "constraints": [
@@ -383,9 +383,9 @@
     ],
     "constraints": [
       {
-        "left": "motor_inertia+load_inertia",
+        "left": "motor_inertia",
         "op": ">",
-        "right": "0",
+        "right": "-load_inertia",
         "message": "At least one shaft inertia must be positive"
       },
       {
@@ -518,19 +518,19 @@
         "key": "angular_travel",
         "label": "Angular travel during braking interval",
         "unit": "rad",
-        "expression": "initial_speed*time*exprel(-time/mechanical_tau)"
+        "expression": "initial_speed*(time*exprel(-time/mechanical_tau))"
       },
       {
         "key": "brake_energy",
         "label": "Energy deposited in external brake resistor",
         "unit": "J",
-        "expression": "inertia*initial_speed^2/2*(brake_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"
+        "expression": "inertia*initial_speed*(initial_speed/2)*(brake_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"
       },
       {
         "key": "winding_energy",
         "label": "Energy deposited in winding resistance",
         "unit": "J",
-        "expression": "inertia*initial_speed^2/2*(armature_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"
+        "expression": "inertia*initial_speed*(initial_speed/2)*(armature_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"
       }
     ],
     "constraints": [],
@@ -680,7 +680,7 @@
         "key": "stator_copper_loss",
         "label": "Three-phase stator copper loss",
         "unit": "W",
-        "expression": "1.5*stator_resistance*phase_current_peak^2"
+        "expression": "1.5*(stator_resistance*phase_current_peak)*phase_current_peak"
       }
     ],
     "constraints": [
@@ -820,7 +820,7 @@
         "key": "air_gap_power",
         "label": "Three-phase air-gap power",
         "unit": "W",
-        "expression": "3*(thevenin_voltage/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance)))^2*rotor_resistance*slip"
+        "expression": "3*(thevenin_voltage/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance)))*(thevenin_voltage/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance))*rotor_resistance*slip)"
       },
       {
         "key": "electromagnetic_torque",
@@ -850,7 +850,7 @@
         "key": "breakdown_torque",
         "label": "Unconstrained peak electromagnetic torque",
         "unit": "N m",
-        "expression": "3*thevenin_voltage^2/(2*synchronous_speed*(thevenin_resistance+hypot(thevenin_resistance,thevenin_reactance+rotor_reactance)))"
+        "expression": "3*(thevenin_voltage*(thevenin_voltage/(2*synchronous_speed*(thevenin_resistance+hypot(thevenin_resistance,thevenin_reactance+rotor_reactance)))))"
       }
     ],
     "constraints": [

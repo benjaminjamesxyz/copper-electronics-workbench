@@ -633,7 +633,7 @@
       "message": "Common-mode limits must be ordered"
     },
     {
-      "left": "1/load_resistance+(1/r_one-(r_four/r_three)/r_two)",
+      "left": "1/load_resistance*(r_one*r_two*r_three)+r_two*r_three-r_one*r_four",
       "op": ">",
       "right": "0",
       "message": "The loaded Howland feedback must have positive total conductance"
@@ -873,7 +873,7 @@
       "key": "log_decades",
       "label": "Signed logarithmic current ratio",
       "unit": "decade",
-      "expression": "log1p((signal_current-reference_current)/reference_current)/ln(10)"
+      "expression": "(log1p((signal_current-reference_current)/reference_current)/(1+exp(min(50,max(-50,(abs((signal_current-reference_current)/reference_current)-1e-8)*1e12))))+ln(signal_current/reference_current)*(1-1/(1+exp(min(50,max(-50,(abs((signal_current-reference_current)/reference_current)-1e-8)*1e12))))))/ln(10)"
     },
     {
       "key": "log_output",

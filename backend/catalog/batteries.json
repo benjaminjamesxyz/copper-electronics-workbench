@@ -335,13 +335,13 @@
         "key": "runtime",
         "label": "Full-to-cutoff runtime",
         "unit": "h",
-        "expression": "rated_duration*(rated_current/load_current)^peukert_exponent"
+        "expression": "exp(ln(rated_duration)+peukert_exponent*(ln(rated_capacity/rated_duration)-ln(load_current)))"
       },
       {
         "key": "delivered_capacity",
         "label": "Effective delivered capacity",
         "unit": "Ah",
-        "expression": "rated_capacity*(rated_current/load_current)^(peukert_exponent-1)"
+        "expression": "exp(ln(rated_capacity)+(peukert_exponent-1)*(ln(rated_capacity/rated_duration)-ln(load_current)))"
       }
     ],
     "constraints": [],
@@ -447,7 +447,7 @@
         "key": "bound_final",
         "label": "Bound charge after interval",
         "unit": "C",
-        "expression": "bound_initial-(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))-pulse_current*(1-available_fraction)*pulse_duration*(equalization_rate*pulse_duration)*expm1mx_ratio(-equalization_rate*pulse_duration)"
+        "expression": "bound_initial-(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))-pulse_current*(1-available_fraction)*pulse_duration*(equalization_rate*pulse_duration*expm1mx_ratio(-equalization_rate*pulse_duration))"
       },
       {
         "key": "total_final",
@@ -572,13 +572,13 @@
         "key": "voltage_slope",
         "label": "Voltage slope per filling fraction",
         "unit": "V",
-        "expression": "-(8.31446261815324*temperature/(filling_fraction*(1-filling_fraction))-2*interaction_energy)/96485.33212"
+        "expression": "-(8.31446261815324*temperature/(96485.33212*filling_fraction*(1-filling_fraction))-2*interaction_energy/96485.33212)"
       },
       {
         "key": "chemical_capacitance",
         "label": "Positive differential chemical capacitance",
         "unit": "F",
-        "expression": "full_insertion_charge*96485.33212*filling_fraction*(1-filling_fraction)/(8.31446261815324*temperature-2*interaction_energy*filling_fraction*(1-filling_fraction))"
+        "expression": "full_insertion_charge*(96485.33212*filling_fraction*(1-filling_fraction)/(8.31446261815324*temperature-2*interaction_energy*filling_fraction*(1-filling_fraction)))"
       }
     ],
     "constraints": [

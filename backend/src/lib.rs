@@ -130,15 +130,35 @@ impl Engine {
 }
 
 #[derive(Deserialize)]
-#[serde(tag = "command", rename_all = "snake_case")]
-pub enum Request { Catalog, Calculate { id: String, inputs: BTreeMap<String, f64> } }
+struct RequestShape { command: String, id: Option<String>, #[serde(default)] inputs: Option<BTreeMap<String, Box<serde_json::value::RawValue>>> }
+
+// serde_json's float parser misrounds some decimal literals (e.g. 0.9999999999999999 to exactly 1.0);
+// RawValue preserves the literal so Rust's correctly-rounded str::parse can read it.
+fn lexical_inputs(inputs: BTreeMap<String, Box<serde_json::value::RawValue>>) -> Result<BTreeMap<String, f64>, String> {
+    inputs.into_iter().map(|(key, value)| {
+        let text = value.get();
+        let number = text.parse::<f64>().map_err(|_| format!("Invalid number for input {key}: {text}"))?;
+        if !number.is_finite() { return Err(format!("Non-finite input {key}")); }
+        Ok((key, number))
+    }).collect()
+}
 pub fn respond(engine: &Engine, request: &str) -> serde_json::Value {
-    match serde_json::from_str::<Request>(request) {
-        Ok(Request::Catalog) => serde_json::json!({"ok":true, "calculations":engine.catalog()}),
-        Ok(Request::Calculate { id, inputs }) => match engine.calculate(&id, &inputs) {
-            Ok(outputs) => serde_json::json!({"ok":true,"id":id,"outputs":outputs}),
-            Err(error) => serde_json::json!({"ok":false,"error":error}),
-        },
-        Err(error) => serde_json::json!({"ok":false,"error":format!("Invalid request: {error}")}),
+    let shape = match serde_json::from_str::<RequestShape>(request) {
+        Ok(shape) => shape,
+        Err(error) => return serde_json::json!({"ok":false,"error":format!("Invalid request: {error}")}),
+    };
+    match shape.command.as_str() {
+        "catalog" => serde_json::json!({"ok":true, "calculations":engine.catalog()}),
+        "calculate" => {
+            let (Some(id), Some(raw_inputs)) = (shape.id.clone(), shape.inputs) else {
+                return serde_json::json!({"ok":false,"error":"Invalid request: calculate requires id and inputs"});
+            };
+            match lexical_inputs(raw_inputs).and_then(|inputs| engine.calculate(&id, &inputs)) {
+                Ok(outputs) => serde_json::json!({"ok":true,"id":id,"outputs":outputs}),
+                Err(error) => serde_json::json!({"ok":false,"error":error}),
+            }
+        }
+        other => serde_json::json!({"ok":false,"error":format!("Invalid request: unknown command {other}")}),
     }
 }
+

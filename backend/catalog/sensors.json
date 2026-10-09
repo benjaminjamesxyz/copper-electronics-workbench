@@ -81,7 +81,7 @@
         "key": "temperature_sensitivity",
         "label": "Local temperature sensitivity",
         "unit": "K/ohm",
-        "expression": "-temperature_kelvin*(temperature_kelvin/resistance)*(coefficient_b+3*coefficient_c*ln(resistance)^2)"
+        "expression": "-temperature_kelvin*((coefficient_b+3*coefficient_c*ln(resistance)^2)*temperature_kelvin/resistance)"
       }
     ],
     "constraints": [
@@ -355,13 +355,13 @@
         "key": "hall_voltage",
         "label": "Signed transverse Hall voltage",
         "unit": "V",
-        "expression": "hall_coefficient*bias_current*(field_magnitude/plate_thickness)*cos(field_angle)"
+        "expression": "hall_coefficient*(bias_current*(field_magnitude/plate_thickness))*cos(field_angle)"
       },
       {
         "key": "angle_sensitivity",
         "label": "Signed angular voltage sensitivity",
         "unit": "V/rad",
-        "expression": "-hall_coefficient*bias_current*(field_magnitude/plate_thickness)*sin(field_angle)"
+        "expression": "-hall_coefficient*(bias_current*(field_magnitude/plate_thickness))*sin(field_angle)"
       }
     ],
     "constraints": [
@@ -468,7 +468,7 @@
         "key": "angular_resistance_sensitivity",
         "label": "Local angular resistance sensitivity",
         "unit": "ohm/rad",
-        "expression": "-2*resistance_anisotropy*sin(magnetization_angle)*cos(magnetization_angle)"
+        "expression": "-(resistance_anisotropy*sin(magnetization_angle))*(2*cos(magnetization_angle))"
       }
     ],
     "constraints": [
@@ -670,7 +670,7 @@
         "key": "differential_capacitance",
         "label": "Near-minus-far capacitance",
         "unit": "F",
-        "expression": "2*8.8541878128e-12*relative_permittivity*plate_width*plate_length*(displacement/(rest_gap-displacement))/(rest_gap+displacement)"
+        "expression": "(2*near_capacitance)*(displacement/(rest_gap+displacement))"
       },
       {
         "key": "normalized_difference",

@@ -48,7 +48,7 @@
         "key": "geometry_factor",
         "label": "Inverse-hyperbolic geometry factor",
         "unit": "1",
-        "expression": "log1p((center_spacing-wire_diameter)/wire_diameter+sqrt((center_spacing-wire_diameter)/wire_diameter)*sqrt((center_spacing+wire_diameter)/wire_diameter))"
+        "expression": "log1p((center_spacing-wire_diameter)/wire_diameter+sqrt((center_spacing-wire_diameter)/wire_diameter)*sqrt(1+center_spacing/wire_diameter))"
       },
       {
         "key": "inductance_per_length",
@@ -477,15 +477,15 @@
     ],
     "constraints": [
       {
-        "left": "(3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3)",
+        "left": "3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus)",
         "op": "<=",
-        "right": "0.1*sphere_radius",
+        "right": "(0.1*sphere_radius)^3",
         "message": "Hertz small-contact screen requires contact radius no greater than 0.1 curvature radius."
       },
       {
-        "left": "(3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3)",
+        "left": "3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus)",
         "op": ">=",
-        "right": "10*electron_mean_free_path",
+        "right": "(10*electron_mean_free_path)^3",
         "message": "Diffusive Holm screen requires contact radius at least ten electron mean free paths."
       },
       {
@@ -602,9 +602,9 @@
         "message": "Temperature limit must not be below the remote electrode temperature."
       },
       {
-        "left": "hypot(bulk_temperature,contact_voltage/(2*sqrt(lorenz_number)))",
-        "op": "<=",
-        "right": "temperature_limit",
+"left": "(contact_voltage/(2*sqrt(lorenz_number)))^2",
+      "op": "<=",
+      "right": "(temperature_limit-bulk_temperature)*(temperature_limit+bulk_temperature)",
         "message": "Contact hotspot exceeds the supplied physical-model temperature limit."
       }
     ],

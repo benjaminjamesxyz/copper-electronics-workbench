@@ -455,7 +455,7 @@
         "key": "log10_chain_mtbf",
         "label": "log10 of single-chain MTBF in seconds",
         "unit": "1",
-        "expression": "(resolution_time/resolution_constant-ln(aperture_parameter)-ln(clock_frequency)-ln(data_transition_rate))/ln(10)"
+        "expression": "(resolution_time/(resolution_constant*ln(10))-(ln(aperture_parameter)+ln(clock_frequency)+ln(data_transition_rate))/ln(10))"
       },
       {
         "key": "log10_system_mtbf",
@@ -484,9 +484,9 @@
         "message": "Synchronizer chain count must be a whole number"
       },
       {
-        "left": "aperture_parameter",
+        "left": "aperture_parameter*data_transition_rate",
         "op": "<",
-        "right": "1/data_transition_rate",
+        "right": "1",
         "message": "The aperture-times-transition-rate factor must be below one; rare-event characterization must also be valid"
       }
     ],
@@ -709,7 +709,7 @@
         "key": "usable_depth",
         "label": "Sufficient whole-word usable FIFO depth",
         "unit": "word",
-        "expression": "ceil(backlog_bound)"
+        "expression": "burst_words+ceil(arrival_rate*service_latency)"
       },
       {
         "key": "storage_bits",

@@ -86,7 +86,7 @@
         "key": "pulse_i2t",
         "label": "Inrush pulse integral",
         "unit": "A² s",
-        "expression": "(peak_current*sqrt(hold_time+(rise_time+fall_time)/3))^2"
+        "expression": "(peak_current*sqrt(3*hold_time+rise_time+fall_time))^2/3"
       },
       {
         "key": "pulse_margin",
@@ -244,7 +244,7 @@
         "key": "surge_current",
         "label": "TVS surge current",
         "unit": "A",
-        "expression": "(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)"
+        "expression": "((surge_voltage-breakdown_intercept)/source_resistance)/(1+dynamic_resistance/source_resistance)"
       },
       {
         "key": "clamp_voltage",
@@ -279,13 +279,13 @@
         "message": "The characterized current interval must have positive width"
       },
       {
-        "left": "(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)",
+        "left": "((surge_voltage-breakdown_intercept)/source_resistance)/(1+dynamic_resistance/source_resistance)",
         "op": ">=",
         "right": "fit_current_min",
         "message": "Surge current is below the characterized avalanche-fit interval"
       },
       {
-        "left": "(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)",
+        "left": "((surge_voltage-breakdown_intercept)/source_resistance)/(1+dynamic_resistance/source_resistance)",
         "op": "<=",
         "right": "fit_current_max",
         "message": "Surge current exceeds the characterized avalanche-fit interval"
@@ -419,7 +419,7 @@
         "key": "absorbed_energy",
         "label": "Rectangular pulse absorbed energy",
         "unit": "J",
-        "expression": "clamp_voltage*pulse_current*pulse_duration"
+        "expression": "clamp_voltage*(pulse_current*pulse_duration)"
       },
       {
         "key": "energy_margin",
@@ -745,7 +745,7 @@
         "key": "minimum_area_mm2",
         "label": "Minimum thermal-withstand area",
         "unit": "mm²",
-        "expression": "fault_current*sqrt(clearing_time)/material_k"
+        "expression": "fault_current*(sqrt(clearing_time)/material_k)"
       },
       {
         "key": "area_margin_mm2",
@@ -858,7 +858,7 @@
         "key": "fault_output_current",
         "label": "Foldback fault output current",
         "unit": "A",
-        "expression": "short_current/((1-fault_resistance/knee_load_resistance)+(fault_resistance/knee_load_resistance)*(short_current/knee_current))"
+        "expression": "short_current*knee_current/((1-fault_resistance/knee_load_resistance)*knee_current+fault_resistance/knee_load_resistance*short_current)"
       },
       {
         "key": "fault_output_voltage",
