@@ -124,5 +124,117 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "motors.stepper_static_microstep",
+    "title": "Stepper microstep torque and static load deflection",
+    "category": "Electromechanical drives",
+    "level": "intermediate",
+    "description": "Distinguish commanded microstep resolution from static positioning accuracy using the sinusoidal torque-angle law of a two-phase stepper.",
+    "formula": "alpha=2 pi/S; delta_micro=alpha/m; Tinc=Th sin(pi/(2m)); delta_load=(4/S) asin(Tload/Th); stiffness=(S/4) sqrt((Th-Tload)(Th+Tload))",
+    "assumptions": [
+      "Ideal two-phase sinusoidal torque-angle law with constant current-vector magnitude; four full steps per electrical cycle.",
+      "holding_torque is the peak torque at the same current-vector magnitude used during microstepping, not a mismatched two-phase-current nameplate value.",
+      "Static stable branch only, with load strictly below holding torque. Ignores detent torque, friction, harmonics, current quantization, elastic compliance and resonance.",
+      "Incremental torque is the torque immediately after one commanded microstep from an initially aligned unloaded rotor held fixed. It is not the torque change of an already loaded rotor and does not guarantee motion."
+    ],
+    "references": [
+      {
+        "title": "FAULHABER Application Note 015, Microstepping, equations 1-2 and Accuracy vs. resolution",
+        "url": "https://www.faulhaber.com/fileadmin/Import/Media/AN015_EN.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "full_steps_per_turn",
+        "label": "Full steps per mechanical revolution",
+        "unit": "steps/rev",
+        "default": 200,
+        "min": 4
+      },
+      {
+        "key": "microsteps_per_step",
+        "label": "Microsteps per full step",
+        "unit": "1",
+        "default": 16,
+        "min": 1
+      },
+      {
+        "key": "holding_torque",
+        "label": "Holding torque at operating current vector",
+        "unit": "N m",
+        "default": 0.5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_torque",
+        "label": "Static opposing load torque",
+        "unit": "N m",
+        "default": 0.1,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "microstep_angle",
+        "label": "Commanded mechanical microstep angle",
+        "unit": "rad",
+        "expression": "2*pi/full_steps_per_turn/microsteps_per_step"
+      },
+      {
+        "key": "incremental_torque",
+        "label": "One-microstep torque from unloaded alignment",
+        "unit": "N m",
+        "expression": "holding_torque*sin(pi/(2*microsteps_per_step))"
+      },
+      {
+        "key": "load_lag",
+        "label": "Static mechanical lag behind commanded field",
+        "unit": "rad",
+        "expression": "4/full_steps_per_turn*asin(load_torque/holding_torque)"
+      },
+      {
+        "key": "angular_stiffness",
+        "label": "Local restoring stiffness at loaded equilibrium",
+        "unit": "N m/rad",
+        "expression": "full_steps_per_turn/4*sqrt(holding_torque-load_torque)*sqrt(holding_torque+load_torque)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "full_steps_per_turn/4",
+        "op": "==",
+        "right": "floor(full_steps_per_turn/4)",
+        "message": "The ideal two-phase model requires an integer number of electrical cycles, or a multiple of four full steps per revolution"
+      },
+      {
+        "left": "microsteps_per_step",
+        "op": "==",
+        "right": "floor(microsteps_per_step)",
+        "message": "Microsteps per full step must be an integer"
+      },
+      {
+        "left": "load_torque",
+        "op": "<",
+        "right": "holding_torque",
+        "message": "Static load must remain strictly below holding torque for positive restoring stiffness"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "full_steps_per_turn": 200,
+        "microsteps_per_step": 16,
+        "holding_torque": 0.5,
+        "load_torque": 0.1
+      },
+      "expected": {
+        "microstep_angle": 0.001963495408493621,
+        "incremental_torque": 0.0490085701647803,
+        "load_lag": 0.004027158415806616,
+        "angular_stiffness": 24.49489742783178
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

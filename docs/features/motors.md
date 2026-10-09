@@ -72,3 +72,60 @@ Use a dashed, explicitly non-electrical coupling arrow from the motor EMF region
 **Quantity labels:** `voltage` as `V`, `armature_resistance` as `Ra`, `current` as `I`, `back_emf` as `E`, `speed` as `omega`, `load_torque` as `Tload`. Plain text near coupling: `E = K omega; T = K I`. Bind a short `K` label to `motor_constant` if space permits. Plain drag text is `b omega`; a separate `b` label may bind `viscous_drag`, but never bind `b omega` to `viscous_drag`.
 
 **Caption:** “At steady speed, back EMF and winding drop sum to the applied voltage. Electromagnetic torque balances load and viscous drag. Positive current enters the motor; no acceleration or brush drop is modeled.”
+
+## 2. `motors.stepper_static_microstep`
+
+### Purpose and distinct model
+
+Separate controller resolution from mechanical accuracy and restoring torque. The baseline clock divider only quantizes electrical timing; it cannot predict rotor lag or torque. This item has a spatial sinusoidal torque law, distinct from all DC/PMSM speed or energy models. It does not calculate a pulse generator or dynamic pull-out speed.
+
+### Equations, signs and validity
+
+Source: FAULHABER AN015, equations 1–2 and the accompanying limitations. Let `S=full_steps_per_turn`, `m=microsteps_per_step`, and `H=holding_torque`. Four full steps span one electrical cycle, so electrical rotor lag is `(S/4)*delta_mechanical`. The ideal torque law is:
+
+`T=H*sin((S/4)*delta_mechanical)`.
+
+Commanded microstep angle is `2*pi/(S*m)`. With the rotor initially aligned and held fixed, one new microstep gives electrical displacement `pi/(2*m)`, hence `incremental_torque=H*sin(pi/(2*m))`.
+
+At a static load `Tload`, use the stable branch:
+
+`load_lag=(4/S)*asin(Tload/H)`.
+
+Differentiate torque with respect to lag:
+
+`angular_stiffness=(S/4)*H*cos(asin(Tload/H))=(S/4)*sqrt(H-Tload)*sqrt(H+Tload)`.
+
+The split roots preserve the vanishing stiffness without first subtracting squared nearly equal torques. Lag is positive behind the commanded current vector. Actual electromagnetic torque opposes a further positive lag; stiffness is its positive restoring magnitude.
+
+Require integer `m>=1`, positive `H`, `0<=Tload<H`, and `S` a positive multiple of four. The last guard is the integer electrical-cycle count for this ideal two-phase model, not an arbitrary bound. Holding torque must correspond to the same current-vector magnitude as microstepping. Real full-step nameplate ratings may use different simultaneous phase-current normalization. Detent torque, current distortion, winding mismatch, friction, resonance and mechanical compliance are omitted. Exact holding torque has zero stiffness and is not admitted as stable operation.
+
+### Complete independent example
+
+Inputs: `full_steps_per_turn=200`, `microsteps_per_step=16`, `holding_torque=0.5 N m`, `load_torque=0.1 N m`.
+
+- Full-step mechanical angle `2*pi/200=0.031415926535897934 rad`.
+- `microstep_angle=2*pi/(200*16)=0.001963495408493621 rad`.
+- `incremental_torque=0.5*sin(pi/32)=0.0490085701647803 N m`, or `9.80171403295606%` of holding torque.
+- Electrical lag `asin(0.1/0.5)=0.2013579207903308 rad`.
+- `load_lag=0.02*0.2013579207903308=0.004027158415806616 rad`.
+- `angular_stiffness=50*sqrt(0.4)*sqrt(0.6)=24.49489742783178 N m/rad`.
+
+The load lag exceeds one microstep angle; that is a model result, not a rounding fault or evidence of accurate one-microstep physical motion.
+
+### Tester cases
+
+- Nominal: all four outputs above; substitution of `load_lag` into the torque law returns `0.1 N m`.
+- Full-step unloaded limit: defaults except `microsteps_per_step=1, load_torque=0` gives angles `0.031415926535897934` and `0`, torque `0.5`, stiffness `25`.
+- Increasing `m` reduces `incremental_torque` and command angle but leaves static lag and stiffness unchanged for the same load/current vector.
+- As `load_torque` approaches `0.5` from below, `load_lag` approaches `pi/100=0.031415926535897934 rad` and stiffness approaches zero. Do not round an admitted subcritical value up to holding torque.
+- Reject `microsteps_per_step=1.5`, `full_steps_per_turn=202`, zero holding torque, negative load and load equal to or exceeding holding torque.
+
+### Mandatory diagram
+
+**Geometry:** a rotor/stator orientation sketch on the left, not an electrical wiring diagram. Use a large circle centered near `(170,135)` and radial direction arrows showing the commanded current-vector direction and the rotor magnetic axis lagging behind. Give the lag arrow a plain `delta` marker and bind `load_lag` to a separate `load lag` label. Make clear that the drawn separation is illustrative, not the computed angle.
+
+On the right, draw horizontal mechanical-lag and vertical restoring-torque axes within `(380,65)` to `(660,215)`. Use a static polyline following the first increasing quarter of a sine, with zero torque at zero lag and a flat top at the holding limit. Mark a conceptual operating point with a dot and a short local tangent; this is not positioned from live input. Below the left sketch show two nearby field-direction rays separated by a conceptual microstep.
+
+**Quantity labels:** `holding_torque` as `Th`, `load_torque` as `Tload`, `load_lag` as `load lag`, `angular_stiffness` as `local stiffness`, `microstep_angle` as `command step`, `incremental_torque` as `Tinc`. `full_steps_per_turn` and `microsteps_per_step` may be left to the legend to avoid crowding. Plain axis endpoint relation: `full-step lag = 2 pi/S`; do not bind this relation to `microstep_angle`.
+
+**Caption:** “Illustrative sinusoidal torque versus rotor lag. Smaller current-vector steps improve command resolution, not guaranteed positioning accuracy. Tinc starts from unloaded alignment; detent torque and friction are omitted.”
