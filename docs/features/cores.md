@@ -162,3 +162,56 @@ Substitution: `Wu=0.020-2*0.001=0.018 m`; `q=floor(0.018/0.0006)=30`; `n=ceil(10
 
 Draw the bobbin window cross-section in x=70–430,y=55–220: flange margins shaded left/right, four square-packed rows of circular insulated-wire cross sections, final row visibly partial. Copper cores and insulation rings must be visually distinct. Thin tape bands occur only between occupied rows. Bind full axial bracket to `window_width`, two identical margin brackets each to `end_margin`, vertical available bracket to `window_height`, occupied bracket to `radial_build`, and remaining clear strip to `height_margin`. Right inset binds outer circle diameter `wire_diameter` and inner copper diameter `copper_diameter`; tape callout binds `tape_thickness`. `turns_per_layer`, `layers_required` and `copper_fill` get short right-hand labels or accessible legend entries. Caption: “Ordered square packing; incomplete last layer still consumes full height. Dimensions are net of bobbin/base insulation; lead and crossover space must be reserved separately.”
 
+## `cores.sinusoidal_steinmetz_loss`
+
+**Purpose and novelty.** Predict dissipated core heat using a measured material calibration. Closest old items are sinusoidal flux amplitude and stored magnetic energy density: neither models hysteretic/eddy dissipation. Closest new neighbor is lamination eddy loss, which predicts one physical mechanism from sheet dimensions; this model is an empirical total-loss fit and must not be added to that result.
+
+**Equation and units.** Sullivan section II gives `pv=k*f^alpha*Bpk^beta`. MIT section 4 uses the normalized power fit. Eliminate the unit-dependent `k` using a reference: `pv=pref*(f/fref)^alpha*(Bpk/Bref)^beta`; `P=pv*Ve`; `Ecycle=P/f`. `pref` is W/m³, frequency is Hz, flux is peak tesla (not RMS or peak-to-peak), volume is m³. All reported losses are positive magnitudes.
+
+**Validity.** Same material, waveform, zero DC bias and fixed temperature as the calibration; sinusoidal flux only. Require both reference and operating points inside the supplied frequency and flux rectangles. These bounds must come from measured/fitted data and remain below saturation. The app cannot authenticate them. No universal alpha/beta presets or material-specific precision claim is made. Positive fitted exponents describe the increasing-loss regime. Defaults are a clearly hypothetical calibration, not invented data for a named material. PWM, DC bias, minor loops and temperature extrapolation need a different calibrated model.
+
+### Complete independent numerical example
+
+Inputs:
+
+```json
+{
+  "frequency": 150000,
+  "flux_peak": 0.08,
+  "reference_frequency": 100000,
+  "reference_flux_peak": 0.1,
+  "reference_loss_density": 200000,
+  "frequency_exponent": 1.5,
+  "flux_exponent": 2.5,
+  "core_volume": 1e-05,
+  "fit_frequency_min": 50000,
+  "fit_frequency_max": 200000,
+  "fit_flux_min": 0.05,
+  "fit_flux_max": 0.15
+}
+```
+
+Expected outputs:
+
+```json
+{
+  "loss_density": 210325.46208198377,
+  "core_loss": 2.103254620819838,
+  "energy_per_cycle": 1.4021697472132253e-05
+}
+```
+
+Substitution: frequency multiplier `(150000/100000)^1.5=1.8371173070873836`; flux multiplier `(0.08/0.1)^2.5=0.5724334022399461`. Thus `pv=200000*1.8371173070873836*0.5724334022399461=210325.46208198377 W/m³`; `P=pv*1e-5=2.103254620819838 W`; `Ecycle=P/150000=1.4021697472132253e-5 J`.
+
+### Independent test scenarios
+
+- Nominal: complete vector above.
+- Reference identity: with `frequency=100000` and `flux_peak=0.1`, all other inputs nominal, outputs are exactly `200000 W/m³`, `2 W`, `20e-6 J` in the mathematical model.
+- Double only `core_volume`: loss density stays fixed; total heat and per-cycle loss double.
+- Inclusive fit endpoints are admitted; changing the fitted range must not silently clamp input. Both reference and operating points must fit.
+- Invalid: frequency zero; negative/zero flux; reversed bounds; operating or reference point outside a bound; zero reference loss/volume or nonpositive fitted exponent. Incorrect material/temperature cannot be detected numerically and remains the user's calibration responsibility.
+
+### Mandatory physical-geometry diagram
+
+Left x=50–290,y=70–210: an ungapped closed rectangular core with a schematic winding and a shaded volume callout `core_volume`. Draw a clockwise conceptual circulating-flux arrow entirely within the core, with a magnitude label `flux_peak`. Right x=360–620,y=55–165: a sinusoidal flux sketch centred on zero, with positive peak label `flux_peak` and period bracket labeled “T=1/f” bound to `frequency` only through that explicit relation. Add an outward heat arrow from the core bound to `core_loss`; a small cycle-area label binds `energy_per_cycle`. Reference fit labels `reference_loss_density`, `reference_frequency`, `reference_flux_peak` belong to a calibration callout, not to the live sinusoid. Caption: “Sinusoidal zero-bias flux at calibration temperature; empirical total core heat, not a computed B–H loop. Reference data are supplied, and the sketch is illustrative.”
+
