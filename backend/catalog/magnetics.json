@@ -664,5 +664,97 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.field_energy_density",
+    "title": "Magnetic field energy in a material volume",
+    "category": "Magnetics and transformers",
+    "level": "intermediate",
+    "description": "Find magnetic energy density and stored field energy in a uniform linear-material region, such as an inductor air gap.",
+    "formula": "u = B²/(2 mu0 mur); W = u Volume",
+    "assumptions": [
+      "Uniform magnetic field in a homogeneous, isotropic, linear material with real constant permeability and no hysteresis.",
+      "Only the specified material region is integrated; this is not necessarily total device energy. Use separate regions for a core and its gap.",
+      "For an air gap, relative permeability is approximately 1. For nonlinear materials the integral of H dB replaces B²/(2 mu).",
+      "The user-supplied field limit defines the chosen linear regime; it must come from appropriate material data. Use mu0 = 4 pi times 1e-7 H/m."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.014 Lecture 11, equations 9 and 15: Magnetic energy density and volume integral",
+        "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"
+      },
+      {
+        "title": "MIT 8.02 Inductance Worked Examples, examples 1 and 3: B²/(2 mu0)",
+        "url": "https://web.mit.edu/course/8/8.02-esg/Spring03/www/8.02ch32we.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "flux_density",
+        "label": "Uniform magnetic flux density magnitude",
+        "unit": "T",
+        "default": 0.2,
+        "min": 0.0
+      },
+      {
+        "key": "relative_permeability",
+        "label": "Linear material relative permeability",
+        "unit": "1",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "volume",
+        "label": "Field-filled material volume",
+        "unit": "m^3",
+        "default": 5e-08,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "linear_flux_limit",
+        "label": "Chosen linear-regime field limit",
+        "unit": "T",
+        "default": 0.3,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "energy_density",
+        "label": "Magnetic field energy density",
+        "unit": "J/m^3",
+        "expression": "flux_density^2/(2*4*pi*1e-7*relative_permeability)"
+      },
+      {
+        "key": "field_energy",
+        "label": "Energy in specified material volume",
+        "unit": "J",
+        "expression": "energy_density*volume"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "flux_density",
+        "op": "<=",
+        "right": "linear_flux_limit",
+        "message": "Field exceeds the supplied linear-regime limit"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "flux_density": 0.2,
+        "relative_permeability": 1.0,
+        "volume": 5e-08,
+        "linear_flux_limit": 0.3
+      },
+      "expected": {
+        "energy_density": 15915.494309189535,
+        "field_energy": 0.0007957747154594767
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

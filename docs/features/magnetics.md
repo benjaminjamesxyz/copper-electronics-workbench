@@ -373,6 +373,55 @@ All inputs are the default/worked input column above; every result is named belo
 | `peak_flux` | Peak magnetic flux | Wb | 0.00010803795793885272 |
 
 
+## `magnetics.field_energy_density` — Magnetic field energy in a material volume (intermediate)
+
+ID: `magnetics.field_energy_density`.
+
+**Question:** How much recoverable magnetic field energy resides in a specified uniform linear-material region?
+
+**Derivation:** The field energy density is u = ∫0^B H(B') dB'. For H = B/mu with constant mu, u = B²/(2mu). Uniform integration over specified volume V gives W = u V. This is the field-domain calculation needed to allocate energy between core and air-gap regions; it deliberately does not accept circuit L and I or duplicate the transients lane's ½ L I² calculator.
+
+**Formula and outputs:**
+
+- `energy_density = flux_density^2/(2*4*pi*1e-7*relative_permeability)` [J/m³].
+- `field_energy = energy_density*volume` [J].
+
+**Input units/domain:** B [T] ≥ 0; mur [1] > 0; V [m³] > 0; linear_flux_limit [T] > 0; B ≤ limit. In air, mur ≈ 1. The field is homogeneous and permeability isotropic, real and constant; no hysteresis/nonlinear B-H behavior. The specified volume may be only an air gap, not the whole component. Different material regions must be integrated separately. No ability to validate user material curves is claimed.
+
+**Worked example/defaults:** B = 0.2 T, mur = 1, V = 5 × 10^-8 m³, limit = 0.3 T. The volume could represent A = 10^-4 m² and gap g = 0.0005 m, but its field is independently specified, not copied from the gapped example.
+
+- u = 0.04/(8π × 10^-7) = **15915.494309189534 J/m³**.
+- W = u × 5 × 10^-8 = **0.0007957747154594767 J** (0.795774715 mJ).
+- At the same field and volume, a linear material with mur = 100 would contain one hundredth this density; this explains why gap energy can dominate.
+
+**Sources:** [MIT Lecture 11 equations 9 and 15](https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf); [MIT 8.02 examples 1 and 3](https://web.mit.edu/course/8/8.02-esg/Spring03/www/8.02ch32we.pdf).
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `flux_density` | Uniform magnetic flux density magnitude | T | 0.2 | >= 0.0 |
+| `relative_permeability` | Linear material relative permeability | 1 | 1.0 | > 0.0 |
+| `volume` | Field-filled material volume | m^3 | 5e-08 | > 0.0 |
+| `linear_flux_limit` | Chosen linear-regime field limit | T | 0.3 | > 0.0 |
+
+**Model-domain and error rationale:** Positive permeability guards the density divisor and positive volume defines a nonempty region. Field magnitude is nonnegative, including zero density and energy. The field-limit constraint rejects operation beyond the user-selected linear B-H regime; a nonlinear or hysteretic material requires a different energy integral.
+
+**Pre-output, input-only constraints:**
+
+- `flux_density <= linear_flux_limit` — Field exceeds the supplied linear-regime limit.
+
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `energy_density` | Magnetic field energy density | J/m^3 | 15915.494309189535 |
+| `field_energy` | Energy in specified material volume | J | 0.0007957747154594767 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.
