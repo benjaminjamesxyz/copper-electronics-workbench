@@ -331,5 +331,129 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "passives.resistor_excess_noise",
+    "title": "Biased resistor excess noise from noise index",
+    "category": "Nonideal passive components",
+    "level": "intermediate",
+    "description": "Convert a resistor's one-decade current-noise index into band-integrated excess noise and spectral density under DC bias.",
+    "formula": "a=10^(NI/20)*1e-6; D=log10(f_hi/f_lo); v_ex=abs(V_DC)*a*sqrt(D); e_ex(f)=abs(V_DC)*a/sqrt(f ln(10))",
+    "assumptions": [
+      "Noise index in dB is referenced to 1 microvolt RMS per volt DC over one frequency decade: 0 dB means 1 microvolt/volt, NOT 1 volt/volt.",
+      "Assume a 1/f excess-noise power spectral density throughout the requested band; use a characterized frequency interval.",
+      "DC bias is the actual voltage across the resistor. Results are open-circuit excess voltage noise, not loaded-node noise.",
+      "Thermal Johnson noise and amplifier noise are excluded. Noise index depends on resistor technology, bias and temperature; it is not a universal constant."
+    ],
+    "references": [
+      {
+        "title": "Vishay, Shunts, Current Shunts, and Current-Sensing Resistors, Noise pp.14-15 and Table 2",
+        "url": "https://www.vishay.com/doc?49159="
+      },
+      {
+        "title": "Vishay Beyschlag, Basics of Linear Fixed Resistors, Noise p.4",
+        "url": "https://www.vishay.com/docs/28771/basics.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "noise_index_db",
+        "label": "One-decade current-noise index",
+        "unit": "dB",
+        "default": -20
+      },
+      {
+        "key": "dc_voltage",
+        "label": "DC voltage across resistor",
+        "unit": "V",
+        "default": 10
+      },
+      {
+        "key": "lower_frequency",
+        "label": "Lower integration frequency",
+        "unit": "Hz",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "upper_frequency",
+        "label": "Upper integration frequency",
+        "unit": "Hz",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "probe_frequency",
+        "label": "Spectral-density observation frequency",
+        "unit": "Hz",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "decade_voltage_ratio",
+        "label": "One-decade RMS voltage ratio",
+        "unit": "V/V",
+        "expression": "10^(noise_index_db/20)*1e-6"
+      },
+      {
+        "key": "band_decades",
+        "label": "Integrated frequency decades",
+        "unit": "decade",
+        "expression": "log1p((upper_frequency-lower_frequency)/lower_frequency)/ln(10)"
+      },
+      {
+        "key": "excess_noise_rms",
+        "label": "Band-integrated excess noise",
+        "unit": "V",
+        "expression": "abs(dc_voltage)*decade_voltage_ratio*sqrt(band_decades)"
+      },
+      {
+        "key": "excess_noise_density",
+        "label": "Excess voltage-noise spectral density",
+        "unit": "V/sqrt(Hz)",
+        "expression": "abs(dc_voltage)*decade_voltage_ratio/sqrt(probe_frequency)/sqrt(ln(10))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "upper_frequency",
+        "op": ">=",
+        "right": "lower_frequency",
+        "message": "Integration frequencies must be ordered."
+      },
+      {
+        "left": "probe_frequency",
+        "op": ">=",
+        "right": "lower_frequency",
+        "message": "The probe frequency must lie inside the characterized band."
+      },
+      {
+        "left": "probe_frequency",
+        "op": "<=",
+        "right": "upper_frequency",
+        "message": "The probe frequency must lie inside the characterized band."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "noise_index_db": -20,
+        "dc_voltage": 10,
+        "lower_frequency": 1,
+        "upper_frequency": 1000,
+        "probe_frequency": 10
+      },
+      "expected": {
+        "decade_voltage_ratio": 1e-07,
+        "band_decades": 3,
+        "excess_noise_rms": 1.7320508075688771e-06,
+        "excess_noise_density": 2.0839733249330516e-07
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

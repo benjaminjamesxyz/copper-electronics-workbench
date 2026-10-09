@@ -152,3 +152,46 @@ Inputs: `zero_bias_capacitance=10e−6 F`, `fit_capacitance=4e−6 F`, `fit_volt
 
 Draw a C_diff versus V plot at x=60…425, y=45…210. The descending straight conceptual curve starts at C_0 and ends at C_fit at V_fit. Show two generic vertical window markers labeled V_lo and V_hi and shade/hatch the intervening area as “∫C(V)dV = ΔQ”. At x=490…655 draw a capacitor with a positive upper terminal and an energy annotation “ΔW = ∫V C(V)dV”. Bound keys: `zero_bias_capacitance`, `fit_capacitance`, `fit_voltage`, `lower_voltage`, `upper_voltage`, `usable_charge`, `usable_energy`. Curves and marker positions are explanatory, not live-scaled. Caption: “Differential capacitance must be integrated; energy-equivalent C differs from endpoint C. Linear reversible fit, only inside the characterized voltage range.”
 
+
+## 4. `passives.resistor_excess_noise` — intermediate
+
+### Purpose and novelty
+
+Predict DC-bias-driven resistance-fluctuation noise from manufacturer noise index. Closest baseline: `noise.johnson_resistor` is bias-independent white thermal noise. `noise.uncorrelated_rms_sum` merely combines amplitudes. Here a new physical source has 1/f power density, an unusual manufacturer normalization and logarithmic bandwidth dependence. No white-noise sum or general dB converter is being counted again.
+
+### Definition and derivation
+
+Vishay pp.14–15 defines the one-decade current-noise index; Table 2 fixes the µV/V scaling. Let `a=10^(noise_index_db/20)×1e−6 V/V` be the one-decade RMS ratio. Under the explicitly assumed 1/f excess-noise power law, choose `S_v(f)=V_DC² a²/[ln(10) f]` so integrating any decade gives `(V_DC a)²`.
+
+Then:
+
+- `band_decades=log10(f_hi/f_lo)`.
+- `excess_noise_rms=|V_DC| a sqrt(band_decades)` V RMS.
+- `excess_noise_density=|V_DC| a/[sqrt(ln(10)) sqrt(f_probe)]` V/√Hz.
+
+The frequency integral requires f_lo>0. f_hi≥f_lo admits an empty band; the probe must stay inside the characterized interval. Use `log1p((f_hi−f_lo)/f_lo)` for a narrow band. A stated noise index alone does not prove a 1/f law over arbitrary frequencies: the spectrum and index must be characterized for the resistor technology, bias and temperature. Output loading, amplifier noise and Johnson noise are deliberately not included.
+
+### Complete independent example
+
+Inputs: `noise_index_db=−20 dB`, `dc_voltage=10 V`, `lower_frequency=1 Hz`, `upper_frequency=1000 Hz`, `probe_frequency=10 Hz`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `decade_voltage_ratio` | 10^(−20/20) µV/V | 1e−7 V/V |
+| `band_decades` | log10(1000/1) | 3 |
+| `excess_noise_rms` | 10×1e−7×sqrt(3) | 1.7320508075688771e−6 V |
+| `excess_noise_density` | 1e−6/sqrt(10 ln(10)) | 2.0839733249330516e−7 V/√Hz |
+
+### Independent tester cases
+
+- Nominal complete table.
+- A single decade gives exactly |V_DC|a; two decades increase RMS by sqrt(2), not 2.
+- Zero DC bias gives zero excess-noise amplitudes, not zero thermal noise. Negative bias has the same amplitudes as positive bias.
+- f_lo=f_hi=f_probe gives zero integrated noise and a finite spectral density.
+- Noise index=0 means 1e−6 V/V. This guards against the factor-one-million normalization error.
+- Reject f_lo≤0, f_hi<f_lo, and a probe outside the integration/characterization band.
+
+### Mandatory diagram
+
+Left side x=40…300: resistor connected across a DC source, plus sign at its upper terminal and a separate equivalent small noise voltage-source glyph in series in an explanatory inset. Label V_DC → `dc_voltage`, NI → `noise_index_db`, and v_ex,rms → `excess_noise_rms`. Right side x=380…650: conceptual log-frequency plot with descending noise-amplitude-density line labeled “e_ex ∝ 1/√f”, a highlighted integration band and probe. Bind band edges to `lower_frequency` and `upper_frequency`; density annotation to `excess_noise_density`. Caption: “Bias-driven excess noise only; a 1/f power spectrum gives equal variance per decade. Johnson noise is separate; plotted line is conceptual.”
+
