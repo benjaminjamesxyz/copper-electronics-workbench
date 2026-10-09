@@ -199,3 +199,42 @@ Show a longitudinal fiber section with a narrow core stripe x=165..545, y=120..1
 
 Quantity labels: `n1` → `core_index`; `n2` → `cladding_index`; `a` → `core_radius`; `lambda` → `wavelength`; `V` → `normalized_frequency`; `lambda_c` → `cutoff_wavelength`. Caption: “Circular weakly guiding step-index model. The LP11 cutoff is approximately V=2.405; the positive margin indicates single spatial mode, not a measured cable rating or coupling efficiency.”
 
+
+## 6. `opto.fiber_gaussian_dispersion`
+
+### Purpose, novelty and source
+
+Use this expert model to determine whether a chirped optical pulse broadens or compresses in a fiber. U1 slide 6.3 gives the width ratio `sqrt((1+C*beta2*L/T0²)²+(beta2*L/T0²)²)`; slide 6.4 states initial compression for `C*beta2<0`. Slides 6.2 and 6.7 distinguish linear dispersion from attenuation and nonlinear terms.
+
+Closest baseline: `signals.rise_time_bandwidth` describes a single-pole electrical edge and `signals.line_propagation` gives nondispersive delay. Neither represents quadratic optical spectral phase or chirp-dependent compression. `noise.uncorrelated_rms_sum` adds unrelated random amplitudes; the two terms here derive from one coherently propagated Gaussian field. The spatial Gaussian item concerns a different domain and boundary-value problem.
+
+### Model and physical domain
+
+Define the input envelope `A(0,t)=A0*exp(-(1+i*C)*t²/(2*T0²))` and propagation sign convention `dA/dz=-i*beta2*d²A/dt²/2`. These definitions produce the catalog's plus sign in `1+C*x`. The intensity is `P0*exp(-t²/T0²)`; T0 is a 1/e intensity half-width. It is neither RMS width nor FWHM.
+
+Set `x=beta2*L/T0²`, `b=hypot(1+C*x,x)` and `Tout=T0*b`. Solve the Gaussian field propagation, then integrate the resulting intensity: conserved energy `Ep=sqrt(pi)*Ppeak*Tout`. Therefore `output_fwhm=2*sqrt(ln(2))*Tout` and `output_peak_power=Ep/(sqrt(pi)*Tout)`.
+
+Require positive initial width and nonnegative length/energy. C and beta2 are signed. Zero beta2 and zero length are supported exactly without a dispersion-length division. The fiber is single mode with constant beta2 across the relevant spectrum; Kerr phase, higher-order dispersion, PMD and loss are neglected. Near the actual zero-dispersion wavelength, beta3 may invalidate the beta2-only approximation even though the algebra accepts zero. Peak power is a lossless idealization, not a nonlinear/damage rating. `1 ps²/km=1e-27 s²/m`.
+
+### Complete independent example
+
+Inputs: `initial_width=1e-11`, `initial_chirp=1`, `beta_two=-2e-26`, `fiber_length=2000`, `pulse_energy=1e-13`.
+
+- `normalized_dispersion=(-2e-26*2000)/(1e-11)²=-0.4`.
+- `width_ratio=sqrt((1-0.4)²+(-0.4)²)=sqrt(0.52)=0.721110255092797858624`.
+- `output_width=1e-11*sqrt(0.52)=7.21110255092797858624e-12 s`.
+- `output_fwhm=2*sqrt(ln(2))*output_width=1.20072733606122511880e-11 s`.
+- `output_peak_power=1e-13/(sqrt(pi)*output_width)=0.00782390181755426780712 W`.
+
+This example is genuine compression, not a positive-only broadening special case.
+
+### Tester cases
+
+Assert all five outputs. With length zero: normalized dispersion 0, width ratio 1, width `1e-11 s`, FWHM `1.66510922231539551271e-11 s`, peak power `0.00564189583547756286948 W`. Beta2 zero gives the same limit at nonzero length. With C=0 and length 5000 m at the nominal beta2/T0, x=-1 and width ratio sqrt(2). With C=1, length 2500 m gives x=-0.5 and the minimum ratio `1/sqrt(2)`; past that distance it grows again. Reversing both C and beta2 preserves all outputs except the sign of normalized dispersion. Zero energy makes only peak power zero. Reject nonpositive initial width and negative length/energy. No fake finite result may hide unrepresentable arithmetic; no arbitrary upper chirp or fiber-length clamp is part of the physical model.
+
+### Mandatory diagram
+
+Use a left input-pulse panel x=40..200, a fiber block x=250..440, and right output-pulse panel x=500..665. Draw positive intensity pulses with the output narrower and taller than the input, matching the documented compression example qualitatively. Mark horizontal width dimensions as 1/e half-widths on one side of each pulse center, not FWHM spans. Within the fiber block label beta2 and L. Add two small frequency-colored or differently marked conceptual wavelets and a static note `C*beta2 < 0 can compress`; do not bind that relation to a nonexistent quantity.
+
+Quantity labels: `T0` → `initial_width`; `C` → `initial_chirp`; `beta2` → `beta_two`; `L` → `fiber_length`; `Tout` → `output_width`; `Ppeak` → `output_peak_power`. Caption: “Illustrative compression case, not a live waveform. Gaussian intensity widths are 1/e half-widths. Linear second-order dispersion conserves pulse energy; chirp sign can reverse initial broadening.”
+

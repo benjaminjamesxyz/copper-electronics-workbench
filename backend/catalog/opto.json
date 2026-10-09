@@ -515,5 +515,112 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opto.fiber_gaussian_dispersion",
+    "title": "Chirped Gaussian pulse fiber dispersion",
+    "category": "Optical hardware",
+    "level": "expert",
+    "description": "Predict temporal broadening or compression from second-order group-velocity dispersion in a single-mode fiber.",
+    "formula": "x=beta2*L/T0^2; b=hypot(1+C*x,x); Tout=T0*b; FWHMout=2*sqrt(ln(2))*Tout; Ppeak=Ep/(sqrt(pi)*Tout)",
+    "assumptions": [
+      "Input field envelope is A(0,t)=A0*exp(-(1+i*C)*t^2/(2*T0^2)); propagation convention is dA/dz=-i*beta2*d2A/dt2/2.",
+      "initial_width is the intensity 1/e half-width, not RMS width or FWHM. Negative C*beta2 can initially compress the pulse.",
+      "Linear single-mode propagation with constant beta2 across the pulse spectrum. Neglect higher-order dispersion, Kerr nonlinearity, loss, PMD and coupling.",
+      "Pulse energy is conserved in this lossless model; calculated peak power does not establish optical damage or nonlinear safety.",
+      "At beta2=0 the model is the dispersion-free limit only when higher-order dispersion is negligible; near a real zero-dispersion wavelength that assumption must be checked."
+    ],
+    "references": [
+      {
+        "title": "UCSB ECE228A Winter 2011 Lecture 6, slides 6.2-6.4 and 6.7: Gaussian pulse dispersion and chirp",
+        "url": "https://courses.ece.ucsb.edu/ECE228/228A_W11Blumenthal/Lecture6-228a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "initial_width",
+        "label": "Input intensity 1/e half-width",
+        "unit": "s",
+        "default": 1e-11,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_chirp",
+        "label": "Signed initial chirp parameter",
+        "unit": "1",
+        "default": 1
+      },
+      {
+        "key": "beta_two",
+        "label": "Second-order group-velocity dispersion",
+        "unit": "s^2/m",
+        "default": -2e-26
+      },
+      {
+        "key": "fiber_length",
+        "label": "Fiber length",
+        "unit": "m",
+        "default": 2000,
+        "min": 0
+      },
+      {
+        "key": "pulse_energy",
+        "label": "Input pulse energy",
+        "unit": "J",
+        "default": 1e-13,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "normalized_dispersion",
+        "label": "Signed normalized dispersion",
+        "unit": "1",
+        "expression": "(beta_two/initial_width)*(fiber_length/initial_width)"
+      },
+      {
+        "key": "width_ratio",
+        "label": "Output to input width ratio",
+        "unit": "1",
+        "expression": "hypot(1+initial_chirp*normalized_dispersion,normalized_dispersion)"
+      },
+      {
+        "key": "output_width",
+        "label": "Output intensity 1/e half-width",
+        "unit": "s",
+        "expression": "initial_width*width_ratio"
+      },
+      {
+        "key": "output_fwhm",
+        "label": "Output intensity FWHM",
+        "unit": "s",
+        "expression": "2*sqrt(ln(2))*output_width"
+      },
+      {
+        "key": "output_peak_power",
+        "label": "Lossless output peak power",
+        "unit": "W",
+        "expression": "pulse_energy/output_width/sqrt(pi)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "initial_width": 1e-11,
+        "initial_chirp": 1,
+        "beta_two": -2e-26,
+        "fiber_length": 2000,
+        "pulse_energy": 1e-13
+      },
+      "expected": {
+        "normalized_dispersion": -0.4,
+        "width_ratio": 0.7211102550927979,
+        "output_width": 7.211102550927979e-12,
+        "output_fwhm": 1.2007273360612251e-11,
+        "output_peak_power": 0.007823901817554269
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
