@@ -1,0 +1,732 @@
+{
+  "lane": "sensors",
+  "base": "4c46fa1",
+  "file": "backend/tests/sensors.rs",
+  "authored_tests": 25,
+  "behaviors_covered": {
+    "sensors.ntc_steinhart_hart": "Complete cubic non-default oracle; finite-difference sensitivity; monotone resistance response; C=0; signed A; reciprocal calibration endpoint equality; scalar, interval and extrapolation rejection/recovery.",
+    "sensors.platinum_callendar_van_dusen": "Complete independent -200/-50/0/150/850 C oracles; subzero quartic and positive quadratic; zero-branch continuity; tiny nonzero curvature; R0 scaling; scalar/range rejection/recovery.",
+    "sensors.type_t_cold_junction_emf": "Complete independently fetched NIST non-default oracle; junction exchange and sensitivity relocation; equal junctions; 0/400 C boundaries; adjacent-f64 signed signal; both junction range errors/recovery.",
+    "sensors.hall_plate_angle": "Complete negative-bias thirty-degree oracle; current/material/orientation reversal; zero field/current/coefficient; zero/quarter-turn angle; inclusive signed-current and field limits; scalar/coupled rejection/recovery.",
+    "sensors.amr_angular_resistance": "Complete negative-anisotropy forty-five-degree oracle; pi periodicity; current sign; parallel/perpendicular limits; positive/zero anisotropy and zero bias; all-orientation positivity; current/scalar rejection/recovery.",
+    "sensors.hydrogen_activity_electrode": "Complete three-decade negative-voltage oracle; equal activity offset; exchange symmetry; both activity and temperature endpoints; adjacent-f64 signed activity signal; scalar errors/recovery.",
+    "sensors.differential_gap_capacitor": "Complete non-default negative-displacement oracle; signed symmetry; centered zero; dielectric scaling; both dimension branches at thin-gap equality; near contact; normal and subnormal tiny displacement; geometry/scalar rejection/recovery."
+  },
+  "shared_coverage": "Every input of every ID receives NaN/+infinity/-infinity and same-thread valid recovery. Shared common helper only. Complete-output non-default oracles for all seven IDs.",
+  "oracle_provenance": {
+    "NIST": "https://its90.nist.gov/downloadFiles/type_t.tab.txt (directly read; positive-branch coefficients and units)",
+    "other_models": "Research source equations and feature contracts read; independent 70-digit decimal arithmetic, elementary angle identities, finite-difference and scaling invariants. No catalog expected maps read into tests.",
+    "tolerances": "Relative-only comparisons except documented trigonometric zero residuals and one minimum-subnormal quantization step. No engine execution."
+  },
+  "verification": "Not executed: no build, test, lint, formatter, calculator process or native launch. Parent must run backend sensors integration target and the flat JSON-lines scenarios after integration.",
+  "untested_gaps": [
+    "Compiled Rust and process assertions remain unexecuted.",
+    "Native interaction/image acceptance belongs to Main and V2SensorsRun.",
+    "No hardware calibration, self-heating, electrode interference, fringing validation or complete binary64-space enumeration."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "sensors.differential_gap_capacitor",
+      "file": "backend/catalog/sensors.json:673",
+      "status": "source-derived, not executed; regression intentionally asserts corrected behavior",
+      "input_vectors": [
+        {
+          "plate_width": 0.01,
+          "plate_length": 0.01,
+          "rest_gap": 0.0001,
+          "displacement": 1e-313,
+          "relative_permittivity": 1
+        },
+        {
+          "plate_width": 0.01,
+          "plate_length": 0.01,
+          "rest_gap": 0.0001,
+          "displacement": -1e-313,
+          "relative_permittivity": 1
+        }
+      ],
+      "expected": "differential_capacitance approximately +/-1.77083756256e-320 F, nonzero; one minimum-subnormal tolerance 5e-324 F. Other outputs remain finite.",
+      "source_prediction": "Current multiplication forms about +/-1.77083756e-324 before final division by 1e-4; the intermediate rounds to signed zero despite representable final output.",
+      "minimal_correction": "Evaluate (2*near_capacitance)*(displacement/(rest_gap+displacement)) so final underflow occurs only at the true output scale.",
+      "origin": "V2SensorsRun analytical finding; independently retained as a signed failing regression."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "ntc_steinhart_hart_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.ntc_steinhart_hart",
+        "inputs": {
+          "resistance": 7.38905609893065,
+          "coefficient_a": 0.002,
+          "coefficient_b": 0.0004,
+          "coefficient_c": 5e-05,
+          "fit_temperature_min": 250,
+          "fit_temperature_max": 400
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "ln(R)=2 gives inverse temperature .0032 and log-resistance derivative .001; cubic coefficient remains active.",
+      "expected_outputs": {
+        "temperature_kelvin": 312.5,
+        "temperature_celsius": 39.35,
+        "temperature_sensitivity": -13.216336253575458
+      }
+    },
+    {
+      "name": "ntc_steinhart_hart_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.ntc_steinhart_hart",
+        "inputs": {
+          "resistance": 7.38905609893065,
+          "coefficient_a": 0.0,
+          "coefficient_b": 0.0004,
+          "coefficient_c": 5e-05,
+          "fit_temperature_min": 250,
+          "fit_temperature_max": 400
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "ntc_steinhart_hart_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.ntc_steinhart_hart",
+        "inputs": {
+          "resistance": 7.38905609893065,
+          "coefficient_a": 0.002,
+          "coefficient_b": 0.0004,
+          "coefficient_c": 5e-05,
+          "fit_temperature_min": 250,
+          "fit_temperature_max": 400
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; ln(R)=2 gives inverse temperature .0032 and log-resistance derivative .001; cubic coefficient remains active.",
+      "expected_outputs": {
+        "temperature_kelvin": 312.5,
+        "temperature_celsius": 39.35,
+        "temperature_sensitivity": -13.216336253575458
+      }
+    },
+    {
+      "name": "platinum_callendar_van_dusen_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.platinum_callendar_van_dusen",
+        "inputs": {
+          "zero_resistance": 250,
+          "temperature_celsius": -50
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent decimal evaluation of the TI forward subzero quartic, derivative and tangent-model error at -50 C, R0=250 ohm.",
+      "expected_outputs": {
+        "resistance": 200.7657046875,
+        "resistance_sensitivity": 0.9928196875,
+        "linear_model_error": -0.3805453125
+      }
+    },
+    {
+      "name": "platinum_callendar_van_dusen_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.platinum_callendar_van_dusen",
+        "inputs": {
+          "zero_resistance": 250,
+          "temperature_celsius": 850.000001
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "platinum_callendar_van_dusen_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.platinum_callendar_van_dusen",
+        "inputs": {
+          "zero_resistance": 250,
+          "temperature_celsius": -50
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; Independent decimal evaluation of the TI forward subzero quartic, derivative and tangent-model error at -50 C, R0=250 ohm.",
+      "expected_outputs": {
+        "resistance": 200.7657046875,
+        "resistance_sensitivity": 0.9928196875,
+        "linear_model_error": -0.3805453125
+      }
+    },
+    {
+      "name": "type_t_cold_junction_emf_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.type_t_cold_junction_emf",
+        "inputs": {
+          "hot_temperature": 250,
+          "cold_temperature": 40
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "NIST SRD60 coefficients fetched independently; 70-digit termwise sums at 250 C and 40 C, not E(Th-Tc).",
+      "expected_outputs": {
+        "hot_emf": 0.012013410275125366,
+        "cold_emf": 0.0016117927674460545,
+        "terminal_emf": 0.010401617507679312,
+        "hot_sensitivity": 5.5800163048414066e-05
+      }
+    },
+    {
+      "name": "type_t_cold_junction_emf_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.type_t_cold_junction_emf",
+        "inputs": {
+          "hot_temperature": 250,
+          "cold_temperature": -1e-09
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "type_t_cold_junction_emf_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.type_t_cold_junction_emf",
+        "inputs": {
+          "hot_temperature": 250,
+          "cold_temperature": 40
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; NIST SRD60 coefficients fetched independently; 70-digit termwise sums at 250 C and 40 C, not E(Th-Tc).",
+      "expected_outputs": {
+        "hot_emf": 0.012013410275125366,
+        "cold_emf": 0.0016117927674460545,
+        "terminal_emf": 0.010401617507679312,
+        "hot_sensitivity": 5.5800163048414066e-05
+      }
+    },
+    {
+      "name": "hall_plate_angle_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hall_plate_angle",
+        "inputs": {
+          "field_magnitude": 0.08,
+          "field_angle": 0.5235987755982988,
+          "bias_current": -0.002,
+          "hall_coefficient": 0.005,
+          "plate_thickness": 2e-05,
+          "field_limit": 0.08,
+          "current_limit": 0.002
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Thirty-degree identities with signed negative bias at inclusive calibration limits give Bn=.04 sqrt(3), VH=-.02 sqrt(3), derivative .02.",
+      "expected_outputs": {
+        "normal_field": 0.06928203230275509,
+        "hall_voltage": -0.034641016151377546,
+        "angle_sensitivity": 0.02
+      }
+    },
+    {
+      "name": "hall_plate_angle_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hall_plate_angle",
+        "inputs": {
+          "field_magnitude": 0.08,
+          "field_angle": 0.5235987755982988,
+          "bias_current": -0.002000001,
+          "hall_coefficient": 0.005,
+          "plate_thickness": 2e-05,
+          "field_limit": 0.08,
+          "current_limit": 0.002
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "hall_plate_angle_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hall_plate_angle",
+        "inputs": {
+          "field_magnitude": 0.08,
+          "field_angle": 0.5235987755982988,
+          "bias_current": -0.002,
+          "hall_coefficient": 0.005,
+          "plate_thickness": 2e-05,
+          "field_limit": 0.08,
+          "current_limit": 0.002
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; Thirty-degree identities with signed negative bias at inclusive calibration limits give Bn=.04 sqrt(3), VH=-.02 sqrt(3), derivative .02.",
+      "expected_outputs": {
+        "normal_field": 0.06928203230275509,
+        "hall_voltage": -0.034641016151377546,
+        "angle_sensitivity": 0.02
+      }
+    },
+    {
+      "name": "amr_angular_resistance_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.amr_angular_resistance",
+        "inputs": {
+          "perpendicular_resistance": 800,
+          "resistance_anisotropy": -40,
+          "magnetization_angle": 0.7853981633974483,
+          "bias_current": -0.003,
+          "current_limit": 0.003
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Forty-five-degree identities give half negative anisotropy and full positive derivative; negative current is at inclusive limit.",
+      "expected_outputs": {
+        "resistance": 780,
+        "voltage_drop": -2.34,
+        "angular_resistance_sensitivity": 40
+      }
+    },
+    {
+      "name": "amr_angular_resistance_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.amr_angular_resistance",
+        "inputs": {
+          "perpendicular_resistance": 800,
+          "resistance_anisotropy": -800,
+          "magnetization_angle": 0.7853981633974483,
+          "bias_current": -0.003,
+          "current_limit": 0.003
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "amr_angular_resistance_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.amr_angular_resistance",
+        "inputs": {
+          "perpendicular_resistance": 800,
+          "resistance_anisotropy": -40,
+          "magnetization_angle": 0.7853981633974483,
+          "bias_current": -0.003,
+          "current_limit": 0.003
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; Forty-five-degree identities give half negative anisotropy and full positive derivative; negative current is at inclusive limit.",
+      "expected_outputs": {
+        "resistance": 780,
+        "voltage_drop": -2.34,
+        "angular_resistance_sensitivity": 40
+      }
+    },
+    {
+      "name": "hydrogen_activity_electrode_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hydrogen_activity_electrode",
+        "inputs": {
+          "sample_activity": 1e-09,
+          "standard_activity": 1e-06,
+          "temperature": 310,
+          "offset_voltage": -0.012
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Three lower activity decades produce offset minus three Nernst slopes; exact SI kB/q and 310 K determine slope.",
+      "expected_outputs": {
+        "sample_ph": 9,
+        "nernst_slope": 0.061510643643409434,
+        "electrode_voltage": -0.1965319309302283,
+        "activity_sensitivity": 26713733.11265005
+      }
+    },
+    {
+      "name": "hydrogen_activity_electrode_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hydrogen_activity_electrode",
+        "inputs": {
+          "sample_activity": 1e-09,
+          "standard_activity": 0,
+          "temperature": 310,
+          "offset_voltage": -0.012
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "hydrogen_activity_electrode_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hydrogen_activity_electrode",
+        "inputs": {
+          "sample_activity": 1e-09,
+          "standard_activity": 1e-06,
+          "temperature": 310,
+          "offset_voltage": -0.012
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; Three lower activity decades produce offset minus three Nernst slopes; exact SI kB/q and 310 K determine slope.",
+      "expected_outputs": {
+        "sample_ph": 9,
+        "nernst_slope": 0.061510643643409434,
+        "electrode_voltage": -0.1965319309302283,
+        "activity_sensitivity": 26713733.11265005
+      }
+    },
+    {
+      "name": "differential_gap_capacitor_independent",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.differential_gap_capacitor",
+        "inputs": {
+          "plate_width": 0.02,
+          "plate_length": 0.03,
+          "rest_gap": 0.0002,
+          "displacement": -0.0001,
+          "relative_permittivity": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Gaps 300 and 100 micrometers, dielectric times area .0018 m2: Cnear=6 epsilon0, Cfar=18 epsilon0; derivative=200000 epsilon0.",
+      "expected_outputs": {
+        "near_capacitance": 5.31251268768e-11,
+        "far_capacitance": 1.593753806304e-10,
+        "differential_capacitance": -1.062502537536e-10,
+        "normalized_difference": -0.5,
+        "differential_sensitivity": 1.77083756256e-06
+      }
+    },
+    {
+      "name": "differential_gap_capacitor_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.differential_gap_capacitor",
+        "inputs": {
+          "plate_width": 0.02,
+          "plate_length": 0.03,
+          "rest_gap": 0.0002,
+          "displacement": 0.0002,
+          "relative_permittivity": 3
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid scalar or coupled-domain input without poisoning the persistent process."
+    },
+    {
+      "name": "differential_gap_capacitor_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.differential_gap_capacitor",
+        "inputs": {
+          "plate_width": 0.02,
+          "plate_length": 0.03,
+          "rest_gap": 0.0002,
+          "displacement": -0.0001,
+          "relative_permittivity": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follow invalid request; Gaps 300 and 100 micrometers, dielectric times area .0018 m2: Cnear=6 epsilon0, Cfar=18 epsilon0; derivative=200000 epsilon0.",
+      "expected_outputs": {
+        "near_capacitance": 5.31251268768e-11,
+        "far_capacitance": 1.593753806304e-10,
+        "differential_capacitance": -1.062502537536e-10,
+        "normalized_difference": -0.5,
+        "differential_sensitivity": 1.77083756256e-06
+      }
+    },
+    {
+      "name": "capacitor_subnormal_positive",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.differential_gap_capacitor",
+        "inputs": {
+          "plate_width": 0.01,
+          "plate_length": 0.01,
+          "rest_gap": 0.0001,
+          "displacement": 1e-313,
+          "relative_permittivity": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Expected finite signed subnormal from small-displacement derivative times x. One minimum-subnormal absolute tolerance allows final rounding, not zero. Source analysis predicts failure before production fix.",
+      "expected_outputs": {
+        "near_capacitance": 8.8541878128e-12,
+        "far_capacitance": 8.8541878128e-12,
+        "differential_capacitance": 1.7707e-320,
+        "normalized_difference": 1.000000000013287e-309,
+        "differential_sensitivity": 1.77083756256e-07
+      },
+      "absolute_tolerances": {
+        "differential_capacitance": 5e-324
+      }
+    },
+    {
+      "name": "capacitor_subnormal_negative",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.differential_gap_capacitor",
+        "inputs": {
+          "plate_width": 0.01,
+          "plate_length": 0.01,
+          "rest_gap": 0.0001,
+          "displacement": -1e-313,
+          "relative_permittivity": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Expected finite signed subnormal from small-displacement derivative times x. One minimum-subnormal absolute tolerance allows final rounding, not zero. Source analysis predicts failure before production fix.",
+      "expected_outputs": {
+        "near_capacitance": 8.8541878128e-12,
+        "far_capacitance": 8.8541878128e-12,
+        "differential_capacitance": -1.7707e-320,
+        "normalized_difference": -1.000000000013287e-309,
+        "differential_sensitivity": 1.77083756256e-07
+      },
+      "absolute_tolerances": {
+        "differential_capacitance": 5e-324
+      }
+    },
+    {
+      "name": "thermocouple_adjacent_temperatures",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.type_t_cold_junction_emf",
+        "inputs": {
+          "hot_temperature": 180.00000000000003,
+          "cold_temperature": 180
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "70-digit NIST polynomial subtraction at exact binary64 temperatures retains 1.4776750170286517e-18 V.",
+      "expected_outputs": {
+        "hot_emf": 0.008236607696989246,
+        "cold_emf": 0.008236607696989244,
+        "terminal_emf": 1.477675017031e-18,
+        "hot_sensitivity": 5.199106762550725e-05
+      }
+    },
+    {
+      "name": "electrode_adjacent_activities",
+      "request": {
+        "command": "calculate",
+        "id": "sensors.hydrogen_activity_electrode",
+        "inputs": {
+          "sample_activity": 1.0000000000000002e-06,
+          "standard_activity": 1e-06,
+          "temperature": 310,
+          "offset_voltage": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "For adjacent activities ln(1+d)=d with relative remainder below 2e-16; assert signed signal without an absolute floor.",
+      "expected_outputs": {
+        "sample_ph": 6.0,
+        "nernst_slope": 0.061510643643409434,
+        "electrode_voltage": 5.656853022643192e-18,
+        "activity_sensitivity": 26713.733112650043
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "sensors.ntc_steinhart_hart",
+      "inputs": {
+        "resistance": 7.38905609893065,
+        "coefficient_a": 0.002,
+        "coefficient_b": 0.0004,
+        "coefficient_c": 5e-05,
+        "fit_temperature_min": 250,
+        "fit_temperature_max": 400
+      },
+      "expected_outputs": {
+        "temperature_kelvin": 312.5,
+        "temperature_celsius": 39.35,
+        "temperature_sensitivity": -13.216336253575458
+      },
+      "rationale": "ln(R)=2 gives inverse temperature .0032 and log-resistance derivative .001; cubic coefficient remains active.",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    },
+    {
+      "id": "sensors.platinum_callendar_van_dusen",
+      "inputs": {
+        "zero_resistance": 250,
+        "temperature_celsius": -50
+      },
+      "expected_outputs": {
+        "resistance": 200.7657046875,
+        "resistance_sensitivity": 0.9928196875,
+        "linear_model_error": -0.3805453125
+      },
+      "rationale": "Independent decimal evaluation of the TI forward subzero quartic, derivative and tangent-model error at -50 C, R0=250 ohm.",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    },
+    {
+      "id": "sensors.type_t_cold_junction_emf",
+      "inputs": {
+        "hot_temperature": 250,
+        "cold_temperature": 40
+      },
+      "expected_outputs": {
+        "hot_emf": 0.012013410275125366,
+        "cold_emf": 0.0016117927674460545,
+        "terminal_emf": 0.010401617507679312,
+        "hot_sensitivity": 5.5800163048414066e-05
+      },
+      "rationale": "NIST SRD60 coefficients fetched independently; 70-digit termwise sums at 250 C and 40 C, not E(Th-Tc).",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    },
+    {
+      "id": "sensors.hall_plate_angle",
+      "inputs": {
+        "field_magnitude": 0.08,
+        "field_angle": 0.5235987755982988,
+        "bias_current": -0.002,
+        "hall_coefficient": 0.005,
+        "plate_thickness": 2e-05,
+        "field_limit": 0.08,
+        "current_limit": 0.002
+      },
+      "expected_outputs": {
+        "normal_field": 0.06928203230275509,
+        "hall_voltage": -0.034641016151377546,
+        "angle_sensitivity": 0.02
+      },
+      "rationale": "Thirty-degree identities with signed negative bias at inclusive calibration limits give Bn=.04 sqrt(3), VH=-.02 sqrt(3), derivative .02.",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    },
+    {
+      "id": "sensors.amr_angular_resistance",
+      "inputs": {
+        "perpendicular_resistance": 800,
+        "resistance_anisotropy": -40,
+        "magnetization_angle": 0.7853981633974483,
+        "bias_current": -0.003,
+        "current_limit": 0.003
+      },
+      "expected_outputs": {
+        "resistance": 780,
+        "voltage_drop": -2.34,
+        "angular_resistance_sensitivity": 40
+      },
+      "rationale": "Forty-five-degree identities give half negative anisotropy and full positive derivative; negative current is at inclusive limit.",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    },
+    {
+      "id": "sensors.hydrogen_activity_electrode",
+      "inputs": {
+        "sample_activity": 1e-09,
+        "standard_activity": 1e-06,
+        "temperature": 310,
+        "offset_voltage": -0.012
+      },
+      "expected_outputs": {
+        "sample_ph": 9,
+        "nernst_slope": 0.061510643643409434,
+        "electrode_voltage": -0.1965319309302283,
+        "activity_sensitivity": 26713733.11265005
+      },
+      "rationale": "Three lower activity decades produce offset minus three Nernst slopes; exact SI kB/q and 310 K determine slope.",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    },
+    {
+      "id": "sensors.differential_gap_capacitor",
+      "inputs": {
+        "plate_width": 0.02,
+        "plate_length": 0.03,
+        "rest_gap": 0.0002,
+        "displacement": -0.0001,
+        "relative_permittivity": 3
+      },
+      "expected_outputs": {
+        "near_capacitance": 5.31251268768e-11,
+        "far_capacitance": 1.593753806304e-10,
+        "differential_capacitance": -1.062502537536e-10,
+        "normalized_difference": -0.5,
+        "differential_sensitivity": 1.77083756256e-06
+      },
+      "rationale": "Gaps 300 and 100 micrometers, dielectric times area .0018 m2: Cnear=6 epsilon0, Cfar=18 epsilon0; derivative=200000 epsilon0.",
+      "actions": [
+        "Select this exact calculator and enter complete non-default map.",
+        "Calculate and compare every output using receipt relative tolerance 1e-10.",
+        "Enter the corresponding invalid process vector, confirm visible error, restore valid inputs and recalculate.",
+        "Confirm units, signed result and diagram quantity labels remain correct."
+      ]
+    }
+  ]
+}
