@@ -1,0 +1,126 @@
+[
+  {
+    "id": "logic.guaranteed_noise_margins",
+    "title": "Guaranteed logic-level noise margins with ground offset",
+    "category": "Digital logic and interfaces",
+    "level": "basic",
+    "description": "Check high and low recognition margins between a driver and receiver using guaranteed voltage limits, a signed ground offset and adverse line-noise bounds. Negative results identify incompatible corners.",
+    "formula": "DeltaG = GND_receiver - GND_driver; NMH = VOH_min - DeltaG - VIH_min - noise_high; NML = VIL_max - VOL_max + DeltaG - noise_low; NM = min(NMH,NML)",
+    "assumptions": [
+      "Single-ended positive logic; all driver levels reference driver ground and receiver thresholds reference receiver ground. Positive ground_offset raises receiver ground.",
+      "Use worst-case voltage guarantees at the actual supply, temperature and loading. noise_high is an adverse downward voltage disturbance; noise_low is an adverse upward disturbance, both entered as positive magnitudes.",
+      "A nonnegative result checks logic recognition only. Separately check input absolute/recommended voltage limits, power-off tolerance, current fanout, edge rates, ringing and timing. Zero margin leaves no extra noise allowance."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SZZA036C, section 5 and Figure 50: logic compatibility",
+        "url": "https://www.ti.com/lit/an/szza036c/szza036c.pdf"
+      },
+      {
+        "title": "Texas Instruments SCAA029, Figure 23: DC noise margin",
+        "url": "https://www.ti.com/lit/pdf/scaa029"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "output_high_min",
+        "label": "Guaranteed driver high minimum",
+        "unit": "V",
+        "default": 2.4,
+        "min": 0
+      },
+      {
+        "key": "output_low_max",
+        "label": "Guaranteed driver low maximum",
+        "unit": "V",
+        "default": 0.4,
+        "min": 0
+      },
+      {
+        "key": "input_high_min",
+        "label": "Receiver guaranteed high threshold",
+        "unit": "V",
+        "default": 2.0,
+        "min": 0
+      },
+      {
+        "key": "input_low_max",
+        "label": "Receiver guaranteed low threshold",
+        "unit": "V",
+        "default": 0.8,
+        "min": 0
+      },
+      {
+        "key": "ground_offset",
+        "label": "Receiver ground minus driver ground",
+        "unit": "V",
+        "default": 0.1
+      },
+      {
+        "key": "high_noise",
+        "label": "Adverse high-state noise magnitude",
+        "unit": "V",
+        "default": 0.1,
+        "min": 0
+      },
+      {
+        "key": "low_noise",
+        "label": "Adverse low-state noise magnitude",
+        "unit": "V",
+        "default": 0.1,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "high_margin",
+        "label": "Remaining high-state noise margin",
+        "unit": "V",
+        "expression": "output_high_min-ground_offset-input_high_min-high_noise"
+      },
+      {
+        "key": "low_margin",
+        "label": "Remaining low-state noise margin",
+        "unit": "V",
+        "expression": "input_low_max-output_low_max+ground_offset-low_noise"
+      },
+      {
+        "key": "minimum_margin",
+        "label": "Worst remaining recognition margin",
+        "unit": "V",
+        "expression": "min(high_margin,low_margin)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "output_high_min",
+        "op": ">",
+        "right": "output_low_max",
+        "message": "Driver high guarantee must exceed its low guarantee"
+      },
+      {
+        "left": "input_high_min",
+        "op": ">",
+        "right": "input_low_max",
+        "message": "Receiver high threshold must exceed its low threshold"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "output_high_min": 2.4,
+        "output_low_max": 0.4,
+        "input_high_min": 2.0,
+        "input_low_max": 0.8,
+        "ground_offset": 0.1,
+        "high_noise": 0.1,
+        "low_noise": 0.1
+      },
+      "expected": {
+        "high_margin": 0.2,
+        "low_margin": 0.4,
+        "minimum_margin": 0.2
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
