@@ -508,5 +508,109 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "timing.i2c_pullup_bounds",
+    "title": "I2C pullup resistance bounds",
+    "category": "Digital interfaces",
+    "level": "intermediate",
+    "description": "Find the pullup resistor interval allowed by open-drain sink capability and a 30%-to-70% bus rise-time limit.",
+    "formula": "R_min = (V_supply - V_OL)/I_sink; R_max = t_r/[ln(7/3) C_bus]; width = R_max - R_min",
+    "assumptions": [
+      "Single lumped bus capacitance and passive resistor pullup; no rise-time accelerator or active pullup.",
+      "Rise time is measured between 30% and 70% of the supply.",
+      "Use the weakest device's guaranteed sink capability and actual mode-specific rise-time limit; leakage, resistor tolerance and capacitance tolerance require additional margin.",
+      "Negative interval width means no feasible passive pullup, not a recommended resistor; this estimate does not establish I2C compliance."
+    ],
+    "references": [
+      {
+        "title": "TI SLVA689: I2C Bus Pullup Resistor Calculation, equations 1-6",
+        "url": "https://www.ti.com/lit/pdf/slva689"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_supply",
+        "label": "Pullup supply voltage",
+        "unit": "V",
+        "default": 3.3,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_ol",
+        "label": "Guaranteed maximum output-low voltage",
+        "unit": "V",
+        "default": 0.4,
+        "min": 0
+      },
+      {
+        "key": "i_sink",
+        "label": "Guaranteed sink current at output-low limit",
+        "unit": "A",
+        "default": 0.003,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "c_bus",
+        "label": "Total bus capacitance",
+        "unit": "F",
+        "default": 2e-10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rise_limit",
+        "label": "Maximum allowed 30%-70% rise time",
+        "unit": "s",
+        "default": 3e-07,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_min",
+        "label": "Sink-limited minimum resistance",
+        "unit": "ohm",
+        "expression": "(v_supply-v_ol)/i_sink"
+      },
+      {
+        "key": "r_max",
+        "label": "Rise-limited maximum resistance",
+        "unit": "ohm",
+        "expression": "rise_limit/(ln(7/3)*c_bus)"
+      },
+      {
+        "key": "interval_width",
+        "label": "Feasible resistance interval width (negative means infeasible)",
+        "unit": "ohm",
+        "expression": "r_max-r_min"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_ol",
+        "op": "<",
+        "right": "v_supply",
+        "message": "Output-low limit must be below the pullup supply."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "v_supply": 3.3,
+        "v_ol": 0.4,
+        "i_sink": 0.003,
+        "c_bus": 2e-10,
+        "rise_limit": 3e-07
+      },
+      "expected": {
+        "r_min": 966.6666666666666,
+        "r_max": 1770.3337517157427,
+        "interval_width": 803.667085049076
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

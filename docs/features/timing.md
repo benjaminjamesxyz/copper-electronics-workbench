@@ -230,3 +230,52 @@ Cross-input/model constraints (evaluated before outputs):
 | `displacement_current` | Signed displacement current | A | `0.2125005075072` | `overlap_capacitance*voltage_slew` |
 | `current_density` | Signed displacement current density | A/m^2 | `354.167512512` | `displacement_current/(width*length)` |
 
+## 1. I2C pullup resistance bounds — intermediate
+
+**ID:** `timing.i2c_pullup_bounds`
+
+**Purpose:** Select the passive pullup interval that simultaneously permits an open-drain device to sink the bus low and meets the bus rise-time budget.
+
+**Derivation:** At the guaranteed low-voltage limit, resistor current is `(V_supply - V_OL)/R`; limiting it to guaranteed `I_sink` gives:
+
+`R_min = (V_supply - V_OL)/I_sink`.
+
+For a lumped released bus, `V(t) = V_supply[1-exp(-t/(R C_bus))]`. The 30% and 70% crossing times differ by:
+
+`t_30_70 = R C_bus[ln(0.7)-ln(0.3)] = R C_bus ln(7/3)`.
+
+Thus `R_max = rise_limit/[C_bus ln(7/3)]`. The exact logarithm is used rather than TI's rounded factor 0.8473. `interval_width = R_max - R_min`; a negative width indicates no passive solution.
+
+**Dimensions/domain:** Voltage in V, sink capability in A, bus capacitance in F, rise limit in s, all resistance outputs in ohm. Supply/current/capacitance/time must be positive, and `0 <= V_OL < V_supply`. Infeasible electrical specifications remain evaluable so the user can see the interval failure. Use the weakest sink on the bus and the applicable mode's actual rise limit. No active pullup, accelerator, leakage, resistor tolerance, or distributed bus model.
+
+**Independent example:** 3.3 V supply, 0.4 V maximum low, 3 mA sink, 200 pF bus, 300 ns rise limit:
+
+- `R_min = 2.9/0.003 = 966.666666667 ohm`.
+- `ln(7/3) = 0.847297860387`; `R_max = 300e-9/(200e-12 × 0.847297860387) = 1770.333751716 ohm`.
+- Width `= 803.667085049 ohm`.
+
+This recomputes, rather than transcribes, the TI example and deliberately preserves the exact logarithmic factor. The chosen resistor needs tolerance margin inside the interval; this calculator makes no I2C compliance claim.
+
+**Primary source:** [TI SLVA689, I2C Bus Pullup Resistor Calculation](https://www.ti.com/lit/pdf/slva689), equations 1–6 and section 4.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `v_supply` | Pullup supply voltage | V | `3.3` | > 0 |
+| `v_ol` | Guaranteed maximum output-low voltage | V | `0.4` | >= 0 |
+| `i_sink` | Guaranteed sink current at output-low limit | A | `0.003` | > 0 |
+| `c_bus` | Total bus capacitance | F | `2e-10` | > 0 |
+| `rise_limit` | Maximum allowed 30%-70% rise time | s | `3e-07` | > 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- `v_ol < v_supply` — Output-low limit must be below the pullup supply.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `r_min` | Sink-limited minimum resistance | ohm | `966.6666666666666` | `(v_supply-v_ol)/i_sink` |
+| `r_max` | Rise-limited maximum resistance | ohm | `1770.3337517157427` | `rise_limit/(ln(7/3)*c_bus)` |
+| `interval_width` | Feasible resistance interval width (negative means infeasible) | ohm | `803.667085049076` | `r_max-r_min` |
+
