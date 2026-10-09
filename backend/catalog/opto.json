@@ -291,5 +291,121 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opto.gaussian_aperture_capture",
+    "title": "Gaussian beam propagation and aperture capture",
+    "category": "Optical hardware",
+    "level": "expert",
+    "description": "Size a centered circular aperture from the evolving radius of a diffraction-limited Gaussian beam.",
+    "formula": "zR=pi*w0^2/lambda; w(z)=hypot(w0,lambda*z/(pi*w0)); F=1-exp(-2*(a/w)^2); Pcap=P*F; Iaxis=2P/(pi*w^2)",
+    "assumptions": [
+      "Ideal circular TEM00 Gaussian beam in vacuum or air approximated as index one; M squared equals one.",
+      "waist_radius and beam_radius are 1/e^2 intensity radii, not diameters. axial_distance is signed relative to the waist.",
+      "Paraxial model uses divergence lambda/(pi*w0)<=0.1 rad; tan(theta)/theta differs from unity by about 0.335% at that limit.",
+      "Aperture is circular, centered, normal to the axis and located at the requested plane. Capture is evaluated at that plane only.",
+      "Diffraction and changed beam shape after clipping are not predicted. No damage threshold, alignment tolerance or aberration model."
+    ],
+    "references": [
+      {
+        "title": "Newport Gaussian Beam Optics, enclosed-power equation and free-space propagation equations",
+        "url": "https://www.newport.com/n/gaussian-beam-optics/"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "wavelength",
+        "label": "Vacuum wavelength",
+        "unit": "m",
+        "default": 6.33e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "waist_radius",
+        "label": "Waist 1/e^2 intensity radius",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "axial_distance",
+        "label": "Signed waist to aperture distance",
+        "unit": "m",
+        "default": 0.05
+      },
+      {
+        "key": "aperture_radius",
+        "label": "Centered clear aperture radius",
+        "unit": "m",
+        "default": 0.00015,
+        "min": 0
+      },
+      {
+        "key": "beam_power",
+        "label": "Total incident beam power",
+        "unit": "W",
+        "default": 0.01,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "rayleigh_range",
+        "label": "Rayleigh range",
+        "unit": "m",
+        "expression": "pi*waist_radius*(waist_radius/wavelength)"
+      },
+      {
+        "key": "beam_radius",
+        "label": "1/e^2 radius at aperture plane",
+        "unit": "m",
+        "expression": "hypot(waist_radius,(wavelength/waist_radius)*(axial_distance/pi))"
+      },
+      {
+        "key": "captured_fraction",
+        "label": "Fraction passing aperture",
+        "unit": "1",
+        "expression": "-expm1(-2*(aperture_radius/beam_radius)^2)"
+      },
+      {
+        "key": "captured_power",
+        "label": "Power passing aperture",
+        "unit": "W",
+        "expression": "beam_power*captured_fraction"
+      },
+      {
+        "key": "axis_irradiance",
+        "label": "Incident on-axis irradiance at aperture",
+        "unit": "W/m^2",
+        "expression": "(2/pi)*(beam_power/beam_radius)/beam_radius"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "wavelength/waist_radius",
+        "op": "<=",
+        "right": "0.1*pi",
+        "message": "Gaussian paraxial divergence must not exceed 0.1 rad."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "wavelength": 6.33e-07,
+        "waist_radius": 0.0001,
+        "axial_distance": 0.05,
+        "aperture_radius": 0.00015,
+        "beam_power": 0.01
+      },
+      "expected": {
+        "rayleigh_range": 0.04963021569652122,
+        "beam_radius": 0.0001419491843517115,
+        "captured_fraction": 0.8928256332251838,
+        "captured_power": 0.008928256332251838,
+        "axis_irradiance": 315947.0612663579
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

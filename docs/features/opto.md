@@ -130,3 +130,38 @@ Draw two adjacent vertical slabs from y=60 to 220: narrow inactive layer x=235..
 
 Quantity labels: `P0` → `incident_power`; `d` → `dead_thickness`; `t` → `active_thickness`; `alpha_d` → `dead_absorption`; `alpha_a` → `active_absorption`; `Pd` → `dead_absorbed_power`; `Pa` → `active_absorbed_power`; `Pt` → `transmitted_power`. Use compact labels with clear spacing and move coefficients to the lower legend if needed. Caption: “Single-pass absorption after the entrance surface. Inactive absorption is lost; active absorption is optical capture only. Reflections, scattering and carrier-collection losses are not modeled.”
 
+
+## 4. `opto.gaussian_aperture_capture`
+
+### Purpose, novelty and source
+
+Use this expert model to select an aperture or active detector radius in a propagating laser beam. N3 defines w as the 1/e² intensity radius and gives `w(z)²=w0²[1+(lambda*z/(pi*w0²))²]` and `P(a)=Ptotal[1-exp(-2*a²/w²)]`. Its warning about truncation changing subsequent beam propagation is retained.
+
+Closest baseline: `signals.line_propagation` computes delay/wavelength, with no transverse diffraction or aperture integral. Closest neighboring item: fiber temporal dispersion changes pulse width through spectral phase; this model is free-space transverse spreading and spatial interception. Sharing Gaussian algebra does not make these the same physical problem. The entire propagation-plus-capture chain counts as one calculator, not separate radius and power items.
+
+### Model and physical domain
+
+`zR=pi*w0²/lambda`; `w=hypot(w0,lambda*z/(pi*w0))`; `F=-expm1(-2*(a/w)²)`; `Pcap=P*F`; `Iaxis=2*P/(pi*w²)`. `Iaxis` is the incident on-axis irradiance at the aperture plane, not transmitted beam-average irradiance.
+
+Require positive wavelength and waist radius, nonnegative aperture radius/power and any signed axial distance. The divergence `lambda/(pi*w0)` must not exceed 0.1 rad. This is an explicitly conservative paraxial screening window: `tan(0.1)/0.1-1` is about 0.00335, not a promise that all physical errors are below that amount. Only circular TEM00, M²=1 propagation in index-one space is represented. A centered, normal circular aperture is required. Values at negative z are valid and symmetric in radius/power. Zero aperture passes zero total power; on-axis incident irradiance remains defined. The output makes no prediction after clipping or about optical damage.
+
+### Complete independent example
+
+Inputs: `wavelength=6.33e-7`, `waist_radius=0.0001`, `axial_distance=0.05`, `aperture_radius=0.00015`, `beam_power=0.01`.
+
+- `rayleigh_range=pi*(0.0001)²/(6.33e-7)=0.0496302156965212201969 m`.
+- `beam_radius=sqrt((0.0001)²+[(6.33e-7*0.05)/(pi*0.0001)]²)=0.000141949184351711474797 m`.
+- `captured_fraction=1-exp(-2*(0.00015/beam_radius)²)=0.892825633225183769229`.
+- `captured_power=0.01*captured_fraction=0.00892825633225183769229 W`.
+- `axis_irradiance=2*0.01/(pi*beam_radius²)=315947.061266357865102 W/m²`.
+
+### Tester cases
+
+All five nominal outputs. At `axial_distance=0` and `aperture_radius=0.0001`, radius equals `0.0001 m`, capture fraction equals `1-exp(-2)=0.864664716763387308106`, and power equals `0.00864664716763387308106 W`; axis irradiance is `636619.772367581343076 W/m²`. The Rayleigh range remains unchanged. Swap z to -z: all outputs unchanged. Zero power only zeros the power/irradiance outputs; zero aperture only zeros capture fraction/power. At `abs(z)=zR`, radius is `sqrt(2)*w0`. Tiny a/w must retain positive fraction through `expm1`. Reject nonpositive waist/wavelength, negative aperture/power and divergence above 0.1 rad. Include the admitted 0.1-rad endpoint.
+
+### Mandatory diagram
+
+Draw horizontal optical axis from x=60 to 650 at y=145, waist at x=210 and aperture plane at x=505. Two smooth conceptual envelope curves narrow to the waist and widen toward the aperture. They represent the 1/e² contour, not a hard beam edge. Draw the aperture as two opaque vertical segments separated by an opening centered on the axis; do not draw opaque material across the opening. Show radial dimension arrows from the axis to one envelope and one aperture edge, not full diameters. A z dimension line lies below the envelopes.
+
+Quantity labels: `w0` → `waist_radius`; `w(z)` → `beam_radius`; `a` → `aperture_radius`; `z` → `axial_distance`; incoming `P` → `beam_power`; outgoing `Pcap` → `captured_power`; `lambda` → `wavelength`. Caption: “Illustrative 1/e² Gaussian contours; not a live plot or hard beam boundary. Captured power is evaluated at the centered aperture. Post-aperture diffraction is excluded.”
+
