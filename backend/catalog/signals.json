@@ -525,5 +525,100 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.load_reflection",
+    "title": "Resistive-load reflection and first arrival",
+    "category": "Signal integrity and transmission lines",
+    "level": "intermediate",
+    "description": "Calculate the reflected voltage wave, first-arrival load voltage and reflected power fraction at a resistive termination.",
+    "formula": "Gamma=(RL-Z0)/(RL+Z0); Vr=Gamma*Vi; VL=2*RL/(RL+Z0)*Vi; reflected_fraction=Gamma^2; accepted_fraction=4*RL*Z0/(RL+Z0)^2",
+    "assumptions": [
+      "Real positive line impedance and finite nonnegative resistive load; a zero-ohm short is allowed, while infinity/open is not an input.",
+      "Incident voltage is the traveling-wave amplitude at the load, not the driver step voltage; real signed voltage amplitudes are supported.",
+      "Lossless real-Z0 line; outputs describe a single boundary encounter before subsequent source/load reflections.",
+      "No reactive loads, frequency-dependent load impedance or multiple-reflection transient simulation; transmitted_fraction is the accepted-power fraction."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 5\u20136",
+        "url": "https://www.ti.com/lit/an/snla027b/snla027b.pdf"
+      },
+      {
+        "title": "Steven W. Ellingson, Quarter-Wavelength Transmission Line, load reflection equation",
+        "url": "https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "line_impedance",
+        "label": "Characteristic line impedance",
+        "unit": "ohm",
+        "default": 50,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_resistance",
+        "label": "Finite load resistance",
+        "unit": "ohm",
+        "default": 75,
+        "min": 0
+      },
+      {
+        "key": "incident_voltage",
+        "label": "Incident traveling-wave amplitude",
+        "unit": "V",
+        "default": 1.2
+      }
+    ],
+    "outputs": [
+      {
+        "key": "reflection_coefficient",
+        "label": "Voltage reflection coefficient",
+        "unit": "1",
+        "expression": "((load_resistance/max(load_resistance,line_impedance))-(line_impedance/max(load_resistance,line_impedance)))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance)))"
+      },
+      {
+        "key": "reflected_voltage",
+        "label": "Reflected traveling-wave amplitude",
+        "unit": "V",
+        "expression": "reflection_coefficient*incident_voltage"
+      },
+      {
+        "key": "load_voltage",
+        "label": "First-arrival load voltage",
+        "unit": "V",
+        "expression": "(2*(load_resistance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))*incident_voltage"
+      },
+      {
+        "key": "reflected_fraction",
+        "label": "Reflected power fraction",
+        "unit": "1",
+        "expression": "reflection_coefficient^2"
+      },
+      {
+        "key": "transmitted_fraction",
+        "label": "Accepted load power fraction",
+        "unit": "1",
+        "expression": "(4*(load_resistance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))*((line_impedance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "line_impedance": 50,
+        "load_resistance": 75,
+        "incident_voltage": 1.2
+      },
+      "expected": {
+        "reflection_coefficient": 0.2,
+        "reflected_voltage": 0.24,
+        "load_voltage": 1.44,
+        "reflected_fraction": 0.04,
+        "transmitted_fraction": 0.96
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

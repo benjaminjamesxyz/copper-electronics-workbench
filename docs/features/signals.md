@@ -299,6 +299,62 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 **Feature sources:**
 - [Steven W. Ellingson, Coaxial Line, derivation from per-unit-length inductance and capacitance](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line)
 
+## 5. Resistive-load reflection and first arrival — intermediate
+
+**ID:** `signals.load_reflection`. **Sources:** S4 sections 5–6; S6 states the load coefficient explicitly.
+
+At the load, voltage continuity gives V_L = V_i + V_r, and current continuity gives I_L = (V_i - V_r)/Z0. Substituting V_L = R_L I_L and solving:
+
+- Gamma_L = (R_L - Z0)/(R_L + Z0).
+- V_r = Gamma_L V_i.
+- V_L = (1 + Gamma_L) V_i.
+- Reflected power fraction = Gamma_L^2; accepted load power fraction = 1 - Gamma_L^2.
+
+**Domain guards:** Z0 > 0 and finite R_L >= 0; the denominator is strictly positive. Incident voltage may be signed, including zero. The voltage input is the wave arriving at the load, **not** the driver open-circuit voltage. Fractions describe the power split for this real-impedance boundary; for zero excitation they still describe the coefficient-based split but are not a measured 0/0 ratio. An ideal short is allowed: Gamma = -1 and V_L = 0. An infinite ideal open cannot be a finite JSON input; the open limit is Gamma = +1 but is not silently simulated by an arbitrary huge resistance. Reactive loads and subsequent multiple bounces are excluded.
+
+**Independent example/default:** Z0 = 50 ohm, R_L = 75 ohm, V_i = 1.2 V. Gamma = 25/125 = **0.2**; V_r = **0.24 V**; V_L = **1.44 V**; reflected fraction = **0.04**; accepted fraction = **0.96**. Energy check by hand: incident power 1.2^2/50 = 0.0288 W and load power 1.44^2/75 = 0.027648 W, exactly 96% of incident power. These are single-boundary wave powers, not a new generic resistor-power calculator.
+
+### Executable conditioning
+
+For executable arithmetic, normalize both impedances by `M=max(RL,Z0)>0`, then use `Gamma=(RL/M-Z0/M)/(RL/M+Z0/M)`, `VL=[2*(RL/M)/(RL/M+Z0/M)]*Vi` and accepted fraction `[4*(RL/M)/(RL/M+Z0/M)]*[(Z0/M)/(RL/M+Z0/M)]`. This avoids overflow of the impedance sum and cancellation of `1+Gamma` near a short and `1-Gamma^2` near a short/open. Supporting output keys/order and all example values remain unchanged. A finite resistance ratio too extreme to represent can still underflow; no arbitrary resistance clamp or fake open is substituted.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `line_impedance` | Characteristic line impedance | ohm | 50 | > 0 |
+| `load_resistance` | Finite load resistance | ohm | 75 | >= 0 |
+| `incident_voltage` | Incident traveling-wave amplitude | V | 1.2 | any finite signed value |
+
+**Input-only model guards:**
+The scalar bounds above suffice for the physical model; no additional relational constraint is needed.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "line_impedance": 50,
+  "load_resistance": 75,
+  "incident_voltage": 1.2
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `reflection_coefficient` | Voltage reflection coefficient | 1 | `((load_resistance/max(load_resistance,line_impedance))-(line_impedance/max(load_resistance,line_impedance)))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance)))` | `0.2` |
+| `reflected_voltage` | Reflected traveling-wave amplitude | V | `reflection_coefficient*incident_voltage` | `0.24` |
+| `load_voltage` | First-arrival load voltage | V | `(2*(load_resistance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))*incident_voltage` | `1.44` |
+| `reflected_fraction` | Reflected power fraction | 1 | `reflection_coefficient^2` | `0.04` |
+| `transmitted_fraction` | Accepted load power fraction | 1 | `(4*(load_resistance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))*((line_impedance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))` | `0.96` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 5–6](https://www.ti.com/lit/an/snla027b/snla027b.pdf)
+- [Steven W. Ellingson, Quarter-Wavelength Transmission Line, load reflection equation](https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.
