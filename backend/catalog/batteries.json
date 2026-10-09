@@ -1,0 +1,144 @@
+[
+  {
+    "id": "batteries.series_weakest_cell",
+    "title": "Three-series pack usable charge and stranded state",
+    "category": "Battery design",
+    "level": "basic",
+    "description": "Find the first-cell discharge cutoff and the state left in each cell of an unbalanced three-series pack.",
+    "formula": "Qusable = min(C1(s1-sfloor), C2(s2-sfloor), C3(s3-sfloor)); si,end = si-Qusable/Ci",
+    "assumptions": [
+      "Three cells in series carry the same extracted charge; there is no balancing or bypass current.",
+      "Capacities are measured usable full capacities in Ah under the intended temperature, current and cutoff conditions.",
+      "The common SOC floor is a design input, not a universal chemistry limit. Voltage sag, resistance and rate dependence can cause earlier hardware cutoff.",
+      "SOC is a fraction, not percent; stranded SOC is not pack-deliverable charge."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SSZT724, HEV/EV Battery Management Systems Explained Simply, pages 1-2",
+        "url": "https://www.ti.com/lit/pdf/sszt724"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "capacity_one",
+        "label": "Cell 1 full capacity",
+        "unit": "Ah",
+        "default": 3,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "capacity_two",
+        "label": "Cell 2 full capacity",
+        "unit": "Ah",
+        "default": 2.8,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "capacity_three",
+        "label": "Cell 3 full capacity",
+        "unit": "Ah",
+        "default": 3.2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "soc_one",
+        "label": "Cell 1 initial SOC",
+        "unit": "1",
+        "default": 0.9,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "soc_two",
+        "label": "Cell 2 initial SOC",
+        "unit": "1",
+        "default": 0.85,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "soc_three",
+        "label": "Cell 3 initial SOC",
+        "unit": "1",
+        "default": 0.95,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "soc_floor",
+        "label": "Common discharge SOC floor",
+        "unit": "1",
+        "default": 0.1,
+        "min": 0,
+        "max": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "usable_charge",
+        "label": "Series pack deliverable charge",
+        "unit": "Ah",
+        "expression": "min(capacity_one*(soc_one-soc_floor),min(capacity_two*(soc_two-soc_floor),capacity_three*(soc_three-soc_floor)))"
+      },
+      {
+        "key": "end_soc_one",
+        "label": "Cell 1 SOC at pack cutoff",
+        "unit": "1",
+        "expression": "soc_one-usable_charge/capacity_one"
+      },
+      {
+        "key": "end_soc_two",
+        "label": "Cell 2 SOC at pack cutoff",
+        "unit": "1",
+        "expression": "soc_two-usable_charge/capacity_two"
+      },
+      {
+        "key": "end_soc_three",
+        "label": "Cell 3 SOC at pack cutoff",
+        "unit": "1",
+        "expression": "soc_three-usable_charge/capacity_three"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "soc_one",
+        "op": ">=",
+        "right": "soc_floor",
+        "message": "Cell 1 is already below the discharge floor"
+      },
+      {
+        "left": "soc_two",
+        "op": ">=",
+        "right": "soc_floor",
+        "message": "Cell 2 is already below the discharge floor"
+      },
+      {
+        "left": "soc_three",
+        "op": ">=",
+        "right": "soc_floor",
+        "message": "Cell 3 is already below the discharge floor"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "capacity_one": 3,
+        "capacity_two": 2.8,
+        "capacity_three": 3.2,
+        "soc_one": 0.9,
+        "soc_two": 0.85,
+        "soc_three": 0.95,
+        "soc_floor": 0.1
+      },
+      "expected": {
+        "usable_charge": 2.1,
+        "end_soc_one": 0.2,
+        "end_soc_two": 0.1,
+        "end_soc_three": 0.29375
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
