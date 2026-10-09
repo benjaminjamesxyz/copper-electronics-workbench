@@ -1,0 +1,169 @@
+[
+  {
+    "id": "emc.thin_slot_shielding",
+    "title": "Thin-slot shield leakage estimate",
+    "category": "EMC design",
+    "level": "basic",
+    "description": "Estimate the worst-orientation field leakage through one electrically small, thin rectangular slot. Engineering estimate, not enclosure compliance.",
+    "formula": "lambda=c/f; SE=20 log10(lambda/(2L)); E_transmitted/E_incident=2L/lambda",
+    "assumptions": ["One isolated slot in an otherwise highly conducting shield; L>w and L>=10t define the thin-slot geometry used here.", "L<=lambda/20 restricts operation to the manufacturer's electrically small design guideline.", "Worst polarization/orientation estimate; no cavity resonance, seams, multiple apertures, penetrations or near-field magnetic shielding.", "Estimate only, not a certified shielding effectiveness or EMC compliance result."],
+    "references": [{"title": "Laird technical note 154, Rule-of-Thumb for Calculating Aperture Size, page 1", "url": "http://cdn.lairdtech.com/home/brandworld/files/EMI%20Rule-of-Thumb%20for%20Calculating%20Aperture%20Size%20Technical%20Note%20Download.pdf"}],
+    "inputs": [
+      {"key":"frequency","label":"Interference frequency","unit":"Hz","default":100000000,"min":0,"exclusive_min":true},
+      {"key":"slot_length","label":"Longest slot dimension","unit":"m","default":0.02,"min":0,"exclusive_min":true},
+      {"key":"slot_width","label":"Slot width","unit":"m","default":0.002,"min":0,"exclusive_min":true},
+      {"key":"shield_thickness","label":"Shield thickness","unit":"m","default":0.0005,"min":0}
+    ],
+    "outputs": [
+      {"key":"wavelength","label":"Free-space wavelength","unit":"m","expression":"299792458/frequency"},
+      {"key":"shielding_db","label":"Slot shielding estimate","unit":"dB","expression":"20*log10(wavelength/(2*slot_length))"},
+      {"key":"field_ratio","label":"Transmitted-to-incident field ratio","unit":"1","expression":"2*slot_length/wavelength"}
+    ],
+    "constraints": [
+      {"left":"slot_length","op":">","right":"slot_width","message":"The longest dimension must exceed the width; this is a slot, not a round aperture."},
+      {"left":"slot_length","op":">=","right":"10*shield_thickness","message":"Thin-slot estimate requires length at least ten times shield thickness."},
+      {"left":"slot_length*frequency/299792458","op":"<=","right":"0.05","message":"Slot length must not exceed wavelength/20 for this screening model."}
+    ],
+    "example":{"inputs":{"frequency":100000000,"slot_length":0.02,"slot_width":0.002,"shield_thickness":0.0005},"expected":{"wavelength":2.99792458,"shielding_db":37.495214231999306,"field_ratio":0.013342563807926084},"relative_tolerance":0.000001}
+  },
+  {
+    "id":"emc.rc_common_mode_conversion",
+    "title":"RC input-filter common-mode conversion",
+    "category":"EMC design",
+    "level":"expert",
+    "description":"Predict differential interference created by mismatched RC input legs, including the bridging differential capacitor. Engineering estimate, not immunity compliance.",
+    "formula":"D=R2 C2-R1 C1; a=1-w^2 R1 R2[C1 C2+Cd(C1+C2)]; b=w[R1(C1+Cd)+R2(C2+Cd)]; |Vdiff/Vcm|=w|D|/hypot(a,b)",
+    "assumptions":["Both ideal source nodes carry the same sinusoidal RMS common-mode voltage relative to the capacitor return.","R1 and R2 feed separate high-impedance receiver inputs; C1 and C2 shunt these nodes to the common return; Cd bridges the receiver nodes.","Lumped linear ideal components; effective source resistances may be included in R1/R2. No receiver loading, rectification, capacitor voltage dependence or amplifier CMRR.","Differential polarity is node one minus node two. Output voltage is a nonnegative RMS magnitude.","Estimate only, not proof of RF immunity or EMC compliance."],
+    "references":[{"title":"Texas Instruments, Art Kay, Common mode and differential filter, 2022, pages 2-5","url":"https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/73/common-mode-and-differential-filter.pdf"}],
+    "inputs":[
+      {"key":"resistance_one","label":"Input one series resistance","unit":"ohm","default":1000,"min":0,"exclusive_min":true},
+      {"key":"resistance_two","label":"Input two series resistance","unit":"ohm","default":1000,"min":0,"exclusive_min":true},
+      {"key":"capacitance_one","label":"Input one common-mode capacitance","unit":"F","default":1.01e-8,"min":0,"exclusive_min":true},
+      {"key":"capacitance_two","label":"Input two common-mode capacitance","unit":"F","default":9.9e-9,"min":0,"exclusive_min":true},
+      {"key":"differential_capacitance","label":"Bridging differential capacitance","unit":"F","default":1e-7,"min":0},
+      {"key":"frequency","label":"Common-mode interference frequency","unit":"Hz","default":10000,"min":0},
+      {"key":"common_mode_rms","label":"Common-mode interference RMS","unit":"V","default":0.1,"min":0}
+    ],
+    "outputs":[
+      {"key":"mismatch_time","label":"Signed RC mismatch R2C2 minus R1C1","unit":"s","expression":"resistance_two*capacitance_two-resistance_one*capacitance_one"},
+      {"key":"conversion_gain","label":"Common-to-differential magnitude gain","unit":"1","expression":"2*pi*frequency*abs(mismatch_time)/hypot(1-(2*pi*frequency)^2*resistance_one*resistance_two*(capacitance_one*capacitance_two+differential_capacitance*(capacitance_one+capacitance_two)),2*pi*frequency*(resistance_one*(capacitance_one+differential_capacitance)+resistance_two*(capacitance_two+differential_capacitance)))"},
+      {"key":"differential_rms","label":"Converted differential RMS voltage","unit":"V","expression":"common_mode_rms*conversion_gain"}
+    ],
+    "constraints":[],
+    "example":{"inputs":{"resistance_one":1000,"resistance_two":1000,"capacitance_one":1.01e-8,"capacitance_two":9.9e-9,"differential_capacitance":1e-7,"frequency":10000,"common_mode_rms":0.1},"expected":{"mismatch_time":-2e-7,"conversion_gain":0.0008041073247070083,"differential_rms":0.00008041073247070084},"relative_tolerance":0.000001}
+  },
+  {
+    "id":"emc.trapezoid_conducted_harmonic",
+    "title":"Trapezoidal conducted-current harmonic",
+    "category":"EMC design",
+    "level":"intermediate",
+    "description":"Estimate one conducted harmonic from a symmetric-edge switching-current pulse train and its known resistive termination voltage. Not a receiver compliance reading.",
+    "formula":"fn=n fs; Idc=Ipk D; In,rms=sqrt(2) Ipk |sin(pi n D)/(pi n)| |sin(pi n fs tr)/(pi n fs tr)|; Vn,rms=R In,rms",
+    "assumptions":["Periodic unipolar trapezoid has equal linear 0-to-100% rise and fall times tr, not oscilloscope 10-to-90% times.","D is pulse width between the half-amplitude crossings divided by period. tr<=min(D,1-D)/fs prevents overlapping edges.","Input current is the actual current delivered to a purely resistive RF termination, not an unfiltered switch current assumed to reach a LISN.","No frequency modulation, ringing, nonlinear load, spectral detector, resolution bandwidth or LISN transfer model is included.","Harmonic RMS amplitude estimate only; never a peak/quasi-peak compliance prediction. Analytic harmonic nulls may leave floating-point sine residuals."],
+    "references":[{"title":"Texas Instruments, Rice/Gehrke/Segal, Understanding Noise-Spreading Techniques, section IV equation 1 and Figure 2","url":"https://www.ti.com/download/trng/docs/seminar/Topic_2_Rice_Gehrke_Segal.pdf"}],
+    "inputs":[
+      {"key":"switching_frequency","label":"Pulse repetition frequency","unit":"Hz","default":100000,"min":0,"exclusive_min":true},
+      {"key":"pulse_current","label":"Plateau current above zero baseline","unit":"A","default":0.001,"min":0},
+      {"key":"duty_half_height","label":"Half-height pulse duty","unit":"1","default":0.4,"min":0,"max":1,"exclusive_min":true,"exclusive_max":true},
+      {"key":"edge_time","label":"Equal full rise and fall time","unit":"s","default":1e-7,"min":0,"exclusive_min":true},
+      {"key":"harmonic_order","label":"Positive integer harmonic order","unit":"1","default":3,"min":1},
+      {"key":"termination_resistance","label":"RF termination resistance","unit":"ohm","default":50,"min":0,"exclusive_min":true}
+    ],
+    "outputs":[
+      {"key":"harmonic_frequency","label":"Selected harmonic frequency","unit":"Hz","expression":"harmonic_order*switching_frequency"},
+      {"key":"dc_current","label":"Mean pulse current","unit":"A","expression":"pulse_current*duty_half_height"},
+      {"key":"harmonic_current_rms","label":"Harmonic sinusoidal RMS current","unit":"A","expression":"sqrt(2)*pulse_current*abs(sin(pi*harmonic_order*duty_half_height)/(pi*harmonic_order))*abs(sin(pi*harmonic_frequency*edge_time)/(pi*harmonic_frequency*edge_time))"},
+      {"key":"termination_voltage_rms","label":"Harmonic termination RMS voltage","unit":"V","expression":"harmonic_current_rms*termination_resistance"}
+    ],
+    "constraints":[
+      {"left":"harmonic_order","op":"==","right":"floor(harmonic_order)","message":"Harmonic order must be a positive integer."},
+      {"left":"edge_time*switching_frequency","op":"<=","right":"min(duty_half_height,1-duty_half_height)","message":"Full rise and fall edges must fit the high and low intervals."},
+      {"left":"pi*harmonic_order*switching_frequency*edge_time","op":">","right":"0","message":"The positive edge-to-period argument must be representable."}
+    ],
+    "example":{"inputs":{"switching_frequency":100000,"pulse_current":0.001,"duty_half_height":0.4,"edge_time":1e-7,"harmonic_order":3,"termination_resistance":50},"expected":{"harmonic_frequency":300000,"dc_current":0.0004,"harmonic_current_rms":0.00008806826043190418,"termination_voltage_rms":0.004403413021595208},"relative_tolerance":0.000001}
+  },
+  {
+    "id":"emc.sinusoidal_dither_occupancy",
+    "title":"Switching-frequency dither harmonic occupancy",
+    "category":"EMC design",
+    "level":"intermediate",
+    "description":"Use Carson's sinusoidal-FM estimate to plan harmonic spreading and adjacent-harmonic overlap. Does not predict an EMC detector's reduction.",
+    "formula":"beta_n=n Deltaf/fm; Bn=2(n Deltaf+fm); gap_to_next=fs-[(2n+1)Deltaf+2fm]",
+    "assumptions":["Instantaneous switching frequency is fs+Deltaf sin(2 pi fm t); Deltaf is peak deviation, not peak-to-peak.","An otherwise fixed periodic waveform is phase/frequency modulated sinusoidally; its nth harmonic has deviation n Deltaf.","Carson bandwidth is an approximate occupied band containing roughly 98% of single-tone FM power, not a hard spectral boundary.","Negative adjacent-band gap means the estimated occupied bands overlap. Real sidebands extend outside both bands.","No flat-spectrum assumption, dB reduction, resolution-bandwidth weighting, converter stability or compliance claim is made."],
+    "references":[{"title":"Texas Instruments, Rice/Gehrke/Segal, Understanding Noise-Spreading Techniques, section IX and Figure 7","url":"https://www.ti.com/download/trng/docs/seminar/Topic_2_Rice_Gehrke_Segal.pdf"}],
+    "inputs":[
+      {"key":"switching_frequency","label":"Nominal switching frequency","unit":"Hz","default":100000,"min":0,"exclusive_min":true},
+      {"key":"peak_deviation","label":"Peak switching-frequency deviation","unit":"Hz","default":10000,"min":0,"exclusive_min":true},
+      {"key":"modulation_frequency","label":"Sinusoidal modulation frequency","unit":"Hz","default":2000,"min":0,"exclusive_min":true},
+      {"key":"harmonic_order","label":"Positive integer harmonic order","unit":"1","default":3,"min":1}
+    ],
+    "outputs":[
+      {"key":"harmonic_modulation_index","label":"Selected harmonic FM index","unit":"1","expression":"harmonic_order*peak_deviation/modulation_frequency"},
+      {"key":"occupied_bandwidth","label":"Carson harmonic occupied bandwidth","unit":"Hz","expression":"2*(harmonic_order*peak_deviation+modulation_frequency)"},
+      {"key":"next_harmonic_gap","label":"Signed gap to next Carson band","unit":"Hz","expression":"switching_frequency-((2*harmonic_order+1)*peak_deviation+2*modulation_frequency)"}
+    ],
+    "constraints":[
+      {"left":"peak_deviation","op":"<","right":"switching_frequency","message":"Peak deviation must remain below nominal frequency so switching never reverses or stops."},
+      {"left":"modulation_frequency","op":"<","right":"switching_frequency","message":"This switching-dither interpretation requires modulation slower than the carrier."},
+      {"left":"harmonic_order","op":"==","right":"floor(harmonic_order)","message":"Harmonic order must be a positive integer."}
+    ],
+    "example":{"inputs":{"switching_frequency":100000,"peak_deviation":10000,"modulation_frequency":2000,"harmonic_order":3},"expected":{"harmonic_modulation_index":15,"occupied_bandwidth":64000,"next_harmonic_gap":26000},"relative_tolerance":0.000001}
+  },
+  {
+    "id":"emc.ringing_rc_snubber",
+    "title":"Measured-ringing RC snubber design",
+    "category":"EMC design",
+    "level":"expert",
+    "description":"Identify switch-node parasitics from two ringing frequencies, then estimate a shunt series-RC snubber and its cycle loss. Bench-tuned estimate, not compliance.",
+    "formula":"Cp=Ctest/[(f0/f1)^2-1]; Lp=1/[(2 pi f0)^2 Cp]; Rs=sqrt(Lp/Cp)/(2 zeta); Cs=k Cp; P=Cs V^2 fs",
+    "assumptions":["Measure the same lightly damped LC mode before and after adding a known low-ESL capacitance directly across the switch-node return.","Added capacitance changes only C; inductance and voltage-dependent device capacitance remain effectively constant at the measured operating point.","Rs is TI's first-pass shunt-snubber damping guideline, not the series gate-loop critical-resistance formula and not an exact third-order pole solution.","Use damping target 0.5 to 1 and Cs/Cp ratio 3 to 4 per the cited note. Confirm ringing and resistor temperature on hardware.","Cs charges and discharges fully through voltage swing V once per switching cycle; loss omits parasitic ringing energy and switching-device interaction.","Engineering estimate only; component pulse ratings, layout and actual EMC testing remain mandatory."],
+    "references":[{"title":"Texas Instruments SLVA790A, Reducing Radiated EMI in TPS61088 Boost Converter, section 2.4 equations 4-5","url":"https://www.ti.com/lit/pdf/slva790"}],
+    "inputs":[
+      {"key":"original_frequency","label":"Original ringing frequency","unit":"Hz","default":30000000,"min":0,"exclusive_min":true},
+      {"key":"loaded_frequency","label":"Ringing frequency with test capacitor","unit":"Hz","default":15000000,"min":0,"exclusive_min":true},
+      {"key":"test_capacitance","label":"Added test capacitance","unit":"F","default":3e-9,"min":0,"exclusive_min":true},
+      {"key":"damping_target","label":"First-pass damping target","unit":"1","default":0.75,"min":0.5,"max":1},
+      {"key":"capacitance_multiplier","label":"Snubber-to-parasitic capacitance ratio","unit":"1","default":3,"min":3,"max":4},
+      {"key":"voltage_swing","label":"Full snubber capacitor voltage swing","unit":"V","default":12,"min":0},
+      {"key":"switching_frequency","label":"Charge-discharge cycle frequency","unit":"Hz","default":500000,"min":0,"exclusive_min":true}
+    ],
+    "outputs":[
+      {"key":"parasitic_capacitance","label":"Identified parasitic capacitance","unit":"F","expression":"test_capacitance/(((original_frequency-loaded_frequency)/loaded_frequency)*((original_frequency+loaded_frequency)/loaded_frequency))"},
+      {"key":"parasitic_inductance","label":"Identified parasitic inductance","unit":"H","expression":"(1/(2*pi*original_frequency*sqrt(parasitic_capacitance)))^2"},
+      {"key":"snubber_resistance","label":"Starting snubber resistance","unit":"ohm","expression":"sqrt(parasitic_inductance)/sqrt(parasitic_capacitance)/(2*damping_target)"},
+      {"key":"snubber_capacitance","label":"Starting snubber capacitance","unit":"F","expression":"capacitance_multiplier*parasitic_capacitance"},
+      {"key":"snubber_power","label":"Capacitive charge-discharge loss","unit":"W","expression":"(voltage_swing*sqrt(snubber_capacitance)*sqrt(switching_frequency))^2"}
+    ],
+    "constraints":[
+      {"left":"loaded_frequency","op":"<","right":"original_frequency","message":"Added positive capacitance must reduce the same ringing frequency."},
+      {"left":"switching_frequency","op":"<","right":"loaded_frequency","message":"The ringing mode must be faster than the switching repetition rate."}
+    ],
+    "example":{"inputs":{"original_frequency":30000000,"loaded_frequency":15000000,"test_capacitance":3e-9,"damping_target":0.75,"capacitance_multiplier":3,"voltage_swing":12,"switching_frequency":500000},"expected":{"parasitic_capacitance":1e-9,"parasitic_inductance":2.8144773233982716e-8,"snubber_resistance":3.53677651315323,"snubber_capacitance":3e-9,"snubber_power":0.216},"relative_tolerance":0.000001}
+  },
+  {
+    "id":"emc.short_cable_radiation",
+    "title":"Short common-mode cable radiation estimate",
+    "category":"EMC design",
+    "level":"intermediate",
+    "description":"Estimate broadside far-field radiation from a short straight cable carrying a known spatially uniform common-mode current. Free-space estimate, not a chamber result.",
+    "formula":"ell/lambda=ell f/c; kr=2 pi f r/c; E_rms,max=mu0 f Icm,rms ell/(2r)",
+    "assumptions":["Straight electrically short cable is represented by a uniform in-phase Hertzian current element. Icm is the algebraic sum of conductor currents, not current in each wire.","User must know the spatially uniform current or its equivalent current-length moment. A feed-point current alone does not establish that distribution.","ell/lambda<=0.1 and kr>=10 define this far-zone screening domain; observation is broadside, the maximum directional field of this model.","Free space only: no ground-plane image multiplier, cable return radiator, nearby enclosure, standing wave, dielectric or chamber reflection is included.","Uses conventional engineering mu0=4 pi 1e-7 H/m and exact c=299792458 m/s. All fields and current use RMS consistently.","Estimate only, not an intentional antenna design, EMC compliance prediction or bound for an arbitrary cable installation."],
+    "references":[{"title":"MIT 6.013 Electromagnetics and Applications, Chapter 10, section 10.2.1 equations 10.2.7-10.2.10","url":"https://ocw.mit.edu/courses/6-013-electromagnetics-and-applications-spring-2009/1b0b8fccbc37c9089f313dc459bf0b14_MIT6_013S09_chap10.pdf"},{"title":"Texas Instruments SLVA790A, section 2.5, unintended common-mode cable radiation context; geometry differs from free-space model","url":"https://www.ti.com/lit/pdf/slva790"}],
+    "inputs":[
+      {"key":"frequency","label":"Common-mode current frequency","unit":"Hz","default":100000000,"min":0,"exclusive_min":true},
+      {"key":"cable_length","label":"Uniform-current cable length","unit":"m","default":0.1,"min":0,"exclusive_min":true},
+      {"key":"common_mode_current_rms","label":"Total common-mode RMS current","unit":"A","default":1e-5,"min":0},
+      {"key":"distance","label":"Broadside observation distance","unit":"m","default":10,"min":0,"exclusive_min":true}
+    ],
+    "outputs":[
+      {"key":"electrical_length","label":"Cable length divided by wavelength","unit":"1","expression":"cable_length*frequency/299792458"},
+      {"key":"far_field_parameter","label":"Far-zone parameter kr","unit":"1","expression":"2*pi*frequency*distance/299792458"},
+      {"key":"electric_field_rms","label":"Broadside far-field RMS electric field","unit":"V/m","expression":"2*pi*1e-7*frequency*common_mode_current_rms*(cable_length/distance)"}
+    ],
+    "constraints":[
+      {"left":"cable_length*frequency/299792458","op":"<=","right":"0.1","message":"The uniform-current element must be no longer than one tenth wavelength."},
+      {"left":"2*pi*frequency*distance/299792458","op":">=","right":"10","message":"Far-field estimate requires kr at least 10; near-field terms are not included."}
+    ],
+    "example":{"inputs":{"frequency":100000000,"cable_length":0.1,"common_mode_current_rms":1e-5,"distance":10},"expected":{"electrical_length":0.03335640951981521,"far_field_parameter":20.958450219516816,"electric_field_rms":6.283185307179587e-6},"relative_tolerance":0.000001}
+  }
+]

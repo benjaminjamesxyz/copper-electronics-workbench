@@ -1,0 +1,216 @@
+[
+  {
+    "id": "converters.inverting_charge_pump",
+    "title": "Single-flying-capacitor inverter load regulation",
+    "category": "Additional power converters",
+    "level": "basic",
+    "description": "Estimate the negative rail of a two-phase, single-flying-capacitor inverter from charge-transfer resistance and characterized conduction resistance.",
+    "formula": "Rtransport = 1/(fs Cfly); Rout = Rtransport + Rswitch + 4 ESRfly + ESRout; Vout = -Vin + Iload Rout",
+    "assumptions": [
+      "Two nonoverlapping equal-duration phases, one complete charge-transfer cycle per fs period; fs is not oscillator frequency. LM2662 oscillator frequency is twice fs.",
+      "Manufacturer first-order output-resistance approximation; capacitances are effective operating values and Rswitch is the characterized effective switch-path contribution, not one MOSFET Rds(on).",
+      "Steady state with small reservoir ripple, positive input, and positive load-current magnitude flowing from ground into the negative output. No interleaving, regulation, startup, leakage or quiescent-current model.",
+      "Require Iload Rout < Vin so the approximate output remains negative. Check device voltage/current/thermal ratings independently; this generic model does not enforce LM2662-specific ratings."
+    ],
+    "references": [{"title": "Texas Instruments LM2662/LM2663, SNVS002E, sections 8.1, 8.3 and 9.2.1.2", "url": "https://www.ti.com/lit/ds/symlink/lm2662.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Positive input voltage", "unit": "V", "default": 5.0, "min": 0.0, "exclusive_min": true},
+      {"key": "load_current", "label": "Negative-rail load current magnitude", "unit": "A", "default": 0.02, "min": 0.0},
+      {"key": "switching_frequency", "label": "Complete charge-transfer cycle frequency", "unit": "Hz", "default": 10000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "flying_capacitance", "label": "Effective flying capacitance", "unit": "F", "default": 0.000047, "min": 0.0, "exclusive_min": true},
+      {"key": "switch_resistance", "label": "Effective switch resistance contribution", "unit": "ohm", "default": 1.0, "min": 0.0},
+      {"key": "flying_esr", "label": "Flying capacitor ESR", "unit": "ohm", "default": 0.05, "min": 0.0},
+      {"key": "output_esr", "label": "Output capacitor ESR", "unit": "ohm", "default": 0.05, "min": 0.0}
+    ],
+    "outputs": [
+      {"key": "transport_resistance", "label": "Charge-transfer resistance contribution", "unit": "ohm", "expression": "1/switching_frequency/flying_capacitance"},
+      {"key": "output_resistance", "label": "Approximate output resistance", "unit": "ohm", "expression": "transport_resistance+switch_resistance+4*flying_esr+output_esr"},
+      {"key": "voltage_droop", "label": "Loss of negative-rail magnitude", "unit": "V", "expression": "load_current*output_resistance"},
+      {"key": "output_voltage", "label": "Signed output voltage relative to ground", "unit": "V", "expression": "-vin+voltage_droop"}
+    ],
+    "constraints": [{"left": "load_current*(1/switching_frequency/flying_capacitance+switch_resistance+4*flying_esr+output_esr)", "op": "<", "right": "vin", "message": "Load drop must remain below the input voltage for a negative output."}],
+    "example": {"inputs": {"vin": 5.0, "load_current": 0.02, "switching_frequency": 10000.0, "flying_capacitance": 0.000047, "switch_resistance": 1.0, "flying_esr": 0.05, "output_esr": 0.05}, "expected": {"transport_resistance": 2.1276595744680855, "output_resistance": 3.3776595744680855, "voltage_droop": 0.06755319148936172, "output_voltage": -4.9324468085106385}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "converters.sepic_ccm_stress",
+    "title": "Uncoupled-inductor SEPIC CCM component stress",
+    "category": "Additional power converters",
+    "level": "intermediate",
+    "description": "Calculate summed switch current and series energy-transfer capacitor RMS current in a noninverting SEPIC with two separate inductors.",
+    "formula": "D = Vo/(Vi+Vo); I1 = Vo Io/Vi; deltaI1,2 = Vi D/(fs L1,2); IQpk = I1+Io+(deltaI1+deltaI2)/2; ICp,rms² = D (Io²+deltaI2²/12)+(1-D)(I1²+deltaI1²/12)",
+    "assumptions": [
+      "Ideal nonisolated SEPIC with two uncoupled inductors, ideal switch/diode and negligible capacitor voltage ripple. Do not use coupled-inductor half-inductance rules.",
+      "Both branch currents remain strictly positive throughout the cycle. This is a sufficient, explicitly narrower operating condition than merely requiring their sum to remain positive.",
+      "Input-inductor current flows from the source toward the switch; second-inductor current flows from ground toward the rectifier. Their triangular ripples rise together during switch on-time.",
+      "Coupling capacitor mean voltage is Vi, left plate positive. During on-time it carries minus the second-inductor current; during off-time it carries input-inductor current.",
+      "Blocking voltage excludes diode drop, leakage spikes and ringing. RMS values include ideal triangular ripple but not capacitor-voltage-ripple distortion, losses or control dynamics."
+    ],
+    "references": [{"title": "Texas Instruments SLVA516A, sections 1, 2.2, 2.4 and 2.6; Figures 1-3", "url": "https://www.ti.com/lit/an/slva516a/slva516a.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 12.0, "min": 0.0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 18.0, "min": 0.0, "exclusive_min": true},
+      {"key": "load_current", "label": "Output load current", "unit": "A", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "switching_frequency", "label": "Switching frequency", "unit": "Hz", "default": 200000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "input_inductance", "label": "Uncoupled input inductance L1", "unit": "H", "default": 0.0001, "min": 0.0, "exclusive_min": true},
+      {"key": "second_inductance", "label": "Uncoupled second inductance L2", "unit": "H", "default": 0.00015, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Switch on-duty fraction", "unit": "1", "expression": "vout/(vin+vout)"},
+      {"key": "input_current", "label": "Average input-inductor current", "unit": "A", "expression": "load_current*(vout/vin)"},
+      {"key": "input_ripple", "label": "Input-inductor peak-to-peak ripple", "unit": "A", "expression": "vin*duty/switching_frequency/input_inductance"},
+      {"key": "second_ripple", "label": "Second-inductor peak-to-peak ripple", "unit": "A", "expression": "vin*duty/switching_frequency/second_inductance"},
+      {"key": "switch_peak_current", "label": "Peak switch and diode current", "unit": "A", "expression": "input_current+load_current+(input_ripple+second_ripple)/2"},
+      {"key": "switch_rms_current", "label": "Switch RMS current over full period", "unit": "A", "expression": "sqrt(duty)*hypot(input_current+load_current,(input_ripple+second_ripple)/sqrt(12))"},
+      {"key": "coupling_cap_rms_current", "label": "Series energy-transfer capacitor RMS current", "unit": "A", "expression": "hypot(sqrt(duty)*hypot(load_current,second_ripple/sqrt(12)),sqrt(vin/(vin+vout))*hypot(input_current,input_ripple/sqrt(12)))"},
+      {"key": "blocking_voltage", "label": "Ideal switch and diode blocking voltage", "unit": "V", "expression": "vin+vout"}
+    ],
+    "constraints": [
+      {"left": "load_current*(vout/vin)", "op": ">", "right": "vin*(vout/(vin+vout))/switching_frequency/input_inductance/2", "message": "Input-inductor valley current must remain positive for this branch-positive CCM model."},
+      {"left": "load_current", "op": ">", "right": "vin*(vout/(vin+vout))/switching_frequency/second_inductance/2", "message": "Second-inductor valley current must remain positive for this branch-positive CCM model."}
+    ],
+    "example": {"inputs": {"vin": 12.0, "vout": 18.0, "load_current": 1.0, "switching_frequency": 200000.0, "input_inductance": 0.0001, "second_inductance": 0.00015}, "expected": {"duty": 0.6, "input_current": 1.5, "input_ripple": 0.36, "second_ripple": 0.24, "switch_peak_current": 2.8, "switch_rms_current": 1.9411336893681486, "coupling_cap_rms_current": 1.2276807402578245, "blocking_voltage": 30.0}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "converters.forward_reset_winding",
+    "title": "Single-switch forward transformer-reset feasibility",
+    "category": "Additional power converters",
+    "level": "intermediate",
+    "description": "Check whether a reset winding can demagnetize a single-switch forward transformer within the available off-time, and estimate ideal switch stress.",
+    "formula": "n = Np/Ns; r = Nr/Np; D = n Vo/Vi; Dreset = r D; Dlimit = 1/(1+r); idle = 1-D-Dreset; VDS = Vi (1+1/r)",
+    "assumptions": [
+      "Ideal single-switch forward with a dedicated reset winding and reset diode returning magnetizing energy to the input bus; no active clamp or two-switch reset.",
+      "Output inductor operates in CCM with negligible diode and winding drops. This calculation accepts that operating condition; it does not size the output inductor or prove CCM from a load.",
+      "Turns inputs are dimensionless positive ratios: primary/secondary and reset/primary. The reset winding imposes primary reverse voltage Vi/r.",
+      "Require strictly positive idle fraction after reset; equality is the zero-margin boundary, not a feasible design with reset margin.",
+      "Switch voltage is an ideal flat-top stress, not a component rating. Leakage spikes, magnetizing saturation, tolerances, controller duty limits, winding losses and safety isolation need independent checks."
+    ],
+    "references": [{"title": "Texas Instruments SNVA603, Forward Converter, Single-Ended Topology; Figures 3-4", "url": "https://www.ti.com/lit/an/snva603/snva603.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 48.0, "min": 0.0, "exclusive_min": true},
+      {"key": "vout", "label": "Required output voltage", "unit": "V", "default": 12.0, "min": 0.0, "exclusive_min": true},
+      {"key": "primary_secondary_ratio", "label": "Primary-to-secondary turns ratio Np/Ns", "unit": "1", "default": 1.5, "min": 0.0, "exclusive_min": true},
+      {"key": "reset_primary_ratio", "label": "Reset-to-primary turns ratio Nr/Np", "unit": "1", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "switching_frequency", "label": "Switching frequency", "unit": "Hz", "default": 100000.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Required switch on-duty fraction", "unit": "1", "expression": "primary_secondary_ratio*(vout/vin)"},
+      {"key": "reset_fraction", "label": "Required reset fraction of full period", "unit": "1", "expression": "reset_primary_ratio*duty"},
+      {"key": "duty_limit", "label": "Zero-margin reset duty boundary", "unit": "1", "expression": "1/(1+reset_primary_ratio)"},
+      {"key": "idle_fraction", "label": "Remaining fraction after reset", "unit": "1", "expression": "(duty_limit-duty)*(1+reset_primary_ratio)"},
+      {"key": "reset_time", "label": "Transformer demagnetization time", "unit": "s", "expression": "reset_fraction/switching_frequency"},
+      {"key": "switch_blocking_voltage", "label": "Ideal switch flat-top blocking voltage", "unit": "V", "expression": "vin*(1+1/reset_primary_ratio)"}
+    ],
+    "constraints": [{"left": "primary_secondary_ratio*(vout/vin)", "op": "<", "right": "1/(1+reset_primary_ratio)", "message": "Required duty must be below the reset-winding duty boundary, leaving a positive reset margin."}],
+    "example": {"inputs": {"vin": 48.0, "vout": 12.0, "primary_secondary_ratio": 1.5, "reset_primary_ratio": 1.0, "switching_frequency": 100000.0}, "expected": {"duty": 0.375, "reset_fraction": 0.375, "duty_limit": 0.5, "idle_fraction": 0.25, "reset_time": 0.00000375, "switch_blocking_voltage": 96.0}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "converters.flyback_dcm_demagnetization",
+    "title": "DCM flyback energy and demagnetization budget",
+    "category": "Additional power converters",
+    "level": "expert",
+    "description": "Determine the peak current, conduction intervals, RMS winding currents and ideal device stress needed to deliver a specified load with complete flyback demagnetization.",
+    "formula": "Ipk = sqrt(2 Vo Io/(Lm fs)); D = Lm fs Ipk/Vi; Ddemag = Lm fs Ipk/(n Vo); idle = 1-D-Ddemag; Ipri,rms = Ipk sqrt(D/3); Isec,rms = n Ipk sqrt(Ddemag/3)",
+    "assumptions": [
+      "Ideal fixed-frequency isolated flyback, one output, magnetizing inductance referred to primary, n = Np/Ns, positive input/output/load.",
+      "Primary current starts at zero every cycle; stored energy transfers fully to the output. Efficiency is exactly unity in this model, avoiding inconsistent mixing of loss budgets and ideal demagnetization waveforms.",
+      "DCM requires D+Ddemag < 1, leaving a nonzero idle interval. Boundary-conduction and CCM inputs are rejected.",
+      "Output capacitor keeps voltage approximately constant. Winding RMS currents refer to full switching periods, including zero-current intervals.",
+      "Flat-top blocking voltages omit diode drops, parasitic capacitance, leakage ringing, clamp action and core/copper loss. Core saturation, current limits, control behavior and isolation ratings remain external design checks."
+    ],
+    "references": [{"title": "Texas Instruments John Betten, Designing a DCM flyback converter, SSZTCW6, equations 4-10 and 23-27", "url": "https://www.ti.com/lit/ta/ssztcw6/ssztcw6.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 48.0, "min": 0.0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12.0, "min": 0.0, "exclusive_min": true},
+      {"key": "load_current", "label": "Output load current", "unit": "A", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "magnetizing_inductance", "label": "Primary-referred magnetizing inductance", "unit": "H", "default": 0.0001, "min": 0.0, "exclusive_min": true},
+      {"key": "switching_frequency", "label": "Switching frequency", "unit": "Hz", "default": 100000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "primary_secondary_ratio", "label": "Primary-to-secondary turns ratio Np/Ns", "unit": "1", "default": 2.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "primary_peak_current", "label": "Peak primary and switch current", "unit": "A", "expression": "sqrt(2)*sqrt(vout)*sqrt(load_current)/sqrt(magnetizing_inductance)/sqrt(switching_frequency)"},
+      {"key": "duty", "label": "Primary conduction fraction", "unit": "1", "expression": "magnetizing_inductance*switching_frequency*(primary_peak_current/vin)"},
+      {"key": "demagnetization_fraction", "label": "Secondary conduction fraction", "unit": "1", "expression": "magnetizing_inductance*switching_frequency*(primary_peak_current/vout)/primary_secondary_ratio"},
+      {"key": "idle_fraction", "label": "Zero-current idle fraction", "unit": "1", "expression": "1-(duty+demagnetization_fraction)"},
+      {"key": "primary_rms_current", "label": "Full-period primary RMS current", "unit": "A", "expression": "primary_peak_current*sqrt(duty/3)"},
+      {"key": "secondary_rms_current", "label": "Full-period secondary RMS current", "unit": "A", "expression": "primary_secondary_ratio*primary_peak_current*sqrt(demagnetization_fraction/3)"},
+      {"key": "switch_blocking_voltage", "label": "Ideal switch flat-top blocking voltage", "unit": "V", "expression": "vin+primary_secondary_ratio*vout"},
+      {"key": "diode_reverse_voltage", "label": "Ideal secondary diode reverse voltage", "unit": "V", "expression": "vout+vin/primary_secondary_ratio"}
+    ],
+    "constraints": [{"left": "sqrt(2)*sqrt(vout)*sqrt(load_current)*sqrt(magnetizing_inductance)*sqrt(switching_frequency)*(1/vin+1/vout/primary_secondary_ratio)", "op": "<", "right": "1", "message": "Primary plus demagnetization intervals must be shorter than one switching period for DCM."}],
+    "example": {"inputs": {"vin": 48.0, "vout": 12.0, "load_current": 1.0, "magnetizing_inductance": 0.0001, "switching_frequency": 100000.0, "primary_secondary_ratio": 2.0}, "expected": {"primary_peak_current": 1.5491933384829668, "duty": 0.3227486121839514, "demagnetization_fraction": 0.6454972243679028, "idle_fraction": 0.031754163448145856, "primary_rms_current": 0.5081327481546147, "secondary_rms_current": 1.4372164478523368, "switch_blocking_voltage": 72.0, "diode_reverse_voltage": 36.0}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "converters.llc_half_bridge_fha",
+    "title": "Half-bridge LLC loaded fundamental-harmonic gain",
+    "category": "Additional power converters",
+    "level": "expert",
+    "description": "Estimate DC conversion gain and input-reactance sign of a half-bridge LLC using the rectifier-equivalent AC load and a separate series resonant inductor.",
+    "formula": "fr = 1/(2 pi sqrt(Lr Cr)); x = fs/fr; k = Lm/Lr; Rac = 8 n² Rload/pi²; Q = sqrt(Lr/Cr)/Rac; M = 1/hypot(1+(1-1/x²)/k, Q(x-1/x)); Vo = Vi M/(2n)",
+    "assumptions": [
+      "Fundamental-harmonic approximation (FHA), symmetric 50% half-bridge excitation, ideal transformer with n = Np/Ns, full-wave diode rectifier, capacitive output filter and finite positive resistive DC load.",
+      "Separate series Lr and shunt magnetizing Lm; secondary leakage is neglected. Do not substitute open/short-circuit integrated-transformer inductances into this model without deriving their equivalent circuit.",
+      "FHA is most credible near the series resonance and sinusoidal tank-current operation. There is no universal numerical frequency-ratio bound guaranteeing accuracy; far-from-resonance, light-load and discontinuous rectifier behavior need time-domain analysis.",
+      "Input reactance is the imaginary part of j omega Lr + 1/(j omega Cr) + (j omega Lm parallel Rac). Positive means inductive; zero/negative is not a ZVS operating certificate.",
+      "No diode drop, winding/core loss, dead time, MOSFET capacitance or control-loop model. Even an inductive result does not guarantee enough current/charge to achieve ZVS."
+    ],
+    "references": [
+      {"title": "onsemi AND90061/D, pages 2-5, equations 3-7 and separate-versus-integrated magnetic distinction", "url": "https://www.onsemi.com/download/application-notes/pdf/and90061-d.pdf"},
+      {"title": "Texas Instruments SLUA733, abstract and section 1: limitations of FHA and diode-equivalent rectification", "url": "https://www.ti.com/lit/an/slua733/slua733.pdf"}
+    ],
+    "inputs": [
+      {"key": "vin", "label": "DC half-bridge bus voltage", "unit": "V", "default": 400.0, "min": 0.0, "exclusive_min": true},
+      {"key": "primary_secondary_ratio", "label": "Primary-to-secondary turns ratio Np/Ns", "unit": "1", "default": 4.0, "min": 0.0, "exclusive_min": true},
+      {"key": "resonant_inductance", "label": "Separate series resonant inductance Lr", "unit": "H", "default": 0.00002, "min": 0.0, "exclusive_min": true},
+      {"key": "magnetizing_inductance", "label": "Shunt magnetizing inductance Lm", "unit": "H", "default": 0.0001, "min": 0.0, "exclusive_min": true},
+      {"key": "resonant_capacitance", "label": "Series resonant capacitance Cr", "unit": "F", "default": 0.0000001, "min": 0.0, "exclusive_min": true},
+      {"key": "switching_frequency", "label": "Half-bridge switching frequency", "unit": "Hz", "default": 120000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "load_resistance", "label": "DC output load resistance", "unit": "ohm", "default": 10.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "resonant_frequency", "label": "Series Lr-Cr resonant frequency", "unit": "Hz", "expression": "1/(2*pi)/sqrt(resonant_inductance)/sqrt(resonant_capacitance)"},
+      {"key": "normalized_frequency", "label": "Switching-to-series-resonance frequency ratio", "unit": "1", "expression": "switching_frequency/resonant_frequency"},
+      {"key": "ac_load_resistance", "label": "Primary-referred rectifier-equivalent AC resistance", "unit": "ohm", "expression": "(8/pi^2)*primary_secondary_ratio^2*load_resistance"},
+      {"key": "quality_factor", "label": "Loaded tank quality factor", "unit": "1", "expression": "sqrt(resonant_inductance)/sqrt(resonant_capacitance)/ac_load_resistance"},
+      {"key": "inductance_ratio", "label": "Magnetizing-to-resonant inductance ratio", "unit": "1", "expression": "magnetizing_inductance/resonant_inductance"},
+      {"key": "tank_gain", "label": "FHA tank gain 2 n Vo/Vi", "unit": "1", "expression": "1/hypot(1+(1-1/normalized_frequency^2)/inductance_ratio,quality_factor*(normalized_frequency-1/normalized_frequency))"},
+      {"key": "output_voltage", "label": "FHA estimated DC output voltage", "unit": "V", "expression": "vin*tank_gain/2/primary_secondary_ratio"},
+      {"key": "input_reactance", "label": "FHA tank input reactance; positive is inductive", "unit": "ohm", "expression": "2*pi*switching_frequency*resonant_inductance-1/(2*pi*switching_frequency)/resonant_capacitance+(ac_load_resistance/hypot(ac_load_resistance,2*pi*switching_frequency*magnetizing_inductance))*(2*pi*switching_frequency*magnetizing_inductance*(ac_load_resistance/hypot(ac_load_resistance,2*pi*switching_frequency*magnetizing_inductance)))"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"vin": 400.0, "primary_secondary_ratio": 4.0, "resonant_inductance": 0.00002, "magnetizing_inductance": 0.0001, "resonant_capacitance": 0.0000001, "switching_frequency": 120000.0, "load_resistance": 10.0}, "expected": {"resonant_frequency": 112539.53951963827, "normalized_frequency": 1.0662919051580078, "ac_load_resistance": 129.69111506219235, "quality_factor": 0.10904475311935749, "inductance_ratio": 5.0, "tank_gain": 0.9763804121956473, "output_voltage": 48.81902060978236, "input_reactance": 58.16865958726068}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "converters.dual_active_bridge_power",
+    "title": "Dual-active-bridge single-phase-shift power exchange",
+    "category": "Additional power converters",
+    "level": "expert",
+    "description": "Calculate signed transferred power and the theoretical transfer limit of two phase-shifted full bridges coupled through an ideal transformer and transfer inductance.",
+    "formula": "n = Np/Ns; P = n V1 V2 phi (1-|phi|/pi)/(2 pi fs L); Pmax = n V1 V2/(8 fs L); I1 = P/V1; I2 = P/V2; delay = phi/(2 pi fs)",
+    "assumptions": [
+      "Two ideal full bridges each produce a bipolar 50% duty square wave at fs, with no internal bridge phase shift. Total transfer/leakage inductance L is referred to primary and magnetizing current is neglected.",
+      "phi is secondary-bridge lag relative to primary, in radians. Positive power flows primary to secondary; negative phi reverses power. Bus current signs use the same primary-to-secondary power reference.",
+      "Admit the entire ideal SPS phase domain -pi <= phi <= pi, including the falling-power branch beyond |phi| = pi/2. The maximum-power output is theoretical, not an operating recommendation.",
+      "Stiff positive DC buses, ideal transformer, periodic antisymmetric current, no DC bias, losses, dead time, capacitance or saturation. Zero net power does not imply zero circulating current or loss in real hardware.",
+      "No claim of ZVS or component current rating. Verify circulating current, switching charge, thermal limits and isolation independently."
+    ],
+    "references": [{"title": "Texas Instruments TIDUES0F, section 2.3.4.1 equation 6 and section 2.3.4.2 soft-switching limits", "url": "https://www.ti.com/lit/ug/tidues0f/tidues0f.pdf"}],
+    "inputs": [
+      {"key": "primary_voltage", "label": "Primary DC bus voltage", "unit": "V", "default": 400.0, "min": 0.0, "exclusive_min": true},
+      {"key": "secondary_voltage", "label": "Secondary DC bus voltage", "unit": "V", "default": 200.0, "min": 0.0, "exclusive_min": true},
+      {"key": "primary_secondary_ratio", "label": "Primary-to-secondary turns ratio Np/Ns", "unit": "1", "default": 2.0, "min": 0.0, "exclusive_min": true},
+      {"key": "switching_frequency", "label": "Bridge switching frequency", "unit": "Hz", "default": 100000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "transfer_inductance", "label": "Total primary-referred transfer inductance", "unit": "H", "default": 0.00005, "min": 0.0, "exclusive_min": true},
+      {"key": "phase_shift", "label": "Secondary lag relative to primary", "unit": "rad", "default": 0.5235987755982988}
+    ],
+    "outputs": [
+      {"key": "voltage_ratio", "label": "Referred secondary-to-primary bus ratio", "unit": "1", "expression": "primary_secondary_ratio*(secondary_voltage/primary_voltage)"},
+      {"key": "transferred_power", "label": "Signed primary-to-secondary transferred power", "unit": "W", "expression": "primary_voltage*(primary_secondary_ratio*secondary_voltage/transfer_inductance/switching_frequency)*(phase_shift/(2*pi))*(1-abs(phase_shift)/pi)"},
+      {"key": "maximum_power", "label": "Theoretical magnitude at 90-degree phase shift", "unit": "W", "expression": "primary_voltage*(primary_secondary_ratio*secondary_voltage/transfer_inductance/switching_frequency)/8"},
+      {"key": "primary_bus_current", "label": "Signed average current drawn from primary bus", "unit": "A", "expression": "transferred_power/primary_voltage"},
+      {"key": "secondary_bus_current", "label": "Signed average current delivered to secondary bus", "unit": "A", "expression": "transferred_power/secondary_voltage"},
+      {"key": "phase_delay", "label": "Signed secondary time lag", "unit": "s", "expression": "phase_shift/(2*pi)/switching_frequency"}
+    ],
+    "constraints": [{"left": "abs(phase_shift)", "op": "<=", "right": "pi", "message": "Single-phase-shift angle must lie between -pi and pi radians."}],
+    "example": {"inputs": {"primary_voltage": 400.0, "secondary_voltage": 200.0, "primary_secondary_ratio": 2.0, "switching_frequency": 100000.0, "transfer_inductance": 0.00005, "phase_shift": 0.5235987755982988}, "expected": {"voltage_ratio": 1.0, "transferred_power": 2222.222222222222, "maximum_power": 4000.0, "primary_bus_current": 5.555555555555555, "secondary_bus_current": 11.11111111111111, "phase_delay": 0.0000008333333333333333}, "relative_tolerance": 0.000001}
+  }
+]

@@ -1,0 +1,234 @@
+[
+  {
+    "id": "control.delay_phase_budget",
+    "title": "Feedback transport-delay phase-margin budget",
+    "category": "Feedback and control design",
+    "level": "basic",
+    "description": "Allocate additional pure transport delay at an existing unity-gain crossover while retaining a requested phase margin.",
+    "formula": "phase_loss = 360 f_c t_d; PM_remaining = PM_initial - phase_loss; t_max = (PM_initial - PM_target)/(360 f_c)",
+    "assumptions": [
+      "Continuous-time SISO negative feedback; the undelayed closed loop is stable and has one relevant unity-gain crossover.",
+      "The added element is a pure time delay, with unit magnitude and phase -360 f t degrees; crossover frequency does not move.",
+      "Input phase margin already includes all existing plant, sensor and controller lag. Delay input is additional delay only.",
+      "A negative remaining margin or delay headroom is a failed design indication, not an invalid input. Multiple crossovers require checking every crossover separately; this calculator is not a global stability certificate.",
+      "Sampling, zero-order-hold magnitude, jitter, time variation and actuator saturation are not represented by a pure delay."
+    ],
+    "references": [
+      {"title": "NASA NTRS: Time Domain Stability Margin Assessment, slides 4-6 and 12", "url": "https://ntrs.nasa.gov/api/citations/20160013363/downloads/20160013363.pdf"}
+    ],
+    "inputs": [
+      {"key": "crossover_frequency", "label": "Undelayed unity-gain crossover", "unit": "Hz", "default": 1000, "min": 0, "exclusive_min": true},
+      {"key": "initial_phase_margin", "label": "Undelayed phase margin", "unit": "deg", "default": 60, "min": 0, "exclusive_min": true, "max": 180},
+      {"key": "target_phase_margin", "label": "Required retained phase margin", "unit": "deg", "default": 45, "min": 0, "max": 180},
+      {"key": "added_delay", "label": "Additional transport delay", "unit": "s", "default": 0.00002, "min": 0}
+    ],
+    "outputs": [
+      {"key": "added_phase_lag", "label": "Added lag magnitude", "unit": "deg", "expression": "360*crossover_frequency*added_delay"},
+      {"key": "remaining_phase_margin", "label": "Remaining phase margin", "unit": "deg", "expression": "initial_phase_margin-added_phase_lag"},
+      {"key": "maximum_delay", "label": "Maximum added delay for target", "unit": "s", "expression": "(initial_phase_margin-target_phase_margin)/360/crossover_frequency"},
+      {"key": "delay_headroom", "label": "Delay headroom relative to target", "unit": "s", "expression": "maximum_delay-added_delay"}
+    ],
+    "constraints": [
+      {"left": "target_phase_margin", "op": "<=", "right": "initial_phase_margin", "message": "A pure added delay cannot increase the original phase margin"}
+    ],
+    "example": {
+      "inputs": {"crossover_frequency": 1000, "initial_phase_margin": 60, "target_phase_margin": 45, "added_delay": 0.00002},
+      "expected": {"added_phase_lag": 7.2, "remaining_phase_margin": 52.8, "maximum_delay": 0.000041666666666666665, "delay_headroom": 0.000021666666666666664},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "control.loop_sensitivity",
+    "title": "Complex loop disturbance and measurement-noise sensitivity",
+    "category": "Feedback and control design",
+    "level": "intermediate",
+    "description": "Compute output-disturbance rejection and measurement-noise transmission from a measured complex return ratio at one frequency.",
+    "formula": "L = a + j b; D = |1+L|; |S| = 1/D; |T| = |L|/D; |y_d| = |S| d; |y_n| = |T| n",
+    "assumptions": [
+      "SISO linear negative feedback with return ratio L measured without including the summing-junction minus sign.",
+      "The physical closed loop must be stable for sinusoidal steady-state amplitudes to apply; one complex frequency point cannot establish stability.",
+      "Disturbance is added at the plant output before the feedback pickoff; measurement noise is added only in the feedback measurement.",
+      "Disturbance and noise amplitudes use the same voltage convention, such as both RMS. Outputs are separate contributions, not their coherent or statistical sum.",
+      "The exact singular point L=-1 is excluded. Near this point the ideal linear model predicts large amplification, often beyond real actuator headroom."
+    ],
+    "references": [
+      {"title": "Lehigh University ME450, Lecture 5: Classical Feedback Control, slides 13-15, equations 10-19", "url": "https://www.lehigh.edu/~eus204/teaching/ME450_SIRC/lectures/lecture05.pdf"}
+    ],
+    "inputs": [
+      {"key": "loop_real", "label": "Real part of return ratio", "unit": "1", "default": -0.5},
+      {"key": "loop_imaginary", "label": "Imaginary part of return ratio", "unit": "1", "default": -0.5},
+      {"key": "disturbance_amplitude", "label": "Additive output disturbance amplitude", "unit": "V", "default": 0.01, "min": 0},
+      {"key": "noise_amplitude", "label": "Measurement noise amplitude", "unit": "V", "default": 0.001, "min": 0}
+    ],
+    "outputs": [
+      {"key": "return_difference", "label": "Distance of return ratio from -1", "unit": "1", "expression": "hypot(1+loop_real,loop_imaginary)"},
+      {"key": "sensitivity_magnitude", "label": "Output-disturbance sensitivity magnitude", "unit": "1", "expression": "1/return_difference"},
+      {"key": "complementary_magnitude", "label": "Complementary sensitivity magnitude", "unit": "1", "expression": "hypot(loop_real,loop_imaginary)/return_difference"},
+      {"key": "disturbance_output", "label": "Output contribution from disturbance", "unit": "V", "expression": "disturbance_amplitude/return_difference"},
+      {"key": "noise_output", "label": "Output contribution from measurement noise", "unit": "V", "expression": "noise_amplitude*complementary_magnitude"}
+    ],
+    "constraints": [
+      {"left": "hypot(1+loop_real,loop_imaginary)", "op": ">", "right": "0", "message": "The singular return ratio L=-1 has no finite sensitivity"}
+    ],
+    "example": {
+      "inputs": {"loop_real": -0.5, "loop_imaginary": -0.5, "disturbance_amplitude": 0.01, "noise_amplitude": 0.001},
+      "expected": {"return_difference": 0.7071067811865476, "sensitivity_magnitude": 1.4142135623730951, "complementary_magnitude": 1, "disturbance_output": 0.014142135623730952, "noise_output": 0.001},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "control.lead_crossover_synthesis",
+    "title": "Phase-lead compensator at a chosen loop crossover",
+    "category": "Feedback and control design",
+    "level": "intermediate",
+    "description": "Place a lead compensator's peak phase boost at a selected crossover and normalize its gain using the uncompensated loop magnitude there.",
+    "formula": "C(s)=Kc(1+s tau)/(1+s alpha tau); alpha=(1-sin(phi))/(1+sin(phi)); fz=fc sqrt(alpha); fp=fc/sqrt(alpha); Kc=sqrt(alpha)/M",
+    "assumptions": [
+      "The requested positive phase boost is strictly between 0 and 90 degrees and is centered at the chosen crossover.",
+      "Plant magnitude includes all fixed gain and feedback sensing, but excludes the new lead compensator.",
+      "This design makes the local loop magnitude unity; plant phase, other crossovers and Nyquist stability still require separate assessment.",
+      "The controller is a continuous-time minimum-phase lead network. Finite amplifier bandwidth, component tolerances and high-frequency noise are not included.",
+      "No phase-margin-to-overshoot approximation is used. Peak boost approaching 90 degrees needs unbounded pole separation and high-frequency gain."
+    ],
+    "references": [
+      {"title": "Toronto Metropolitan University: Introduction to Control Systems, section 13.2, equations 13-1 through 13-11", "url": "https://pressbooks.library.torontomu.ca/controlsystems/chapter/13-2lead-controller/"}
+    ],
+    "inputs": [
+      {"key": "phase_boost", "label": "Required peak phase boost", "unit": "deg", "default": 30, "min": 0, "exclusive_min": true, "max": 90, "exclusive_max": true},
+      {"key": "crossover_frequency", "label": "Chosen loop crossover", "unit": "Hz", "default": 1000, "min": 0, "exclusive_min": true},
+      {"key": "plant_magnitude", "label": "Uncompensated return-ratio magnitude at crossover", "unit": "1", "default": 0.5, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "pole_zero_ratio", "label": "Alpha: zero-frequency to pole-frequency ratio", "unit": "1", "expression": "(cos(phase_boost*pi/180)/(1+sin(phase_boost*pi/180)))^2"},
+      {"key": "zero_frequency", "label": "Compensator zero frequency", "unit": "Hz", "expression": "crossover_frequency*sqrt(pole_zero_ratio)"},
+      {"key": "pole_frequency", "label": "Compensator pole frequency", "unit": "Hz", "expression": "crossover_frequency/sqrt(pole_zero_ratio)"},
+      {"key": "dc_gain", "label": "Compensator DC gain", "unit": "1", "expression": "sqrt(pole_zero_ratio)/plant_magnitude"},
+      {"key": "high_frequency_gain", "label": "Compensator high-frequency gain", "unit": "1", "expression": "1/plant_magnitude/sqrt(pole_zero_ratio)"},
+      {"key": "zero_time_constant", "label": "Compensator zero time constant", "unit": "s", "expression": "1/(2*pi)/zero_frequency"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"phase_boost": 30, "crossover_frequency": 1000, "plant_magnitude": 0.5},
+      "expected": {"pole_zero_ratio": 0.3333333333333333, "zero_frequency": 577.3502691896258, "pole_frequency": 1732.0508075688772, "dc_gain": 1.1547005383792517, "high_frequency_gain": 3.4641016151377544, "zero_time_constant": 0.00027566444771089603},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "control.pi_pole_placement",
+    "title": "PI pole placement for a first-order voltage-domain plant",
+    "category": "Feedback and control design",
+    "level": "intermediate",
+    "description": "Choose proportional and integral gains so a first-order plant has a specified closed-loop characteristic frequency and damping.",
+    "formula": "P(s)=K/(1+s tau); C(s)=Kp+Ki/s; tau s^2+(1+K Kp)s+K Ki=0; Kp=(2 zeta wn tau-1)/K; Ki=tau wn^2/K",
+    "assumptions": [
+      "Plant input, plant output and unity-feedback reference are voltage-domain signals. Plant gain K is positive and dimensionless.",
+      "The plant is adequately modeled by one real stable pole with no transport delay or zeros over the control band.",
+      "The requested design uses positive proportional and integral gains; 2 zeta wn tau must exceed one.",
+      "The controller is continuous-time PI. Sampling, finite amplifier bandwidth, saturation and anti-windup behavior are not modeled.",
+      "The desired characteristic polynomial does not imply the standard zero-free second-order step overshoot: the closed-loop transfer also has the PI zero. No RLC step response is calculated."
+    ],
+    "references": [
+      {"title": "University of Utah ME3210 Lab 7: PID Controllers, page 1 equation 1", "url": "https://my.mech.utah.edu/~me3200/labs/S05Labs/S05_PID_L07.pdf"},
+      {"title": "Lehigh University ME450 Lecture 5, equations 10-19: negative-feedback characteristic equation", "url": "https://www.lehigh.edu/~eus204/teaching/ME450_SIRC/lectures/lecture05.pdf"},
+      {"title": "MIT 18.03 Supplementary Notes chapter 13: normalized characteristic polynomial, page 1", "url": "https://ocw.mit.edu/courses/18-03-differential-equations-spring-2010/d48ecf2076cc72288ff8d35c859d7551_MIT18_03S10_chapter_13.pdf"}
+    ],
+    "inputs": [
+      {"key": "plant_gain", "label": "First-order plant DC voltage gain", "unit": "1", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "plant_time_constant", "label": "First-order plant time constant", "unit": "s", "default": 0.01, "min": 0, "exclusive_min": true},
+      {"key": "natural_frequency", "label": "Target characteristic angular frequency", "unit": "rad/s", "default": 200, "min": 0, "exclusive_min": true},
+      {"key": "damping_ratio", "label": "Target characteristic damping ratio", "unit": "1", "default": 0.75, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "proportional_gain", "label": "PI proportional gain", "unit": "1", "expression": "(2*damping_ratio*natural_frequency*plant_time_constant-1)/plant_gain"},
+      {"key": "integral_gain", "label": "PI integral gain", "unit": "1/s", "expression": "plant_time_constant*natural_frequency*(natural_frequency/plant_gain)"},
+      {"key": "integral_time", "label": "PI integral time Kp/Ki", "unit": "s", "expression": "proportional_gain/integral_gain"},
+      {"key": "zero_frequency", "label": "PI zero frequency", "unit": "Hz", "expression": "integral_gain/proportional_gain/(2*pi)"}
+    ],
+    "constraints": [
+      {"left": "2*damping_ratio*natural_frequency*plant_time_constant", "op": ">", "right": "1", "message": "The requested pole placement must produce positive proportional gain"}
+    ],
+    "example": {
+      "inputs": {"plant_gain": 2, "plant_time_constant": 0.01, "natural_frequency": 200, "damping_ratio": 0.75},
+      "expected": {"proportional_gain": 1, "integral_gain": 200, "integral_time": 0.005, "zero_frequency": 31.830988618379067},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "control.peak_current_slope_compensation",
+    "title": "Peak-current sampled perturbation and slope compensation",
+    "category": "Feedback and control design",
+    "level": "expert",
+    "description": "Assess cycle-to-cycle subharmonic stability from sensed current slopes and an artificial compensation ramp.",
+    "formula": "lambda=(ma-m2)/(m1+ma); delta_next=lambda delta_initial; ma_boundary=max(0,(m2-m1)/2); stable iff |lambda|<1",
+    "assumptions": [
+      "Fixed-frequency trailing-edge peak-current PWM in continuous conduction, with locally constant rising and falling inductor-current slopes.",
+      "All slopes are referred to the same current-sense voltage node in V/s. Falling slope is entered as a positive magnitude.",
+      "A positive artificial ramp is added to sensed current, equivalently subtracted from the comparator threshold, and resets each switching period.",
+      "The current command is fixed during the local perturbation analysis. Comparator delay, blanking, duty clamps, current-sense filtering and outer-loop dynamics are neglected.",
+      "Perturbation is infinitesimal: next_perturbation is a linearized prediction, not a finite-amplitude simulation.",
+      "Minimum ramp is the nonnegative stability boundary. Equality is marginal when falling slope is at least rising slope; zero ramp is already strictly stable when falling slope is smaller.",
+      "Negative stability reserve is intentionally returned for a subharmonically unstable design. Converter steady-state component sizing is outside this calculation."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLUA837: Slope Compensation Design for UCC2897A, sections 2.1-2.2, equation 8 and deadbeat discussion", "url": "https://www.ti.com/lit/an/slua837/slua837.pdf"}
+    ],
+    "inputs": [
+      {"key": "rising_slope", "label": "Current-sense rising slope", "unit": "V/s", "default": 100000, "min": 0, "exclusive_min": true},
+      {"key": "falling_slope", "label": "Current-sense falling-slope magnitude", "unit": "V/s", "default": 300000, "min": 0, "exclusive_min": true},
+      {"key": "ramp_slope", "label": "Added compensation-ramp slope", "unit": "V/s", "default": 200000, "min": 0},
+      {"key": "switching_period", "label": "Fixed PWM switching period", "unit": "s", "default": 0.00001, "min": 0, "exclusive_min": true},
+      {"key": "initial_perturbation", "label": "Signed cycle-start sense-voltage perturbation", "unit": "V", "default": 0.01}
+    ],
+    "outputs": [
+      {"key": "sample_multiplier", "label": "Cycle-to-cycle signed perturbation multiplier", "unit": "1", "expression": "(ramp_slope-falling_slope)/(rising_slope+ramp_slope)"},
+      {"key": "next_perturbation", "label": "Next-cycle sense-voltage perturbation", "unit": "V", "expression": "sample_multiplier*initial_perturbation"},
+      {"key": "minimum_ramp_slope", "label": "Nonnegative ramp stability boundary", "unit": "V/s", "expression": "max(0,(falling_slope-rising_slope)/2)"},
+      {"key": "ramp_amplitude", "label": "Full-period artificial ramp swing", "unit": "V", "expression": "ramp_slope*switching_period"},
+      {"key": "stability_reserve", "label": "Contraction reserve 1 - absolute multiplier", "unit": "1", "expression": "1-abs(sample_multiplier)"},
+      {"key": "steady_duty", "label": "Duty implied by periodic current slopes", "unit": "1", "expression": "1/(1+rising_slope/falling_slope)"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"rising_slope": 100000, "falling_slope": 300000, "ramp_slope": 200000, "switching_period": 0.00001, "initial_perturbation": 0.01},
+      "expected": {"sample_multiplier": -0.3333333333333333, "next_perturbation": -0.0033333333333333335, "minimum_ramp_slope": 100000, "ramp_amplitude": 2, "stability_reserve": 0.6666666666666666, "steady_duty": 0.75},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "control.integral_two_lag_stability",
+    "title": "Integral-regulator stability limit with plant and sensor lag",
+    "category": "Feedback and control design",
+    "level": "expert",
+    "description": "Find the strict integral-gain stability bound and onset frequency when both a plant pole and a feedback-sensor pole enter a voltage-regulation loop.",
+    "formula": "P(s)=K/(1+s tp); H(s)=1/(1+s ts); C(s)=Ki/s; tp ts s^3+(tp+ts)s^2+s+K Ki=0; Ki_critical=(1/tp+1/ts)/K; f_critical=1/(2 pi sqrt(tp ts))",
+    "assumptions": [
+      "Continuous-time SISO negative feedback; positive voltage-domain plant DC gain, one stable real plant pole and one stable real sensor pole.",
+      "Controller is a pure integrator with positive gain in 1/s; no proportional term, extra zeros, delay, sampling or saturation is included.",
+      "Routh-Hurwitz gives strict stability only when integral gain is below the reported critical gain. Equality gives an imaginary pole pair, not asymptotic stability.",
+      "The reported critical frequency is the oscillation frequency at the gain boundary, not the present loop crossover or an actual observed oscillation.",
+      "Negative Routh reserve and a gain factor below one intentionally expose an unstable proposed design. This bound is specific to the stated two-lag topology."
+    ],
+    "references": [
+      {"title": "University of Illinois ECE486 Lecture 7: Routh-Hurwitz criterion, Example 3 cubic shortcut", "url": "https://courses.physics.illinois.edu/ece486/sp2025/documentation/handbook/lec07.html"},
+      {"title": "Lehigh University ME450 Lecture 5, equations 10-19: feedback characteristic equation", "url": "https://www.lehigh.edu/~eus204/teaching/ME450_SIRC/lectures/lecture05.pdf"}
+    ],
+    "inputs": [
+      {"key": "plant_gain", "label": "Plant DC voltage gain", "unit": "1", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "plant_time_constant", "label": "Plant pole time constant", "unit": "s", "default": 0.001, "min": 0, "exclusive_min": true},
+      {"key": "sensor_time_constant", "label": "Feedback-sensor pole time constant", "unit": "s", "default": 0.002, "min": 0, "exclusive_min": true},
+      {"key": "integral_gain", "label": "Proposed pure-integrator gain", "unit": "1/s", "default": 100, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "critical_integral_gain", "label": "Marginal-stability integral gain", "unit": "1/s", "expression": "(1/plant_time_constant+1/sensor_time_constant)/plant_gain"},
+      {"key": "gain_factor_to_boundary", "label": "Integral-gain factor to stability boundary", "unit": "1", "expression": "critical_integral_gain/integral_gain"},
+      {"key": "routh_reserve", "label": "Normalized Routh reserve", "unit": "1", "expression": "(critical_integral_gain-integral_gain)/critical_integral_gain"},
+      {"key": "critical_frequency", "label": "Oscillation frequency at marginal stability", "unit": "Hz", "expression": "1/(2*pi)/sqrt(plant_time_constant)/sqrt(sensor_time_constant)"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"plant_gain": 2, "plant_time_constant": 0.001, "sensor_time_constant": 0.002, "integral_gain": 100},
+      "expected": {"critical_integral_gain": 750, "gain_factor_to_boundary": 7.5, "routh_reserve": 0.8666666666666667, "critical_frequency": 112.53953951963827},
+      "relative_tolerance": 0.000001
+    }
+  }
+]

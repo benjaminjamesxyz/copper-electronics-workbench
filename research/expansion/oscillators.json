@@ -1,0 +1,185 @@
+[
+  {
+    "id": "oscillators.timer_555_astable",
+    "title": "555 astable charge-discharge timing",
+    "category": "Oscillator design",
+    "level": "basic",
+    "description": "Predict self-triggered 555 output timing from its separate charging and discharging paths.",
+    "formula": "tH=ln(2)(RA+RB)C; tL=ln(2)RB C; T=tH+tL; f=1/T; D=tH/T",
+    "assumptions": ["Standard astable: pins 2 and 6 share the timing capacitor; RA connects supply to pin 7; RB connects pin 7 to the capacitor.", "Ideal trigger/threshold levels are VCC/3 and 2VCC/3; discharge saturation, leakage, threshold errors and propagation delays are neglected.", "Use a properly decoupled 5–15 V bipolar 555 supply, reset high, and component/current ratings from the selected device. The bipolar-555 distortion guideline limits the nominal frequency to 100 kHz.", "Duty is the fraction of output-high time, not the discharge-transistor on-time. This topology cannot produce duty below 0.5 with positive RA."],
+    "references": [{"title": "Texas Instruments xx555 data sheet, SLFS022K, section 6.3.2, equations 1–4", "url": "https://www.ti.com/lit/ds/symlink/ne555.pdf"}],
+    "inputs": [
+      {"key": "charge_resistance", "label": "Supply-to-discharge resistance RA", "unit": "ohm", "default": 1000, "min": 0, "exclusive_min": true},
+      {"key": "discharge_resistance", "label": "Discharge-to-capacitor resistance RB", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "timing_capacitance", "label": "Timing capacitance", "unit": "F", "default": 1e-7, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "high_time", "label": "Output high interval", "unit": "s", "expression": "ln(2)*(charge_resistance+discharge_resistance)*timing_capacitance"},
+      {"key": "low_time", "label": "Output low interval", "unit": "s", "expression": "ln(2)*discharge_resistance*timing_capacitance"},
+      {"key": "period", "label": "Oscillation period", "unit": "s", "expression": "high_time+low_time"},
+      {"key": "frequency", "label": "Oscillation frequency", "unit": "Hz", "expression": "1/period"},
+      {"key": "high_duty", "label": "Output high duty fraction", "unit": "1", "expression": "(charge_resistance+discharge_resistance)/(charge_resistance+2*discharge_resistance)"}
+    ],
+    "constraints": [{"left": "ln(2)*(charge_resistance+2*discharge_resistance)*timing_capacitance", "op": ">=", "right": "1e-5", "message": "The bipolar 555 model requires nominal frequency no greater than 100 kHz."}],
+    "example": {"inputs": {"charge_resistance": 1000, "discharge_resistance": 10000, "timing_capacitance": 1e-7}, "expected": {"high_time": 0.0007624618986159398, "low_time": 0.0006931471805599453, "period": 0.0014556090791758851, "frequency": 686.997638518554, "high_duty": 0.5238095238095238}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "oscillators.comparator_rc_oscillator",
+    "title": "Three-resistor comparator RC oscillator",
+    "category": "Oscillator design",
+    "level": "intermediate",
+    "description": "Design the unequal duty and switching thresholds of an autonomous comparator relaxation oscillator.",
+    "formula": "G=1+RF/RU+RF/RL; VL=Vs(RF/RU)/G; VH=Vs(1+RF/RU)/G; tH=RT C ln(1+RL/RF); tL=RT C ln(1+RU/RF)",
+    "assumptions": ["Comparator output switches ideally between ground and supply. RU joins supply to noninverting input, RL joins that input to ground, and RF joins output to that input.", "Output drives timing resistor RT; timing capacitor to ground drives the inverting input. Internal comparator hysteresis is neglected.", "Propagation delay and output resistance must be negligible compared with both half-cycle intervals and RT; input common-mode range must include both thresholds.", "Capacitor leakage, bias current, parasitic capacitance and output-loading effects are excluded. Values predict the settled cycle, not the first startup pulse."],
+    "references": [{"title": "Texas Instruments SNOA998A, Relaxation Oscillator Circuit, design steps 1–7", "url": "https://www.ti.com/lit/ab/snoa998a/snoa998a.pdf"}],
+    "inputs": [
+      {"key": "supply_voltage", "label": "Ideal output-high and supply voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "upper_resistance", "label": "Threshold node to supply RU", "unit": "ohm", "default": 20000, "min": 0, "exclusive_min": true},
+      {"key": "lower_resistance", "label": "Threshold node to ground RL", "unit": "ohm", "default": 40000, "min": 0, "exclusive_min": true},
+      {"key": "feedback_resistance", "label": "Output to threshold node RF", "unit": "ohm", "default": 20000, "min": 0, "exclusive_min": true},
+      {"key": "timing_resistance", "label": "Output to capacitor RT", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "timing_capacitance", "label": "Timing capacitance", "unit": "F", "default": 1e-7, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "upper_threshold", "label": "High-output switching threshold", "unit": "V", "expression": "supply_voltage*(1+feedback_resistance/upper_resistance)/(1+feedback_resistance/upper_resistance+feedback_resistance/lower_resistance)"},
+      {"key": "lower_threshold", "label": "Low-output switching threshold", "unit": "V", "expression": "supply_voltage*(feedback_resistance/upper_resistance)/(1+feedback_resistance/upper_resistance+feedback_resistance/lower_resistance)"},
+      {"key": "high_time", "label": "Output high interval", "unit": "s", "expression": "timing_resistance*timing_capacitance*log1p(lower_resistance/feedback_resistance)"},
+      {"key": "low_time", "label": "Output low interval", "unit": "s", "expression": "timing_resistance*timing_capacitance*log1p(upper_resistance/feedback_resistance)"},
+      {"key": "frequency", "label": "Oscillation frequency", "unit": "Hz", "expression": "1/(high_time+low_time)"},
+      {"key": "high_duty", "label": "Output high duty fraction", "unit": "1", "expression": "high_time/(high_time+low_time)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"supply_voltage": 5, "upper_resistance": 20000, "lower_resistance": 40000, "feedback_resistance": 20000, "timing_resistance": 10000, "timing_capacitance": 1e-7}, "expected": {"upper_threshold": 4, "lower_threshold": 2, "high_time": 0.0010986122886681097, "low_time": 0.0006931471805599453, "frequency": 558.1106265512473, "high_duty": 0.6131471927654584}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "oscillators.triangle_integrator_oscillator",
+    "title": "Integrator and comparator triangle oscillator",
+    "category": "Oscillator design",
+    "level": "intermediate",
+    "description": "Calculate the triangle amplitude and self-oscillation period of a closed integrator–hysteresis loop.",
+    "formula": "Vtri,pk=(RT/RF)Vsq,pk; |dVtri/dt|=Vsq,pk/(RI C); T=4 RI C RT/RF; f=1/T",
+    "assumptions": ["All voltages are referred to a stiff midpoint or ground. Comparator output levels are symmetric at plus/minus square_peak.", "Comparator noninverting input sums triangle voltage through RT and comparator output through RF; its inverting input is grounded. An inverting integrator driven through RI closes the loop.", "The integrator uses feedback C and a grounded noninverting input. Available linear output swing must exceed the calculated triangle peak; slew rate must exceed ramp_slew.", "Comparator delay must be small compared with a half-cycle; integrator GBW, bias-current drift, capacitor leakage, offsets and saturation recovery are neglected. Output amplitude is not independently regulated."],
+    "references": [{"title": "Texas Instruments SBOA212B, PWM Generator Circuit, triangle-generator subcircuit and design steps 3–4", "url": "https://www.ti.com/lit/pdf/sboa212"}],
+    "inputs": [
+      {"key": "square_peak", "label": "Comparator output peak about reference", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "triangle_resistance", "label": "Triangle output to comparator sum RT", "unit": "ohm", "default": 8000, "min": 0, "exclusive_min": true},
+      {"key": "feedback_resistance", "label": "Comparator output to sum RF", "unit": "ohm", "default": 20000, "min": 0, "exclusive_min": true},
+      {"key": "integrator_resistance", "label": "Integrator input resistance RI", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "integrator_capacitance", "label": "Integrator feedback capacitance", "unit": "F", "default": 1e-8, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "triangle_peak", "label": "Triangle peak about reference", "unit": "V", "expression": "square_peak*(triangle_resistance/feedback_resistance)"},
+      {"key": "triangle_pp", "label": "Triangle peak-to-peak voltage", "unit": "V", "expression": "2*triangle_peak"},
+      {"key": "ramp_slew", "label": "Magnitude of triangle ramp slope", "unit": "V/s", "expression": "square_peak/integrator_resistance/integrator_capacitance"},
+      {"key": "period", "label": "Oscillation period", "unit": "s", "expression": "4*integrator_resistance*integrator_capacitance*(triangle_resistance/feedback_resistance)"},
+      {"key": "frequency", "label": "Oscillation frequency", "unit": "Hz", "expression": "1/period"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"square_peak": 5, "triangle_resistance": 8000, "feedback_resistance": 20000, "integrator_resistance": 10000, "integrator_capacitance": 1e-8}, "expected": {"triangle_peak": 2, "triangle_pp": 4, "ramp_slew": 50000, "period": 0.00016, "frequency": 6250}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "oscillators.wien_bridge_balance",
+    "title": "Wien-bridge oscillator loop balance",
+    "category": "Oscillator design",
+    "level": "basic",
+    "description": "Choose the frequency-selective bridge and test the amplifier gain needed for Wien-bridge oscillation.",
+    "formula": "f0=1/(2 pi RC); beta=1/3; A=1+RF/RG; RF,critical=2 RG; loop_gain=A/3",
+    "assumptions": ["Equal R and equal C in the series RC and parallel RC positive-feedback branches; ideal noninverting amplifier, dual supply and ground reference.", "Loop gain above one indicates small-signal growth; unity is marginal and does not guarantee startup. Below unity oscillations decay.", "A real steady sine requires amplitude stabilization or limiting; this calculation predicts neither amplitude nor distortion. RF is the small-signal feedback resistance.", "Op-amp closed-loop bandwidth must greatly exceed f0, slew rate must support the desired sine amplitude, and output loading and parasitics must be negligible."],
+    "references": [{"title": "Texas Instruments SLOA060, Sine-Wave Oscillator, sections 3, 6 and 8.1, equations 10–13", "url": "https://www.ti.com/lit/an/sloa060/sloa060.pdf"}],
+    "inputs": [
+      {"key": "bridge_resistance", "label": "Each bridge resistance R", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "bridge_capacitance", "label": "Each bridge capacitance C", "unit": "F", "default": 1e-8, "min": 0, "exclusive_min": true},
+      {"key": "gain_resistance", "label": "Inverting input to ground RG", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "feedback_resistance", "label": "Output to inverting input RF", "unit": "ohm", "default": 20200, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "frequency", "label": "Zero-phase bridge frequency", "unit": "Hz", "expression": "1/(2*pi)/bridge_resistance/bridge_capacitance"},
+      {"key": "feedback_fraction", "label": "Bridge feedback fraction at zero phase", "unit": "1", "expression": "1/3"},
+      {"key": "critical_feedback_resistance", "label": "Marginal RF for unity loop gain", "unit": "ohm", "expression": "2*gain_resistance"},
+      {"key": "amplifier_gain", "label": "Noninverting amplifier gain", "unit": "1", "expression": "1+feedback_resistance/gain_resistance"},
+      {"key": "loop_gain", "label": "Small-signal loop gain", "unit": "1", "expression": "amplifier_gain/3"},
+      {"key": "loop_excess", "label": "Signed excess above unity loop gain", "unit": "1", "expression": "(feedback_resistance-2*gain_resistance)/gain_resistance/3"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"bridge_resistance": 10000, "bridge_capacitance": 1e-8, "gain_resistance": 10000, "feedback_resistance": 20200}, "expected": {"frequency": 1591.5494309189534, "feedback_fraction": 0.3333333333333333, "critical_feedback_resistance": 20000, "amplifier_gain": 3.02, "loop_gain": 1.0066666666666666, "loop_excess": 0.006666666666666667}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "oscillators.loaded_rc_phase_shift",
+    "title": "Loaded three-section RC oscillator",
+    "category": "Oscillator design",
+    "level": "intermediate",
+    "description": "Size the gain and frequency of an unbuffered high-pass RC phase-shift oscillator including section loading.",
+    "formula": "beta(s)=(sRC)^3/[(sRC)^3+6(sRC)^2+5sRC+1]; f0=1/(2 pi RC sqrt(6)); |beta(f0)|=1/29; |A|=RF/R",
+    "assumptions": ["Three equal series capacitors form the feedback ladder. The first two nodes have R to ground; the final node connects through the third R to the op-amp virtual ground. No additional final-node shunt resistor is fitted.", "Amplifier noninverting input is grounded and RF feeds output to inverting input. This topology makes all three effective ladder loads equal to R.", "Mutual loading is included; independent buffered-section formulas (gain 8 and sqrt(3)/(2 pi RC)) do not apply.", "Ideal op-amp bandwidth and input impedance; no parasitics or output loading. Loop gain above one is a startup condition, not a prediction of steady amplitude, harmonic purity or startup time."],
+    "references": [{"title": "Georgia State University HyperPhysics, Phase-Shift Oscillator, 1/29 feedback and frequency equation", "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/Electronic/oscphas.html"}, {"title": "Texas Instruments SLOA060, section 8.2, warning about unbuffered RC section loading", "url": "https://www.ti.com/lit/an/sloa060/sloa060.pdf"}],
+    "inputs": [
+      {"key": "section_resistance", "label": "Each effective ladder resistance R", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "section_capacitance", "label": "Each series ladder capacitance C", "unit": "F", "default": 1e-8, "min": 0, "exclusive_min": true},
+      {"key": "feedback_resistance", "label": "Amplifier feedback resistance RF", "unit": "ohm", "default": 300000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "frequency", "label": "180-degree feedback frequency", "unit": "Hz", "expression": "1/(2*pi*sqrt(6))/section_resistance/section_capacitance"},
+      {"key": "feedback_magnitude", "label": "Ladder feedback magnitude", "unit": "1", "expression": "1/29"},
+      {"key": "critical_feedback_resistance", "label": "Marginal RF for unity loop gain", "unit": "ohm", "expression": "29*section_resistance"},
+      {"key": "amplifier_gain_magnitude", "label": "Inverting gain magnitude", "unit": "1", "expression": "feedback_resistance/section_resistance"},
+      {"key": "loop_gain", "label": "Small-signal loop gain", "unit": "1", "expression": "amplifier_gain_magnitude/29"},
+      {"key": "loop_excess", "label": "Signed excess above unity loop gain", "unit": "1", "expression": "(feedback_resistance-29*section_resistance)/section_resistance/29"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"section_resistance": 10000, "section_capacitance": 1e-8, "feedback_resistance": 300000}, "expected": {"frequency": 649.7473343613968, "feedback_magnitude": 0.034482758620689655, "critical_feedback_resistance": 290000, "amplifier_gain_magnitude": 30, "loop_gain": 1.0344827586206897, "loop_excess": 0.034482758620689655}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "oscillators.cross_coupled_lc_startup",
+    "title": "Cross-coupled LC oscillator startup poles",
+    "category": "Oscillator design",
+    "level": "expert",
+    "description": "Compare a differential tank loss against cross-coupled negative conductance and predict small-signal growth or decay.",
+    "formula": "Rneg=-2/gm; gm,critical=2/Rp; alpha=(gm/2-1/Rp)/(2C); omega0=1/sqrt(LC); omega_start=sqrt(omega0^2-alpha^2)",
+    "assumptions": ["L, C and Rp are total two-terminal differential values across the tank, not each half-circuit value. gm is the transconductance of each identical cross-coupled transistor.", "Pair differential resistance is -2/gm; transistor output conductance and all passive losses are included in Rp. Bias network is an AC open circuit in differential mode.", "Linear small-signal constant-gm model only. Positive growth_rate means startup growth; zero is marginal; negative means decay. Noise seed, amplitude limiting, phase noise and final amplitude are not modeled.", "Only the complex-conjugate-pole regime is admitted: abs(gm/2-1/Rp)<2 sqrt(C/L). Device transit time, parasitics and nonquasistatic effects must be negligible at tank frequency."],
+    "references": [{"title": "Behzad Razavi, UCLA / IEEE Solid-State Circuits Magazine, The Cross-Coupled Pair—Part III, XCP as Negative Resistance and Figure 2(b)", "url": "https://www.seas.ucla.edu/brweb/papers/Journals/BR_Magzine3.pdf"}],
+    "inputs": [
+      {"key": "tank_inductance", "label": "Differential tank inductance", "unit": "H", "default": 1e-8, "min": 0, "exclusive_min": true},
+      {"key": "tank_capacitance", "label": "Differential tank capacitance", "unit": "F", "default": 1e-11, "min": 0, "exclusive_min": true},
+      {"key": "parallel_loss_resistance", "label": "Differential tank parallel loss Rp", "unit": "ohm", "default": 2000, "min": 0, "exclusive_min": true},
+      {"key": "transistor_transconductance", "label": "Each transistor transconductance gm", "unit": "S", "default": 0.002, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "tank_frequency", "label": "Lossless tank frequency", "unit": "Hz", "expression": "1/(2*pi)/sqrt(tank_inductance)/sqrt(tank_capacitance)"},
+      {"key": "negative_resistance", "label": "Pair differential negative resistance", "unit": "ohm", "expression": "-2/transistor_transconductance"},
+      {"key": "critical_transconductance", "label": "Per-transistor marginal gm", "unit": "S", "expression": "2/parallel_loss_resistance"},
+      {"key": "startup_ratio", "label": "Negative-to-loss conductance ratio", "unit": "1", "expression": "transistor_transconductance*parallel_loss_resistance/2"},
+      {"key": "growth_rate", "label": "Signed amplitude exponential growth rate", "unit": "1/s", "expression": "(transistor_transconductance/2-1/parallel_loss_resistance)/tank_capacitance/2"},
+      {"key": "startup_frequency", "label": "Small-signal oscillatory pole frequency", "unit": "Hz", "expression": "tank_frequency*sqrt((1-abs(growth_rate)/(2*pi*tank_frequency))*(1+abs(growth_rate)/(2*pi*tank_frequency)))"}
+    ],
+    "constraints": [{"left": "abs(transistor_transconductance/2-1/parallel_loss_resistance)", "op": "<", "right": "2*sqrt(tank_capacitance)/sqrt(tank_inductance)", "message": "This startup-frequency model requires an oscillatory complex pole pair, not real poles."}],
+    "example": {"inputs": {"tank_inductance": 1e-8, "tank_capacitance": 1e-11, "parallel_loss_resistance": 2000, "transistor_transconductance": 0.002}, "expected": {"tank_frequency": 503292121.0448704, "negative_resistance": -1000, "critical_transconductance": 0.001, "startup_ratio": 2, "growth_rate": 25000000, "startup_frequency": 503276392.9203319}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "oscillators.pierce_crystal_startup",
+    "title": "Pierce crystal load and startup margin",
+    "category": "Oscillator design",
+    "level": "expert",
+    "description": "Select equal Pierce load capacitors and compare available inverter transconductance with crystal startup demand.",
+    "formula": "C1=C2=2(CL-Cs); gm,critical=4 ESR [2 pi f(C0+CL)]^2; gain_margin=gm/gm,critical; gm,design=M gm,critical",
+    "assumptions": ["Fundamental-mode Pierce oscillator with equal external load capacitors and the manufacturer's specified crystal load CL. Cs is equivalent terminal stray capacitance, not the sum of two untransformed pin capacitances.", "ESR is the crystal's specified worst-case equivalent series resistance for this startup model; C0 is crystal shunt capacitance. No additional series drive-limiting resistor is included.", "Available transconductance must be actual inverter gm, not a datasheet parameter named maximum critical crystal transconductance, Gm_crit_max, or ambiguously Gm.", "This is a small-signal compatibility estimate, not guaranteed startup time or a drive-level check. Verify crystal drive power, MCU frequency range, temperature, supply corners and PCB parasitics separately.", "A gain-margin target of 5 is the AN2867 gm-method guideline; device-specific guidance can require another target. Negative transconductance_headroom reports a failed target without hiding the result."],
+    "references": [{"title": "STMicroelectronics AN2867 Rev16, sections 3.1–3.4; original manufacturer URL", "url": "https://www.st.com/resource/en/application_note/cd00221665.pdf"}, {"title": "Actually read AN2867 Rev16 manufacturer document, accessible PDF mirror, pages 11–14", "url": "https://oss.yzcstatic.com/online/xqq/20230106/3nnyWGGbbeGhRPJ7ZxFYsTEGWQhdTiXa.pdf"}],
+    "inputs": [
+      {"key": "crystal_frequency", "label": "Crystal nominal frequency", "unit": "Hz", "default": 16000000, "min": 0, "exclusive_min": true},
+      {"key": "crystal_esr", "label": "Crystal worst-case ESR", "unit": "ohm", "default": 40, "min": 0, "exclusive_min": true},
+      {"key": "shunt_capacitance", "label": "Crystal shunt capacitance C0", "unit": "F", "default": 3e-12, "min": 0},
+      {"key": "load_capacitance", "label": "Specified terminal load CL", "unit": "F", "default": 1.2e-11, "min": 0, "exclusive_min": true},
+      {"key": "stray_capacitance", "label": "Equivalent terminal stray capacitance Cs", "unit": "F", "default": 2e-12, "min": 0},
+      {"key": "available_transconductance", "label": "Actual available inverter gm", "unit": "S", "default": 0.005, "min": 0, "exclusive_min": true},
+      {"key": "margin_target", "label": "Required gm ratio target", "unit": "1", "default": 5, "min": 1}
+    ],
+    "outputs": [
+      {"key": "load_capacitor_each", "label": "Each equal external load capacitor", "unit": "F", "expression": "2*(load_capacitance-stray_capacitance)"},
+      {"key": "critical_transconductance", "label": "Critical crystal transconductance", "unit": "S", "expression": "4*crystal_esr*(2*pi*crystal_frequency*(shunt_capacitance+load_capacitance))^2"},
+      {"key": "gain_margin", "label": "Available-to-critical gm ratio", "unit": "1", "expression": "available_transconductance/critical_transconductance"},
+      {"key": "design_transconductance", "label": "gm needed for target margin", "unit": "S", "expression": "margin_target*critical_transconductance"},
+      {"key": "transconductance_headroom", "label": "Signed gm headroom above target", "unit": "S", "expression": "available_transconductance-design_transconductance"}
+    ],
+    "constraints": [{"left": "load_capacitance", "op": ">", "right": "stray_capacitance", "message": "Specified load capacitance must exceed equivalent terminal stray capacitance for positive external capacitors."}],
+    "example": {"inputs": {"crystal_frequency": 16000000, "crystal_esr": 40, "shunt_capacitance": 3e-12, "load_capacitance": 1.2e-11, "stray_capacitance": 2e-12, "available_transconductance": 0.005, "margin_target": 5}, "expected": {"load_capacitor_each": 2e-11, "critical_transconductance": 0.0003638330966417581, "gain_margin": 13.742565055655622, "design_transconductance": 0.0018191654832087906, "transconductance_headroom": 0.0031808345167912094}, "relative_tolerance": 1e-9}
+  }
+]

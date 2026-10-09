@@ -205,24 +205,131 @@ See [illustration evidence](coordination/diagram_evidence.json), [review history
 
 Baseline: `29f9c2b`, 128 live Rust catalog IDs, all illustrated. Target: 100 genuinely additional models, 228 total. The existing implementation is preserved. The following reservations prevent cross-lane duplication; every candidate must also pass the [actual baseline exclusion inventory](coordination/expansion/baseline.json). No inverse, renamed formula or extra output counts as another calculator.
 
-Contract: [expansion workflow, ownership and diagram requirements](coordination/EXPANSION_CONTRACT.md). Research is in progress; rows below are allocations, not completed features. Scrum planning follows the complete research wave; implementation follows the approved backlog.
+Contract: [expansion workflow, ownership and diagram requirements](coordination/EXPANSION_CONTRACT.md). All sixteen researchers completed exactly 100 unique new definitions: **26 basic, 39 intermediate and 35 expert**. Parent checked ID/schema/example completeness and compared physical problem boundaries against the baseline. Research completion is not implementation or runtime acceptance. Scrum planning follows this completed wave; all items and diagrams remain required.
 
 | Lane / ID prefix | New count | Research and diagram specifications | Status |
 |---|---:|---|---|
-| sensors | 7 | `research/expansion/sensors.md` | Reserved |
-| opto | 7 | `research/expansion/opto.md` | Reserved |
-| oscillators | 7 | `research/expansion/oscillators.md` | Reserved |
-| rf | 7 | `research/expansion/rf.md` | Reserved |
-| batteries | 6 | `research/expansion/batteries.md` | Reserved |
-| protection | 6 | `research/expansion/protection.md` | Reserved |
-| converters | 6 | `research/expansion/converters.md` | Reserved |
-| control | 6 | `research/expansion/control.md` | Reserved |
-| emc | 6 | `research/expansion/emc.md` | Reserved |
-| cables | 6 | `research/expansion/cables.md` | Reserved |
-| precision | 6 | `research/expansion/precision.md` | Reserved |
-| logic | 6 | `research/expansion/logic.md` | Reserved |
-| motors | 6 | `research/expansion/motors.md` | Reserved |
-| passives | 6 | `research/expansion/passives.md` | Reserved |
-| cores | 6 | `research/expansion/cores.md` | Reserved |
-| measurement | 6 | `research/expansion/measurement.md` | Reserved |
+| sensors | 7 | [Research](research/expansion/sensors.md), [Definitions](research/expansion/sensors.json) | Research complete |
+| opto | 7 | [Research](research/expansion/opto.md), [Definitions](research/expansion/opto.json) | Research complete |
+| oscillators | 7 | [Research](research/expansion/oscillators.md), [Definitions](research/expansion/oscillators.json) | Research complete |
+| rf | 7 | [Research](research/expansion/rf.md), [Definitions](research/expansion/rf.json) | Research complete |
+| batteries | 6 | [Research](research/expansion/batteries.md), [Definitions](research/expansion/batteries.json) | Research complete |
+| protection | 6 | [Research](research/expansion/protection.md), [Definitions](research/expansion/protection.json) | Research complete |
+| converters | 6 | [Research](research/expansion/converters.md), [Definitions](research/expansion/converters.json) | Research complete |
+| control | 6 | [Research](research/expansion/control.md), [Definitions](research/expansion/control.json) | Research complete |
+| emc | 6 | [Research](research/expansion/emc.md), [Definitions](research/expansion/emc.json) | Research complete |
+| cables | 6 | [Research](research/expansion/cables.md), [Definitions](research/expansion/cables.json) | Research complete |
+| precision | 6 | [Research](research/expansion/precision.md), [Definitions](research/expansion/precision.json) | Research complete |
+| logic | 6 | [Research](research/expansion/logic.md), [Definitions](research/expansion/logic.json) | Research complete |
+| motors | 6 | [Research](research/expansion/motors.md), [Definitions](research/expansion/motors.json) | Research complete |
+| passives | 6 | [Research](research/expansion/passives.md), [Definitions](research/expansion/passives.json) | Research complete |
+| cores | 6 | [Research](research/expansion/cores.md), [Definitions](research/expansion/cores.json) | Research complete |
+| measurement | 6 | [Research](research/expansion/measurement.md), [Definitions](research/expansion/measurement.json) | Research complete |
+
+### Completed expansion research index
+
+Each row has a complete independent example, cited physical limits, boundary cases and mandatory diagram specification in its lane handoff. Fuse survival and semiconductor clearing share one budget and therefore count once. New nonideal/historical models must retain the behavior that distinguishes them from an existing ideal model; simplification back to an old formula would fail novelty acceptance.
+
+| ID | New physical design calculation | Level |
+|---|---|---|
+| `sensors.ntc_steinhart_hart` | Steinhart–Hart NTC thermistor temperature | intermediate |
+| `sensors.platinum_callendar_van_dusen` | Platinum RTD nonlinear resistance response | intermediate |
+| `sensors.type_t_cold_junction_emf` | Type-T thermocouple EMF with finite cold junction | expert |
+| `sensors.hall_plate_angle` | Hall-plate field-angle transduction | basic |
+| `sensors.amr_angular_resistance` | Anisotropic magnetoresistive angular resistance | basic |
+| `sensors.hydrogen_activity_electrode` | Nernst hydrogen-activity electrode | basic |
+| `sensors.differential_gap_capacitor` | Differential variable-gap displacement sensor | intermediate |
+| `opto.photodiode_quantum_conversion` | Unity-gain photodiode photon conversion | basic |
+| `opto.lambertian_target_irradiance` | Lambertian source target irradiance | basic |
+| `opto.layer_absorption_capture` | Inactive and active optical layer absorption | intermediate |
+| `opto.gaussian_aperture_capture` | Gaussian beam propagation and aperture capture | expert |
+| `opto.step_index_mode_cutoff` | Step-index fiber mode cutoff | intermediate |
+| `opto.fiber_gaussian_dispersion` | Chirped Gaussian pulse fiber dispersion | expert |
+| `opto.sipm_finite_cell_response` | SiPM finite-cell short-pulse response | expert |
+| `oscillators.timer_555_astable` | 555 astable charge-discharge timing | basic |
+| `oscillators.comparator_rc_oscillator` | Three-resistor comparator RC oscillator | intermediate |
+| `oscillators.triangle_integrator_oscillator` | Integrator and comparator triangle oscillator | intermediate |
+| `oscillators.wien_bridge_balance` | Wien-bridge oscillator loop balance | basic |
+| `oscillators.loaded_rc_phase_shift` | Loaded three-section RC oscillator | intermediate |
+| `oscillators.cross_coupled_lc_startup` | Cross-coupled LC oscillator startup poles | expert |
+| `oscillators.pierce_crystal_startup` | Pierce crystal load and startup margin | expert |
+| `rf.matched_t_attenuator` | Symmetric matched T attenuator | basic |
+| `rf.lowpass_l_match` | Lumped low-pass L impedance match | intermediate |
+| `rf.free_space_link_budget` | Free-space radio link budget | basic |
+| `rf.first_fresnel_clearance` | First-Fresnel obstruction clearance | intermediate |
+| `rf.circular_aperture_gain` | Circular-aperture antenna gain | intermediate |
+| `rf.two_tone_im3` | Equal-tone third-order intermodulation | expert |
+| `rf.monostatic_radar_return` | Monostatic point-target radar return | expert |
+| `batteries.series_weakest_cell` | Three-series pack usable charge and stranded state | basic |
+| `batteries.coulomb_state_cycle` | Coulomb-counted discharge and recharge state | basic |
+| `batteries.peukert_runtime` | Peukert rate-dependent discharge runtime | intermediate |
+| `batteries.kinetic_charge_recovery` | Kinetic available and bound charge after a pulse | expert |
+| `batteries.intercalation_regular_solution` | Single-phase intercalation voltage and chemical capacitance | expert |
+| `batteries.sand_depletion_limit` | Sand electrolyte-depletion charging limit | expert |
+| `protection.fuse_pulse_coordination` | Fuse pulse survival and semiconductor clearing budget | basic |
+| `protection.tvs_surge_load_line` | TVS avalanche surge load line | intermediate |
+| `protection.mov_power_law_pulse` | MOV nonlinear pulse clamp and absorption | intermediate |
+| `protection.scr_crowbar_trigger_latch` | Zener-triggered SCR crowbar latch window | intermediate |
+| `protection.copper_adiabatic_fault_limit` | Copper conductor temperature-limited fault withstand | expert |
+| `protection.foldback_fault_envelope` | Foldback limiter fault equilibrium and peak pass stress | expert |
+| `converters.inverting_charge_pump` | Single-flying-capacitor inverter load regulation | basic |
+| `converters.sepic_ccm_stress` | Uncoupled-inductor SEPIC CCM component stress | intermediate |
+| `converters.forward_reset_winding` | Single-switch forward transformer-reset feasibility | intermediate |
+| `converters.flyback_dcm_demagnetization` | DCM flyback energy and demagnetization budget | expert |
+| `converters.llc_half_bridge_fha` | Half-bridge LLC loaded fundamental-harmonic gain | expert |
+| `converters.dual_active_bridge_power` | Dual-active-bridge single-phase-shift power exchange | expert |
+| `control.delay_phase_budget` | Feedback transport-delay phase-margin budget | basic |
+| `control.loop_sensitivity` | Complex loop disturbance and measurement-noise sensitivity | intermediate |
+| `control.lead_crossover_synthesis` | Phase-lead compensator at a chosen loop crossover | intermediate |
+| `control.pi_pole_placement` | PI pole placement for a first-order voltage-domain plant | intermediate |
+| `control.peak_current_slope_compensation` | Peak-current sampled perturbation and slope compensation | expert |
+| `control.integral_two_lag_stability` | Integral-regulator stability limit with plant and sensor lag | expert |
+| `emc.thin_slot_shielding` | Thin-slot shield leakage estimate | basic |
+| `emc.rc_common_mode_conversion` | RC input-filter common-mode conversion | expert |
+| `emc.trapezoid_conducted_harmonic` | Trapezoidal conducted-current harmonic | intermediate |
+| `emc.sinusoidal_dither_occupancy` | Switching-frequency dither harmonic occupancy | intermediate |
+| `emc.ringing_rc_snubber` | Measured-ringing RC snubber design | expert |
+| `emc.short_cable_radiation` | Short common-mode cable radiation estimate | intermediate |
+| `cables.twin_lead_geometry` | Homogeneous parallel-wire line geometry | intermediate |
+| `cables.lossy_rlgc_line` | Exact lossy distributed RLGC line | expert |
+| `cables.radial_insulation_stress` | Cylindrical cable insulation electric stress | intermediate |
+| `cables.hertz_holm_contact` | Elastic rounded-contact constriction resistance | expert |
+| `cables.contact_hotspot_temperature` | Metallic contact voltage–hotspot temperature | basic |
+| `cables.cantilever_contact_spring` | Cantilever connector-contact spring | basic |
+| `precision.bjt_mirror_base_current` | Matched BJT current mirror base-current error | basic |
+| `precision.instrumentation_internal_headroom` | Three-op-amp instrumentation internal headroom | intermediate |
+| `precision.transimpedance_butterworth` | Finite-GBW transimpedance Butterworth compensation | expert |
+| `precision.howland_mismatch_load` | Howland current pump resistor mismatch and load | expert |
+| `precision.brokaw_first_order_trim` | Brokaw bandgap first-order resistor trim | intermediate |
+| `precision.log114_current_ratio` | LOG114 resistor-referenced logarithmic front end | basic |
+| `logic.guaranteed_noise_margins` | Guaranteed logic-level noise margins with ground offset | basic |
+| `logic.dc_current_fanout` | Logic output DC-current fanout | basic |
+| `logic.cmos_package_power` | CMOS logic internal and output-load power budget | intermediate |
+| `logic.synchronizer_metastability` | Synchronizer metastability reliability budget | expert |
+| `logic.three_stage_logical_effort` | Three-stage CMOS logical-effort gate sizing | expert |
+| `logic.fifo_envelope_depth` | Hardware FIFO depth from burst and service guarantees | intermediate |
+| `motors.pm_dc_load_equilibrium` | PM DC motor loaded torque-speed equilibrium | basic |
+| `motors.stepper_static_microstep` | Stepper microstep torque and static load deflection | intermediate |
+| `motors.geared_axis_acceleration` | Geared-axis acceleration current and voltage requirement | intermediate |
+| `motors.resistive_dynamic_braking` | PM motor resistive dynamic braking transient | intermediate |
+| `motors.salient_pmsm_dq_operating_point` | Salient PMSM steady dq torque and voltage | expert |
+| `motors.induction_slip_power` | Induction motor slip torque and air-gap power split | expert |
+| `passives.mlcc_logarithmic_aging` | Ferroelectric capacitor logarithmic aging | basic |
+| `passives.dielectric_absorption_recovery` | Capacitor dielectric-memory voltage recovery | expert |
+| `passives.mlcc_bias_charge_energy` | Voltage-dependent capacitor usable charge and energy | intermediate |
+| `passives.resistor_excess_noise` | Biased resistor excess noise from noise index | intermediate |
+| `passives.negative_vcr_divider` | Self-consistent high-voltage divider VCR error | expert |
+| `passives.nonideal_r2r_ladder` | Three-bit R-2R ladder with unequal switch resistance | expert |
+| `cores.single_layer_air_solenoid` | Single-layer air solenoid geometry | basic |
+| `cores.square_planar_spiral` | Square planar spiral current-sheet inductance | intermediate |
+| `cores.bobbin_layer_fit` | Insulated round-wire bobbin layer fit | basic |
+| `cores.sinusoidal_steinmetz_loss` | Calibrated sinusoidal core-loss scaling | intermediate |
+| `cores.lamination_eddy_loss` | Thin-lamination classical eddy loss | expert |
+| `cores.thin_foil_winding_loss` | Thin-foil multilayer winding AC loss | expert |
+| `measurement.dmm_accuracy_bound` | DMM reading-plus-range accuracy bound | basic |
+| `measurement.delta_resistance` | Three-point delta resistance and thermal-EMF rejection | intermediate |
+| `measurement.compensated_probe_loading` | Compensated passive probe with source loading | expert |
+| `measurement.rectangular_aperture_response` | Rectangular measurement-aperture response | intermediate |
+| `measurement.sampling_jitter_snr` | Sinusoidal sampling-jitter noise limit | intermediate |
+| `measurement.correlated_voltage_ratio` | Correlated voltage-ratio measurement uncertainty | expert |
 

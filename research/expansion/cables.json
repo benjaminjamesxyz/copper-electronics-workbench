@@ -1,0 +1,213 @@
+[
+  {
+    "id": "cables.twin_lead_geometry",
+    "title": "Homogeneous parallel-wire line geometry",
+    "category": "Cables and connectors",
+    "level": "intermediate",
+    "description": "Find differential line impedance and distributed capacitance/inductance for two equal round wires in a homogeneous dielectric.",
+    "formula": "q = acosh(D/d); L' = mu0 q/pi; C' = pi eps0 er/q; Zdiff = sqrt(L'/C')",
+    "assumptions": [
+      "Two straight, parallel, equal-diameter round conductors; D is center-to-center spacing and d is conductor diameter, not jacket diameter.",
+      "Homogeneous nonmagnetic dielectric, perfectly conducting surfaces and negligible internal inductance; TEM field solution without nearby conductors, shield, bends or radiation.",
+      "Real twin-lead jackets and air are not homogeneous; use a characterized effective permittivity only as an explicitly approximate engineering model.",
+      "Constants: mu0 = 4*pi*1e-7 H/m and eps0 = 8.8541878128e-12 F/m. No delay or reflection model is included."
+    ],
+    "references": [{"title": "Virginia Tech, Ellingson Electromagnetics II §7.1: Parallel Wire Transmission Line, exact L' and C' expressions", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_II_%28Ellingson%29/07%3A_Transmission_Lines_Redux/7.01%3A_Parallel_Wire_Transmission_Line"}],
+    "inputs": [
+      {"key":"wire_diameter","label":"Bare wire diameter","unit":"m","default":0.001,"min":0,"exclusive_min":true},
+      {"key":"center_spacing","label":"Wire center spacing","unit":"m","default":0.006,"min":0,"exclusive_min":true},
+      {"key":"relative_permittivity","label":"Homogeneous relative permittivity","unit":"1","default":2.25,"min":1}
+    ],
+    "outputs": [
+      {"key":"geometry_factor","label":"Inverse-hyperbolic geometry factor","unit":"1","expression":"log1p((center_spacing-wire_diameter)/wire_diameter+sqrt((center_spacing-wire_diameter)/wire_diameter)*sqrt((center_spacing+wire_diameter)/wire_diameter))"},
+      {"key":"inductance_per_length","label":"Differential loop inductance per length","unit":"H/m","expression":"4e-7*geometry_factor"},
+      {"key":"capacitance_per_length","label":"Wire-to-wire capacitance per length","unit":"F/m","expression":"pi*8.8541878128e-12*relative_permittivity/geometry_factor"},
+      {"key":"differential_impedance","label":"Differential characteristic impedance","unit":"ohm","expression":"sqrt(4*pi*1e-7/8.8541878128e-12)/pi/sqrt(relative_permittivity)*geometry_factor"}
+    ],
+    "constraints": [{"left":"center_spacing","op":">","right":"wire_diameter","message":"Wire centers must be farther apart than one bare conductor diameter."}],
+    "example": {"inputs":{"wire_diameter":0.001,"center_spacing":0.006,"relative_permittivity":2.25},"expected":{"geometry_factor":2.477888730288475,"inductance_per_length":9.9115549211539e-7,"capacitance_per_length":2.525802101358135e-11,"differential_impedance":198.09396088157135},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "cables.lossy_rlgc_line",
+    "title": "Exact lossy distributed RLGC line",
+    "category": "Cables and connectors",
+    "level": "expert",
+    "description": "Compute exact distributed attenuation, phase constant and complex characteristic impedance from frequency-specific RLGC parameters.",
+    "formula": "gamma = sqrt((R'+j omega L')(G'+j omega C')); Z0 = sqrt((R'+j omega L')/(G'+j omega C')); A = exp(-Re(gamma) length)",
+    "assumptions": [
+      "Uniform passive single-mode line with frequency-specific per-length RLGC values; R' is total series loop resistance.",
+      "Sinusoidal steady state uses exp(+j omega t), forward wave exp(-gamma z), alpha >= 0 and beta > 0.",
+      "No low-loss approximation. Zero R' and/or G' are valid limits; DC is outside this positive-frequency model.",
+      "Amplitude ratio describes a forward traveling wave only, not loaded insertion loss or a mismatch/reflection calculation.",
+      "Frequency dependence must already be represented by the supplied RLGC values. No broadband skin-effect fit, group delay or causal time-domain simulation is inferred."
+    ],
+    "references": [{"title":"North Carolina State University, Steer Microwave and RF Design II §2.2.1–2.2.2, equations 7, 8 and 12","url":"https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_(Steer)/02%3A_Transmission_Lines/2.02%3A_Transmission_Line_Theory"}],
+    "inputs": [
+      {"key":"series_resistance_per_length","label":"Series loop resistance per length","unit":"ohm/m","default":2,"min":0},
+      {"key":"inductance_per_length","label":"Series inductance per length","unit":"H/m","default":2.5e-7,"min":0,"exclusive_min":true},
+      {"key":"shunt_conductance_per_length","label":"Shunt conductance per length","unit":"S/m","default":2e-5,"min":0},
+      {"key":"capacitance_per_length","label":"Shunt capacitance per length","unit":"F/m","default":1e-10,"min":0,"exclusive_min":true},
+      {"key":"frequency","label":"Characterization frequency","unit":"Hz","default":1e6,"min":0,"exclusive_min":true},
+      {"key":"length","label":"Uniform line length","unit":"m","default":10,"min":0}
+    ],
+    "outputs": [
+      {"key":"angular_frequency","label":"Angular frequency","unit":"rad/s","expression":"2*pi*frequency"},
+      {"key":"series_impedance_magnitude","label":"Series impedance magnitude per length","unit":"ohm/m","expression":"hypot(series_resistance_per_length,angular_frequency*inductance_per_length)"},
+      {"key":"shunt_admittance_magnitude","label":"Shunt admittance magnitude per length","unit":"S/m","expression":"hypot(shunt_conductance_per_length,angular_frequency*capacitance_per_length)"},
+      {"key":"normalized_propagation_square_real","label":"Normalized gamma-squared real part","unit":"1","expression":"series_resistance_per_length/series_impedance_magnitude*(shunt_conductance_per_length/shunt_admittance_magnitude)-(angular_frequency*inductance_per_length/series_impedance_magnitude)*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude)"},
+      {"key":"normalized_propagation_square_imaginary","label":"Normalized gamma-squared imaginary part","unit":"1","expression":"series_resistance_per_length/series_impedance_magnitude*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude)+(angular_frequency*inductance_per_length/series_impedance_magnitude)*(shunt_conductance_per_length/shunt_admittance_magnitude)"},
+      {"key":"attenuation_constant","label":"Attenuation constant","unit":"Np/m","expression":"sqrt(series_impedance_magnitude)*sqrt(shunt_admittance_magnitude)*hypot(sqrt(max(normalized_propagation_square_real,0)),normalized_propagation_square_imaginary/sqrt(2*(hypot(normalized_propagation_square_real,normalized_propagation_square_imaginary)+abs(normalized_propagation_square_real))))"},
+      {"key":"phase_constant","label":"Phase constant","unit":"rad/m","expression":"sqrt(series_impedance_magnitude)*sqrt(shunt_admittance_magnitude)*hypot(sqrt(max(-normalized_propagation_square_real,0)),normalized_propagation_square_imaginary/sqrt(2*(hypot(normalized_propagation_square_real,normalized_propagation_square_imaginary)+abs(normalized_propagation_square_real))))"},
+      {"key":"impedance_real","label":"Characteristic impedance real part","unit":"ohm","expression":"sqrt(series_impedance_magnitude)/sqrt(shunt_admittance_magnitude)*sqrt((1+series_resistance_per_length/series_impedance_magnitude*(shunt_conductance_per_length/shunt_admittance_magnitude)+(angular_frequency*inductance_per_length/series_impedance_magnitude)*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude))/2)"},
+      {"key":"impedance_imaginary","label":"Characteristic impedance imaginary part","unit":"ohm","expression":"sqrt(series_impedance_magnitude)/sqrt(shunt_admittance_magnitude)*((angular_frequency*inductance_per_length/series_impedance_magnitude)*(shunt_conductance_per_length/shunt_admittance_magnitude)-series_resistance_per_length/series_impedance_magnitude*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude))/(2*sqrt((1+series_resistance_per_length/series_impedance_magnitude*(shunt_conductance_per_length/shunt_admittance_magnitude)+(angular_frequency*inductance_per_length/series_impedance_magnitude)*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude))/2))"},
+      {"key":"forward_amplitude_ratio","label":"Forward voltage amplitude ratio","unit":"1","expression":"exp(-attenuation_constant*length)"},
+      {"key":"attenuation_db","label":"Forward-wave attenuation","unit":"dB","expression":"20/ln(10)*attenuation_constant*length"}
+    ],
+    "constraints": [],
+    "example": {"inputs":{"series_resistance_per_length":2,"inductance_per_length":2.5e-7,"shunt_conductance_per_length":2e-5,"capacitance_per_length":1e-10,"frequency":1e6,"length":10},"expected":{"angular_frequency":6283185.307179586,"series_impedance_magnitude":2.5431085506270352,"shunt_admittance_magnitude":0.0006286367600161275,"normalized_propagation_square_real":-0.5923346865096576,"normalized_propagation_square_imaginary":0.8056920125938358,"attenuation_constant":0.018051746169367573,"phase_constant":0.03567668678383984,"impedance_real":57.63732387347136,"impedance_imaginary":-26.89559334274006,"forward_amplitude_ratio":0.8348381028824459,"attenuation_db":1.5679547500148998},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "cables.radial_insulation_stress",
+    "title": "Cylindrical cable insulation electric stress",
+    "category": "Cables and connectors",
+    "level": "intermediate",
+    "description": "Estimate radial dielectric field concentration and voltage capability in a concentric insulated cable, independently of line impedance.",
+    "formula": "E(r) = Vpk/[r ln(b/a)]; Emax = E(a); Vlimit = Eallow a ln(b/a)",
+    "assumptions": [
+      "Long concentric cylindrical conductors, homogeneous isotropic insulation, no space charge, voids, edges or eccentricity.",
+      "Voltage is nonnegative peak conductor-to-shield voltage, not RMS. For positive inner voltage, electric field points radially outward.",
+      "User supplies an allowable field appropriate to material, thickness, temperature, waveform and safety margin; this is not a certification or partial-discharge model.",
+      "Negative field margin indicates an over-stressed design; the electrostatic field calculation remains valid before actual breakdown."
+    ],
+    "references": [{"title":"Virginia Tech, Ellingson Electromagnetics II §7.4: radial electric field and maximum safe field","url":"https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_II_(Ellingson)/07:_Transmission_Lines_Redux/7.04:_Power_Handling_Capability_of_Coaxial_Cable"}],
+    "inputs": [
+      {"key":"conductor_radius","label":"Inner conductor radius","unit":"m","default":0.001,"min":0,"exclusive_min":true},
+      {"key":"shield_inner_radius","label":"Shield inner radius","unit":"m","default":0.004,"min":0,"exclusive_min":true},
+      {"key":"peak_voltage","label":"Conductor-to-shield peak voltage","unit":"V","default":2000,"min":0},
+      {"key":"allowable_field","label":"Application-specific allowable field","unit":"V/m","default":8e6,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"inner_surface_field","label":"Maximum field at inner surface","unit":"V/m","expression":"peak_voltage/conductor_radius/log1p((shield_inner_radius-conductor_radius)/conductor_radius)"},
+      {"key":"outer_surface_field","label":"Field at insulation outer surface","unit":"V/m","expression":"peak_voltage/shield_inner_radius/log1p((shield_inner_radius-conductor_radius)/conductor_radius)"},
+      {"key":"voltage_limit","label":"Field-limited peak voltage","unit":"V","expression":"allowable_field*conductor_radius*log1p((shield_inner_radius-conductor_radius)/conductor_radius)"},
+      {"key":"field_margin","label":"Allowable minus maximum field","unit":"V/m","expression":"allowable_field-inner_surface_field"}
+    ],
+    "constraints": [{"left":"shield_inner_radius","op":">","right":"conductor_radius","message":"Shield inner radius must exceed conductor radius."}],
+    "example": {"inputs":{"conductor_radius":0.001,"shield_inner_radius":0.004,"peak_voltage":2000,"allowable_field":8e6},"expected":{"inner_surface_field":1442695.0408889633,"outer_surface_field":360673.7602222408,"voltage_limit":11090.354888959124,"field_margin":6557304.959111037},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "cables.hertz_holm_contact",
+    "title": "Elastic rounded-contact constriction resistance",
+    "category": "Cables and connectors",
+    "level": "expert",
+    "description": "Couple Hertz contact mechanics to Holm current constriction for one clean, elastic, spherical connector contact on a flat of the same metal.",
+    "formula": "E* = E/[2(1-nu²)]; a = [3 F R/(4 E*)]^(1/3); p0 = 3F/(2 pi a²); Rc = rho/(2a); indentation = a²/R",
+    "assumptions": [
+      "One smooth spherical contact on a thick flat; identical homogeneous isotropic metal on both sides, frictionless nonadhesive elastic contact.",
+      "Holm resistance is only the constriction contribution. Oxides, contamination, plating interfaces, rough multiple asperities, bulk lead resistance and temperature rise are excluded.",
+      "Contact radius must not exceed one tenth of sphere radius, a conservative small-contact screening criterion rather than a universal Hertz error bound.",
+      "Contact radius must be at least ten electron mean free paths, a conservative diffusive-transport screening criterion; nanocontacts need ballistic/quantum models.",
+      "User supplies a material/application-qualified maximum elastic Hertz pressure; a uniaxial yield strength is not automatically this pressure limit."
+    ],
+    "references": [
+      {"title":"University of Utah ME EN 7960 Topic 7, slides 7-5 and 7-6: Hertz sphere/flat contact","url":"https://www.mech.utah.edu/~me7960/lectures/Topic7-ContactStressesAndDeformations.pdf"},
+      {"title":"Auburn University, Jackson et al., A Simplified Model of Multiscale Electrical Contact Resistance, equation 3: Holm single-spot resistance","url":"https://www.eng.auburn.edu/~jacksr7/SimplifiedModelofMultiscaleECRJacksonMalucciAngadiPolchow.pdf"},
+      {"title":"NTU, Made et al., ECS Transactions 33(12), equation 4: diffusive versus ballistic constriction","url":"https://dr.ntu.edu.sg/server/api/core/bitstreams/f6cee9fd-a286-4c14-ac2c-4b32c161afae/content"}
+    ],
+    "inputs": [
+      {"key":"normal_force","label":"Compressive normal force","unit":"N","default":0.01,"min":0,"exclusive_min":true},
+      {"key":"sphere_radius","label":"Rounded contact curvature radius","unit":"m","default":0.002,"min":0,"exclusive_min":true},
+      {"key":"young_modulus","label":"Metal Young modulus","unit":"Pa","default":1.1e11,"min":0,"exclusive_min":true},
+      {"key":"poisson_ratio","label":"Metal Poisson ratio","unit":"1","default":0.34,"min":-1,"max":0.5,"exclusive_min":true,"exclusive_max":true},
+      {"key":"resistivity","label":"Metal resistivity at operating temperature","unit":"ohm m","default":1.7e-8,"min":0,"exclusive_min":true},
+      {"key":"electron_mean_free_path","label":"Electron mean free path","unit":"m","default":4e-8,"min":0,"exclusive_min":true},
+      {"key":"elastic_pressure_limit","label":"Qualified elastic Hertz pressure limit","unit":"Pa","default":3e8,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"effective_modulus","label":"Two-body effective modulus","unit":"Pa","expression":"young_modulus/(2*(1-poisson_ratio)*(1+poisson_ratio))"},
+      {"key":"contact_radius","label":"Circular contact spot radius","unit":"m","expression":"(3*normal_force*sphere_radius/(4*effective_modulus))^(1/3)"},
+      {"key":"maximum_pressure","label":"Maximum Hertz contact pressure","unit":"Pa","expression":"3*normal_force/(2*pi*contact_radius^2)"},
+      {"key":"constriction_resistance","label":"Single-spot constriction resistance","unit":"ohm","expression":"resistivity/(2*contact_radius)"},
+      {"key":"indentation","label":"Mutual elastic approach","unit":"m","expression":"contact_radius*(contact_radius/sphere_radius)"}
+    ],
+    "constraints": [
+      {"left":"(3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3)","op":"<=","right":"0.1*sphere_radius","message":"Hertz small-contact screen requires contact radius no greater than 0.1 curvature radius."},
+      {"left":"(3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3)","op":">=","right":"10*electron_mean_free_path","message":"Diffusive Holm screen requires contact radius at least ten electron mean free paths."},
+      {"left":"3*normal_force/(2*pi*((3*normal_force*sphere_radius*(1-poisson_ratio)*(1+poisson_ratio)/(2*young_modulus))^(1/3))^2)","op":"<=","right":"elastic_pressure_limit","message":"Maximum contact pressure exceeds the qualified elastic Hertz limit."}
+    ],
+    "example": {"inputs":{"normal_force":0.01,"sphere_radius":0.002,"young_modulus":1.1e11,"poisson_ratio":0.34,"resistivity":1.7e-8,"electron_mean_free_path":4e-8,"elastic_pressure_limit":3e8},"expected":{"effective_modulus":62189054726.368164,"contact_radius":6.22480523898329e-6,"maximum_pressure":123222453.18016359,"constriction_resistance":0.0013655045698085684,"indentation":1.9374100131636908e-8},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "cables.contact_hotspot_temperature",
+    "title": "Metallic contact voltage–hotspot temperature",
+    "category": "Cables and connectors",
+    "level": "basic",
+    "description": "Estimate the microscopic contact hotspot from contact voltage using the Kohlrausch/Wiedemann–Franz relation, not a package thermal resistance.",
+    "formula": "Tm = sqrt(Tbulk² + Vcontact²/(4 Lorenz)); DeltaT = Tm-Tbulk; Vlimit = 2 sqrt(Lorenz) sqrt(Tlimit²-Tbulk²)",
+    "assumptions": [
+      "Clean symmetric metallic constriction in steady state; both remote electrodes have the same bulk temperature.",
+      "Wiedemann–Franz electronic heat conduction with a constant supplied Lorenz number; surfaces otherwise thermally insulated.",
+      "Voltage is the drop across the constriction only, excluding lead resistance, oxide films, dissimilar-metal thermoelectric effects and arcs.",
+      "User temperature limit is an upper validity bound below relevant softening, melting or structural change. Reject conditions beyond that bound.",
+      "This local hotspot is not the connector housing temperature, current rating or an instruction to apply a damaging test voltage."
+    ],
+    "references": [{"title":"NTU, Made, Gan and Tan, ECS Transactions 33(12) (2010), page 10 before equation 23: contact voltage–temperature relation","url":"https://dr.ntu.edu.sg/server/api/core/bitstreams/f6cee9fd-a286-4c14-ac2c-4b32c161afae/content"}],
+    "inputs": [
+      {"key":"contact_voltage","label":"Contact-only voltage drop magnitude","unit":"V","default":0.05,"min":0},
+      {"key":"bulk_temperature","label":"Remote electrode temperature","unit":"K","default":300,"min":0,"exclusive_min":true},
+      {"key":"lorenz_number","label":"Lorenz number","unit":"V^2/K^2","default":2.45e-8,"min":0,"exclusive_min":true},
+      {"key":"temperature_limit","label":"Upper physical-model temperature limit","unit":"K","default":600,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"hotspot_temperature","label":"Microscopic contact hotspot","unit":"K","expression":"hypot(bulk_temperature,contact_voltage/(2*sqrt(lorenz_number)))"},
+      {"key":"temperature_rise","label":"Local hotspot temperature rise","unit":"K","expression":"contact_voltage/(2*sqrt(lorenz_number))*(contact_voltage/(2*sqrt(lorenz_number))/(hotspot_temperature+bulk_temperature))"},
+      {"key":"contact_voltage_limit","label":"Contact voltage at model temperature limit","unit":"V","expression":"2*sqrt(lorenz_number)*sqrt(temperature_limit-bulk_temperature)*sqrt(temperature_limit+bulk_temperature)"},
+      {"key":"temperature_margin","label":"Limit minus hotspot temperature","unit":"K","expression":"temperature_limit-hotspot_temperature"}
+    ],
+    "constraints": [
+      {"left":"temperature_limit","op":">=","right":"bulk_temperature","message":"Temperature limit must not be below the remote electrode temperature."},
+      {"left":"hypot(bulk_temperature,contact_voltage/(2*sqrt(lorenz_number)))","op":"<=","right":"temperature_limit","message":"Contact hotspot exceeds the supplied physical-model temperature limit."}
+    ],
+    "example": {"inputs":{"contact_voltage":0.05,"bulk_temperature":300,"lorenz_number":2.45e-8,"temperature_limit":600},"expected":{"hotspot_temperature":339.8679215248663,"temperature_rise":39.86792152486629,"contact_voltage_limit":0.16266530054071152,"temperature_margin":260.1320784751337},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "cables.cantilever_contact_spring",
+    "title": "Cantilever connector-contact spring",
+    "category": "Cables and connectors",
+    "level": "basic",
+    "description": "Size a rectangular connector contact beam from imposed mating deflection, estimating normal force and elastic root bending stress.",
+    "formula": "k = E b t³/(4 L³); F = k delta; sigma_root = 6 F L/(b t²) = 3 E t delta/(2 L²)",
+    "assumptions": [
+      "Straight uniform rectangular beam, perfectly clamped root, normal point load at free end, linear isotropic elasticity.",
+      "Thickness is measured in the bending direction; width is perpendicular to the bending plane. Deflection is nonnegative mating travel.",
+      "Conservative Euler–Bernoulli screening uses L/t >= 10 and delta/L <= 0.1; these are engineering approximation limits, not certification tolerances.",
+      "Calculated root stress must not exceed a supplied allowable elastic stress for the contact material and temperature.",
+      "No root notch stress concentration, prestress, curved beam, friction/insertion-force conversion, creep, stress relaxation, wear or fatigue-life prediction."
+    ],
+    "references": [
+      {"title":"Wright State University ME 499/699 Homework 1, page 3: end-loaded cantilever deflection and rectangular second moment","url":"https://cecs.wright.edu/~rsrin/Courses/Materials-Selection/ME%20499-699-07/Fall%202006/HW-1-solutions.pdf"},
+      {"title":"MIT, Roylance, Stresses in Beams (2000), equations 5–7: rectangular section and bending stress","url":"https://web.mit.edu/course/3/3.11/www/modules/bstress.pdf"},
+      {"title":"Materion, What Makes a Good Spring Material? (2024): connector force, stiffness, elasticity and lifetime limitations","url":"https://www.materion.com/insights/blog/what-makes-a-good-spring-material"}
+    ],
+    "inputs": [
+      {"key":"beam_length","label":"Free beam length","unit":"m","default":0.01,"min":0,"exclusive_min":true},
+      {"key":"beam_width","label":"Beam width","unit":"m","default":0.002,"min":0,"exclusive_min":true},
+      {"key":"beam_thickness","label":"Thickness in bending direction","unit":"m","default":0.0002,"min":0,"exclusive_min":true},
+      {"key":"young_modulus","label":"Contact material Young modulus","unit":"Pa","default":1.3e11,"min":0,"exclusive_min":true},
+      {"key":"tip_deflection","label":"Mating tip deflection","unit":"m","default":0.0005,"min":0},
+      {"key":"allowable_stress","label":"Allowable elastic bending stress","unit":"Pa","default":6e8,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"spring_rate","label":"Normal contact spring rate","unit":"N/m","expression":"young_modulus*beam_width/4*(beam_thickness/beam_length)^3"},
+      {"key":"normal_force","label":"Normal tip contact force","unit":"N","expression":"spring_rate*tip_deflection"},
+      {"key":"root_stress","label":"Maximum root bending stress magnitude","unit":"Pa","expression":"1.5*young_modulus*(beam_thickness/beam_length)*(tip_deflection/beam_length)"},
+      {"key":"stress_margin","label":"Allowable minus root stress","unit":"Pa","expression":"allowable_stress-root_stress"}
+    ],
+    "constraints": [
+      {"left":"beam_thickness","op":"<=","right":"beam_length/10","message":"Slender-beam screen requires free length at least ten thicknesses."},
+      {"left":"tip_deflection","op":"<=","right":"beam_length/10","message":"Small-deflection screen requires mating travel at most ten percent of free length."},
+      {"left":"1.5*young_modulus*(beam_thickness/beam_length)*(tip_deflection/beam_length)","op":"<=","right":"allowable_stress","message":"Root bending stress exceeds the supplied elastic stress limit."}
+    ],
+    "example": {"inputs":{"beam_length":0.01,"beam_width":0.002,"beam_thickness":0.0002,"young_modulus":1.3e11,"tip_deflection":0.0005,"allowable_stress":6e8},"expected":{"spring_rate":520,"normal_force":0.26,"root_stress":195000000,"stress_margin":405000000},"relative_tolerance":0.000001}
+  }
+]

@@ -1,0 +1,888 @@
+[
+  {
+    "id": "cores.single_layer_air_solenoid",
+    "title": "Single-layer air solenoid geometry",
+    "category": "Winding and magnetic design",
+    "level": "basic",
+    "description": "Estimate the low-frequency inductance of a finite-length, closely spaced cylindrical air winding.",
+    "formula": "L = (1e-6/0.0254) r^2 N^2/(9r+10l); pitch=l/N",
+    "assumptions": [
+      "Wheeler empirical current-sheet approximation; all supplied dimensions are metres, not inches.",
+      "Nonmagnetic former, single uniform layer, no nearby conducting or magnetic body; low-frequency inductance only, well below self resonance.",
+      "Radius is to wire centres. Length is the axial current-sheet span N times pitch. End leads are omitted.",
+      "Length >= radius and pitch <= radius/5 are conservative geometry screens, not a certified accuracy guarantee. Actual winding shape requires measurement."
+    ],
+    "references": [
+      {
+        "title": "University of Georgia: Inductance Meter for Small Inductances, Motivation",
+        "url": "https://photonics.engr.uga.edu/inductor_meter/index.html"
+      },
+      {
+        "title": "Jim Lux: Wheeler Formulas, explicit inch and microhenry units",
+        "url": "https://www.pe2bz.philpem.me.uk/Power/-%20-%20Power-Design%20-%20-/HighVoltage/wheeler.htm"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "radius",
+        "label": "Mean winding radius",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "length",
+        "label": "Axial winding span",
+        "unit": "m",
+        "default": 0.03,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "turns",
+        "label": "Complete turns",
+        "unit": "turn",
+        "default": 20,
+        "min": 1
+      },
+      {
+        "key": "wire_diameter",
+        "label": "Insulated wire diameter",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "inductance",
+        "label": "Estimated inductance",
+        "unit": "H",
+        "expression": "(1e-6/0.0254)*radius*turns^2/(9+10*length/radius)"
+      },
+      {
+        "key": "turn_pitch",
+        "label": "Axial turn pitch",
+        "unit": "m",
+        "expression": "length/turns"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "turns",
+        "op": "==",
+        "right": "floor(turns)",
+        "message": "Turns must be an integer."
+      },
+      {
+        "left": "length",
+        "op": ">=",
+        "right": "radius",
+        "message": "Use a winding at least one mean radius long."
+      },
+      {
+        "left": "length/turns",
+        "op": ">=",
+        "right": "wire_diameter",
+        "message": "Insulated turns must not overlap."
+      },
+      {
+        "left": "length/turns",
+        "op": "<=",
+        "right": "radius/5",
+        "message": "Current-sheet screening requires pitch no greater than radius/5."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "radius": 0.01,
+        "length": 0.03,
+        "turns": 20,
+        "wire_diameter": 0.001
+      },
+      "expected": {
+        "inductance": 4.037956793862305e-06,
+        "turn_pitch": 0.0015
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "cores.square_planar_spiral",
+    "title": "Square planar spiral current-sheet inductance",
+    "category": "Winding and magnetic design",
+    "level": "intermediate",
+    "description": "Size an isolated square spiral from its trace width, spacing, turns and outside dimension.",
+    "formula": "di=do-2[Nw+(N-1)s]; davg=(do+di)/2; fill=(do-di)/(do+di); L=mu0 N^2 davg*1.27/2*[ln(2.07/fill)+0.18fill+0.13fill^2]",
+    "assumptions": [
+      "Mohan square current-sheet fit, DC/quasistatic inductance; not a self-resonant frequency or Q prediction.",
+      "Uniform thin conductor on a nonmagnetic substrate; no nearby ground plane, shield or magnetic core. Thickness, underpass and terminal parasitics are omitted.",
+      "Source reports at most 8% error for spacing <= 3 widths in its studied integrated-spiral population; typical errors are smaller. This is not a PCB-wide guaranteed tolerance.",
+      "Integer complete turns are used. Inner-side geometry follows the ideal nested-turn convention; terminal routing is excluded."
+    ],
+    "references": [
+      {
+        "title": "Mohan et al., 1999: current-sheet equation (2), Table II",
+        "url": "https://web.stanford.edu/~boyd/papers/pdf/inductance_expressions.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "outer_side",
+        "label": "Outer square side",
+        "unit": "m",
+        "default": 0.0003,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "turns",
+        "label": "Complete turns",
+        "unit": "turn",
+        "default": 4,
+        "min": 1
+      },
+      {
+        "key": "trace_width",
+        "label": "Trace width",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "spacing",
+        "label": "Edge-to-edge spacing",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "inner_side",
+        "label": "Inner clear side",
+        "unit": "m",
+        "expression": "outer_side-2*(turns*trace_width+(turns-1)*spacing)"
+      },
+      {
+        "key": "average_side",
+        "label": "Average square side",
+        "unit": "m",
+        "expression": "(outer_side+inner_side)/2"
+      },
+      {
+        "key": "fill_ratio",
+        "label": "Radial fill ratio",
+        "unit": "1",
+        "expression": "(turns*trace_width+(turns-1)*spacing)/average_side"
+      },
+      {
+        "key": "inductance",
+        "label": "Estimated inductance",
+        "unit": "H",
+        "expression": "4*pi*1e-7*turns^2*average_side*1.27/2*(ln(2.07/fill_ratio)+0.18*fill_ratio+0.13*fill_ratio^2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "turns",
+        "op": "==",
+        "right": "floor(turns)",
+        "message": "Turns must be an integer."
+      },
+      {
+        "left": "outer_side",
+        "op": ">",
+        "right": "2*(turns*trace_width+(turns-1)*spacing)",
+        "message": "The spiral must retain a positive central opening."
+      },
+      {
+        "left": "spacing",
+        "op": "<=",
+        "right": "3*trace_width",
+        "message": "Use spacing no greater than three trace widths for this fit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "outer_side": 0.0003,
+        "turns": 4,
+        "trace_width": 1e-05,
+        "spacing": 1e-05
+      },
+      "expected": {
+        "inner_side": 0.00015999999999999996,
+        "average_side": 0.00022999999999999995,
+        "fill_ratio": 0.3043478260869566,
+        "inductance": 5.825908169108072e-09
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "cores.bobbin_layer_fit",
+    "title": "Insulated round-wire bobbin layer fit",
+    "category": "Winding and magnetic design",
+    "level": "basic",
+    "description": "Check discrete turns and radial build of a square-packed winding with end margins and interlayer tape.",
+    "formula": "q=floor((W-2m)/do); layers=ceil(N/q); build=layers*do+(layers-1)t; fill=N*pi*dc^2/[4(W-2m)H]",
+    "assumptions": [
+      "Ordered square-packed circular wire with uniform finished diameter; no orthocyclic nesting, random winding, litz bundle or compression.",
+      "Window width and height are already net of bobbin wall and base insulation. End margin is reserved independently at each flange.",
+      "Tape lies only between occupied layers. Last partial layer consumes a full radial layer. Crossovers and leads require additional clearance outside this model.",
+      "Geometric fit does not establish creepage, dielectric withstand, thermal rating or safety compliance. Use maximum finished wire diameter and minimum available dimensions."
+    ],
+    "references": [
+      {
+        "title": "TI SLUP126: Window Utilization and winding design Step 14",
+        "url": "https://www.ti.com/lit/ml/slup126/slup126.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "window_width",
+        "label": "Net bobbin width",
+        "unit": "m",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "window_height",
+        "label": "Available radial height",
+        "unit": "m",
+        "default": 0.004,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "end_margin",
+        "label": "Margin at each flange",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0
+      },
+      {
+        "key": "wire_diameter",
+        "label": "Finished wire diameter",
+        "unit": "m",
+        "default": 0.0006,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "copper_diameter",
+        "label": "Bare copper diameter",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "tape_thickness",
+        "label": "Interlayer tape thickness",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0
+      },
+      {
+        "key": "turns",
+        "label": "Required complete turns",
+        "unit": "turn",
+        "default": 100,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "turns_per_layer",
+        "label": "Complete turns per layer",
+        "unit": "turn",
+        "expression": "floor((window_width-2*end_margin)/wire_diameter)"
+      },
+      {
+        "key": "layers_required",
+        "label": "Occupied layers",
+        "unit": "layer",
+        "expression": "ceil(turns/turns_per_layer)"
+      },
+      {
+        "key": "radial_build",
+        "label": "Winding radial build",
+        "unit": "m",
+        "expression": "layers_required*wire_diameter+(layers_required-1)*tape_thickness"
+      },
+      {
+        "key": "height_margin",
+        "label": "Remaining radial clearance",
+        "unit": "m",
+        "expression": "window_height-radial_build"
+      },
+      {
+        "key": "copper_fill",
+        "label": "Copper fraction of usable window",
+        "unit": "1",
+        "expression": "turns*pi*copper_diameter^2/(4*(window_width-2*end_margin)*window_height)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "turns",
+        "op": "==",
+        "right": "floor(turns)",
+        "message": "Turns must be an integer."
+      },
+      {
+        "left": "window_width-2*end_margin",
+        "op": ">=",
+        "right": "wire_diameter",
+        "message": "At least one finished wire must fit between margins."
+      },
+      {
+        "left": "copper_diameter",
+        "op": "<=",
+        "right": "wire_diameter",
+        "message": "Copper diameter cannot exceed finished diameter."
+      },
+      {
+        "left": "ceil(turns/floor((window_width-2*end_margin)/wire_diameter))*wire_diameter+(ceil(turns/floor((window_width-2*end_margin)/wire_diameter))-1)*tape_thickness",
+        "op": "<=",
+        "right": "window_height",
+        "message": "Requested winding does not fit the available radial height."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "window_width": 0.02,
+        "window_height": 0.004,
+        "end_margin": 0.001,
+        "wire_diameter": 0.0006,
+        "copper_diameter": 0.0005,
+        "tape_thickness": 0.0001,
+        "turns": 100
+      },
+      "expected": {
+        "turns_per_layer": 30,
+        "layers_required": 4,
+        "radial_build": 0.0026999999999999997,
+        "height_margin": 0.0013000000000000004,
+        "copper_fill": 0.2727076956241139
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "cores.sinusoidal_steinmetz_loss",
+    "title": "Calibrated sinusoidal core-loss scaling",
+    "category": "Winding and magnetic design",
+    "level": "intermediate",
+    "description": "Estimate total volumetric core loss within a supplied material fit rectangle, using a measured reference rather than unit-sensitive k.",
+    "formula": "pv=pref*(f/fref)^alpha*(Bpk/Bref)^beta; P=pv*Ve; Ecycle=P/f",
+    "assumptions": [
+      "Empirical Steinmetz scaling for sinusoidal flux, zero DC bias, and the same fixed temperature/material as calibration.",
+      "Reference loss density includes all measured core-loss mechanisms. Do not add classical eddy loss to this total.",
+      "Frequency and flux bounds must come from the actual fitted dataset and remain below saturation; the tool cannot authenticate calibration data.",
+      "Defaults are an illustrative hypothetical calibration, not a claim about a named ferrite. No PWM, minor-loop, biased or temperature-extrapolated prediction."
+    ],
+    "references": [
+      {
+        "title": "Sullivan et al., 2010: section II, sinusoidal Steinmetz fit and limits",
+        "url": "https://www.wcmagnetics.com/wp-content/uploads/2015/03/Core-Loss-Prediction-Square-Wave-Sullivan.pdf"
+      },
+      {
+        "title": "MIT 6.685, Kirtley: sections 3.4 and 4",
+        "url": "https://ocw.mit.edu/courses/6-685-electric-machines-fall-2013/73ce73e3a02b085d00df37882e7636fe_MIT6_685F13_chapter3.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Operating frequency",
+        "unit": "Hz",
+        "default": 150000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "flux_peak",
+        "label": "Peak sinusoidal flux density",
+        "unit": "T",
+        "default": 0.08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "reference_frequency",
+        "label": "Calibration reference frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "reference_flux_peak",
+        "label": "Calibration reference peak flux",
+        "unit": "T",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "reference_loss_density",
+        "label": "Measured reference loss density",
+        "unit": "W/m^3",
+        "default": 200000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "frequency_exponent",
+        "label": "Fitted frequency exponent",
+        "unit": "1",
+        "default": 1.5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "flux_exponent",
+        "label": "Fitted flux exponent",
+        "unit": "1",
+        "default": 2.5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "core_volume",
+        "label": "Effective magnetic volume",
+        "unit": "m^3",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_frequency_min",
+        "label": "Lowest calibrated frequency",
+        "unit": "Hz",
+        "default": 50000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_frequency_max",
+        "label": "Highest calibrated frequency",
+        "unit": "Hz",
+        "default": 200000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_flux_min",
+        "label": "Lowest calibrated peak flux",
+        "unit": "T",
+        "default": 0.05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_flux_max",
+        "label": "Highest calibrated peak flux",
+        "unit": "T",
+        "default": 0.15,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "loss_density",
+        "label": "Estimated total core-loss density",
+        "unit": "W/m^3",
+        "expression": "reference_loss_density*(frequency/reference_frequency)^frequency_exponent*(flux_peak/reference_flux_peak)^flux_exponent"
+      },
+      {
+        "key": "core_loss",
+        "label": "Estimated core heat",
+        "unit": "W",
+        "expression": "loss_density*core_volume"
+      },
+      {
+        "key": "energy_per_cycle",
+        "label": "Core loss per cycle",
+        "unit": "J",
+        "expression": "core_loss/frequency"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_frequency_max",
+        "op": ">=",
+        "right": "fit_frequency_min",
+        "message": "Frequency calibration limits must be ordered."
+      },
+      {
+        "left": "fit_flux_max",
+        "op": ">=",
+        "right": "fit_flux_min",
+        "message": "Flux calibration limits must be ordered."
+      },
+      {
+        "left": "frequency",
+        "op": ">=",
+        "right": "fit_frequency_min",
+        "message": "Value lies below its calibrated fit range."
+      },
+      {
+        "left": "reference_frequency",
+        "op": ">=",
+        "right": "fit_frequency_min",
+        "message": "Value lies below its calibrated fit range."
+      },
+      {
+        "left": "flux_peak",
+        "op": ">=",
+        "right": "fit_flux_min",
+        "message": "Value lies below its calibrated fit range."
+      },
+      {
+        "left": "reference_flux_peak",
+        "op": ">=",
+        "right": "fit_flux_min",
+        "message": "Value lies below its calibrated fit range."
+      },
+      {
+        "left": "frequency",
+        "op": "<=",
+        "right": "fit_frequency_max",
+        "message": "Value lies above its calibrated fit range."
+      },
+      {
+        "left": "reference_frequency",
+        "op": "<=",
+        "right": "fit_frequency_max",
+        "message": "Value lies above its calibrated fit range."
+      },
+      {
+        "left": "flux_peak",
+        "op": "<=",
+        "right": "fit_flux_max",
+        "message": "Value lies above its calibrated fit range."
+      },
+      {
+        "left": "reference_flux_peak",
+        "op": "<=",
+        "right": "fit_flux_max",
+        "message": "Value lies above its calibrated fit range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 150000,
+        "flux_peak": 0.08,
+        "reference_frequency": 100000,
+        "reference_flux_peak": 0.1,
+        "reference_loss_density": 200000,
+        "frequency_exponent": 1.5,
+        "flux_exponent": 2.5,
+        "core_volume": 1e-05,
+        "fit_frequency_min": 50000,
+        "fit_frequency_max": 200000,
+        "fit_flux_min": 0.05,
+        "fit_flux_max": 0.15
+      },
+      "expected": {
+        "loss_density": 210325.46208198377,
+        "core_loss": 2.103254620819838,
+        "energy_per_cycle": 1.4021697472132253e-05
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "cores.lamination_eddy_loss",
+    "title": "Thin-lamination classical eddy loss",
+    "category": "Winding and magnetic design",
+    "level": "expert",
+    "description": "Estimate classical eddy-current heating of electrically isolated steel sheets under parallel sinusoidal flux.",
+    "formula": "pv=(pi*f*Bpk*t)^2/(6*rho); P=pv*Vmetal; penetration_ratio=t*sqrt(pi*f*mu0*mur/rho)",
+    "assumptions": [
+      "Uniform sinusoidal flux parallel to thin, mutually insulated laminations; no transport current or normal flux component.",
+      "Constant effective permeability and resistivity at operating temperature, unsaturated material; eddy reaction must be small.",
+      "Thickness/skin-depth <= 0.3 is a conservative complete-penetration screening criterion, not a manufacturer accuracy guarantee.",
+      "Volume means metal only, excluding insulation/voids. Classical eddy loss excludes hysteresis, excess/domain-wall loss, cut-edge damage, burr shorts and joints."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.685, Kirtley: sections 3.4 and 4",
+        "url": "https://ocw.mit.edu/courses/6-685-electric-machines-fall-2013/73ce73e3a02b085d00df37882e7636fe_MIT6_685F13_chapter3.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Flux frequency",
+        "unit": "Hz",
+        "default": 50,
+        "min": 0
+      },
+      {
+        "key": "flux_peak",
+        "label": "Peak parallel flux density",
+        "unit": "T",
+        "default": 0.8,
+        "min": 0
+      },
+      {
+        "key": "lamination_thickness",
+        "label": "Metal sheet thickness",
+        "unit": "m",
+        "default": 0.0002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Lamination resistivity",
+        "unit": "ohm m",
+        "default": 5e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permeability",
+        "label": "Effective relative permeability",
+        "unit": "1",
+        "default": 1000,
+        "min": 1
+      },
+      {
+        "key": "metal_volume",
+        "label": "Total metal volume",
+        "unit": "m^3",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "linear_flux_limit",
+        "label": "Material linear-model flux limit",
+        "unit": "T",
+        "default": 1.2,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "penetration_ratio",
+        "label": "Thickness to penetration-depth ratio",
+        "unit": "1",
+        "expression": "lamination_thickness*sqrt(pi*frequency*4*pi*1e-7*relative_permeability/resistivity)"
+      },
+      {
+        "key": "eddy_loss_density",
+        "label": "Classical eddy-loss density",
+        "unit": "W/m^3",
+        "expression": "(pi*frequency*flux_peak*lamination_thickness/sqrt(6*resistivity))^2"
+      },
+      {
+        "key": "eddy_loss",
+        "label": "Classical eddy heat",
+        "unit": "W",
+        "expression": "eddy_loss_density*metal_volume"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "flux_peak",
+        "op": "<=",
+        "right": "linear_flux_limit",
+        "message": "Peak flux exceeds the supplied linear-material limit."
+      },
+      {
+        "left": "lamination_thickness*sqrt(pi*frequency*4*pi*1e-7*relative_permeability/resistivity)",
+        "op": "<=",
+        "right": "0.3",
+        "message": "Complete-penetration approximation requires thickness/depth <= 0.3."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 50,
+        "flux_peak": 0.8,
+        "lamination_thickness": 0.0002,
+        "resistivity": 5e-07,
+        "relative_permeability": 1000,
+        "metal_volume": 0.0001,
+        "linear_flux_limit": 1.2
+      },
+      "expected": {
+        "penetration_ratio": 0.12566370614359174,
+        "eddy_loss_density": 210.55156055657307,
+        "eddy_loss": 0.021055156055657307
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "cores.thin_foil_winding_loss",
+    "title": "Thin-foil multilayer winding AC loss",
+    "category": "Winding and magnetic design",
+    "level": "expert",
+    "description": "Estimate transport plus proximity/skin eddy loss in a series foil winding using the controlled low-frequency Dowell expansion.",
+    "formula": "x=t*sqrt(pi*f*mu0/rho); excess=(5m^2-1)x^4/45; Rdc=rho*m*MLT/(b*t); Rac=Rdc*(1+excess); P=Irms^2*Rac",
+    "assumptions": [
+      "Solid nonmagnetic foil, one turn per layer, integer series layers, equal mean turn length, sinusoidal current, no parallel paths.",
+      "One-dimensional field with zero tangential magnetic field on one side of the winding portion; no interleaving within the portion or gap-fringing/edge field.",
+      "Low-frequency expansion through x^4, where x=foil thickness/skin depth <= 0.5. Foil width >= 20 thicknesses screens the sheet geometry.",
+      "Resistivity is at operating temperature. No round-wire equivalent-foil conversion, litz correction, harmonic summation, dielectric loss or thermal feedback.",
+      "Frequency zero is the analytic DC limit. Excess factor and excess heat are computed separately to retain small positive increments without subtracting nearly equal totals."
+    ],
+    "references": [
+      {
+        "title": "Dowell, 1966: equations (8), (32), (33), thin-layer series derived in research notes",
+        "url": "https://www.cpdee.ufmg.br/~troliveira/docs/aulas/fontes/05247417.pdf"
+      },
+      {
+        "title": "TI SLUP125: sections on multiple-layer windings and winding sections",
+        "url": "https://www.ti.com/lit/ml/slup125/slup125.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Sinusoidal current frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0
+      },
+      {
+        "key": "foil_thickness",
+        "label": "Copper foil thickness",
+        "unit": "m",
+        "default": 5e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "foil_width",
+        "label": "Foil axial width",
+        "unit": "m",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "layers",
+        "label": "Series foil layers",
+        "unit": "layer",
+        "default": 3,
+        "min": 1
+      },
+      {
+        "key": "mean_turn_length",
+        "label": "Mean length per turn",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Foil resistivity at temperature",
+        "unit": "ohm m",
+        "default": 1.72e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "current_rms",
+        "label": "Winding RMS current",
+        "unit": "A",
+        "default": 10,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "thickness_ratio",
+        "label": "Foil thickness to depth ratio",
+        "unit": "1",
+        "expression": "foil_thickness*sqrt(pi*frequency*4*pi*1e-7/resistivity)"
+      },
+      {
+        "key": "resistance_dc",
+        "label": "Geometric DC winding resistance",
+        "unit": "ohm",
+        "expression": "resistivity*layers*mean_turn_length/(foil_width*foil_thickness)"
+      },
+      {
+        "key": "ac_excess_factor",
+        "label": "AC resistance excess over DC",
+        "unit": "1",
+        "expression": "(5*layers^2-1)/45*thickness_ratio^4"
+      },
+      {
+        "key": "resistance_ac",
+        "label": "Approximate AC winding resistance",
+        "unit": "ohm",
+        "expression": "resistance_dc*(1+ac_excess_factor)"
+      },
+      {
+        "key": "winding_loss",
+        "label": "Total winding heat",
+        "unit": "W",
+        "expression": "(current_rms*sqrt(resistance_ac))^2"
+      },
+      {
+        "key": "ac_excess_loss",
+        "label": "Additional AC eddy heat",
+        "unit": "W",
+        "expression": "(current_rms*thickness_ratio*sqrt(resistance_dc)*sqrt((5*layers^2-1)/45)*thickness_ratio)^2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "layers",
+        "op": "==",
+        "right": "floor(layers)",
+        "message": "Foil layer count must be an integer."
+      },
+      {
+        "left": "foil_width",
+        "op": ">=",
+        "right": "20*foil_thickness",
+        "message": "Foil width must be at least twenty thicknesses for the sheet approximation."
+      },
+      {
+        "left": "foil_thickness*sqrt(pi*frequency*4*pi*1e-7/resistivity)",
+        "op": "<=",
+        "right": "0.5",
+        "message": "Thin-foil expansion requires thickness/depth <= 0.5."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 100000,
+        "foil_thickness": 5e-05,
+        "foil_width": 0.02,
+        "layers": 3,
+        "mean_turn_length": 0.1,
+        "resistivity": 1.72e-08,
+        "current_rms": 10
+      },
+      "expected": {
+        "thickness_ratio": 0.23954419411992858,
+        "resistance_dc": 0.00516,
+        "ac_excess_factor": 0.0032194579693949473,
+        "resistance_ac": 0.005176612403122077,
+        "winding_loss": 0.5176612403122077,
+        "ac_excess_loss": 0.0016612403122077928
+      },
+      "relative_tolerance": 1e-09
+    }
+  }
+]

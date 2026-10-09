@@ -1,0 +1,720 @@
+[
+  {
+    "id": "sensors.ntc_steinhart_hart",
+    "title": "Steinhart\u2013Hart NTC thermistor temperature",
+    "category": "Sensor transduction",
+    "level": "intermediate",
+    "description": "Convert a calibrated nonlinear thermistor resistance to temperature and local resistance-to-temperature sensitivity.",
+    "formula": "1/T = A+B ln(R/1 ohm)+C ln(R/1 ohm)^3; dT/dR = -T^2(B+3C ln(R/1 ohm)^2)/R",
+    "assumptions": [
+      "Coefficients use the numerical resistance in ohms and temperature in kelvin; do not reuse coefficients fitted with kilohms.",
+      "Monotonic NTC coefficient family B>0 and C>=0; coefficients and fit interval must come from calibration of the actual sensor.",
+      "Negligible measurement self-heating, lead resistance and leakage; static thermal equilibrium. This is not a constant-TCR model."
+    ],
+    "references": [
+      {
+        "title": "ILX Lightwave TNSTEIN-1, equation (1), 2005",
+        "url": "https://api.p1.mks.com/medias/sys_master/images/images/hdb/hac/8797291479070/TN-STEIN-1-Thermistor-Constant-Conversions-Beta-to-Steinhart-Hart.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "resistance",
+        "label": "Measured thermistor resistance",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "coefficient_a",
+        "label": "Steinhart\u2013Hart A",
+        "unit": "1/K",
+        "default": 0.001129148
+      },
+      {
+        "key": "coefficient_b",
+        "label": "Steinhart\u2013Hart B",
+        "unit": "1/K",
+        "default": 0.000234125,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "coefficient_c",
+        "label": "Steinhart\u2013Hart C",
+        "unit": "1/K",
+        "default": 8.76741e-08,
+        "min": 0
+      },
+      {
+        "key": "fit_temperature_min",
+        "label": "Calibrated minimum temperature",
+        "unit": "K",
+        "default": 233.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_temperature_max",
+        "label": "Calibrated maximum temperature",
+        "unit": "K",
+        "default": 398.15,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "temperature_kelvin",
+        "label": "Thermistor temperature",
+        "unit": "K",
+        "expression": "1/(coefficient_a+coefficient_b*ln(resistance)+coefficient_c*ln(resistance)^3)"
+      },
+      {
+        "key": "temperature_celsius",
+        "label": "Thermistor temperature",
+        "unit": "degC",
+        "expression": "temperature_kelvin-273.15"
+      },
+      {
+        "key": "temperature_sensitivity",
+        "label": "Local temperature sensitivity",
+        "unit": "K/ohm",
+        "expression": "-temperature_kelvin*(temperature_kelvin/resistance)*(coefficient_b+3*coefficient_c*ln(resistance)^2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_temperature_max",
+        "op": ">",
+        "right": "fit_temperature_min",
+        "message": "Calibration temperature interval must be ordered"
+      },
+      {
+        "left": "coefficient_a+coefficient_b*ln(resistance)+coefficient_c*ln(resistance)^3",
+        "op": ">=",
+        "right": "1/fit_temperature_max",
+        "message": "Resistance implies temperature above the calibrated interval or nonpositive inverse temperature"
+      },
+      {
+        "left": "coefficient_a+coefficient_b*ln(resistance)+coefficient_c*ln(resistance)^3",
+        "op": "<=",
+        "right": "1/fit_temperature_min",
+        "message": "Resistance implies temperature below the calibrated interval"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "resistance": 10000,
+        "coefficient_a": 0.001129148,
+        "coefficient_b": 0.000234125,
+        "coefficient_c": 8.76741e-08,
+        "fit_temperature_min": 233.15,
+        "fit_temperature_max": 398.15
+      },
+      "expected": {
+        "temperature_kelvin": 298.1496681766963,
+        "temperature_celsius": 24.999668176696318,
+        "temperature_sensitivity": -0.002279553664363643
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "sensors.platinum_callendar_van_dusen",
+    "title": "Platinum RTD nonlinear resistance response",
+    "category": "Sensor transduction",
+    "level": "intermediate",
+    "description": "Predict platinum RTD resistance and sensitivity including the subzero quartic term.",
+    "formula": "R=R0[1+A t+B t^2+C(u-100)u^3], u=min(t,0); A=3.9083e-3, B=-5.775e-7, C=-4.183e-12",
+    "assumptions": [
+      "Nominal IEC 60751 platinum coefficient family, not a calibration or a guarantee of sensor tolerance class.",
+      "Temperature is explicitly degrees Celsius; reference resistance is at 0 degrees Celsius.",
+      "Valid reference-function range is -200 to 850 degrees Celsius; a particular package may have a narrower rating.",
+      "Neglect self-heating, lead resistance, hysteresis and strain. Linear-model error compares against R0(1+A t), not a separate calculator."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SDAA150, section 1.2.2.1, equations 21 and 23\u201326",
+        "url": "https://www.ti.com/document-viewer/lit/html/SDAA150/GUID-D7335C6E-A97D-4849-80CC-6781C31A787C.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "zero_resistance",
+        "label": "Resistance at 0 degrees Celsius",
+        "unit": "ohm",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature_celsius",
+        "label": "Sensor temperature",
+        "unit": "degC",
+        "default": -100,
+        "min": -200,
+        "max": 850
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resistance",
+        "label": "RTD resistance",
+        "unit": "ohm",
+        "expression": "zero_resistance*(1+3.9083e-3*temperature_celsius-5.775e-7*temperature_celsius^2-4.183e-12*(min(temperature_celsius,0)-100)*min(temperature_celsius,0)^3)"
+      },
+      {
+        "key": "resistance_sensitivity",
+        "label": "Local resistance sensitivity",
+        "unit": "ohm/K",
+        "expression": "zero_resistance*(3.9083e-3-1.155e-6*temperature_celsius-4.183e-12*(4*min(temperature_celsius,0)-300)*min(temperature_celsius,0)^2)"
+      },
+      {
+        "key": "linear_model_error",
+        "label": "Resistance minus tangent model at zero",
+        "unit": "ohm",
+        "expression": "zero_resistance*(-5.775e-7*temperature_celsius^2-4.183e-12*(min(temperature_celsius,0)-100)*min(temperature_celsius,0)^3)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "zero_resistance": 100,
+        "temperature_celsius": -100
+      },
+      "expected": {
+        "resistance": 60.25584,
+        "resistance_sensitivity": 0.4053081,
+        "linear_model_error": -0.66116
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "sensors.type_t_cold_junction_emf",
+    "title": "Type-T thermocouple EMF with finite cold junction",
+    "category": "Sensor transduction",
+    "level": "expert",
+    "description": "Predict terminal EMF from both junction temperatures using the nonlinear NIST Type-T positive-temperature polynomial.",
+    "formula": "E(t)=1e-3 sum(c_i t^i) V; Vterminal=E(Th)-E(Tc); Shot=dE(Th)/dTh",
+    "assumptions": [
+      "This calculation implements the NIST 0 to 400 degrees Celsius polynomial branch for both junctions; negative-temperature operation is not supported.",
+      "Copper is the positive Type-T leg and constantan the negative leg. Terminal voltage is copper minus constantan at an isothermal reference block.",
+      "Use homogeneous wire and open-circuit measurement; no parasitic junction gradients, leakage, wire tolerance or calibration error included.",
+      "Cold-junction correction occurs in EMF space, not by subtracting temperatures. Divided differences preserve near-equal junction signals."
+    ],
+    "references": [
+      {
+        "title": "NIST SRD 60, Type T reference function, 0 to 400 degrees Celsius",
+        "url": "https://its90.nist.gov/downloadFiles/type_t.tab.txt"
+      },
+      {
+        "title": "Texas Instruments SBAA274A, sections 1.1 and 1.3",
+        "url": "https://www.ti.com/lit/an/sbaa274a/sbaa274a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "hot_temperature",
+        "label": "Measurement-junction temperature",
+        "unit": "degC",
+        "default": 100,
+        "min": 0,
+        "max": 400
+      },
+      {
+        "key": "cold_temperature",
+        "label": "Isothermal reference-block temperature",
+        "unit": "degC",
+        "default": 25,
+        "min": 0,
+        "max": 400
+      }
+    ],
+    "outputs": [
+      {
+        "key": "hot_emf",
+        "label": "Hot-junction EMF relative to zero Celsius",
+        "unit": "V",
+        "expression": "1e-3*hot_temperature*(0.038748106364+hot_temperature*(0.00003329222788+hot_temperature*(2.0618243404E-7+hot_temperature*(-2.1882256846E-9+hot_temperature*(1.0996880928E-11+hot_temperature*(-3.0815758772E-14+hot_temperature*(4.547913529E-17+hot_temperature*-2.7512901673E-20)))))))"
+      },
+      {
+        "key": "cold_emf",
+        "label": "Cold-junction EMF relative to zero Celsius",
+        "unit": "V",
+        "expression": "1e-3*cold_temperature*(0.038748106364+cold_temperature*(0.00003329222788+cold_temperature*(2.0618243404E-7+cold_temperature*(-2.1882256846E-9+cold_temperature*(1.0996880928E-11+cold_temperature*(-3.0815758772E-14+cold_temperature*(4.547913529E-17+cold_temperature*-2.7512901673E-20)))))))"
+      },
+      {
+        "key": "terminal_emf",
+        "label": "Copper-minus-constantan terminal EMF",
+        "unit": "V",
+        "expression": "1e-3*(hot_temperature-cold_temperature)*((0.038748106364)*(1)+(0.00003329222788)*(hot_temperature+cold_temperature)+(2.0618243404E-7)*(hot_temperature^2+hot_temperature*cold_temperature+cold_temperature^2)+(-2.1882256846E-9)*(hot_temperature^3+hot_temperature^2*cold_temperature+hot_temperature*cold_temperature^2+cold_temperature^3)+(1.0996880928E-11)*(hot_temperature^4+hot_temperature^3*cold_temperature+hot_temperature^2*cold_temperature^2+hot_temperature*cold_temperature^3+cold_temperature^4)+(-3.0815758772E-14)*(hot_temperature^5+hot_temperature^4*cold_temperature+hot_temperature^3*cold_temperature^2+hot_temperature^2*cold_temperature^3+hot_temperature*cold_temperature^4+cold_temperature^5)+(4.547913529E-17)*(hot_temperature^6+hot_temperature^5*cold_temperature+hot_temperature^4*cold_temperature^2+hot_temperature^3*cold_temperature^3+hot_temperature^2*cold_temperature^4+hot_temperature*cold_temperature^5+cold_temperature^6)+(-2.7512901673E-20)*(hot_temperature^7+hot_temperature^6*cold_temperature+hot_temperature^5*cold_temperature^2+hot_temperature^4*cold_temperature^3+hot_temperature^3*cold_temperature^4+hot_temperature^2*cold_temperature^5+hot_temperature*cold_temperature^6+cold_temperature^7))"
+      },
+      {
+        "key": "hot_sensitivity",
+        "label": "Hot-junction Seebeck sensitivity",
+        "unit": "V/K",
+        "expression": "1e-3*((1*(0.038748106364))*hot_temperature^0+(2*(0.00003329222788))*hot_temperature^1+(3*(2.0618243404E-7))*hot_temperature^2+(4*(-2.1882256846E-9))*hot_temperature^3+(5*(1.0996880928E-11))*hot_temperature^4+(6*(-3.0815758772E-14))*hot_temperature^5+(7*(4.547913529E-17))*hot_temperature^6+(8*(-2.7512901673E-20))*hot_temperature^7)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "hot_temperature": 100,
+        "cold_temperature": 25
+      },
+      "expected": {
+        "hot_emf": 0.00427851861580027,
+        "cold_emf": 0.0009919772678200114,
+        "terminal_emf": 0.003286541347980259,
+        "hot_sensitivity": 4.67849607861716e-05
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "sensors.hall_plate_angle",
+    "title": "Hall-plate field-angle transduction",
+    "category": "Sensor transduction",
+    "level": "basic",
+    "description": "Estimate transverse Hall voltage and angular sensitivity of a biased plate in a uniform tilted field.",
+    "formula": "Bn=B cos(theta); VH=RH I Bn/t; dVH/dtheta=-RH I B sin(theta)/t",
+    "assumptions": [
+      "Theta is the angle between magnetic flux density and the selected positive plate normal, in radians.",
+      "RH is a signed calibrated Hall coefficient; voltage-contact polarity must match that calibration.",
+      "Uniform single-carrier plate approximation and constant temperature; geometry factor, offset, planar Hall terms and loading are excluded.",
+      "Entered field and current limits must come from the sensor linear-region calibration; no amplifier or supply-rail model."
+    ],
+    "references": [
+      {
+        "title": "Allegro AN296065, Hall Effect Principles, equation 1",
+        "url": "https://www.allegromicro.com/en/insights-and-innovations/technical-documents/hall-effect-sensor-ic-publications/allegro-hall-effect-sensor-ics"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "field_magnitude",
+        "label": "Applied magnetic flux density magnitude",
+        "unit": "T",
+        "default": 0.05,
+        "min": 0
+      },
+      {
+        "key": "field_angle",
+        "label": "Field angle from plate normal",
+        "unit": "rad",
+        "default": 1.0471975511965976
+      },
+      {
+        "key": "bias_current",
+        "label": "Signed longitudinal bias current",
+        "unit": "A",
+        "default": 0.001
+      },
+      {
+        "key": "hall_coefficient",
+        "label": "Signed calibrated Hall coefficient",
+        "unit": "m^3/C",
+        "default": 0.01
+      },
+      {
+        "key": "plate_thickness",
+        "label": "Hall plate thickness",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "field_limit",
+        "label": "Maximum calibrated total field",
+        "unit": "T",
+        "default": 0.2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "current_limit",
+        "label": "Maximum calibrated bias magnitude",
+        "unit": "A",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "normal_field",
+        "label": "Field component normal to plate",
+        "unit": "T",
+        "expression": "field_magnitude*cos(field_angle)"
+      },
+      {
+        "key": "hall_voltage",
+        "label": "Signed transverse Hall voltage",
+        "unit": "V",
+        "expression": "hall_coefficient*bias_current*(field_magnitude/plate_thickness)*cos(field_angle)"
+      },
+      {
+        "key": "angle_sensitivity",
+        "label": "Signed angular voltage sensitivity",
+        "unit": "V/rad",
+        "expression": "-hall_coefficient*bias_current*(field_magnitude/plate_thickness)*sin(field_angle)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "field_magnitude",
+        "op": "<=",
+        "right": "field_limit",
+        "message": "Applied field exceeds calibrated Hall model range"
+      },
+      {
+        "left": "abs(bias_current)",
+        "op": "<=",
+        "right": "current_limit",
+        "message": "Bias current exceeds calibrated Hall model range"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "field_magnitude": 0.05,
+        "field_angle": 1.0471975511965976,
+        "bias_current": 0.001,
+        "hall_coefficient": 0.01,
+        "plate_thickness": 1e-05,
+        "field_limit": 0.2,
+        "current_limit": 0.005
+      },
+      "expected": {
+        "normal_field": 0.02500000000000001,
+        "hall_voltage": 0.02500000000000001,
+        "angle_sensitivity": -0.04330127018922193
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "sensors.amr_angular_resistance",
+    "title": "Anisotropic magnetoresistive angular resistance",
+    "category": "Sensor transduction",
+    "level": "basic",
+    "description": "Predict longitudinal AMR resistance from the magnetization-to-current angle without a bridge or amplifier.",
+    "formula": "R=Rperp+DeltaR cos(theta)^2; V=I R; dR/dtheta=-2 DeltaR sin(theta)cos(theta)",
+    "assumptions": [
+      "Theta is the internal magnetization angle relative to longitudinal current, not automatically the applied-field angle.",
+      "Single-domain uniform thin film, fixed temperature, quasi-static known magnetization; hysteresis and the field-to-magnetization rotation model are excluded.",
+      "DeltaR is the measured signed difference Rparallel-Rperp, not an assumed universal percentage.",
+      "180-degree periodic response cannot distinguish opposite magnetization directions; no bridge solver or amplifier stage."
+    ],
+    "references": [
+      {
+        "title": "Philips Semiconductors, Magnetoresistive sensors for magnetic field measurement, 2000, appendix 1 page 15 equation 2 (manufacturer document mirror)",
+        "url": "https://manualsdump.com/en/manuals/philips-magnetoresistive_sensor/271677/15"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "perpendicular_resistance",
+        "label": "Resistance with perpendicular magnetization",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistance_anisotropy",
+        "label": "Parallel-minus-perpendicular resistance",
+        "unit": "ohm",
+        "default": 20
+      },
+      {
+        "key": "magnetization_angle",
+        "label": "Magnetization angle from current direction",
+        "unit": "rad",
+        "default": 1.0471975511965976
+      },
+      {
+        "key": "bias_current",
+        "label": "Signed sensing current",
+        "unit": "A",
+        "default": 0.001
+      },
+      {
+        "key": "current_limit",
+        "label": "Maximum calibrated sensing-current magnitude",
+        "unit": "A",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resistance",
+        "label": "Longitudinal AMR resistance",
+        "unit": "ohm",
+        "expression": "perpendicular_resistance+resistance_anisotropy*cos(magnetization_angle)^2"
+      },
+      {
+        "key": "voltage_drop",
+        "label": "Longitudinal passive-sign voltage",
+        "unit": "V",
+        "expression": "bias_current*resistance"
+      },
+      {
+        "key": "angular_resistance_sensitivity",
+        "label": "Local angular resistance sensitivity",
+        "unit": "ohm/rad",
+        "expression": "-2*resistance_anisotropy*sin(magnetization_angle)*cos(magnetization_angle)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "perpendicular_resistance+min(resistance_anisotropy,0)",
+        "op": ">",
+        "right": "0",
+        "message": "AMR resistance must remain positive at every angle"
+      },
+      {
+        "left": "abs(bias_current)",
+        "op": "<=",
+        "right": "current_limit",
+        "message": "Sensing current exceeds calibrated AMR range"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "perpendicular_resistance": 1000,
+        "resistance_anisotropy": 20,
+        "magnetization_angle": 1.0471975511965976,
+        "bias_current": 0.001,
+        "current_limit": 0.005
+      },
+      "expected": {
+        "resistance": 1005.0,
+        "voltage_drop": 1.0050000000000001,
+        "angular_resistance_sensitivity": -17.320508075688775
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "sensors.hydrogen_activity_electrode",
+    "title": "Nernst hydrogen-activity electrode",
+    "category": "Sensor transduction",
+    "level": "basic",
+    "description": "Predict glass-electrode potential from hydrogen activities and temperature, retaining its logarithmic chemical transduction.",
+    "formula": "pH=-log10(aH); S=(kB/q)T ln(10); V=Voffset+(kB/q)T ln(a_sample/a_standard)",
+    "assumptions": [
+      "Activities are dimensionless relative to the standard state, not uncorrected molar concentrations.",
+      "Ideal monovalent Nernst response over the declared aqueous pH 0 to 14 and 0 to 100 degrees Celsius envelope; actual electrode ratings may be narrower.",
+      "Offset is the measured electrode voltage at equal activities and the same temperature. Voltage rises for increasing hydrogen activity.",
+      "No loading, liquid-junction error, aging, sodium interference or reference-buffer temperature drift; practical use needs calibration. No amplifier is modeled."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments AN-1852 SNOA529A, section 1.1 equations 1\u20132",
+        "url": "https://www.ti.com/lit/an/snoa529a/snoa529a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "sample_activity",
+        "label": "Sample hydrogen activity",
+        "unit": "1",
+        "default": 0.0001,
+        "min": 1e-14,
+        "max": 1
+      },
+      {
+        "key": "standard_activity",
+        "label": "Standard hydrogen activity",
+        "unit": "1",
+        "default": 1e-07,
+        "min": 1e-14,
+        "max": 1
+      },
+      {
+        "key": "temperature",
+        "label": "Electrode and solution temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 273.15,
+        "max": 373.15
+      },
+      {
+        "key": "offset_voltage",
+        "label": "Equal-activity electrode offset",
+        "unit": "V",
+        "default": 0.005
+      }
+    ],
+    "outputs": [
+      {
+        "key": "sample_ph",
+        "label": "Sample pH",
+        "unit": "pH",
+        "expression": "-log10(sample_activity)"
+      },
+      {
+        "key": "nernst_slope",
+        "label": "Ideal voltage magnitude per pH",
+        "unit": "V/pH",
+        "expression": "(1.380649e-23/1.602176634e-19)*temperature*ln(10)"
+      },
+      {
+        "key": "electrode_voltage",
+        "label": "Sample-minus-reference electrode potential",
+        "unit": "V",
+        "expression": "offset_voltage+(1.380649e-23/1.602176634e-19)*temperature*(log1p(max(sample_activity-standard_activity,0)/standard_activity)-log1p(max(standard_activity-sample_activity,0)/sample_activity))"
+      },
+      {
+        "key": "activity_sensitivity",
+        "label": "Local voltage sensitivity to activity",
+        "unit": "V",
+        "expression": "(1.380649e-23/1.602176634e-19)*temperature/sample_activity"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "sample_activity": 0.0001,
+        "standard_activity": 1e-07,
+        "temperature": 298.15,
+        "offset_voltage": 0.005
+      },
+      "expected": {
+        "sample_ph": 4.0,
+        "nernst_slope": 0.05915934968478233,
+        "electrode_voltage": 0.182478049054347,
+        "activity_sensitivity": 256.92579121085845
+      },
+      "relative_tolerance": 1e-09
+    }
+  },
+  {
+    "id": "sensors.differential_gap_capacitor",
+    "title": "Differential variable-gap displacement sensor",
+    "category": "Sensor transduction",
+    "level": "intermediate",
+    "description": "Predict both opposed capacitances and nonlinear differential sensitivity of a moving central electrode.",
+    "formula": "Cnear=epsilon A/(g-x); Cfar=epsilon A/(g+x); DeltaC=2 epsilon A x/[(g-x)(g+x)]; DeltaC/(Cnear+Cfar)=x/g",
+    "assumptions": [
+      "Three parallel matched rectangular electrodes; central plate moves toward the near electrode for positive displacement.",
+      "Uniform dielectric, negligible tilt, fringe fields, parasitic capacitance and electrostatic mechanical loading.",
+      "The larger instantaneous gap must not exceed one tenth of either plate dimension: an explicit thin-gap screening rule, not a claimed 1-percent accuracy bound.",
+      "Predicted capacitances are separate central-to-outer measurements, not the series equivalent of floating plates."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SNOA927A, sections 1, 5.2 and 6.1",
+        "url": "https://www.ti.com/lit/pdf/snoa927"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "plate_width",
+        "label": "Overlapping plate width",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plate_length",
+        "label": "Overlapping plate length",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rest_gap",
+        "label": "Each gap at zero displacement",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "displacement",
+        "label": "Signed central-plate displacement",
+        "unit": "m",
+        "default": 2e-05
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Gap dielectric relative permittivity",
+        "unit": "1",
+        "default": 1,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "near_capacitance",
+        "label": "Capacitance toward positive displacement",
+        "unit": "F",
+        "expression": "8.8541878128e-12*relative_permittivity*plate_width*plate_length/(rest_gap-displacement)"
+      },
+      {
+        "key": "far_capacitance",
+        "label": "Opposite capacitance",
+        "unit": "F",
+        "expression": "8.8541878128e-12*relative_permittivity*plate_width*plate_length/(rest_gap+displacement)"
+      },
+      {
+        "key": "differential_capacitance",
+        "label": "Near-minus-far capacitance",
+        "unit": "F",
+        "expression": "2*8.8541878128e-12*relative_permittivity*plate_width*plate_length*(displacement/(rest_gap-displacement))/(rest_gap+displacement)"
+      },
+      {
+        "key": "normalized_difference",
+        "label": "Differential-to-total capacitance ratio",
+        "unit": "1",
+        "expression": "displacement/rest_gap"
+      },
+      {
+        "key": "differential_sensitivity",
+        "label": "Local differential displacement sensitivity",
+        "unit": "F/m",
+        "expression": "near_capacitance/(rest_gap-displacement)+far_capacitance/(rest_gap+displacement)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "abs(displacement)",
+        "op": "<",
+        "right": "rest_gap",
+        "message": "Central plate must not touch either fixed electrode"
+      },
+      {
+        "left": "rest_gap+abs(displacement)",
+        "op": "<=",
+        "right": "min(plate_width,plate_length)/10",
+        "message": "Plate geometry violates the declared thin-gap approximation"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "plate_width": 0.01,
+        "plate_length": 0.01,
+        "rest_gap": 0.0001,
+        "displacement": 2e-05,
+        "relative_permittivity": 1
+      },
+      "expected": {
+        "near_capacitance": 1.1067734766e-11,
+        "far_capacitance": 7.378489844e-12,
+        "differential_capacitance": 3.689244922e-12,
+        "normalized_difference": 0.2,
+        "differential_sensitivity": 1.9983409994166667e-07
+      },
+      "relative_tolerance": 1e-09
+    }
+  }
+]

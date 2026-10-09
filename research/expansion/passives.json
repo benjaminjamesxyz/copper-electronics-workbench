@@ -1,0 +1,167 @@
+[
+  {
+    "id": "passives.mlcc_logarithmic_aging",
+    "title": "Ferroelectric capacitor logarithmic aging",
+    "category": "Nonideal passive components",
+    "level": "basic",
+    "description": "Estimate capacitance loss from a measured one-hour post-deaging value and a calibrated percent-per-decade aging rate.",
+    "formula": "d = log10(t/3600 s); loss = A d/100; C(t) = C_1h (1-loss)",
+    "assumptions": ["Class II/III ferroelectric ceramic with an approximately constant logarithmic aging rate over the supplied interval.", "Time is seconds since the last heating above the material Curie temperature; reference capacitance is measured at exactly one hour.", "No subsequent deaging, temperature change or DC-bias change. Aging rate is percent of the one-hour reference per decade, not compounded percent of the preceding decade.", "Use part-specific characterized aging data. This is not a lifetime or reliability prediction."],
+    "references": [{"title": "KYOCERA AVX / American Technical Ceramics, Dielectric Aging Phenomena, Calculating Aging Rate", "url": "https://rfs.kyocera-avx.com/userFiles/uploads/pdfs/dielectric_aging.pdf"}],
+    "inputs": [
+      {"key": "capacitance_one_hour", "label": "Capacitance one hour after deaging", "unit": "F", "default": 0.00001, "min": 0, "exclusive_min": true},
+      {"key": "aging_percent_decade", "label": "Aging rate per time decade", "unit": "%/decade", "default": 2, "min": 0},
+      {"key": "age", "label": "Time since last deaging", "unit": "s", "default": 36000000, "min": 3600}
+    ],
+    "outputs": [
+      {"key": "elapsed_decades", "label": "Decades after one-hour reference", "unit": "decade", "expression": "log1p((age-3600)/3600)/ln(10)"},
+      {"key": "fractional_loss", "label": "Fractional capacitance loss", "unit": "1", "expression": "aging_percent_decade/100*elapsed_decades"},
+      {"key": "aged_capacitance", "label": "Aged capacitance", "unit": "F", "expression": "capacitance_one_hour*(1-fractional_loss)"}
+    ],
+    "constraints": [{"left": "aging_percent_decade/100*(log1p((age-3600)/3600)/ln(10))", "op": "<", "right": "1", "message": "The logarithmic fit must retain positive capacitance."}],
+    "example": {"inputs": {"capacitance_one_hour": 0.00001, "aging_percent_decade": 2, "age": 36000000}, "expected": {"elapsed_decades": 4, "fractional_loss": 0.08, "aged_capacitance": 0.0000092}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "passives.dielectric_absorption_recovery",
+    "title": "Capacitor dielectric-memory voltage recovery",
+    "category": "Nonideal passive components",
+    "level": "expert",
+    "description": "Predict reappearing terminal voltage after finite charging, ideal shorting and open-circuit recovery of a one-branch dielectric-absorption model.",
+    "formula": "V_a0 = V_ch [1-exp(-t_ch/(R_a C_a))] exp(-t_short/(R_a C_a)); tau = R_a C_a C_m/(C_a+C_m); V_inf = V_a0 C_a/(C_a+C_m); V_rec = V_inf [1-exp(-t_rec/tau)]",
+    "assumptions": ["Main capacitance C_m is in parallel with a SERIES R_a-C_a polarization branch. Both capacitors start uncharged.", "An ideal voltage source clamps the terminals during charge; an ideal short clamps them during discharge; both are disconnected during recovery.", "No terminal leakage, measurement loading, ESR, ESL or additional absorption branches. Parameters must be fitted to the relevant time and temperature range.", "This is a reduced dielectric-polarization memory model, not the full IEC dielectric-absorption test or a safety guarantee that a discharged capacitor remains safe."],
+    "references": [{"title": "Texas Instruments SBOA597, section 4.5 Dielectric Absorption and Relaxation, Figure 4-15", "url": "https://www.ti.com/lit/pdf/sboa597"}],
+    "inputs": [
+      {"key": "main_capacitance", "label": "Fast terminal capacitance", "unit": "F", "default": 0.000001, "min": 0, "exclusive_min": true},
+      {"key": "absorption_capacitance", "label": "Polarization branch capacitance", "unit": "F", "default": 0.00000001, "min": 0, "exclusive_min": true},
+      {"key": "absorption_resistance", "label": "Polarization relaxation resistance", "unit": "ohm", "default": 1000000000, "min": 0, "exclusive_min": true},
+      {"key": "charge_voltage", "label": "Applied charge voltage", "unit": "V", "default": 10},
+      {"key": "charge_time", "label": "Voltage-clamped charging time", "unit": "s", "default": 20, "min": 0},
+      {"key": "short_time", "label": "Terminal shorting time", "unit": "s", "default": 1, "min": 0},
+      {"key": "recovery_time", "label": "Time after removing short", "unit": "s", "default": 10, "min": 0}
+    ],
+    "outputs": [
+      {"key": "memory_voltage", "label": "Hidden polarization voltage after short", "unit": "V", "expression": "charge_voltage*(-expm1(-charge_time/absorption_resistance/absorption_capacitance))*exp(-short_time/absorption_resistance/absorption_capacitance)"},
+      {"key": "recovery_time_constant", "label": "Open-terminal recovery time constant", "unit": "s", "expression": "absorption_resistance*absorption_capacitance/(1+absorption_capacitance/main_capacitance)"},
+      {"key": "final_recovery_voltage", "label": "Asymptotic recovered terminal voltage", "unit": "V", "expression": "memory_voltage/(1+main_capacitance/absorption_capacitance)"},
+      {"key": "recovered_voltage", "label": "Recovered terminal voltage at observation", "unit": "V", "expression": "final_recovery_voltage*(-expm1(-recovery_time/recovery_time_constant))"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"main_capacitance": 0.000001, "absorption_capacitance": 0.00000001, "absorption_resistance": 1000000000, "charge_voltage": 10, "charge_time": 20, "short_time": 1, "recovery_time": 10}, "expected": {"memory_voltage": 7.823809897829776, "recovery_time_constant": 9.900990099009901, "final_recovery_voltage": 0.07746346433494829, "recovered_voltage": 0.04924980040079833}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "passives.mlcc_bias_charge_energy",
+    "title": "Voltage-dependent capacitor usable charge and energy",
+    "category": "Nonideal passive components",
+    "level": "intermediate",
+    "description": "Integrate a manufacturer-fitted linear differential-capacitance curve over a voltage window instead of treating biased MLCC capacitance as constant.",
+    "formula": "k=(C_0-C_fit)/V_fit; C(V)=C_0-kV; DeltaQ=(V_hi-V_lo)[C_0-k(V_hi+V_lo)/2]; DeltaW=(V_hi-V_lo)[C_0(V_hi+V_lo)/2-k(V_hi^2+V_hi V_lo+V_lo^2)/3]",
+    "assumptions": ["C(V)=dQ/dV is a reversible, memoryless differential-capacitance fit from zero to fit_voltage, not a static Q/V value.", "Unipolar operation, positive capacitance, and a nonincreasing linear C(V) curve. Only interpolation within the fitted voltage range is allowed.", "Reported charge and energy are released when moving from upper to lower voltage. No ESR loss, dielectric hysteresis, aging, leakage or temperature dependence is included.", "Real MLCC curves can be strongly non-linear; do not extrapolate or assume the linear fit is conservative. Supply measured part-specific endpoint values."],
+    "references": [{"title": "Analog Devices RAQ Issue 192, first-order voltage-dependent capacitance and integrated charge model", "url": "https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-192.html"}],
+    "inputs": [
+      {"key": "zero_bias_capacitance", "label": "Differential capacitance at zero bias", "unit": "F", "default": 0.00001, "min": 0, "exclusive_min": true},
+      {"key": "fit_capacitance", "label": "Differential capacitance at fit voltage", "unit": "F", "default": 0.000004, "min": 0, "exclusive_min": true},
+      {"key": "fit_voltage", "label": "Upper voltage of characterized fit", "unit": "V", "default": 10, "min": 0, "exclusive_min": true},
+      {"key": "lower_voltage", "label": "Lower usable voltage", "unit": "V", "default": 2, "min": 0},
+      {"key": "upper_voltage", "label": "Upper usable voltage", "unit": "V", "default": 8, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "upper_capacitance", "label": "Differential capacitance at upper voltage", "unit": "F", "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*(upper_voltage/fit_voltage)"},
+      {"key": "usable_charge", "label": "Usable charge in voltage window", "unit": "C", "expression": "(upper_voltage-lower_voltage)*(zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*((upper_voltage+lower_voltage)/fit_voltage)/2)"},
+      {"key": "usable_energy", "label": "Usable reversible energy in window", "unit": "J", "expression": "(upper_voltage-lower_voltage)*(zero_bias_capacitance*(upper_voltage+lower_voltage)/2-(zero_bias_capacitance-fit_capacitance)*(upper_voltage*(upper_voltage/fit_voltage)+lower_voltage*(upper_voltage/fit_voltage)+lower_voltage*(lower_voltage/fit_voltage))/3)"},
+      {"key": "charge_equivalent_capacitance", "label": "Window charge-equivalent capacitance", "unit": "F", "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*((upper_voltage+lower_voltage)/fit_voltage)/2"},
+      {"key": "energy_equivalent_capacitance", "label": "Window energy-equivalent capacitance", "unit": "F", "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*(2/3)*((upper_voltage/fit_voltage)+(lower_voltage/fit_voltage)*(lower_voltage/(upper_voltage+lower_voltage)))"}
+    ],
+    "constraints": [
+      {"left": "fit_capacitance", "op": "<=", "right": "zero_bias_capacitance", "message": "This MLCC fit requires nonincreasing capacitance."},
+      {"left": "upper_voltage", "op": ">", "right": "lower_voltage", "message": "The usable voltage window must have positive width."},
+      {"left": "upper_voltage", "op": "<=", "right": "fit_voltage", "message": "Do not extrapolate beyond the characterized voltage range."}
+    ],
+    "example": {"inputs": {"zero_bias_capacitance": 0.00001, "fit_capacitance": 0.000004, "fit_voltage": 10, "lower_voltage": 2, "upper_voltage": 8}, "expected": {"upper_capacitance": 0.0000052, "usable_charge": 0.000042, "usable_energy": 0.0001992, "charge_equivalent_capacitance": 0.000007, "energy_equivalent_capacitance": 0.00000664}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "passives.resistor_excess_noise",
+    "title": "Biased resistor excess noise from noise index",
+    "category": "Nonideal passive components",
+    "level": "intermediate",
+    "description": "Convert a resistor's one-decade current-noise index into band-integrated excess noise and spectral density under DC bias.",
+    "formula": "a=10^(NI/20)*1e-6; D=log10(f_hi/f_lo); v_ex=abs(V_DC)*a*sqrt(D); e_ex(f)=abs(V_DC)*a/sqrt(f ln(10))",
+    "assumptions": ["Noise index in dB is referenced to 1 microvolt RMS per volt DC over one frequency decade: 0 dB means 1 microvolt/volt, NOT 1 volt/volt.", "Assume a 1/f excess-noise power spectral density throughout the requested band; use a characterized frequency interval.", "DC bias is the actual voltage across the resistor. Results are open-circuit excess voltage noise, not loaded-node noise.", "Thermal Johnson noise and amplifier noise are excluded. Noise index depends on resistor technology, bias and temperature; it is not a universal constant."],
+    "references": [{"title": "Vishay, Shunts, Current Shunts, and Current-Sensing Resistors, Noise pp.14-15 and Table 2", "url": "https://www.vishay.com/doc?49159="}, {"title": "Vishay Beyschlag, Basics of Linear Fixed Resistors, Noise p.4", "url": "https://www.vishay.com/docs/28771/basics.pdf"}],
+    "inputs": [
+      {"key": "noise_index_db", "label": "One-decade current-noise index", "unit": "dB", "default": -20},
+      {"key": "dc_voltage", "label": "DC voltage across resistor", "unit": "V", "default": 10},
+      {"key": "lower_frequency", "label": "Lower integration frequency", "unit": "Hz", "default": 1, "min": 0, "exclusive_min": true},
+      {"key": "upper_frequency", "label": "Upper integration frequency", "unit": "Hz", "default": 1000, "min": 0, "exclusive_min": true},
+      {"key": "probe_frequency", "label": "Spectral-density observation frequency", "unit": "Hz", "default": 10, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "decade_voltage_ratio", "label": "One-decade RMS voltage ratio", "unit": "V/V", "expression": "10^(noise_index_db/20)*1e-6"},
+      {"key": "band_decades", "label": "Integrated frequency decades", "unit": "decade", "expression": "log1p((upper_frequency-lower_frequency)/lower_frequency)/ln(10)"},
+      {"key": "excess_noise_rms", "label": "Band-integrated excess noise", "unit": "V", "expression": "abs(dc_voltage)*decade_voltage_ratio*sqrt(band_decades)"},
+      {"key": "excess_noise_density", "label": "Excess voltage-noise spectral density", "unit": "V/sqrt(Hz)", "expression": "abs(dc_voltage)*decade_voltage_ratio/sqrt(probe_frequency)/sqrt(ln(10))"}
+    ],
+    "constraints": [
+      {"left": "upper_frequency", "op": ">=", "right": "lower_frequency", "message": "Integration frequencies must be ordered."},
+      {"left": "probe_frequency", "op": ">=", "right": "lower_frequency", "message": "The probe frequency must lie inside the characterized band."},
+      {"left": "probe_frequency", "op": "<=", "right": "upper_frequency", "message": "The probe frequency must lie inside the characterized band."}
+    ],
+    "example": {"inputs": {"noise_index_db": -20, "dc_voltage": 10, "lower_frequency": 1, "upper_frequency": 1000, "probe_frequency": 10}, "expected": {"decade_voltage_ratio": 0.0000001, "band_decades": 3, "excess_noise_rms": 0.0000017320508075688771, "excess_noise_density": 0.00000020839733249330516}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "passives.negative_vcr_divider",
+    "title": "Self-consistent high-voltage divider VCR error",
+    "category": "Nonideal passive components",
+    "level": "expert",
+    "description": "Solve a divider whose high-side resistance decreases with its own unknown terminal voltage; quantify nonlinear ratio error.",
+    "formula": "k=VCR*1e-6; r=R_b/R_0; b=1+r-kV_s; V_h=2V_s/[b+sqrt((1+r+kV_s)^2-4r kV_s)]; R_h=R_0(1+kV_h); V_o=V_h r/(1+kV_h); error=-kV_h/(1+r+kV_h)",
+    "assumptions": ["High-side resistance follows the calibrated static fit R_h(V_h)=R_0(1+k V_h) for 0<=V_h<=V_s; R_0 is the extrapolated zero-voltage resistance.", "Only zero or negative voltage coefficients are covered. The fit must remain positive throughout the complete supply-voltage interval.", "Bottom resistance is voltage-independent and output is unloaded. Temperature is fixed; self-heating, TCR, leakage and parasitic capacitance are omitted.", "A datasheet two-point VCR is not automatically a valid zero-voltage fit: characterize the actual interval. Check working-voltage, power, insulation and creepage separately."],
+    "references": [{"title": "Vishay RIFAQ, Basic Principles Q6: voltage coefficient of a high-voltage resistor", "url": "https://www.vishay.com/en/landingpage/rifaq/index.html#bp6"}],
+    "inputs": [
+      {"key": "supply_voltage", "label": "Positive divider supply", "unit": "V", "default": 1000, "min": 0},
+      {"key": "high_resistance_zero", "label": "High-side zero-voltage fitted resistance", "unit": "ohm", "default": 9900000, "min": 0, "exclusive_min": true},
+      {"key": "bottom_resistance", "label": "Voltage-independent bottom resistance", "unit": "ohm", "default": 100000, "min": 0, "exclusive_min": true},
+      {"key": "vcr_ppm_volt", "label": "Negative high-side voltage coefficient", "unit": "ppm/V", "default": -10, "max": 0}
+    ],
+    "outputs": [
+      {"key": "high_voltage", "label": "Self-consistent high-side voltage", "unit": "V", "expression": "2*supply_voltage/(1+bottom_resistance/high_resistance_zero-vcr_ppm_volt*1e-6*supply_voltage+hypot(1+bottom_resistance/high_resistance_zero+vcr_ppm_volt*1e-6*supply_voltage,2*sqrt(-(bottom_resistance/high_resistance_zero)*(vcr_ppm_volt*1e-6*supply_voltage))))"},
+      {"key": "high_resistance", "label": "High-side resistance under bias", "unit": "ohm", "expression": "high_resistance_zero*(1+vcr_ppm_volt*1e-6*high_voltage)"},
+      {"key": "output_voltage", "label": "Actual unloaded divider output", "unit": "V", "expression": "high_voltage*(bottom_resistance/high_resistance_zero)/(1+vcr_ppm_volt*1e-6*high_voltage)"},
+      {"key": "ideal_output_voltage", "label": "Output with zero voltage coefficient", "unit": "V", "expression": "supply_voltage/(1+high_resistance_zero/bottom_resistance)"},
+      {"key": "fractional_ratio_error", "label": "Nonlinear fractional divider-ratio error", "unit": "1", "expression": "-(vcr_ppm_volt*1e-6*high_voltage)/(1+bottom_resistance/high_resistance_zero+vcr_ppm_volt*1e-6*high_voltage)"}
+    ],
+    "constraints": [{"left": "1+vcr_ppm_volt*1e-6*supply_voltage", "op": ">", "right": "0", "message": "The fitted high-side resistance must remain positive over the complete supply interval."}],
+    "example": {"inputs": {"supply_voltage": 1000, "high_resistance_zero": 9900000, "bottom_resistance": 100000, "vcr_ppm_volt": -10}, "expected": {"high_voltage": 989.901029888954, "high_resistance": 9801999.798040994, "output_voltage": 10.098970111046048, "ideal_output_voltage": 10, "fractional_ratio_error": 0.009897011104604824}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "passives.nonideal_r2r_ladder",
+    "title": "Three-bit R-2R ladder with unequal switch resistance",
+    "category": "Nonideal passive components",
+    "level": "expert",
+    "description": "Solve the component-level Thevenin ladder including independent switch resistances and output loading, rather than assuming ideal binary weights.",
+    "formula": "B_i=2R+R_on,i; T_0=B_0||2R; E_0=b_0 V_ref*2R/(B_0+2R); T_1=B_1||(R+T_0); E_1=[b_1 V_ref(R+T_0)+E_0 B_1]/(B_1+R+T_0); R_out=B_2||(R+T_1); V_oc=[b_2 V_ref(R+T_1)+E_1 B_2]/(B_2+R+T_1); V_load=V_oc/(1+G_load R_out)",
+    "assumptions": ["Exactly three voltage-mode ladder rungs: each switched branch is 2R plus its supplied switch resistance; two horizontal links are R; the LSB end has an unswitched 2R termination to ground.", "Code bits select an ideal low-impedance reference or ground. Switch resistance can differ by bit but is constant with signal, code and temperature.", "Output is at the MSB end with a conductance to ground. Zero load conductance denotes open circuit.", "DC settled solution only. No glitch, settling, reference impedance, resistor tolerance, parasitic capacitance or switch nonlinearity is modeled.", "Reported code error includes loading and gain error; it is NOT endpoint-corrected INL."],
+    "references": [{"title": "Analog Devices University, Current Steering Digital-to-Analog Converters, section 1.4 R-2R Ladder DACs and Figure 4b", "url": "https://wiki.analog.com/university/courses/tutorials/cmos-dac-chapter"}],
+    "inputs": [
+      {"key": "ladder_resistance", "label": "Horizontal ladder resistance R", "unit": "ohm", "default": 1000, "min": 0, "exclusive_min": true},
+      {"key": "lsb_switch_resistance", "label": "LSB switch on-resistance", "unit": "ohm", "default": 100, "min": 0},
+      {"key": "middle_switch_resistance", "label": "Middle-bit switch on-resistance", "unit": "ohm", "default": 200, "min": 0},
+      {"key": "msb_switch_resistance", "label": "MSB switch on-resistance", "unit": "ohm", "default": 300, "min": 0},
+      {"key": "reference_voltage", "label": "Ideal switched reference voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "code", "label": "Unsigned three-bit code", "unit": "count", "default": 5, "min": 0, "max": 7},
+      {"key": "load_conductance", "label": "Output load conductance to ground", "unit": "S", "default": 0.0001, "min": 0}
+    ],
+    "outputs": [
+      {"key": "lsb_thevenin_resistance", "label": "LSB subladder source resistance", "unit": "ohm", "expression": "(2*ladder_resistance)/(1+2*ladder_resistance/(2*ladder_resistance+lsb_switch_resistance))"},
+      {"key": "lsb_thevenin_voltage", "label": "LSB subladder open voltage", "unit": "V", "expression": "(code-2*floor(code/2))*reference_voltage/(2+lsb_switch_resistance/(2*ladder_resistance))"},
+      {"key": "middle_thevenin_resistance", "label": "Two-rung subladder source resistance", "unit": "ohm", "expression": "(ladder_resistance+lsb_thevenin_resistance)/(1+(ladder_resistance+lsb_thevenin_resistance)/(2*ladder_resistance+middle_switch_resistance))"},
+      {"key": "middle_thevenin_voltage", "label": "Two-rung subladder open voltage", "unit": "V", "expression": "(floor(code/2)-2*floor(code/4))*reference_voltage/(1+(2*ladder_resistance+middle_switch_resistance)/(ladder_resistance+lsb_thevenin_resistance))+lsb_thevenin_voltage/(1+(ladder_resistance+lsb_thevenin_resistance)/(2*ladder_resistance+middle_switch_resistance))"},
+      {"key": "output_resistance", "label": "Complete ladder output resistance", "unit": "ohm", "expression": "(ladder_resistance+middle_thevenin_resistance)/(1+(ladder_resistance+middle_thevenin_resistance)/(2*ladder_resistance+msb_switch_resistance))"},
+      {"key": "open_voltage", "label": "Complete ladder unloaded voltage", "unit": "V", "expression": "floor(code/4)*reference_voltage/(1+(2*ladder_resistance+msb_switch_resistance)/(ladder_resistance+middle_thevenin_resistance))+middle_thevenin_voltage/(1+(ladder_resistance+middle_thevenin_resistance)/(2*ladder_resistance+msb_switch_resistance))"},
+      {"key": "loaded_voltage", "label": "Loaded output voltage", "unit": "V", "expression": "open_voltage/(1+load_conductance*output_resistance)"},
+      {"key": "ideal_voltage", "label": "Ideal unloaded three-bit output", "unit": "V", "expression": "reference_voltage*(code/8)"},
+      {"key": "code_error_lsb", "label": "Uncorrected loaded code error", "unit": "LSB", "expression": "loaded_voltage/reference_voltage*8-code"}
+    ],
+    "constraints": [{"left": "code", "op": "==", "right": "floor(code)", "message": "DAC code must be an integer from zero through seven."}],
+    "example": {"inputs": {"ladder_resistance": 1000, "lsb_switch_resistance": 100, "middle_switch_resistance": 200, "msb_switch_resistance": 300, "reference_voltage": 5, "code": 5, "load_conductance": 0.0001}, "expected": {"lsb_thevenin_resistance": 1024.3902439024391, "lsb_thevenin_voltage": 2.4390243902439024, "middle_thevenin_resistance": 1054.2725173210163, "middle_thevenin_voltage": 1.2702078521939955, "output_resistance": 1085.101304762915, "open_voltage": 3.029861037445635, "loaded_voltage": 2.733273205310086, "ideal_voltage": 3.125, "code_error_lsb": -0.6267628715038625}, "relative_tolerance": 0.000001}
+  }
+]

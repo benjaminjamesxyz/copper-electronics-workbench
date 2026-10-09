@@ -1,0 +1,729 @@
+[
+  {
+    "id": "opto.photodiode_quantum_conversion",
+    "title": "Unity-gain photodiode photon conversion",
+    "category": "Optical hardware",
+    "level": "basic",
+    "description": "Convert monochromatic optical power and external quantum efficiency to collected photocurrent, without amplifier or noise modeling.",
+    "formula": "Eph=hc/lambda; photon_rate=P/Eph; R=eta*q*lambda/(hc); Iph=R*P",
+    "assumptions": [
+      "Monochromatic illumination, unity internal gain, and external quantum efficiency at the stated wavelength, bias and temperature.",
+      "Quantum efficiency includes window, reflection and carrier-collection losses; it is not an independent fitted constant across all wavelengths.",
+      "Photocurrent is a nonnegative magnitude of the generated reverse current, excluding dark current, loading, saturation and noise.",
+      "Use measured linear operating range and material spectral response; this calculation does not enforce a device rating."
+    ],
+    "references": [
+      {
+        "title": "Hamamatsu Si photodiodes, sections 2-2 and 2-3, equation 2-3",
+        "url": "https://www.hamamatsu.com/content/dam/hamamatsu-photonics/sites/documents/99_SALES_LIBRARY/ssd/si_pd_kspd9001e.pdf"
+      },
+      {
+        "title": "Hamamatsu MPPC physics, section I equation 3 with gain M=1",
+        "url": "https://hub.hamamatsu.com/us/en/technical-notes/mppc-sipms/physics-and-operation-of-the-MPPC-silicon-photomultiplier.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "wavelength",
+        "label": "Vacuum wavelength",
+        "unit": "m",
+        "default": 8.5e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "quantum_efficiency",
+        "label": "External quantum efficiency",
+        "unit": "1",
+        "default": 0.75,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "optical_power",
+        "label": "Incident monochromatic optical power",
+        "unit": "W",
+        "default": 2e-05,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "photon_energy",
+        "label": "Energy per photon",
+        "unit": "J",
+        "expression": "6.62607015e-34*299792458/wavelength"
+      },
+      {
+        "key": "photon_rate",
+        "label": "Incident photon rate",
+        "unit": "1/s",
+        "expression": "optical_power/photon_energy"
+      },
+      {
+        "key": "responsivity",
+        "label": "Spectral responsivity",
+        "unit": "A/W",
+        "expression": "quantum_efficiency*(1.602176634e-19/(6.62607015e-34*299792458))*wavelength"
+      },
+      {
+        "key": "photocurrent",
+        "label": "Generated photocurrent magnitude",
+        "unit": "A",
+        "expression": "responsivity*optical_power"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "wavelength": 8.5e-07,
+        "quantum_efficiency": 0.75,
+        "optical_power": 2e-05
+      },
+      "expected": {
+        "photon_energy": 2.3369951260575634e-19,
+        "photon_rate": 85579981648226.06,
+        "responsivity": 0.5141784260060123,
+        "photocurrent": 1.0283568520120244e-05
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "opto.lambertian_target_irradiance",
+    "title": "Lambertian source target irradiance",
+    "category": "Optical hardware",
+    "level": "basic",
+    "description": "Estimate irradiance at a target point from hemisphere flux, source orientation and receiving-plane tilt.",
+    "formula": "I0=Phi/pi; I(theta)=I0*cos(theta); E=I(theta)*cos(phi)/r^2",
+    "assumptions": [
+      "Ideal Lambertian emitter radiates the entered total optical flux into one unobstructed hemisphere.",
+      "Point-source/far-field approximation: source dimensions must be much smaller than source-to-target distance.",
+      "Angles in radians are measured from source normal and the target normal pointing toward the source; both are within the forward hemisphere.",
+      "Target irradiance is a local value, not total intercepted power for an extended surface. No lens, reflection, absorption or photometric lux conversion."
+    ],
+    "references": [
+      {
+        "title": "Newport Laws of Radiation, Lambert law",
+        "url": "https://www.newport.com/t/laws-of-radiation/"
+      },
+      {
+        "title": "Newport Oriel Spectral Irradiance, units and distance scaling pages 2 and 5",
+        "url": "https://www.newport.com/medias/sys_master/images/images/hfb/hdf/8797196451870/Light-Sources.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "radiant_flux",
+        "label": "Forward hemisphere radiant flux",
+        "unit": "W",
+        "default": 0.1,
+        "min": 0
+      },
+      {
+        "key": "distance",
+        "label": "Source to target distance",
+        "unit": "m",
+        "default": 0.2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "emission_angle",
+        "label": "Source normal to outgoing ray angle",
+        "unit": "rad",
+        "default": 0.5235987755982989,
+        "min": 0
+      },
+      {
+        "key": "incidence_angle",
+        "label": "Target normal to source direction angle",
+        "unit": "rad",
+        "default": 0.7853981633974483,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "axial_intensity",
+        "label": "On-axis radiant intensity",
+        "unit": "W/sr",
+        "expression": "radiant_flux/pi"
+      },
+      {
+        "key": "directional_intensity",
+        "label": "Radiant intensity toward target",
+        "unit": "W/sr",
+        "expression": "axial_intensity*cos(emission_angle)"
+      },
+      {
+        "key": "target_irradiance",
+        "label": "Local target irradiance",
+        "unit": "W/m^2",
+        "expression": "directional_intensity*cos(incidence_angle)/distance/distance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "emission_angle",
+        "op": "<=",
+        "right": "pi/2",
+        "message": "Emission angle must lie in the forward hemisphere."
+      },
+      {
+        "left": "incidence_angle",
+        "op": "<=",
+        "right": "pi/2",
+        "message": "Receiving surface must face the source."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "radiant_flux": 0.1,
+        "distance": 0.2,
+        "emission_angle": 0.5235987755982989,
+        "incidence_angle": 0.7853981633974483
+      },
+      "expected": {
+        "axial_intensity": 0.03183098861837907,
+        "directional_intensity": 0.0275664447710896,
+        "target_irradiance": 0.4873105007710476
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "opto.layer_absorption_capture",
+    "title": "Inactive and active optical layer absorption",
+    "category": "Optical hardware",
+    "level": "intermediate",
+    "description": "Partition incident optical power between a noncollecting entrance layer, a useful absorbing layer and transmitted light.",
+    "formula": "Pd=P0*(1-exp(-alpha_d*d)); Fa=exp(-alpha_d*d)*(1-exp(-alpha_a*t)); Pa=P0*Fa; Pt=P0*exp(-alpha_d*d-alpha_a*t)",
+    "assumptions": [
+      "Homogeneous independent absorption coefficients at one wavelength; normal incidence, no scattering, fluorescence or optical gain.",
+      "Incident power is defined immediately inside the entrance surface. Ignore interface reflections and coherent thin-film interference.",
+      "Inactive layer absorption is lost; active absorption is optical capture only, not collected photocurrent or quantum efficiency.",
+      "The exponential single-pass model applies without back-reflection or optical saturation; coefficients must come from material data at operating conditions."
+    ],
+    "references": [
+      {
+        "title": "Hamamatsu MPPC physics, section I equation 1 and absorption-depth discussion",
+        "url": "https://hub.hamamatsu.com/us/en/technical-notes/mppc-sipms/physics-and-operation-of-the-MPPC-silicon-photomultiplier.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "incident_power",
+        "label": "Power just inside entrance surface",
+        "unit": "W",
+        "default": 0.002,
+        "min": 0
+      },
+      {
+        "key": "dead_absorption",
+        "label": "Inactive-layer absorption coefficient",
+        "unit": "1/m",
+        "default": 200000.0,
+        "min": 0
+      },
+      {
+        "key": "dead_thickness",
+        "label": "Inactive-layer thickness",
+        "unit": "m",
+        "default": 1e-06,
+        "min": 0
+      },
+      {
+        "key": "active_absorption",
+        "label": "Active-layer absorption coefficient",
+        "unit": "1/m",
+        "default": 100000.0,
+        "min": 0
+      },
+      {
+        "key": "active_thickness",
+        "label": "Active-layer thickness",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "dead_absorbed_power",
+        "label": "Power lost in inactive layer",
+        "unit": "W",
+        "expression": "incident_power*(-expm1(-dead_absorption*dead_thickness))"
+      },
+      {
+        "key": "active_capture_fraction",
+        "label": "Fraction captured in active layer",
+        "unit": "1",
+        "expression": "exp(-dead_absorption*dead_thickness)*(-expm1(-active_absorption*active_thickness))"
+      },
+      {
+        "key": "active_absorbed_power",
+        "label": "Power captured in active layer",
+        "unit": "W",
+        "expression": "incident_power*active_capture_fraction"
+      },
+      {
+        "key": "transmitted_power",
+        "label": "Power transmitted through both layers",
+        "unit": "W",
+        "expression": "incident_power*exp(-dead_absorption*dead_thickness-active_absorption*active_thickness)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "incident_power": 0.002,
+        "dead_absorption": 200000.0,
+        "dead_thickness": 1e-06,
+        "active_absorption": 100000.0,
+        "active_thickness": 1e-05
+      },
+      "expected": {
+        "dead_absorbed_power": 0.0003625384938440363,
+        "active_capture_fraction": 0.5175365411657797,
+        "active_absorbed_power": 0.0010350730823315596,
+        "transmitted_power": 0.0006023884238244042
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "opto.gaussian_aperture_capture",
+    "title": "Gaussian beam propagation and aperture capture",
+    "category": "Optical hardware",
+    "level": "expert",
+    "description": "Size a centered circular aperture from the evolving radius of a diffraction-limited Gaussian beam.",
+    "formula": "zR=pi*w0^2/lambda; w(z)=hypot(w0,lambda*z/(pi*w0)); F=1-exp(-2*(a/w)^2); Pcap=P*F; Iaxis=2P/(pi*w^2)",
+    "assumptions": [
+      "Ideal circular TEM00 Gaussian beam in vacuum or air approximated as index one; M squared equals one.",
+      "waist_radius and beam_radius are 1/e^2 intensity radii, not diameters. axial_distance is signed relative to the waist.",
+      "Paraxial model uses divergence lambda/(pi*w0)<=0.1 rad; tan(theta)/theta differs from unity by about 0.335% at that limit.",
+      "Aperture is circular, centered, normal to the axis and located at the requested plane. Capture is evaluated at that plane only.",
+      "Diffraction and changed beam shape after clipping are not predicted. No damage threshold, alignment tolerance or aberration model."
+    ],
+    "references": [
+      {
+        "title": "Newport Gaussian Beam Optics, enclosed-power equation and free-space propagation equations",
+        "url": "https://www.newport.com/n/gaussian-beam-optics/"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "wavelength",
+        "label": "Vacuum wavelength",
+        "unit": "m",
+        "default": 6.33e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "waist_radius",
+        "label": "Waist 1/e^2 intensity radius",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "axial_distance",
+        "label": "Signed waist to aperture distance",
+        "unit": "m",
+        "default": 0.05
+      },
+      {
+        "key": "aperture_radius",
+        "label": "Centered clear aperture radius",
+        "unit": "m",
+        "default": 0.00015,
+        "min": 0
+      },
+      {
+        "key": "beam_power",
+        "label": "Total incident beam power",
+        "unit": "W",
+        "default": 0.01,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "rayleigh_range",
+        "label": "Rayleigh range",
+        "unit": "m",
+        "expression": "pi*waist_radius*(waist_radius/wavelength)"
+      },
+      {
+        "key": "beam_radius",
+        "label": "1/e^2 radius at aperture plane",
+        "unit": "m",
+        "expression": "hypot(waist_radius,(wavelength/waist_radius)*(axial_distance/pi))"
+      },
+      {
+        "key": "captured_fraction",
+        "label": "Fraction passing aperture",
+        "unit": "1",
+        "expression": "-expm1(-2*(aperture_radius/beam_radius)^2)"
+      },
+      {
+        "key": "captured_power",
+        "label": "Power passing aperture",
+        "unit": "W",
+        "expression": "beam_power*captured_fraction"
+      },
+      {
+        "key": "axis_irradiance",
+        "label": "Incident on-axis irradiance at aperture",
+        "unit": "W/m^2",
+        "expression": "(2/pi)*(beam_power/beam_radius)/beam_radius"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "wavelength/waist_radius",
+        "op": "<=",
+        "right": "0.1*pi",
+        "message": "Gaussian paraxial divergence must not exceed 0.1 rad."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "wavelength": 6.33e-07,
+        "waist_radius": 0.0001,
+        "axial_distance": 0.05,
+        "aperture_radius": 0.00015,
+        "beam_power": 0.01
+      },
+      "expected": {
+        "rayleigh_range": 0.04963021569652122,
+        "beam_radius": 0.0001419491843517115,
+        "captured_fraction": 0.8928256332251838,
+        "captured_power": 0.008928256332251838,
+        "axis_irradiance": 315947.0612663579
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "opto.step_index_mode_cutoff",
+    "title": "Step-index fiber mode cutoff",
+    "category": "Optical hardware",
+    "level": "intermediate",
+    "description": "Estimate whether a circular weakly guiding step-index fiber lies below the first higher-order mode cutoff.",
+    "formula": "NA=sqrt((ncore-nclad)*(ncore+nclad)); V=2*pi*a*NA/lambda; lambda_c=2*pi*a*NA/2.405; margin=2.405-V",
+    "assumptions": [
+      "Circular, straight, uniform step-index fiber with ordinary dielectric core and cladding and indices specified at operating wavelength.",
+      "Weak-guidance screening window: (ncore-nclad)/ncore<=0.01. The 2.405 LP11 threshold is approximate, not a measured cable cutoff.",
+      "Positive single_mode_margin indicates V<2.405; zero is the approximate cutoff boundary, not robust single-mode margin.",
+      "cutoff_wavelength holds the entered indices constant; material dispersion can shift the actual spectral cutoff.",
+      "No graded-index, photonic-crystal, polarization-maintaining or bent-fiber model. Numerical aperture is not a single-mode coupling-efficiency prediction."
+    ],
+    "references": [
+      {
+        "title": "Newport Photonics Technical Note 21 Fiber Basics, pages 1-4: NA, V number and cutoff",
+        "url": "https://www.newport.com/medias/sys_master/images/images/hd5/ha2/8797095919646/Fiber-Basics.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "core_index",
+        "label": "Core refractive index",
+        "unit": "1",
+        "default": 1.45,
+        "min": 1
+      },
+      {
+        "key": "cladding_index",
+        "label": "Cladding refractive index",
+        "unit": "1",
+        "default": 1.444,
+        "min": 1
+      },
+      {
+        "key": "core_radius",
+        "label": "Core radius",
+        "unit": "m",
+        "default": 4.1e-06,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "wavelength",
+        "label": "Vacuum operating wavelength",
+        "unit": "m",
+        "default": 1.55e-06,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "numerical_aperture",
+        "label": "Index-derived numerical aperture",
+        "unit": "1",
+        "expression": "sqrt(core_index-cladding_index)*sqrt(core_index+cladding_index)"
+      },
+      {
+        "key": "normalized_frequency",
+        "label": "Fiber V number",
+        "unit": "1",
+        "expression": "2*pi*(core_radius/wavelength)*numerical_aperture"
+      },
+      {
+        "key": "cutoff_wavelength",
+        "label": "Approximate LP11 cutoff wavelength",
+        "unit": "m",
+        "expression": "(2*pi/2.405)*core_radius*numerical_aperture"
+      },
+      {
+        "key": "single_mode_margin",
+        "label": "Margin below LP11 V cutoff",
+        "unit": "1",
+        "expression": "2.405-normalized_frequency"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "core_index",
+        "op": ">",
+        "right": "cladding_index",
+        "message": "Core index must exceed cladding index for this guiding model."
+      },
+      {
+        "left": "(core_index-cladding_index)/core_index",
+        "op": "<=",
+        "right": "0.01",
+        "message": "This LP approximation is restricted to at most 1% relative index contrast."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "core_index": 1.45,
+        "cladding_index": 1.444,
+        "core_radius": 4.1e-06,
+        "wavelength": 1.55e-06
+      },
+      "expected": {
+        "numerical_aperture": 0.13177253128023306,
+        "normalized_frequency": 2.190064550298241,
+        "cutoff_wavelength": 1.411476113497827e-06,
+        "single_mode_margin": 0.21493544970175898
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "opto.fiber_gaussian_dispersion",
+    "title": "Chirped Gaussian pulse fiber dispersion",
+    "category": "Optical hardware",
+    "level": "expert",
+    "description": "Predict temporal broadening or compression from second-order group-velocity dispersion in a single-mode fiber.",
+    "formula": "x=beta2*L/T0^2; b=hypot(1+C*x,x); Tout=T0*b; FWHMout=2*sqrt(ln(2))*Tout; Ppeak=Ep/(sqrt(pi)*Tout)",
+    "assumptions": [
+      "Input field envelope is A(0,t)=A0*exp(-(1+i*C)*t^2/(2*T0^2)); propagation convention is dA/dz=-i*beta2*d2A/dt2/2.",
+      "initial_width is the intensity 1/e half-width, not RMS width or FWHM. Negative C*beta2 can initially compress the pulse.",
+      "Linear single-mode propagation with constant beta2 across the pulse spectrum. Neglect higher-order dispersion, Kerr nonlinearity, loss, PMD and coupling.",
+      "Pulse energy is conserved in this lossless model; calculated peak power does not establish optical damage or nonlinear safety.",
+      "At beta2=0 the model is the dispersion-free limit only when higher-order dispersion is negligible; near a real zero-dispersion wavelength that assumption must be checked."
+    ],
+    "references": [
+      {
+        "title": "UCSB ECE228A Winter 2011 Lecture 6, slides 6.2-6.4 and 6.7: Gaussian pulse dispersion and chirp",
+        "url": "https://courses.ece.ucsb.edu/ECE228/228A_W11Blumenthal/Lecture6-228a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "initial_width",
+        "label": "Input intensity 1/e half-width",
+        "unit": "s",
+        "default": 1e-11,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_chirp",
+        "label": "Signed initial chirp parameter",
+        "unit": "1",
+        "default": 1
+      },
+      {
+        "key": "beta_two",
+        "label": "Second-order group-velocity dispersion",
+        "unit": "s^2/m",
+        "default": -2e-26
+      },
+      {
+        "key": "fiber_length",
+        "label": "Fiber length",
+        "unit": "m",
+        "default": 2000,
+        "min": 0
+      },
+      {
+        "key": "pulse_energy",
+        "label": "Input pulse energy",
+        "unit": "J",
+        "default": 1e-13,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "normalized_dispersion",
+        "label": "Signed normalized dispersion",
+        "unit": "1",
+        "expression": "(beta_two/initial_width)*(fiber_length/initial_width)"
+      },
+      {
+        "key": "width_ratio",
+        "label": "Output to input width ratio",
+        "unit": "1",
+        "expression": "hypot(1+initial_chirp*normalized_dispersion,normalized_dispersion)"
+      },
+      {
+        "key": "output_width",
+        "label": "Output intensity 1/e half-width",
+        "unit": "s",
+        "expression": "initial_width*width_ratio"
+      },
+      {
+        "key": "output_fwhm",
+        "label": "Output intensity FWHM",
+        "unit": "s",
+        "expression": "2*sqrt(ln(2))*output_width"
+      },
+      {
+        "key": "output_peak_power",
+        "label": "Lossless output peak power",
+        "unit": "W",
+        "expression": "pulse_energy/output_width/sqrt(pi)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "initial_width": 1e-11,
+        "initial_chirp": 1,
+        "beta_two": -2e-26,
+        "fiber_length": 2000,
+        "pulse_energy": 1e-13
+      },
+      "expected": {
+        "normalized_dispersion": -0.4,
+        "width_ratio": 0.7211102550927979,
+        "output_width": 7.211102550927979e-12,
+        "output_fwhm": 1.2007273360612251e-11,
+        "output_peak_power": 0.007823901817554269
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "opto.sipm_finite_cell_response",
+    "title": "SiPM finite-cell short-pulse response",
+    "category": "Optical hardware",
+    "level": "expert",
+    "description": "Estimate mean fired microcells and output charge under uniform short-pulse illumination, including occupancy saturation.",
+    "formula": "S=Nph*PDE; Nf=Ncell*(1-exp(-S/Ncell)); response=exprel(-S/Ncell); Q=q*gain*Nf",
+    "assumptions": [
+      "Uniform Poisson photon exposure over identical fully recovered microcells; photon_count is the incident mean per pulse.",
+      "Optical pulse is much shorter than cell recovery time, each cell fires at most once, and pulses are separated enough for full recovery.",
+      "Detection efficiency excludes afterpulsing and optical crosstalk. Those effects, dark counts, recovery during the pulse and nonuniform illumination are not modeled.",
+      "Gain is electrons per fired cell at the operating overvoltage and temperature; no quenching or readout circuit model.",
+      "The finite-cell occupancy model is a screening estimate. Hamamatsu reports measured over-saturation not explained by it; it is not a device rating or a guaranteed upper bound on measured charge.",
+      "relative_response is the response divided by its unsaturated extrapolation; its analytic value at zero illumination or zero PDE is one."
+    ],
+    "references": [
+      {
+        "title": "Hamamatsu MPPC physics, section V Dynamic range equation 9, section II equations 6-7",
+        "url": "https://hub.hamamatsu.com/us/en/technical-notes/mppc-sipms/physics-and-operation-of-the-MPPC-silicon-photomultiplier.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "photon_count",
+        "label": "Mean incident photons per pulse",
+        "unit": "1",
+        "default": 2000,
+        "min": 0
+      },
+      {
+        "key": "detection_efficiency",
+        "label": "Photon detection efficiency excluding correlated noise",
+        "unit": "1",
+        "default": 0.4,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "cell_count",
+        "label": "Available fully recovered microcells",
+        "unit": "1",
+        "default": 1600,
+        "min": 1
+      },
+      {
+        "key": "avalanche_gain",
+        "label": "Electrons per fired microcell",
+        "unit": "1",
+        "default": 1000000.0,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "seed_count",
+        "label": "Unsaturated mean detection seeds",
+        "unit": "1",
+        "expression": "photon_count*detection_efficiency"
+      },
+      {
+        "key": "fired_cells",
+        "label": "Mean fired microcells",
+        "unit": "1",
+        "expression": "seed_count*exprel(-seed_count/cell_count)"
+      },
+      {
+        "key": "relative_response",
+        "label": "Response relative to unsaturated extrapolation",
+        "unit": "1",
+        "expression": "exprel(-seed_count/cell_count)"
+      },
+      {
+        "key": "output_charge",
+        "label": "Mean pulse output charge magnitude",
+        "unit": "C",
+        "expression": "(1.602176634e-19*avalanche_gain)*fired_cells"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "cell_count",
+        "op": "==",
+        "right": "floor(cell_count)",
+        "message": "Available microcell count must be an integer."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "photon_count": 2000,
+        "detection_efficiency": 0.4,
+        "cell_count": 1600,
+        "avalanche_gain": 1000000.0
+      },
+      "expected": {
+        "seed_count": 800.0,
+        "fired_cells": 629.5509444597865,
+        "relative_response": 0.7869386805747332,
+        "output_charge": 1.0086518131261018e-10
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]

@@ -1,0 +1,236 @@
+[
+  {
+    "id": "rf.matched_t_attenuator",
+    "title": "Symmetric matched T attenuator",
+    "category": "RF networks, antennas and links",
+    "level": "basic",
+    "description": "Synthesize an equal-impedance resistive T pad with a specified positive insertion loss while matching both ports.",
+    "formula": "a=ln(10) A/20; Rs=Z0 (1-exp(-a))/(1+exp(-a)); Rp=2 Z0 exp(-a)/(1-exp(-2a)); Pout/Pin=exp(-2a)",
+    "assumptions": [
+      "Both ports use the same positive real reference impedance and the output is terminated in that impedance.",
+      "The two series arms have identical resistance; the shunt arm connects their junction to the common return.",
+      "Ideal lumped resistors; package parasitics, layout, temperature, tolerances and power ratings must be checked separately.",
+      "Attenuation is strictly positive. The zero-loss bypass requires an open shunt and is not a finite-resistor T pad."
+    ],
+    "references": [{"title": "Michael Steer, Microwave and RF Design III, section 5.5.2, equations 2, 7 and 8", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_(Steer)/05%3A_Chapter_5/5.5%3A_Terminations_and_Attenuators"}],
+    "inputs": [
+      {"key": "reference_impedance", "label": "Equal port reference impedance", "unit": "ohm", "default": 50.0, "min": 0.0, "exclusive_min": true},
+      {"key": "attenuation_db", "label": "Matched insertion loss", "unit": "dB", "default": 20.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "series_resistance", "label": "Each series-arm resistance", "unit": "ohm", "expression": "reference_impedance*(-expm1(-ln(10)*attenuation_db/20))/(1+exp(-ln(10)*attenuation_db/20))"},
+      {"key": "shunt_resistance", "label": "Center shunt resistance", "unit": "ohm", "expression": "reference_impedance*exp(-ln(10)*attenuation_db/20)*2/(-expm1(-ln(10)*attenuation_db/10))"},
+      {"key": "power_transmission", "label": "Matched transmitted power fraction", "unit": "1", "expression": "exp(-ln(10)*attenuation_db/10)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"reference_impedance": 50.0, "attenuation_db": 20.0}, "expected": {"series_resistance": 40.90909090909091, "shunt_resistance": 10.1010101010101, "power_transmission": 0.01}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "rf.lowpass_l_match",
+    "title": "Lumped low-pass L impedance match",
+    "category": "RF networks, antennas and links",
+    "level": "intermediate",
+    "description": "Match a lower real source resistance to a higher real load using a series inductor and a load-side shunt capacitor at one frequency.",
+    "formula": "Q=sqrt((Rl-Rs)/Rs); L=Rs Q/(2 pi f); C=Q/(2 pi f Rl)",
+    "assumptions": [
+      "This topology requires 0 < source resistance < load resistance; the capacitor is parallel with the load, not the source.",
+      "Source and load have no residual reactance at the design frequency.",
+      "Ideal lossless lumped components, electrically short interconnects and operation below component self-resonance.",
+      "The resistance ratio fixes loaded Q; Q is not the inductor component Q and does not specify an exact broadband return-loss bandwidth."
+    ],
+    "references": [{"title": "Michael Steer, Microwave and RF Design III, section 6.4.1, equations 1-10", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_%28Steer%29/06%3A_Chapter_6/6.4%3A_The_L_Matching_Network"}],
+    "inputs": [
+      {"key": "source_resistance", "label": "Lower source resistance", "unit": "ohm", "default": 50.0, "min": 0.0, "exclusive_min": true},
+      {"key": "load_resistance", "label": "Higher load resistance", "unit": "ohm", "default": 200.0, "min": 0.0, "exclusive_min": true},
+      {"key": "frequency", "label": "Match frequency", "unit": "Hz", "default": 100000000.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "loaded_q", "label": "Matching-network loaded Q", "unit": "1", "expression": "sqrt((load_resistance-source_resistance)/source_resistance)"},
+      {"key": "series_inductance", "label": "Series inductance", "unit": "H", "expression": "source_resistance*loaded_q/(2*pi*frequency)"},
+      {"key": "shunt_capacitance", "label": "Load-side shunt capacitance", "unit": "F", "expression": "loaded_q/(2*pi*frequency*load_resistance)"}
+    ],
+    "constraints": [{"left": "load_resistance", "op": ">", "right": "source_resistance", "message": "This series-L, load-shunt-C topology requires load resistance greater than source resistance."}],
+    "example": {"inputs": {"source_resistance": 50.0, "load_resistance": 200.0, "frequency": 100000000.0}, "expected": {"loaded_q": 1.7320508075688772, "series_inductance": 1.3783222385544804e-7, "shunt_capacitance": 1.3783222385544801e-11}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "rf.free_space_link_budget",
+    "title": "Free-space radio link budget",
+    "category": "RF networks, antennas and links",
+    "level": "basic",
+    "description": "Estimate received power and sensitivity margin for an unobstructed far-field RF link with directional antenna gains and explicit lumped losses.",
+    "formula": "FSPL=20 log10(4 pi d f/c); Pr=Pt+Gt+Gr-L-FSPL; margin=Pr-Srx; c=299792458 m/s",
+    "assumptions": [
+      "Unobstructed free space; antennas are aligned and polarization matched. Gains are dBi toward the opposite endpoint, not dBd.",
+      "Transmit power and receiver sensitivity are referenced to their equipment ports. Total loss includes feedlines and other known losses not already included in the antenna gains.",
+      "The largest antenna dimension is the maximum dimension across either endpoint antenna.",
+      "A conservative far-field screen enforces d >= max(10 wavelengths, 2 Dmax^2/wavelength). The 10-wavelength term is an explicit engineering screen, not a universal certification boundary.",
+      "No multipath, ground reflection, atmospheric absorption, obstruction, fading or interference model; a positive margin does not guarantee a working link."
+    ],
+    "references": [
+      {"title": "Wurth Elektronik ANR010 Range Estimator v1.1, section 4.1, equations 4-7", "url": "https://www.we-online.com/components/media/o164527v410%20ANR010_Range_Estimation.pdf"},
+      {"title": "MIT Lincoln Laboratory, Introduction to Radar Systems: The Radar Equation, slides 5-8 (gain and effective aperture)", "url": "https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf"},
+      {"title": "Amrita Virtual Lab, Antenna Gain Measurement, procedure 1 (2D squared over wavelength)", "url": "https://vlab.amrita.edu/?brch=180&cnt=1&sim=307&sub=3"}
+    ],
+    "inputs": [
+      {"key": "frequency", "label": "Carrier frequency", "unit": "Hz", "default": 2400000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "distance", "label": "Antenna separation", "unit": "m", "default": 1000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "antenna_max_dimension", "label": "Largest dimension of either antenna", "unit": "m", "default": 0.1, "min": 0.0, "exclusive_min": true},
+      {"key": "transmit_power_dbm", "label": "Equipment transmit power", "unit": "dBm", "default": 20.0},
+      {"key": "transmit_gain_dbi", "label": "Transmit antenna directional gain", "unit": "dBi", "default": 2.0},
+      {"key": "receive_gain_dbi", "label": "Receive antenna directional gain", "unit": "dBi", "default": 2.0},
+      {"key": "total_loss_db", "label": "Total additional link loss", "unit": "dB", "default": 2.0, "min": 0.0},
+      {"key": "sensitivity_dbm", "label": "Receiver sensitivity", "unit": "dBm", "default": -90.0}
+    ],
+    "outputs": [
+      {"key": "free_space_loss_db", "label": "Free-space path loss", "unit": "dB", "expression": "20*(log10(4*pi)+log10(distance)+log10(frequency)-log10(299792458))"},
+      {"key": "received_power_dbm", "label": "Received equipment-port power", "unit": "dBm", "expression": "transmit_power_dbm+transmit_gain_dbi+receive_gain_dbi-total_loss_db-free_space_loss_db"},
+      {"key": "link_margin_db", "label": "Margin above receiver sensitivity", "unit": "dB", "expression": "received_power_dbm-sensitivity_dbm"}
+    ],
+    "constraints": [{"left": "distance", "op": ">=", "right": "max(10*299792458/frequency,2*antenna_max_dimension*(antenna_max_dimension*frequency/299792458))", "message": "Separation must meet the documented far-field screen for frequency and antenna size."}],
+    "example": {"inputs": {"frequency": 2400000000.0, "distance": 1000.0, "antenna_max_dimension": 0.1, "transmit_power_dbm": 20.0, "transmit_gain_dbi": 2.0, "receive_gain_dbi": 2.0, "total_loss_db": 2.0, "sensitivity_dbm": -90.0}, "expected": {"free_space_loss_db": 100.0520080561155, "received_power_dbm": -78.0520080561155, "link_margin_db": 11.947991943884503}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "rf.first_fresnel_clearance",
+    "title": "First-Fresnel obstruction clearance",
+    "category": "RF networks, antennas and links",
+    "level": "intermediate",
+    "description": "Find the first-Fresnel radius at an obstacle and compare actual perpendicular clearance with a chosen required radius fraction.",
+    "formula": "r1=sqrt((c/f) d1 d2/(d1+d2)); hreq=k r1; margin=h-hreq",
+    "assumptions": [
+      "Distances d1 and d2 run along the straight antenna-to-antenna line of sight to the obstacle plane; clearance is perpendicular to that line.",
+      "Paraxial first-Fresnel approximation. Each axial segment must be at least 100 wavelengths, an explicit small-angle screen that keeps r1/di <= 0.1.",
+      "The required fraction is a user planning criterion between zero and one, not a prediction of diffraction loss or a standards-compliance claim.",
+      "Signed clearance is positive when the obstacle stays below the line of sight and negative when it crosses the line. Negative margin is a valid failed-clearance result.",
+      "No Earth curvature, refraction, terrain profile, vegetation motion or diffraction attenuation is modeled."
+    ],
+    "references": [{"title": "Wurth Elektronik ANR010 Range Estimator v1.1, section 3, equations 1-3 and wavelength-distance limitation", "url": "https://www.we-online.com/components/media/o164527v410%20ANR010_Range_Estimation.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Carrier frequency", "unit": "Hz", "default": 2400000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "distance_from_tx", "label": "TX to obstacle-plane distance", "unit": "m", "default": 400.0, "min": 0.0, "exclusive_min": true},
+      {"key": "distance_to_rx", "label": "Obstacle-plane to RX distance", "unit": "m", "default": 600.0, "min": 0.0, "exclusive_min": true},
+      {"key": "clearance_fraction", "label": "Required fraction of first-Fresnel radius", "unit": "1", "default": 0.6, "min": 0.0, "max": 1.0},
+      {"key": "available_clearance", "label": "Signed perpendicular obstacle clearance", "unit": "m", "default": 4.0}
+    ],
+    "outputs": [
+      {"key": "zone_radius", "label": "First-Fresnel radius at obstacle", "unit": "m", "expression": "sqrt(299792458/frequency)*sqrt(min(distance_from_tx,distance_to_rx)/(1+min(distance_from_tx,distance_to_rx)/max(distance_from_tx,distance_to_rx)))"},
+      {"key": "required_clearance", "label": "Required obstacle clearance", "unit": "m", "expression": "clearance_fraction*zone_radius"},
+      {"key": "clearance_margin", "label": "Clearance margin", "unit": "m", "expression": "available_clearance-required_clearance"}
+    ],
+    "constraints": [
+      {"left": "distance_from_tx", "op": ">=", "right": "100*299792458/frequency", "message": "TX-to-obstacle distance must be at least 100 wavelengths for the documented paraxial screen."},
+      {"left": "distance_to_rx", "op": ">=", "right": "100*299792458/frequency", "message": "Obstacle-to-RX distance must be at least 100 wavelengths for the documented paraxial screen."}
+    ],
+    "example": {"inputs": {"frequency": 2400000000.0, "distance_from_tx": 400.0, "distance_to_rx": 600.0, "clearance_fraction": 0.6, "available_clearance": 4.0}, "expected": {"zone_radius": 5.475330656681841, "required_clearance": 3.2851983940091043, "clearance_margin": 0.7148016059908957}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "rf.circular_aperture_gain",
+    "title": "Circular-aperture antenna gain",
+    "category": "RF networks, antennas and links",
+    "level": "intermediate",
+    "description": "Estimate boresight gain and effective collecting area of an electrically large circular-aperture antenna from diameter and aperture efficiency.",
+    "formula": "Ae=eta pi D^2/4; G=eta (pi D f/c)^2; GdBi=10 log10(eta)+20 log10(pi D f/c)",
+    "assumptions": [
+      "Circular aperture with diameter greater than two free-space wavelengths; boresight far-field operation.",
+      "Aperture efficiency is greater than zero and at most one; it accounts for illumination, spillover, blockage, phase and dissipative losses as applicable.",
+      "Efficiency must describe the actual antenna and frequency; a constant user value does not predict its frequency dependence.",
+      "The effective aperture and gain assume conjugate matching and polarization alignment; external feedline and mismatch losses are excluded.",
+      "Only the aperture-gain relation is used from the ITU recommendation, not its complete radiation-pattern model or compatibility procedure."
+    ],
+    "references": [
+      {"title": "ITU-R RS.1813-1 (2011), recommends 1, Gmax and diameter-domain definitions", "url": "https://www.itu.int/dms_pubrec/itu-r/rec/rs/R-REC-RS.1813-1-201102-S!!PDF-E.pdf"},
+      {"title": "MIT Lincoln Laboratory, The Radar Equation, slide 6: gain = 4 pi effective area / wavelength squared", "url": "https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf"}
+    ],
+    "inputs": [
+      {"key": "diameter", "label": "Circular aperture diameter", "unit": "m", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "frequency", "label": "Operating frequency", "unit": "Hz", "default": 10000000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "aperture_efficiency", "label": "Aperture efficiency", "unit": "1", "default": 0.6, "min": 0.0, "exclusive_min": true, "max": 1.0}
+    ],
+    "outputs": [
+      {"key": "effective_aperture", "label": "Effective collecting area", "unit": "m^2", "expression": "(diameter*sqrt(aperture_efficiency*pi/4))^2"},
+      {"key": "gain_linear", "label": "Boresight power gain over isotropic", "unit": "1", "expression": "(sqrt(aperture_efficiency)*pi*(diameter*frequency/299792458))^2"},
+      {"key": "gain_dbi", "label": "Boresight antenna gain", "unit": "dBi", "expression": "10*log10(aperture_efficiency)+20*(log10(pi)+log10(diameter)+log10(frequency)-log10(299792458))"}
+    ],
+    "constraints": [{"left": "diameter", "op": ">", "right": "2*299792458/frequency", "message": "This electrically large circular-aperture model requires diameter greater than two wavelengths."}],
+    "example": {"inputs": {"diameter": 1.0, "frequency": 10000000000.0, "aperture_efficiency": 0.6}, "expected": {"effective_aperture": 0.47123889803846897, "gain_linear": 6588.849534059469, "gain_dbi": 38.188095899160565}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "rf.two_tone_im3",
+    "title": "Equal-tone third-order intermodulation",
+    "category": "RF networks, antennas and links",
+    "level": "expert",
+    "description": "Predict the two nearby IM3 spurs from equal input tones, small-signal gain and an input-referred third-order intercept characterized for the same operating conditions.",
+    "formula": "fIML=2 f1-f2; fIMH=2 f2-f1; Pout=Pin+G; OIP3=IIP3+G; PIM3=3 Pin+G-2 IIP3; C/IM3=2(IIP3-Pin); Ptotal=Pout+10 log10(2)",
+    "assumptions": [
+      "Two equal-power coherent sinusoidal input tones, positive lower IM3 frequency, and both fundamentals/products within the characterized RF band.",
+      "Per-tone powers are dBm, not summed two-tone power. Gain and intercept use the same impedance and measurement reference planes.",
+      "Weak cubic nonlinearity: the fundamental slope is one and each IM3 slope is three. IP3 is an extrapolated intersection, not an achievable output level.",
+      "The maximum total linear output is a user-supplied characterized safe operating limit, not the one-dB compression point. It must include crest-factor, bias, spacing and temperature effects.",
+      "Equal predicted product powers assume the same cubic transfer response at both products. Memory effects, compression, unequal tones, IM2, harmonics and noise are excluded."
+    ],
+    "references": [
+      {"title": "Mini-Circuits, Terms and Definitions: Amplifiers, Two-tone third-order intercept point", "url": "https://blog.minicircuits.com/amplifier-terms-defined/"},
+      {"title": "Texas Instruments TRF1208 EVM guide SBOU266B, section 3.3, OIP3 test equation and reference-plane loss correction", "url": "https://www.ti.com/document-viewer/lit/html/SBOU266B/GUID-95C24EAC-F2FA-4597-8D9E-02715CFD493B"}
+    ],
+    "inputs": [
+      {"key": "lower_frequency", "label": "Lower input-tone frequency", "unit": "Hz", "default": 100000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "upper_frequency", "label": "Upper input-tone frequency", "unit": "Hz", "default": 101000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "input_tone_power_dbm", "label": "Input power per tone", "unit": "dBm", "default": -20.0},
+      {"key": "gain_db", "label": "Small-signal power gain", "unit": "dB", "default": 20.0},
+      {"key": "input_intercept_dbm", "label": "Input third-order intercept", "unit": "dBm", "default": 10.0},
+      {"key": "maximum_total_linear_output_dbm", "label": "Characterized total linear-output limit", "unit": "dBm", "default": 10.0}
+    ],
+    "outputs": [
+      {"key": "lower_product_frequency", "label": "Lower IM3 frequency", "unit": "Hz", "expression": "lower_frequency-(upper_frequency-lower_frequency)"},
+      {"key": "upper_product_frequency", "label": "Upper IM3 frequency", "unit": "Hz", "expression": "upper_frequency+(upper_frequency-lower_frequency)"},
+      {"key": "output_tone_power_dbm", "label": "Output power per fundamental tone", "unit": "dBm", "expression": "input_tone_power_dbm+gain_db"},
+      {"key": "output_intercept_dbm", "label": "Output third-order intercept", "unit": "dBm", "expression": "input_intercept_dbm+gain_db"},
+      {"key": "product_power_dbm", "label": "Power of each IM3 product", "unit": "dBm", "expression": "output_tone_power_dbm-2*(input_intercept_dbm-input_tone_power_dbm)"},
+      {"key": "carrier_to_product_db", "label": "Per-tone carrier to IM3 separation", "unit": "dB", "expression": "2*(input_intercept_dbm-input_tone_power_dbm)"},
+      {"key": "total_fundamental_power_dbm", "label": "Total fundamental average power", "unit": "dBm", "expression": "output_tone_power_dbm+10*log10(2)"}
+    ],
+    "constraints": [
+      {"left": "upper_frequency", "op": ">", "right": "lower_frequency", "message": "The upper tone must lie above the lower tone."},
+      {"left": "upper_frequency-lower_frequency", "op": "<", "right": "lower_frequency", "message": "The lower near-band IM3 product must have positive frequency."},
+      {"left": "input_tone_power_dbm", "op": "<", "right": "input_intercept_dbm", "message": "Per-tone input must remain below the extrapolated IIP3."},
+      {"left": "input_tone_power_dbm+gain_db+10*log10(2)", "op": "<=", "right": "maximum_total_linear_output_dbm", "message": "Total fundamental power exceeds the supplied characterized linear-output limit."}
+    ],
+    "example": {"inputs": {"lower_frequency": 100000000.0, "upper_frequency": 101000000.0, "input_tone_power_dbm": -20.0, "gain_db": 20.0, "input_intercept_dbm": 10.0, "maximum_total_linear_output_dbm": 10.0}, "expected": {"lower_product_frequency": 99000000.0, "upper_product_frequency": 102000000.0, "output_tone_power_dbm": 0.0, "output_intercept_dbm": 30.0, "product_power_dbm": -60.0, "carrier_to_product_db": 60.0, "total_fundamental_power_dbm": 3.010299956639812}, "relative_tolerance": 1e-9}
+  },
+  {
+    "id": "rf.monostatic_radar_return",
+    "title": "Monostatic point-target radar return",
+    "category": "RF networks, antennas and links",
+    "level": "expert",
+    "description": "Predict the echo power of a far-field point target from its radar cross section, shared transmit/receive antenna gain and two-way system losses.",
+    "formula": "Pr=Pt G^2 (c/f)^2 sigma/((4 pi)^3 R^4 L); echo_margin=Pr_dBm-Srx_dBm",
+    "assumptions": [
+      "Monostatic radar with one reciprocal antenna, the same gain on transmit and receive, and a target in the antenna look direction.",
+      "Transmit power is the in-pulse power for pulsed radar or carrier power for CW; receiver threshold must use the same waveform/time reference.",
+      "Positive RCS is the target's monostatic radar cross section at this frequency, aspect and polarization, not its geometric surface area.",
+      "Point-target far-field free-space scattering. Range must exceed max(10 wavelengths, 2 Dant^2/wavelength, 2 Dtarget^2/wavelength); the 10-wavelength term is a conservative engineering screen.",
+      "Loss input is total two-way/receiver-system loss, applied once. Do not enter a one-way loss without first converting it to the full budget.",
+      "No clutter, multipath, fluctuating RCS, radar equation search/integration gain, noise-figure cascade, detection probability or false-alarm calculation. Zero RCS has negative-infinite dBm and is outside this finite-logarithmic model."
+    ],
+    "references": [
+      {"title": "MIT Lincoln Laboratory, Introduction to Radar Systems: The Radar Equation, slides 5-10 and 13", "url": "https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf"},
+      {"title": "Amrita Virtual Lab, Antenna Gain Measurement, procedure 1 (far-field aperture condition)", "url": "https://vlab.amrita.edu/?brch=180&cnt=1&sim=307&sub=3"}
+    ],
+    "inputs": [
+      {"key": "frequency", "label": "Radar carrier frequency", "unit": "Hz", "default": 10000000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "range", "label": "One-way target range", "unit": "m", "default": 1000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "antenna_max_dimension", "label": "Largest antenna dimension", "unit": "m", "default": 0.3, "min": 0.0, "exclusive_min": true},
+      {"key": "target_max_dimension", "label": "Largest target dimension", "unit": "m", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "transmit_power_dbm", "label": "In-pulse or CW transmit power", "unit": "dBm", "default": 30.0},
+      {"key": "antenna_gain_dbi", "label": "One-way antenna gain toward target", "unit": "dBi", "default": 30.0},
+      {"key": "radar_cross_section", "label": "Monostatic radar cross section", "unit": "m^2", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "total_loss_db", "label": "Total two-way and system loss", "unit": "dB", "default": 3.0, "min": 0.0},
+      {"key": "receiver_threshold_dbm", "label": "Receiver echo-power threshold", "unit": "dBm", "default": -100.0}
+    ],
+    "outputs": [
+      {"key": "received_power_dbm", "label": "Received target echo power", "unit": "dBm", "expression": "transmit_power_dbm+2*antenna_gain_dbi+20*(log10(299792458)-log10(frequency))+10*log10(radar_cross_section)-30*log10(4*pi)-40*log10(range)-total_loss_db"},
+      {"key": "echo_margin_db", "label": "Echo margin above threshold", "unit": "dB", "expression": "received_power_dbm-receiver_threshold_dbm"}
+    ],
+    "constraints": [{"left": "range", "op": ">=", "right": "max(10*299792458/frequency,2*max(antenna_max_dimension,target_max_dimension)*(max(antenna_max_dimension,target_max_dimension)*frequency/299792458))", "message": "Range must meet the documented far-field screen for both antenna and target dimensions."}],
+    "example": {"inputs": {"frequency": 10000000000.0, "range": 1000.0, "antenna_max_dimension": 0.3, "target_max_dimension": 1.0, "transmit_power_dbm": 30.0, "antenna_gain_dbi": 30.0, "radar_cross_section": 1.0, "total_loss_db": 3.0, "receiver_threshold_dbm": -100.0}, "expected": {"received_power_dbm": -96.43988186210434, "echo_margin_db": 3.560118137895657}, "relative_tolerance": 1e-9}
+  }
+]

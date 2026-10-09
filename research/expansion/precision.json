@@ -1,0 +1,907 @@
+[
+  {
+    "id": "precision.bjt_mirror_base_current",
+    "title": "Matched BJT current mirror base-current error",
+    "category": "Precision analog front ends",
+    "level": "basic",
+    "description": "Predict current-copy deficit and forward-active compliance for a two-NPN current mirror.",
+    "formula": "Ic=Iref/(1+2/beta); Ib=Iref/(beta+2); deficit=2Ib; margin=Vce-Vbe",
+    "assumptions": [
+      "Equal-area matched NPNs share base voltage and temperature; Q1 collector is tied to its base; both emitters are grounded.",
+      "Equal constant beta; neglect Early effect, mismatch, leakage and self-heating. Iref includes both base currents.",
+      "Conservative forward-active domain Vce >= Vbe; verify device breakdown, power and current ratings separately. Not a high-accuracy current reference by itself."
+    ],
+    "references": [
+      {
+        "title": "Analog Devices University: Chapter 11, sections 11.4 and 11.5",
+        "url": "https://wiki.analog.com/university/courses/electronics/text/chapter-11"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "reference_current",
+        "label": "Current into reference node",
+        "unit": "A",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta",
+        "label": "Matched DC current gain",
+        "unit": "1",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "base_emitter_voltage",
+        "label": "Base-emitter voltage at bias",
+        "unit": "V",
+        "default": 0.65,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "collector_voltage",
+        "label": "Output collector voltage",
+        "unit": "V",
+        "default": 2,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "collector_current",
+        "label": "Mirrored collector current",
+        "unit": "A",
+        "expression": "reference_current/(1+2/beta)"
+      },
+      {
+        "key": "base_current_each",
+        "label": "Base current per transistor",
+        "unit": "A",
+        "expression": "reference_current/(beta+2)"
+      },
+      {
+        "key": "current_deficit",
+        "label": "Reference-to-output current deficit",
+        "unit": "A",
+        "expression": "2*base_current_each"
+      },
+      {
+        "key": "fractional_deficit",
+        "label": "Fractional current-copy deficit",
+        "unit": "1",
+        "expression": "2/(beta+2)"
+      },
+      {
+        "key": "compliance_margin",
+        "label": "Collector-base reverse-bias margin",
+        "unit": "V",
+        "expression": "collector_voltage-base_emitter_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "collector_voltage",
+        "op": ">=",
+        "right": "base_emitter_voltage",
+        "message": "Output transistor must not forward-bias its collector-base junction"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "reference_current": 0.001,
+        "beta": 100,
+        "base_emitter_voltage": 0.65,
+        "collector_voltage": 2
+      },
+      "expected": {
+        "collector_current": 0.000980392156862745,
+        "base_current_each": 9.803921568627451e-06,
+        "current_deficit": 1.9607843137254903e-05,
+        "fractional_deficit": 0.0196078431372549,
+        "compliance_margin": 1.35
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "precision.instrumentation_internal_headroom",
+    "title": "Three-op-amp instrumentation internal headroom",
+    "category": "Precision analog front ends",
+    "level": "intermediate",
+    "description": "Compute differential gain and every amplifier node needed to reject hidden internal clipping.",
+    "formula": "G1=1+2Rf/Rg; G=G1 Rd/Ri; Va,b=Vcm +/- G1 Vd/2; Vp=(Rd/Ri Vb+Vref)/(1+Rd/Ri); Vo=Vref+G Vd",
+    "assumptions": [
+      "Ideal three-op-amp instrumentation topology with two equal first-stage feedback resistors and matched final resistor ratios.",
+      "High-impedance signal inputs; no sensor model, resistor mismatch, bias current, bandwidth or noise model.",
+      "All three amplifiers use supplied guaranteed loaded output and common-mode intervals. Reference is driven from negligible impedance; verify actual output currents and stability separately.",
+      "first_low_voltage names the negative-input branch, not the numerical minimum when differential_voltage is negative."
+    ],
+    "references": [
+      {
+        "title": "TI SLOA034: section 2.2 and Figure 5",
+        "url": "https://www.ti.com/lit/an/sloa034/sloa034.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "feedback_resistance",
+        "label": "Each first-stage feedback resistor",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gain_resistance",
+        "label": "Resistor between first-stage minus pins",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "difference_input_resistance",
+        "label": "Each difference-stage input resistor",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "difference_feedback_resistance",
+        "label": "Matched difference-stage feedback/reference resistors",
+        "unit": "ohm",
+        "default": 20000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "common_voltage",
+        "label": "Input common-mode voltage",
+        "unit": "V",
+        "default": 2
+      },
+      {
+        "key": "differential_voltage",
+        "label": "Positive minus negative input",
+        "unit": "V",
+        "default": 0.01
+      },
+      {
+        "key": "reference_voltage",
+        "label": "Difference-stage reference",
+        "unit": "V",
+        "default": 0.5
+      },
+      {
+        "key": "output_min",
+        "label": "Guaranteed amplifier output minimum",
+        "unit": "V",
+        "default": -10
+      },
+      {
+        "key": "output_max",
+        "label": "Guaranteed amplifier output maximum",
+        "unit": "V",
+        "default": 10
+      },
+      {
+        "key": "common_min",
+        "label": "Guaranteed amplifier common-mode minimum",
+        "unit": "V",
+        "default": -8
+      },
+      {
+        "key": "common_max",
+        "label": "Guaranteed amplifier common-mode maximum",
+        "unit": "V",
+        "default": 8
+      }
+    ],
+    "outputs": [
+      {
+        "key": "first_stage_gain",
+        "label": "First-stage differential gain",
+        "unit": "1",
+        "expression": "1+2*feedback_resistance/gain_resistance"
+      },
+      {
+        "key": "total_gain",
+        "label": "Total differential gain",
+        "unit": "1",
+        "expression": "first_stage_gain*difference_feedback_resistance/difference_input_resistance"
+      },
+      {
+        "key": "first_low_voltage",
+        "label": "Negative-input branch output",
+        "unit": "V",
+        "expression": "common_voltage-first_stage_gain*differential_voltage/2"
+      },
+      {
+        "key": "first_high_voltage",
+        "label": "Positive-input branch output",
+        "unit": "V",
+        "expression": "common_voltage+first_stage_gain*differential_voltage/2"
+      },
+      {
+        "key": "difference_pin_voltage",
+        "label": "Final-stage common input voltage",
+        "unit": "V",
+        "expression": "(difference_feedback_resistance/difference_input_resistance*first_high_voltage+reference_voltage)/(1+difference_feedback_resistance/difference_input_resistance)"
+      },
+      {
+        "key": "output_voltage",
+        "label": "Instrumentation output",
+        "unit": "V",
+        "expression": "reference_voltage+total_gain*differential_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "output_max",
+        "op": ">",
+        "right": "output_min",
+        "message": "Output voltage limits must be ordered"
+      },
+      {
+        "left": "common_max",
+        "op": ">",
+        "right": "common_min",
+        "message": "Common-mode limits must be ordered"
+      },
+      {
+        "left": "(common_voltage-(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+        "op": ">=",
+        "right": "output_min",
+        "message": "Negative-input first-stage output falls below output swing"
+      },
+      {
+        "left": "(common_voltage-(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+        "op": "<=",
+        "right": "output_max",
+        "message": "Negative-input first-stage output exceeds output swing"
+      },
+      {
+        "left": "(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+        "op": ">=",
+        "right": "output_min",
+        "message": "Positive-input first-stage output falls below output swing"
+      },
+      {
+        "left": "(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)",
+        "op": "<=",
+        "right": "output_max",
+        "message": "Positive-input first-stage output exceeds output swing"
+      },
+      {
+        "left": "(reference_voltage+(1+2*feedback_resistance/gain_resistance)*(difference_feedback_resistance/difference_input_resistance)*differential_voltage)",
+        "op": ">=",
+        "right": "output_min",
+        "message": "Final output falls below output swing"
+      },
+      {
+        "left": "(reference_voltage+(1+2*feedback_resistance/gain_resistance)*(difference_feedback_resistance/difference_input_resistance)*differential_voltage)",
+        "op": "<=",
+        "right": "output_max",
+        "message": "Final output exceeds output swing"
+      },
+      {
+        "left": "common_voltage-differential_voltage/2",
+        "op": ">=",
+        "right": "common_min",
+        "message": "Negative signal input falls below common-mode range"
+      },
+      {
+        "left": "common_voltage-differential_voltage/2",
+        "op": "<=",
+        "right": "common_max",
+        "message": "Negative signal input exceeds common-mode range"
+      },
+      {
+        "left": "common_voltage+differential_voltage/2",
+        "op": ">=",
+        "right": "common_min",
+        "message": "Positive signal input falls below common-mode range"
+      },
+      {
+        "left": "common_voltage+differential_voltage/2",
+        "op": "<=",
+        "right": "common_max",
+        "message": "Positive signal input exceeds common-mode range"
+      },
+      {
+        "left": "(((difference_feedback_resistance/difference_input_resistance)*(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)+reference_voltage)/(1+(difference_feedback_resistance/difference_input_resistance)))",
+        "op": ">=",
+        "right": "common_min",
+        "message": "Difference-stage input falls below common-mode range"
+      },
+      {
+        "left": "(((difference_feedback_resistance/difference_input_resistance)*(common_voltage+(1+2*feedback_resistance/gain_resistance)*differential_voltage/2)+reference_voltage)/(1+(difference_feedback_resistance/difference_input_resistance)))",
+        "op": "<=",
+        "right": "common_max",
+        "message": "Difference-stage input exceeds common-mode range"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "feedback_resistance": 10000,
+        "gain_resistance": 1000,
+        "difference_input_resistance": 10000,
+        "difference_feedback_resistance": 20000,
+        "common_voltage": 2,
+        "differential_voltage": 0.01,
+        "reference_voltage": 0.5,
+        "output_min": -10,
+        "output_max": 10,
+        "common_min": -8,
+        "common_max": 8
+      },
+      "expected": {
+        "first_stage_gain": 21.0,
+        "total_gain": 42.0,
+        "first_low_voltage": 1.895,
+        "first_high_voltage": 2.105,
+        "difference_pin_voltage": 1.57,
+        "output_voltage": 0.9199999999999999
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "precision.transimpedance_butterworth",
+    "title": "Finite-GBW transimpedance Butterworth compensation",
+    "category": "Precision analog front ends",
+    "level": "expert",
+    "description": "Choose feedback capacitance for a maximally flat current-to-voltage front end, retaining the finite feedback-capacitance term.",
+    "formula": "wt=2 pi GBW; Cf=sqrt(2 wt Rf Cs-1)/(wt Rf); f3dB=sqrt(wt/[Rf(Cs+Cf)])/(2 pi)",
+    "assumptions": [
+      "Current enters the inverting summing node; noninverting input is grounded; Rf and Cf connect output to summing node; Cs shunts summing node to AC ground.",
+      "Op amp model A(s)=wt/s: infinite DC gain, finite gain-bandwidth, one dominant integrating pole, zero output impedance. This is not a guarantee for a real multipoled amplifier.",
+      "Closed-loop denominator is 1+s(1/wt+Rf Cf)+s^2 Rf(Cs+Cf)/wt. Cf solves Q=1/sqrt(2) exactly within this model.",
+      "2 wt Rf Cs >= 1 permits a nonnegative Butterworth capacitor; equality yields Cf=0. Include device, source and PCB capacitance in Cs.",
+      "Output peak is the low-frequency limit, not the amplitude at f3dB. Verify slew, current drive, parasitic Cf, higher poles and source compliance separately."
+    ],
+    "references": [
+      {
+        "title": "TI SBOA122: Figure 1, equations 2-7 and section 3; integrator-model algebra derived in research",
+        "url": "https://www.ti.com/lit/an/sboa122/sboa122.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "feedback_resistance",
+        "label": "Feedback resistor",
+        "unit": "ohm",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "source_capacitance",
+        "label": "Total summing-node shunt capacitance",
+        "unit": "F",
+        "default": 1e-10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gain_bandwidth",
+        "label": "Op-amp gain-bandwidth product",
+        "unit": "Hz",
+        "default": 10000000.0,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "input_peak",
+        "label": "Low-frequency current peak",
+        "unit": "A",
+        "default": 1e-05,
+        "min": 0
+      },
+      {
+        "key": "output_peak_limit",
+        "label": "Guaranteed symmetric output swing",
+        "unit": "V",
+        "default": 4,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "feedback_capacitance",
+        "label": "Butterworth feedback capacitance",
+        "unit": "F",
+        "expression": "sqrt(4*pi*gain_bandwidth*feedback_resistance*source_capacitance-1)/(2*pi*gain_bandwidth*feedback_resistance)"
+      },
+      {
+        "key": "butterworth_bandwidth",
+        "label": "Closed-loop minus-3-dB bandwidth",
+        "unit": "Hz",
+        "expression": "sqrt(2*pi*gain_bandwidth/(feedback_resistance*(source_capacitance+feedback_capacitance)))/(2*pi)"
+      },
+      {
+        "key": "dc_transimpedance",
+        "label": "Signed DC transimpedance",
+        "unit": "ohm",
+        "expression": "-feedback_resistance"
+      },
+      {
+        "key": "output_peak",
+        "label": "Low-frequency output peak magnitude",
+        "unit": "V",
+        "expression": "input_peak*feedback_resistance"
+      },
+      {
+        "key": "noise_gain_zero",
+        "label": "Noise-gain zero frequency",
+        "unit": "Hz",
+        "expression": "1/(2*pi*feedback_resistance*(source_capacitance+feedback_capacitance))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "4*pi*gain_bandwidth*feedback_resistance*source_capacitance",
+        "op": ">=",
+        "right": "1",
+        "message": "A nonnegative Butterworth feedback capacitance requires 2 wt Rf Cs >= 1"
+      },
+      {
+        "left": "input_peak*feedback_resistance",
+        "op": "<=",
+        "right": "output_peak_limit",
+        "message": "Low-frequency output exceeds guaranteed symmetric swing"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "feedback_resistance": 100000,
+        "source_capacitance": 1e-10,
+        "gain_bandwidth": 10000000.0,
+        "input_peak": 1e-05,
+        "output_peak_limit": 4
+      },
+      "expected": {
+        "feedback_capacitance": 5.63965054967668e-12,
+        "butterworth_bandwidth": 388147.3164084609,
+        "dc_transimpedance": -100000.0,
+        "output_peak": 1.0,
+        "noise_gain_zero": 15065.833923508984
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "precision.howland_mismatch_load",
+    "title": "Howland current pump resistor mismatch and load",
+    "category": "Precision analog front ends",
+    "level": "expert",
+    "description": "Solve a bidirectional basic Howland pump with unequal resistor ratios, including signed output conductance and op-amp compliance.",
+    "formula": "k=R4/R3; J=Vp/R1-k Vn/R2; g=1/R1-k/R2; Vx=J/(1/RL+g); IL=Vx/RL; Vo=(1+k)Vx-k Vn; Io=(Vo-Vx)(1/R2+1/R4)",
+    "assumptions": [
+      "Basic four-resistor Howland topology, not the improved five-resistor version. Ideal op amp in DC linear operation; load is a positive grounded resistor.",
+      "Load current is positive from node Vx into the grounded load. Norton output conductance g may be positive, zero or negative; no infinite output-resistance number is computed at balance.",
+      "Require 1/RL+g>0 for the negative-feedback DC branch. Near cancellation has very high sensitivity and is not a robust practical design.",
+      "Guaranteed output voltage/current and common-mode intervals are user supplied. Dynamic stability, compensation, bias currents, finite open-loop gain and capacitive loads require device-level analysis."
+    ],
+    "references": [
+      {
+        "title": "TI AN-1515/SNOA474A: Figures 1-2, section 2 and Appendix A",
+        "url": "https://www.ti.com/lit/an/snoa474a/snoa474a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_one",
+        "label": "Positive drive to load-node resistor R1",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_two",
+        "label": "Amplifier output to load-node resistor R2",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_three",
+        "label": "Negative drive to minus-pin resistor R3",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_four",
+        "label": "Amplifier feedback resistor R4",
+        "unit": "ohm",
+        "default": 9900,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "positive_drive",
+        "label": "Positive drive voltage",
+        "unit": "V",
+        "default": 1
+      },
+      {
+        "key": "negative_drive",
+        "label": "Negative drive voltage",
+        "unit": "V",
+        "default": 0
+      },
+      {
+        "key": "load_resistance",
+        "label": "Grounded load resistor",
+        "unit": "ohm",
+        "default": 5000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "output_min",
+        "label": "Guaranteed op-amp output minimum",
+        "unit": "V",
+        "default": -10
+      },
+      {
+        "key": "output_max",
+        "label": "Guaranteed op-amp output maximum",
+        "unit": "V",
+        "default": 10
+      },
+      {
+        "key": "common_min",
+        "label": "Guaranteed op-amp common-mode minimum",
+        "unit": "V",
+        "default": -8
+      },
+      {
+        "key": "common_max",
+        "label": "Guaranteed op-amp common-mode maximum",
+        "unit": "V",
+        "default": 8
+      },
+      {
+        "key": "output_current_limit",
+        "label": "Guaranteed op-amp source/sink magnitude",
+        "unit": "A",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "norton_drive_current",
+        "label": "Norton source current",
+        "unit": "A",
+        "expression": "positive_drive/r_one-(r_four/r_three)*negative_drive/r_two"
+      },
+      {
+        "key": "output_conductance",
+        "label": "Signed Norton shunt conductance",
+        "unit": "S",
+        "expression": "1/r_one-(r_four/r_three)/r_two"
+      },
+      {
+        "key": "load_voltage",
+        "label": "Load and input-pin voltage",
+        "unit": "V",
+        "expression": "norton_drive_current/(1/load_resistance+output_conductance)"
+      },
+      {
+        "key": "load_current",
+        "label": "Current into grounded load",
+        "unit": "A",
+        "expression": "load_voltage/load_resistance"
+      },
+      {
+        "key": "amplifier_voltage",
+        "label": "Required amplifier output",
+        "unit": "V",
+        "expression": "(1+r_four/r_three)*load_voltage-(r_four/r_three)*negative_drive"
+      },
+      {
+        "key": "amplifier_current",
+        "label": "Required signed amplifier output current",
+        "unit": "A",
+        "expression": "(amplifier_voltage-load_voltage)/r_two+(amplifier_voltage-load_voltage)/r_four"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "output_max",
+        "op": ">",
+        "right": "output_min",
+        "message": "Output limits must be ordered"
+      },
+      {
+        "left": "common_max",
+        "op": ">",
+        "right": "common_min",
+        "message": "Common-mode limits must be ordered"
+      },
+      {
+        "left": "1/load_resistance+(1/r_one-(r_four/r_three)/r_two)",
+        "op": ">",
+        "right": "0",
+        "message": "The loaded Howland feedback must have positive total conductance"
+      },
+      {
+        "left": "((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))",
+        "op": ">=",
+        "right": "common_min",
+        "message": "Load node falls below input common-mode range"
+      },
+      {
+        "left": "((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))",
+        "op": "<=",
+        "right": "common_max",
+        "message": "Load node exceeds input common-mode range"
+      },
+      {
+        "left": "((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)",
+        "op": ">=",
+        "right": "output_min",
+        "message": "Amplifier output falls below available swing"
+      },
+      {
+        "left": "((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)",
+        "op": "<=",
+        "right": "output_max",
+        "message": "Amplifier output exceeds available swing"
+      },
+      {
+        "left": "abs(((((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)-((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two))))/r_two+(((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)-((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two))))/r_four))",
+        "op": "<=",
+        "right": "output_current_limit",
+        "message": "Amplifier drive exceeds source/sink current rating"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_one": 10000,
+        "r_two": 10000,
+        "r_three": 10000,
+        "r_four": 9900,
+        "positive_drive": 1,
+        "negative_drive": 0,
+        "load_resistance": 5000,
+        "output_min": -10,
+        "output_max": 10,
+        "common_min": -8,
+        "common_max": 8,
+        "output_current_limit": 0.01
+      },
+      "expected": {
+        "norton_drive_current": 0.0001,
+        "output_conductance": 1e-06,
+        "load_voltage": 0.4975124378109453,
+        "load_current": 9.950248756218905e-05,
+        "amplifier_voltage": 0.9900497512437811,
+        "amplifier_current": 9.900497512437811e-05
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "precision.brokaw_first_order_trim",
+    "title": "Brokaw bandgap first-order resistor trim",
+    "category": "Precision analog front ends",
+    "level": "intermediate",
+    "description": "Choose the common-emitter resistor that cancels the local VBE temperature slope in a Brokaw reference.",
+    "formula": "VT=kT/q; dVBE=VT ln(N); I=dVBE/R2; R1/R2=-slope_VBE/[2(k/q)ln(N)]; Vref=VBE+2(R1/R2)dVBE",
+    "assumptions": [
+      "Brokaw core: equal collector currents in Q1 and Q2; emitter area Q2/Q1=N>1; R2 lies between their emitters and R1 carries both emitter currents to ground.",
+      "Large beta approximates emitter currents by collector currents; equal-current mirror/servo, matched junction temperature and matched resistor temperature coefficients.",
+      "base_emitter_voltage and base_emitter_slope are characterized at the stated temperature along the actual biased operating trajectory. This is a local first-order trim, not a constant-current slope substituted into an unrelated bias condition.",
+      "Neglect VBE curvature, offset, mismatch, finite beta and self-heating. Startup and supply headroom are not designed here; assume the core has reached its nonzero regulated state. Verify process/current-density validity separately."
+    ],
+    "references": [
+      {
+        "title": "TI SLLA065: Figure 7 and equations 7-13, pages 12-14",
+        "url": "https://www.ti.com/lit/an/slla065/slla065.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "temperature",
+        "label": "Junction temperature",
+        "unit": "K",
+        "default": 300,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "area_ratio",
+        "label": "Emitter area ratio Q2/Q1",
+        "unit": "1",
+        "default": 8,
+        "min": 1,
+        "exclusive_min": true
+      },
+      {
+        "key": "ptat_resistance",
+        "label": "Emitter difference resistor R2",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "base_emitter_voltage",
+        "label": "Q1 VBE at trim temperature",
+        "unit": "V",
+        "default": 0.65,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "base_emitter_slope",
+        "label": "Local Q1 VBE temperature slope",
+        "unit": "V/K",
+        "default": -0.002
+      }
+    ],
+    "outputs": [
+      {
+        "key": "thermal_voltage",
+        "label": "Thermal voltage",
+        "unit": "V",
+        "expression": "1.380649e-23/1.602176634e-19*temperature"
+      },
+      {
+        "key": "delta_vbe",
+        "label": "Q1 minus Q2 base-emitter voltage",
+        "unit": "V",
+        "expression": "thermal_voltage*ln(area_ratio)"
+      },
+      {
+        "key": "branch_current",
+        "label": "Each collector current approximation",
+        "unit": "A",
+        "expression": "delta_vbe/ptat_resistance"
+      },
+      {
+        "key": "resistor_ratio",
+        "label": "Required R1/R2 ratio",
+        "unit": "1",
+        "expression": "-base_emitter_slope/(2*(1.380649e-23/1.602176634e-19)*ln(area_ratio))"
+      },
+      {
+        "key": "common_resistor",
+        "label": "Common emitter resistor R1",
+        "unit": "ohm",
+        "expression": "resistor_ratio*ptat_resistance"
+      },
+      {
+        "key": "reference_voltage",
+        "label": "First-order bandgap output",
+        "unit": "V",
+        "expression": "base_emitter_voltage-base_emitter_slope*temperature"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "base_emitter_slope",
+        "op": "<",
+        "right": "0",
+        "message": "VBE slope must be negative for positive-resistor PTAT cancellation"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "temperature": 300,
+        "area_ratio": 8,
+        "ptat_resistance": 10000,
+        "base_emitter_voltage": 0.65,
+        "base_emitter_slope": -0.002
+      },
+      "expected": {
+        "thermal_voltage": 0.025851999786435535,
+        "delta_vbe": 0.05375772229141229,
+        "branch_current": 5.375772229141229e-06,
+        "resistor_ratio": 5.580593581955471,
+        "common_resistor": 55805.93581955471,
+        "reference_voltage": 1.25
+      },
+      "relative_tolerance": 1e-06
+    }
+  },
+  {
+    "id": "precision.log114_current_ratio",
+    "title": "LOG114 resistor-referenced logarithmic front end",
+    "category": "Precision analog front ends",
+    "level": "basic",
+    "description": "Calculate nominal log compression and local current sensitivity for a grounded-input dual-supply LOG114 circuit.",
+    "formula": "I2=2.5/Rref; Vo=0.375 log10(I1/I2); dVo/dI1=0.375/[ln(10) I1]",
+    "assumptions": [
+      "LOG114 on +5 V and -5 V supplies at 25 degrees C; VCM IN, COM and VREF GND at ground; nominal internal 2.5 V reference feeds I2 through reference_resistance; signal current enters I1.",
+      "Positive currents only; modeled device input range 100 pA to 10 mA. Internal reference current is restricted to 2 mA or less, matching its stated load condition.",
+      "Nominal transfer only: reference tolerance, input bias, offset, scale-factor error, log conformity and temperature error are excluded. This does not claim datasheet precision at range extremes.",
+      "VLOGOUT load is at least 10 kohm with no more than 100 pF. No auxiliary amplifier or physical optical transducer is modeled; respect current-dependent bandwidth."
+    ],
+    "references": [
+      {
+        "title": "TI LOG114 SBOS301C: sections 5.5, 7.1.7 and 7.2.1 / Figure 7-8",
+        "url": "https://www.ti.com/lit/ds/symlink/log114.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "signal_current",
+        "label": "Current entering I1",
+        "unit": "A",
+        "default": 0.0001,
+        "min": 1e-10,
+        "max": 0.01
+      },
+      {
+        "key": "reference_resistance",
+        "label": "Internal reference to I2 resistor",
+        "unit": "ohm",
+        "default": 2500000,
+        "min": 1250,
+        "max": 25000000000
+      }
+    ],
+    "outputs": [
+      {
+        "key": "reference_current",
+        "label": "Current entering I2",
+        "unit": "A",
+        "expression": "2.5/reference_resistance"
+      },
+      {
+        "key": "current_ratio",
+        "label": "Signal/reference current ratio",
+        "unit": "1",
+        "expression": "signal_current/reference_current"
+      },
+      {
+        "key": "log_decades",
+        "label": "Signed logarithmic current ratio",
+        "unit": "decade",
+        "expression": "log1p((signal_current-reference_current)/reference_current)/ln(10)"
+      },
+      {
+        "key": "log_output",
+        "label": "Nominal VLOGOUT",
+        "unit": "V",
+        "expression": "0.375*log_decades"
+      },
+      {
+        "key": "local_transimpedance",
+        "label": "Local incremental current sensitivity",
+        "unit": "ohm",
+        "expression": "0.375/ln(10)/signal_current"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "signal_current": 0.0001,
+        "reference_resistance": 2500000
+      },
+      "expected": {
+        "reference_current": 1e-06,
+        "current_ratio": 100.0,
+        "log_decades": 2.0,
+        "log_output": 0.75,
+        "local_transimpedance": 1628.6043071371942
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]

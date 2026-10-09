@@ -1,0 +1,237 @@
+[
+  {
+    "id": "protection.fuse_pulse_coordination",
+    "title": "Fuse pulse survival and semiconductor clearing budget",
+    "category": "Protection",
+    "level": "basic",
+    "description": "Integrate a trapezoidal inrush pulse and compare its thermal integral with fuse pre-arcing allowance, while separately checking total clearing against semiconductor withstand.",
+    "formula": "Jpulse = Ipk²[thold+(trise+tfall)/3]; Jallow = f Jpre; Jclear = Jpre+Jarc",
+    "assumptions": [
+      "Current starts and ends at zero; rise and fall are linear and the plateau is constant. Total pulse duration is below 10 ms for the short-pulse adiabatic approximation.",
+      "Pre-arcing and arcing integrals are manufacturer values for the applicable fault current, voltage, temperature and AC power factor or DC L/R; they are not calculated from the inrush waveform.",
+      "The pulse allowance fraction is supplied from the selected fuse's pulse-life and temperature guidance; 0.8 is an illustrative input, not a universal recommendation.",
+      "Semiconductor withstand must explicitly be an I²t rating for the applicable pulse conditions. This is not a generic MOSFET or IGBT SOA test.",
+      "Negative margins identify failed screening criteria. Voltage rating, interrupting capacity, steady current, arc voltage, repetition and complete time-current coordination require separate checks; this calculation does not certify safety."
+    ],
+    "references": [{"title": "SCHURTER Fuse-Link, sections 10, 11 and 13", "url": "https://www.schurter.com/en/knowledge/fuse-link"}],
+    "inputs": [
+      {"key":"peak_current","label":"Inrush peak current","unit":"A","default":20,"min":0},
+      {"key":"rise_time","label":"Linear rise duration","unit":"s","default":0.001,"min":0},
+      {"key":"hold_time","label":"Plateau duration","unit":"s","default":0.002,"min":0},
+      {"key":"fall_time","label":"Linear fall duration","unit":"s","default":0.001,"min":0},
+      {"key":"pre_arcing_i2t","label":"Fuse pre-arcing integral","unit":"A² s","default":2,"min":0,"exclusive_min":true},
+      {"key":"arcing_i2t","label":"Fuse arcing integral","unit":"A² s","default":0.7,"min":0},
+      {"key":"pulse_allowance_fraction","label":"Manufacturer pulse allowance fraction","unit":"1","default":0.8,"min":0,"exclusive_min":true,"max":1},
+      {"key":"device_withstand_i2t","label":"Semiconductor applicable withstand integral","unit":"A² s","default":4,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"pulse_i2t","label":"Inrush pulse integral","unit":"A² s","expression":"(peak_current*sqrt(hold_time+(rise_time+fall_time)/3))^2"},
+      {"key":"pulse_margin","label":"Fuse pulse allowance minus inrush","unit":"A² s","expression":"pulse_allowance_fraction*pre_arcing_i2t-pulse_i2t"},
+      {"key":"clearing_i2t","label":"Fuse total clearing integral","unit":"A² s","expression":"pre_arcing_i2t+arcing_i2t"},
+      {"key":"clearing_margin","label":"Device withstand minus clearing","unit":"A² s","expression":"device_withstand_i2t-clearing_i2t"},
+      {"key":"pulse_utilization","label":"Pulse allowance utilization","unit":"1","expression":"pulse_i2t/(pulse_allowance_fraction*pre_arcing_i2t)"},
+      {"key":"clearing_utilization","label":"Device integral utilization","unit":"1","expression":"clearing_i2t/device_withstand_i2t"}
+    ],
+    "constraints": [
+      {"left":"rise_time+hold_time+fall_time","op":">","right":"0","message":"The inrush pulse must have positive duration"},
+      {"left":"rise_time+hold_time+fall_time","op":"<","right":"0.01","message":"This adiabatic short-pulse screening model requires a pulse shorter than 10 ms"}
+    ],
+    "example": {"inputs":{"peak_current":20,"rise_time":0.001,"hold_time":0.002,"fall_time":0.001,"pre_arcing_i2t":2,"arcing_i2t":0.7,"pulse_allowance_fraction":0.8,"device_withstand_i2t":4},"expected":{"pulse_i2t":1.0666666666666667,"pulse_margin":0.5333333333333333,"clearing_i2t":2.7,"clearing_margin":1.3,"pulse_utilization":0.6666666666666667,"clearing_utilization":0.675},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "protection.tvs_surge_load_line",
+    "title": "TVS avalanche surge load line",
+    "category": "Protection",
+    "level": "intermediate",
+    "description": "Solve the intersection of a resistive surge source and the finite-slope avalanche characteristic of a TVS.",
+    "formula": "I = (Vs-Vb)/(Rs+rd); Vclamp = Vb+rd I; Ppk = Vclamp I",
+    "assumptions": [
+      "Positive avalanche polarity, a resistive Thevenin surge source, negligible protected-load current, and negligible interconnect inductance.",
+      "Breakdown intercept and dynamic resistance are an affine fit at the applicable waveform and temperature, not a universal DC-to-surge conversion.",
+      "Calculated current must remain inside the supplied characterized fit-current interval. The pulse-current rating is separately supplied for that exact waveform, duration and temperature.",
+      "Peak power is instantaneous, not absorbed energy or a repetitive thermal rating. Negative voltage/current margins are useful failed-design results.",
+      "Normal-operation standoff/leakage, negative surges, parasitic overshoot, capacitance, tolerance corners and hardware validation remain separate. No safety or EMC certification is implied."
+    ],
+    "references": [{"title":"Texas Instruments SLVAE37, sections 2.3 and 2.4, Figure 3","url":"https://www.ti.com/lit/an/slvae37/slvae37.pdf"}],
+    "inputs": [
+      {"key":"surge_voltage","label":"Open-circuit surge peak","unit":"V","default":100,"min":0},
+      {"key":"source_resistance","label":"Surge source resistance","unit":"ohm","default":2,"min":0,"exclusive_min":true},
+      {"key":"breakdown_intercept","label":"Avalanche fit voltage intercept","unit":"V","default":30,"min":0,"exclusive_min":true},
+      {"key":"dynamic_resistance","label":"TVS dynamic resistance","unit":"ohm","default":0.5,"min":0},
+      {"key":"fit_current_min","label":"Characterized fit minimum current","unit":"A","default":1,"min":0,"exclusive_min":true},
+      {"key":"fit_current_max","label":"Characterized fit maximum current","unit":"A","default":100,"min":0,"exclusive_min":true},
+      {"key":"rated_pulse_current","label":"Applicable derated pulse-current rating","unit":"A","default":35,"min":0,"exclusive_min":true},
+      {"key":"protected_voltage_limit","label":"Protected circuit voltage limit","unit":"V","default":60,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"surge_current","label":"TVS surge current","unit":"A","expression":"(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)"},
+      {"key":"clamp_voltage","label":"Protected node clamp voltage","unit":"V","expression":"breakdown_intercept+dynamic_resistance*surge_current"},
+      {"key":"peak_power","label":"TVS instantaneous peak power","unit":"W","expression":"clamp_voltage*surge_current"},
+      {"key":"voltage_margin","label":"Protected voltage headroom","unit":"V","expression":"protected_voltage_limit-clamp_voltage"},
+      {"key":"current_margin","label":"Pulse-current headroom","unit":"A","expression":"rated_pulse_current-surge_current"}
+    ],
+    "constraints": [
+      {"left":"fit_current_max","op":">","right":"fit_current_min","message":"The characterized current interval must have positive width"},
+      {"left":"(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)","op":">=","right":"fit_current_min","message":"Surge current is below the characterized avalanche-fit interval"},
+      {"left":"(surge_voltage-breakdown_intercept)/(source_resistance+dynamic_resistance)","op":"<=","right":"fit_current_max","message":"Surge current exceeds the characterized avalanche-fit interval"}
+    ],
+    "example":{"inputs":{"surge_voltage":100,"source_resistance":2,"breakdown_intercept":30,"dynamic_resistance":0.5,"fit_current_min":1,"fit_current_max":100,"rated_pulse_current":35,"protected_voltage_limit":60},"expected":{"surge_current":28,"clamp_voltage":44,"peak_power":1232,"voltage_margin":16,"current_margin":7},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "protection.mov_power_law_pulse",
+    "title": "MOV nonlinear pulse clamp and absorption",
+    "category": "Protection",
+    "level": "intermediate",
+    "description": "Fit a metal-oxide varistor power law between two characterized points and predict clamp voltage, differential resistance and rectangular-pulse absorption within that interval.",
+    "formula": "beta = ln(V2/V1)/ln(I2/I1); V = V1(I/I1)^beta; rd = beta V/I; E = V I t",
+    "assumptions": [
+      "The two V-I points and pulse belong to the same polarity magnitude, temperature and waveform family in the MOV protection region; 0<beta<1.",
+      "Only interpolation between the characterized current endpoints is supported. Do not extrapolate into leakage or high-current bulk-resistance regions.",
+      "An imposed constant-current rectangular pulse is used; ideal zero-duration edges contribute no energy. Real edge energy must be included separately or the waveform integrated separately.",
+      "The energy allowance is supplied for the same duration, temperature, repetition count and aging condition. Equal joules from different waveforms do not imply equal survival.",
+      "The fit neglects self-heating during the pulse, parasitic inductance/capacitance and long-term degradation; it is not a safety certification or thermal-disconnector design."
+    ],
+    "references": [{"title":"Vishay, Varistors: Ideal Solution to Surge Protection, Varistor Operation and Selection Criteria","url":"https://www.vishay.com/docs/49305/49305.pdf"}],
+    "inputs": [
+      {"key":"current_one","label":"Lower characterized current","unit":"A","default":1,"min":0,"exclusive_min":true},
+      {"key":"voltage_one","label":"Voltage at lower current","unit":"V","default":320,"min":0,"exclusive_min":true},
+      {"key":"current_two","label":"Upper characterized current","unit":"A","default":100,"min":0,"exclusive_min":true},
+      {"key":"voltage_two","label":"Voltage at upper current","unit":"V","default":400,"min":0,"exclusive_min":true},
+      {"key":"pulse_current","label":"Rectangular pulse current","unit":"A","default":10,"min":0,"exclusive_min":true},
+      {"key":"pulse_duration","label":"Rectangular pulse duration","unit":"s","default":0.0001,"min":0,"exclusive_min":true},
+      {"key":"energy_allowance","label":"Applicable derated pulse-energy allowance","unit":"J","default":1,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"voltage_exponent","label":"Voltage-law exponent beta","unit":"1","expression":"log1p((voltage_two-voltage_one)/voltage_one)/log1p((current_two-current_one)/current_one)"},
+      {"key":"current_exponent","label":"Current-law exponent alpha","unit":"1","expression":"1/voltage_exponent"},
+      {"key":"clamp_voltage","label":"MOV pulse clamp voltage","unit":"V","expression":"voltage_one*exp(voltage_exponent*log1p((pulse_current-current_one)/current_one))"},
+      {"key":"differential_resistance","label":"MOV local differential resistance","unit":"ohm","expression":"voltage_exponent*clamp_voltage/pulse_current"},
+      {"key":"absorbed_energy","label":"Rectangular pulse absorbed energy","unit":"J","expression":"clamp_voltage*pulse_current*pulse_duration"},
+      {"key":"energy_margin","label":"Applicable energy headroom","unit":"J","expression":"energy_allowance-absorbed_energy"}
+    ],
+    "constraints": [
+      {"left":"current_two","op":">","right":"current_one","message":"Upper characterized current must exceed lower current"},
+      {"left":"voltage_two","op":">","right":"voltage_one","message":"MOV voltage must rise between characterized points"},
+      {"left":"log1p((voltage_two-voltage_one)/voltage_one)","op":"<","right":"log1p((current_two-current_one)/current_one)","message":"The MOV protection-region fit requires a sublinear voltage exponent"},
+      {"left":"pulse_current","op":">=","right":"current_one","message":"Pulse current is below the characterized fit interval"},
+      {"left":"pulse_current","op":"<=","right":"current_two","message":"Pulse current exceeds the characterized fit interval"}
+    ],
+    "example":{"inputs":{"current_one":1,"voltage_one":320,"current_two":100,"voltage_two":400,"pulse_current":10,"pulse_duration":0.0001,"energy_allowance":1},"expected":{"voltage_exponent":0.0484550065040282,"current_exponent":20.637702317032343,"clamp_voltage":357.77087639996637,"differential_resistance":1.7335790142912242,"absorbed_energy":0.35777087639996635,"energy_margin":0.6422291236000337},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "protection.scr_crowbar_trigger_latch",
+    "title": "Zener-triggered SCR crowbar latch window",
+    "category": "Protection",
+    "level": "intermediate",
+    "description": "Account for gate-shunt and source loading when finding a crowbar trigger threshold, then check available anode latching current and the holding-current release boundary.",
+    "formula": "Vtrip = Vz+Vg+(Rs+Rg)(Igt+Vg/Rgk); Ig = (Vfault-Vz-Vg)/(Rs+Rg)-Vg/Rgk; Ia = (Vfault-Von)/Rs; Vrelease = Von+Rs Ih",
+    "assumptions": [
+      "A positive Thevenin fault source feeds the SCR anode through Rs. Anode to gate has series Rg and reverse-biased zener; Rgk shunts gate to cathode. Cathode is the return.",
+      "Protected-load current, zener slope resistance and leakage are neglected. Zener and gate drops are constant values at the relevant currents and temperature.",
+      "The gate pulse lasts until the SCR anode current reaches the specified latching current. Loop inductance, turn-on time, dI/dt and dV/dt immunity require separate dynamic checks.",
+      "After turn-on, Von<Vz turns off the trigger branch. Available anode current is a hypothetical on-state current; a negative latch margin indicates that reliable latching is not established.",
+      "The release voltage is a quasi-static holding-current boundary for the assumed constant on-state drop, not a guaranteed turn-off delay. Fuse clearing, SCR surge/SOA, gate power and fault interruption remain separate; no safety certification."
+    ],
+    "references": [{"title":"STMicroelectronics AN4607 Rev 1, sections 1.1, 1.2 and 2.12; manufacturer PDF mirrored by Octopart","url":"https://datasheet.octopart.com/TXN612RG-STMicroelectronics-datasheet-97040648.pdf"}],
+    "inputs": [
+      {"key":"zener_voltage","label":"Zener avalanche drop","unit":"V","default":12,"min":0,"exclusive_min":true},
+      {"key":"gate_voltage","label":"Gate-cathode trigger drop","unit":"V","default":0.8,"min":0,"exclusive_min":true},
+      {"key":"gate_trigger_current","label":"Required SCR gate trigger current","unit":"A","default":0.005,"min":0,"exclusive_min":true},
+      {"key":"gate_resistance","label":"Series gate resistance","unit":"ohm","default":100,"min":0,"exclusive_min":true},
+      {"key":"gate_shunt_resistance","label":"Gate-cathode shunt resistance","unit":"ohm","default":1000,"min":0,"exclusive_min":true},
+      {"key":"fault_voltage","label":"Open-circuit fault-source voltage","unit":"V","default":18,"min":0,"exclusive_min":true},
+      {"key":"source_resistance","label":"Fault-source resistance","unit":"ohm","default":10,"min":0,"exclusive_min":true},
+      {"key":"on_voltage","label":"SCR on-state voltage approximation","unit":"V","default":1.2,"min":0},
+      {"key":"latching_current","label":"Required anode latching current","unit":"A","default":0.05,"min":0,"exclusive_min":true},
+      {"key":"holding_current","label":"Anode holding current","unit":"A","default":0.02,"min":0,"exclusive_min":true}
+    ],
+    "outputs": [
+      {"key":"trigger_source_voltage","label":"Source voltage needed for gate triggering","unit":"V","expression":"zener_voltage+gate_voltage+(source_resistance+gate_resistance)*(gate_trigger_current+gate_voltage/gate_shunt_resistance)"},
+      {"key":"available_gate_current","label":"Pre-turn-on gate current at fault voltage","unit":"A","expression":"(fault_voltage-zener_voltage-gate_voltage)/(source_resistance+gate_resistance)-gate_voltage/gate_shunt_resistance"},
+      {"key":"available_anode_current","label":"Available on-state anode current","unit":"A","expression":"(fault_voltage-on_voltage)/source_resistance"},
+      {"key":"latch_margin","label":"Available anode current minus latching current","unit":"A","expression":"available_anode_current-latching_current"},
+      {"key":"holding_release_voltage","label":"Quasi-static source holding boundary","unit":"V","expression":"on_voltage+source_resistance*holding_current"}
+    ],
+    "constraints": [
+      {"left":"holding_current","op":"<=","right":"latching_current","message":"Holding current cannot exceed the specified latching current in this SCR model"},
+      {"left":"on_voltage","op":"<","right":"zener_voltage","message":"The trigger zener must cease avalanche after the SCR turns on"},
+      {"left":"fault_voltage","op":">=","right":"zener_voltage+gate_voltage+(source_resistance+gate_resistance)*(gate_trigger_current+gate_voltage/gate_shunt_resistance)","message":"The fault source cannot supply the required gate trigger current"}
+    ],
+    "example":{"inputs":{"zener_voltage":12,"gate_voltage":0.8,"gate_trigger_current":0.005,"gate_resistance":100,"gate_shunt_resistance":1000,"fault_voltage":18,"source_resistance":10,"on_voltage":1.2,"latching_current":0.05,"holding_current":0.02},"expected":{"trigger_source_voltage":13.438,"available_gate_current":0.04647272727272727,"available_anode_current":1.68,"latch_margin":1.63,"holding_release_voltage":1.4},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "protection.copper_adiabatic_fault_limit",
+    "title": "Copper conductor temperature-limited fault withstand",
+    "category": "Protection",
+    "level": "expert",
+    "description": "Use the temperature-dependent copper adiabatic heating integral to determine fault-current withstand and the minimum conductor area for a clearing interval.",
+    "formula": "k = 226 sqrt(ln[(234+Tf)/(234+Ti)]); Iallow = k S/sqrt(t); Jallow=(k S)²; Smin=Ifault sqrt(t)/k",
+    "assumptions": [
+      "S is copper cross-sectional area in mm²; temperatures are degrees Celsius. Material constants 226 A sqrt(s)/mm² and 234 degC come from the cited copper cable adiabatic formula.",
+      "This warm-copper cable application is limited to initial temperatures at least 0 degC and final limits at most 250 degC; it does not model cryogenic properties, melting or insulation above that limit.",
+      "Uniform conductor current and temperature, negligible heat escape, and a fault-clearing interval of at most 5 s. Skin/proximity effects, joints, contact hotspots and electrodynamic forces are excluded.",
+      "Fault current is the equivalent RMS current over the interval; for a nonconstant waveform use its actual integral to establish the equivalent RMS value.",
+      "The selected final temperature must also respect the actual insulation and termination ratings; 250 degC is not permission to use that limit for PVC. Negative area margin indicates an undersized conductor. No standards-compliance or safety-certification claim."
+    ],
+    "references": [
+      {"title":"Liban Cables, Generalities section 5.3, copper conductor short-circuit current rating","url":"https://www.libancables.com/.rest/eservice/dam/v1/file/224143/Generalities_17.pdf"},
+      {"title":"Schneider Electric Electrical Installation Guide, cable thermal constraints","url":"https://www.electrical-installation.org/enwiki/Verification_of_the_withstand_capabilities_of_cables_under_short-circuit_conditions"}
+    ],
+    "inputs": [
+      {"key":"area_mm2","label":"Copper cross-sectional area","unit":"mm²","default":4,"min":0,"exclusive_min":true},
+      {"key":"initial_temperature","label":"Initial copper temperature","unit":"degC","default":90,"min":0},
+      {"key":"limit_temperature","label":"Permitted final temperature","unit":"degC","default":250,"min":0,"max":250},
+      {"key":"clearing_time","label":"Fault clearing interval","unit":"s","default":0.5,"min":0,"exclusive_min":true,"max":5},
+      {"key":"fault_current","label":"Equivalent RMS fault current","unit":"A","default":500,"min":0}
+    ],
+    "outputs": [
+      {"key":"material_k","label":"Temperature-dependent copper k","unit":"A sqrt(s)/mm²","expression":"226*sqrt(log1p((limit_temperature-initial_temperature)/(234+initial_temperature)))"},
+      {"key":"allowable_fault_current","label":"Adiabatic allowable RMS fault current","unit":"A","expression":"material_k*area_mm2/sqrt(clearing_time)"},
+      {"key":"allowable_i2t","label":"Conductor thermal integral limit","unit":"A² s","expression":"(material_k*area_mm2)^2"},
+      {"key":"minimum_area_mm2","label":"Minimum thermal-withstand area","unit":"mm²","expression":"fault_current*sqrt(clearing_time)/material_k"},
+      {"key":"area_margin_mm2","label":"Installed minus required area","unit":"mm²","expression":"area_mm2-minimum_area_mm2"}
+    ],
+    "constraints": [{"left":"limit_temperature","op":">","right":"initial_temperature","message":"The permitted final temperature must exceed the initial copper temperature"}],
+    "example":{"inputs":{"area_mm2":4,"initial_temperature":90,"limit_temperature":250,"clearing_time":0.5,"fault_current":500},"expected":{"material_k":143.1744142046674,"allowable_fault_current":809.9167934122551,"allowable_i2t":327982.6061255947,"minimum_area_mm2":2.4693894684833158,"area_margin_mm2":1.5306105315166842},"relative_tolerance":0.000001}
+  },
+  {
+    "id": "protection.foldback_fault_envelope",
+    "title": "Foldback limiter fault equilibrium and peak pass stress",
+    "category": "Protection",
+    "level": "expert",
+    "description": "Find a resistive-fault operating point on an affine foldback characteristic and the worst pass-element dissipation anywhere between a short circuit and the current-limit knee.",
+    "formula": "b=(Ik-Isc)/Vk; I(V)=Isc+bV; Vfault=R Isc/(1-bR); Vstress=clamp[(Vin-Isc/b)/2,0,Vk]; P(V)=(Vin-V)(Isc+bV)",
+    "assumptions": [
+      "The limiter is represented by its characterized affine foldback branch from (V=0,I=Isc) to (V=Vk,I=Ik), not by an uncharacterized transistor or universal regulator formula.",
+      "The resistive fault is no larger than Vk/Ik, so its load line has a unique intersection on the foldback branch. The normal voltage-regulation branch is not solved.",
+      "A series linear pass element has fixed input voltage greater than the knee voltage. Controller quiescent current and external sense-resistor voltage drop are neglected in pass dissipation.",
+      "The quasi-static curve does not predict compensation, oscillations, capacitive startup, transient overshoot or guaranteed recovery with constant-power/current loads; foldback can cause load-dependent latch-up.",
+      "The maximum power is taken over the entire characterized foldback voltage interval, not only the short circuit. SOA, current crowding, junction temperature, shutdown timing and fault interruption still require hardware-specific checks; no safety certification."
+    ],
+    "references": [{"title":"onsemi SR005AN/D, Short Circuit Protection, Figures 2 and 3 and foldback latch-up discussion","url":"https://www.onsemi.com/download/application-notes/pdf/sr005an-d.pdf"}],
+    "inputs": [
+      {"key":"input_voltage","label":"Pass-element input voltage","unit":"V","default":9,"min":0,"exclusive_min":true},
+      {"key":"knee_voltage","label":"Foldback current-limit knee voltage","unit":"V","default":5,"min":0,"exclusive_min":true},
+      {"key":"knee_current","label":"Current at foldback knee","unit":"A","default":1,"min":0,"exclusive_min":true},
+      {"key":"short_current","label":"Short-circuit foldback current","unit":"A","default":0.2,"min":0,"exclusive_min":true},
+      {"key":"fault_resistance","label":"Resistive fault load","unit":"ohm","default":2,"min":0}
+    ],
+    "outputs": [
+      {"key":"foldback_slope","label":"Foldback current-voltage slope","unit":"A/V","expression":"(knee_current-short_current)/knee_voltage"},
+      {"key":"knee_load_resistance","label":"Load resistance at foldback knee","unit":"ohm","expression":"knee_voltage/knee_current"},
+      {"key":"fault_output_current","label":"Foldback fault output current","unit":"A","expression":"short_current/((1-fault_resistance/knee_load_resistance)+(fault_resistance/knee_load_resistance)*(short_current/knee_current))"},
+      {"key":"fault_output_voltage","label":"Foldback fault output voltage","unit":"V","expression":"fault_resistance*fault_output_current"},
+      {"key":"fault_pass_power","label":"Pass dissipation at the specified fault","unit":"W","expression":"(input_voltage-fault_output_voltage)*fault_output_current"},
+      {"key":"short_pass_power","label":"Pass dissipation at a hard short","unit":"W","expression":"input_voltage*short_current"},
+      {"key":"peak_stress_voltage","label":"Output voltage at worst foldback dissipation","unit":"V","expression":"min(knee_voltage,max(0,(input_voltage-short_current/foldback_slope)/2))"},
+      {"key":"peak_stress_current","label":"Current at worst foldback dissipation","unit":"A","expression":"short_current+foldback_slope*peak_stress_voltage"},
+      {"key":"maximum_pass_power","label":"Maximum pass dissipation over foldback branch","unit":"W","expression":"(input_voltage-peak_stress_voltage)*peak_stress_current"}
+    ],
+    "constraints": [
+      {"left":"input_voltage","op":">","right":"knee_voltage","message":"The pass input must exceed the regulated knee voltage"},
+      {"left":"knee_current","op":">","right":"short_current","message":"A foldback branch requires knee current greater than short-circuit current"},
+      {"left":"fault_resistance","op":"<=","right":"knee_voltage/knee_current","message":"This calculation requires a fault load on the foldback branch"}
+    ],
+    "example":{"inputs":{"input_voltage":9,"knee_voltage":5,"knee_current":1,"short_current":0.2,"fault_resistance":2},"expected":{"foldback_slope":0.16,"knee_load_resistance":5,"fault_output_voltage":0.5882352941176471,"fault_output_current":0.29411764705882354,"fault_pass_power":2.4740484429065744,"short_pass_power":1.8,"peak_stress_voltage":3.875,"peak_stress_current":0.82,"maximum_pass_power":4.2025},"relative_tolerance":0.000001}
+  }
+]

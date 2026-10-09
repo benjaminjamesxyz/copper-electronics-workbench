@@ -1,0 +1,163 @@
+[
+  {
+    "id": "batteries.series_weakest_cell",
+    "title": "Three-series pack usable charge and stranded state",
+    "category": "Battery design",
+    "level": "basic",
+    "description": "Find the first-cell discharge cutoff and the state left in each cell of an unbalanced three-series pack.",
+    "formula": "Qusable = min(C1(s1-sfloor), C2(s2-sfloor), C3(s3-sfloor)); si,end = si-Qusable/Ci",
+    "assumptions": ["Three cells in series carry the same extracted charge; there is no balancing or bypass current.", "Capacities are measured usable full capacities in Ah under the intended temperature, current and cutoff conditions.", "The common SOC floor is a design input, not a universal chemistry limit. Voltage sag, resistance and rate dependence can cause earlier hardware cutoff.", "SOC is a fraction, not percent; stranded SOC is not pack-deliverable charge."],
+    "references": [{"title": "Texas Instruments SSZT724, HEV/EV Battery Management Systems Explained Simply, pages 1-2", "url": "https://www.ti.com/lit/pdf/sszt724"}],
+    "inputs": [
+      {"key": "capacity_one", "label": "Cell 1 full capacity", "unit": "Ah", "default": 3, "min": 0, "exclusive_min": true},
+      {"key": "capacity_two", "label": "Cell 2 full capacity", "unit": "Ah", "default": 2.8, "min": 0, "exclusive_min": true},
+      {"key": "capacity_three", "label": "Cell 3 full capacity", "unit": "Ah", "default": 3.2, "min": 0, "exclusive_min": true},
+      {"key": "soc_one", "label": "Cell 1 initial SOC", "unit": "1", "default": 0.9, "min": 0, "max": 1},
+      {"key": "soc_two", "label": "Cell 2 initial SOC", "unit": "1", "default": 0.85, "min": 0, "max": 1},
+      {"key": "soc_three", "label": "Cell 3 initial SOC", "unit": "1", "default": 0.95, "min": 0, "max": 1},
+      {"key": "soc_floor", "label": "Common discharge SOC floor", "unit": "1", "default": 0.1, "min": 0, "max": 1}
+    ],
+    "outputs": [
+      {"key": "usable_charge", "label": "Series pack deliverable charge", "unit": "Ah", "expression": "min(capacity_one*(soc_one-soc_floor),min(capacity_two*(soc_two-soc_floor),capacity_three*(soc_three-soc_floor)))"},
+      {"key": "end_soc_one", "label": "Cell 1 SOC at pack cutoff", "unit": "1", "expression": "soc_one-usable_charge/capacity_one"},
+      {"key": "end_soc_two", "label": "Cell 2 SOC at pack cutoff", "unit": "1", "expression": "soc_two-usable_charge/capacity_two"},
+      {"key": "end_soc_three", "label": "Cell 3 SOC at pack cutoff", "unit": "1", "expression": "soc_three-usable_charge/capacity_three"}
+    ],
+    "constraints": [
+      {"left": "soc_one", "op": ">=", "right": "soc_floor", "message": "Cell 1 is already below the discharge floor"},
+      {"left": "soc_two", "op": ">=", "right": "soc_floor", "message": "Cell 2 is already below the discharge floor"},
+      {"left": "soc_three", "op": ">=", "right": "soc_floor", "message": "Cell 3 is already below the discharge floor"}
+    ],
+    "example": {"inputs": {"capacity_one": 3, "capacity_two": 2.8, "capacity_three": 3.2, "soc_one": 0.9, "soc_two": 0.85, "soc_three": 0.95, "soc_floor": 0.1}, "expected": {"usable_charge": 2.1, "end_soc_one": 0.2, "end_soc_two": 0.1, "end_soc_three": 0.29375}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "batteries.coulomb_state_cycle",
+    "title": "Coulomb-counted discharge and recharge state",
+    "category": "Battery design",
+    "level": "basic",
+    "description": "Track an initial battery state through a constant-current discharge followed by a charge interval with coulombic loss.",
+    "formula": "sd = s0-Id td/(3600 C); Qstored = eta Ic tc/3600; sf = sd+Qstored/C",
+    "assumptions": ["The discharge interval occurs first, then the charge interval; both currents are nonnegative magnitudes.", "Charge efficiency is a coulombic Ah retention fraction, not converter power efficiency.", "Capacity, current and charge efficiency are constant over each interval; no self-discharge, Peukert correction, temperature drift or aging is included.", "The initial SOC must be synchronized independently. Current-sensor offset accumulates into state error.", "Reject overdischarge or overcharge instead of clamping SOC. This state accounting does not define a safe charger profile."],
+    "references": [{"title": "Victron BMV-712 Smart manual, sections 7.2.1, 7.2.7, 7.2.8 and 7.2.10-13", "url": "https://www.victronenergy.com/media/pg/BMV-712_Smart/en/all-features-and-settings.html"}],
+    "inputs": [
+      {"key": "full_capacity", "label": "Usable full-charge capacity", "unit": "Ah", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "initial_soc", "label": "Initial state of charge", "unit": "1", "default": 0.4, "min": 0, "max": 1},
+      {"key": "discharge_current", "label": "Discharge current magnitude", "unit": "A", "default": 1, "min": 0},
+      {"key": "discharge_time", "label": "Discharge interval", "unit": "s", "default": 1800, "min": 0},
+      {"key": "charge_current", "label": "Charge current magnitude", "unit": "A", "default": 2, "min": 0},
+      {"key": "charge_time", "label": "Charge interval", "unit": "s", "default": 3600, "min": 0},
+      {"key": "charge_efficiency", "label": "Coulombic charge retention", "unit": "1", "default": 0.95, "min": 0, "exclusive_min": true, "max": 1}
+    ],
+    "outputs": [
+      {"key": "discharged_soc", "label": "SOC after discharge", "unit": "1", "expression": "initial_soc-discharge_current*(discharge_time/3600)/full_capacity"},
+      {"key": "stored_charge", "label": "Charge retained on recharge", "unit": "Ah", "expression": "charge_efficiency*charge_current*(charge_time/3600)"},
+      {"key": "final_soc", "label": "SOC after recharge", "unit": "1", "expression": "discharged_soc+stored_charge/full_capacity"}
+    ],
+    "constraints": [
+      {"left": "discharge_current*(discharge_time/3600)/full_capacity", "op": "<=", "right": "initial_soc", "message": "Discharge interval would exhaust the initial stored charge"},
+      {"left": "initial_soc-discharge_current*(discharge_time/3600)/full_capacity+charge_efficiency*charge_current*(charge_time/3600)/full_capacity", "op": "<=", "right": "1", "message": "Charge interval would exceed full charge"}
+    ],
+    "example": {"inputs": {"full_capacity": 5, "initial_soc": 0.4, "discharge_current": 1, "discharge_time": 1800, "charge_current": 2, "charge_time": 3600, "charge_efficiency": 0.95}, "expected": {"discharged_soc": 0.3, "stored_charge": 1.9, "final_soc": 0.68}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "batteries.peukert_runtime",
+    "title": "Peukert rate-dependent discharge runtime",
+    "category": "Battery design",
+    "level": "intermediate",
+    "description": "Estimate full-to-cutoff runtime and delivered capacity at a different constant discharge current using a calibrated Peukert exponent.",
+    "formula": "Ir = Cr/Hr; t = Hr (Ir/I)^n; Cdelivered = Cr (Ir/I)^(n-1)",
+    "assumptions": ["Capacity rating and exponent describe the same battery, temperature and terminal cutoff; the initial battery is fully charged.", "The load is a constant current within the measured fit range. The exponent must be fitted from manufacturer discharge data, not assumed universal.", "The model captures rate-capacity loss but not interrupted-load recovery, aging, self-discharge or voltage sag separately.", "Extrapolation to very low current predicts unbounded capacity for n>1 and is not physical; very high current may perform worse than the model."],
+    "references": [{"title": "Victron SmartShunt manual, chapter 8: Battery capacity and Peukert exponent", "url": "https://www.victronenergy.com/media/pg/SmartShunt/en/battery-capacity-and-peukert-exponent.html"}, {"title": "Jongerden and Haverkort, Battery Modeling, section 5.1 equation (1)", "url": "https://ris.utwente.nl/ws/portalfiles/portal/5101624/BatteryRep4.pdf"}],
+    "inputs": [
+      {"key": "rated_capacity", "label": "Rated capacity at rated duration", "unit": "Ah", "default": 100, "min": 0, "exclusive_min": true},
+      {"key": "rated_duration", "label": "Capacity-rating discharge duration", "unit": "h", "default": 20, "min": 0, "exclusive_min": true},
+      {"key": "load_current", "label": "Constant discharge current", "unit": "A", "default": 20, "min": 0, "exclusive_min": true},
+      {"key": "peukert_exponent", "label": "Calibrated Peukert exponent", "unit": "1", "default": 1.25, "min": 1}
+    ],
+    "outputs": [
+      {"key": "rated_current", "label": "Current at capacity rating", "unit": "A", "expression": "rated_capacity/rated_duration"},
+      {"key": "runtime", "label": "Full-to-cutoff runtime", "unit": "h", "expression": "rated_duration*(rated_current/load_current)^peukert_exponent"},
+      {"key": "delivered_capacity", "label": "Effective delivered capacity", "unit": "Ah", "expression": "rated_capacity*(rated_current/load_current)^(peukert_exponent-1)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"rated_capacity": 100, "rated_duration": 20, "load_current": 20, "peukert_exponent": 1.25}, "expected": {"rated_current": 5, "runtime": 3.5355339059327378, "delivered_capacity": 70.71067811865476}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "batteries.kinetic_charge_recovery",
+    "title": "Kinetic available and bound charge after a pulse",
+    "category": "Battery design",
+    "level": "expert",
+    "description": "Propagate a discharge-conditioned two-well battery state through one constant-current pulse or rest period, including chemical charge recovery.",
+    "formula": "a = c q2-(1-c)q1; x = lambda t; q1f = q1+a(1-exp(-x))-It[c+(1-c)exprel(-x)]; q2f = q2-a(1-exp(-x))-I(1-c)t x expm1mx_ratio(-x)",
+    "assumptions": ["KiBaM charge reservoirs are empirical chemical availability states, not two physical capacitors.", "lambda is the equalization decay rate k/[c(1-c)] in inverse seconds, not the original well conductance k.", "Only discharge or rest is modeled. Initial available-well height cannot exceed bound-well height; both wells start within their capacities.", "The model ceases to supply the load when available charge reaches zero, even if bound charge remains.", "Parameters require cell-specific discharge/recovery fitting. Terminal voltage, thermal limits, aging and charge acceptance are not predicted.", "lambda=0 is the disconnected-well limit; exprel and expm1mx_ratio retain the analytic zero limit."],
+    "references": [{"title": "Jongerden and Haverkort, Battery Modeling, section 5.3, Figure 6 and equation (4), pages 8-10", "url": "https://ris.utwente.nl/ws/portalfiles/portal/5101624/BatteryRep4.pdf"}],
+    "inputs": [
+      {"key": "maximum_charge", "label": "Combined full-well capacity", "unit": "C", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "available_fraction", "label": "Available-well capacity fraction", "unit": "1", "default": 0.4, "min": 0, "exclusive_min": true, "max": 1, "exclusive_max": true},
+      {"key": "available_initial", "label": "Initially available charge", "unit": "C", "default": 3000, "min": 0},
+      {"key": "bound_initial", "label": "Initially bound charge", "unit": "C", "default": 5000, "min": 0},
+      {"key": "equalization_rate", "label": "Well equalization decay rate", "unit": "1/s", "default": 0.001, "min": 0},
+      {"key": "pulse_current", "label": "Discharge current; zero for rest", "unit": "A", "default": 2, "min": 0},
+      {"key": "pulse_duration", "label": "Pulse or rest duration", "unit": "s", "default": 600, "min": 0}
+    ],
+    "outputs": [
+      {"key": "available_final", "label": "Available charge after interval", "unit": "C", "expression": "available_initial+(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))-pulse_current*pulse_duration*(available_fraction+(1-available_fraction)*exprel(-equalization_rate*pulse_duration))"},
+      {"key": "bound_final", "label": "Bound charge after interval", "unit": "C", "expression": "bound_initial-(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))-pulse_current*(1-available_fraction)*pulse_duration*(equalization_rate*pulse_duration)*expm1mx_ratio(-equalization_rate*pulse_duration)"},
+      {"key": "total_final", "label": "Total remaining chemical charge", "unit": "C", "expression": "available_initial+bound_initial-pulse_current*pulse_duration"}
+    ],
+    "constraints": [
+      {"left": "available_initial", "op": "<=", "right": "available_fraction*maximum_charge", "message": "Available well exceeds its capacity"},
+      {"left": "bound_initial", "op": "<=", "right": "(1-available_fraction)*maximum_charge", "message": "Bound well exceeds its capacity"},
+      {"left": "(1-available_fraction)*available_initial", "op": "<=", "right": "available_fraction*bound_initial", "message": "Use an equilibrated or discharge-conditioned initial state"},
+      {"left": "available_initial+(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))", "op": ">=", "right": "pulse_current*pulse_duration*(available_fraction+(1-available_fraction)*exprel(-equalization_rate*pulse_duration))", "message": "Available charge would be exhausted before the interval ends"}
+    ],
+    "example": {"inputs": {"maximum_charge": 10000, "available_fraction": 0.4, "available_initial": 3000, "bound_initial": 5000, "equalization_rate": 0.001, "pulse_current": 2, "pulse_duration": 600}, "expected": {"available_final": 2068.8116360940267, "bound_final": 4731.188363905973, "total_final": 6800}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "batteries.intercalation_regular_solution",
+    "title": "Single-phase intercalation voltage and chemical capacitance",
+    "category": "Battery design",
+    "level": "expert",
+    "description": "Estimate the nonlinear equilibrium voltage, slope and differential charge capacity of a lithium insertion electrode with pair interactions.",
+    "formula": "V = Vmid-[RT ln(x/(1-x))+Omega(1-2x)]/F; dV/dx = -RT/[F x(1-x)]+2Omega/F; Cchem = Qmax F x(1-x)/[RT-2Omega x(1-x)]",
+    "assumptions": ["One electron transfers per inserted lithium ion. Filling fraction x is electrode site occupancy, not automatically full-cell SOC.", "The regular-solution free energy is RT[x ln x+(1-x)ln(1-x)]+Omega x(1-x); Omega is molar interaction energy in J/mol.", "Use the globally single-phase domain Omega<2RT. The two-phase miscibility gap, common-tangent voltage plateau and critical point require another model.", "Voltage is relative to the same fixed lithium reference used to define midpoint voltage; electrolyte activity is fixed.", "Quasi-equilibrium, uniform composition and constant temperature; no hysteresis, ohmic loss, kinetics, stress or double-layer capacitance.", "Chemical capacitance is positive -dQ/dV for inserted charge Q=Qmax x, not an electrostatic energy-storage capacitor. R=8.31446261815324 J/(mol K), F=96485.33212 C/mol."],
+    "references": [{"title": "MIT 10.626 Lithium ion batteries, Regular solution model and Faradaic capacitance, pages 6-8", "url": "https://ocw.mit.edu/courses/10-626-electrochemical-energy-systems-spring-2014/e87e16b891cb649be6032e375c30e322_MIT10_626S14_Lec13_Lithi.pdf"}],
+    "inputs": [
+      {"key": "midpoint_voltage", "label": "Half-filled electrode voltage vs reference", "unit": "V", "default": 3.5},
+      {"key": "temperature", "label": "Absolute electrode temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "interaction_energy", "label": "Molar pair interaction energy", "unit": "J/mol", "default": 3000},
+      {"key": "filling_fraction", "label": "Lithium site filling fraction", "unit": "1", "default": 0.3, "min": 0, "exclusive_min": true, "max": 1, "exclusive_max": true},
+      {"key": "full_insertion_charge", "label": "Charge for all insertion sites", "unit": "C", "default": 10800, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "equilibrium_voltage", "label": "Equilibrium electrode voltage", "unit": "V", "expression": "midpoint_voltage-(8.31446261815324*temperature*(ln(filling_fraction)-log1p(-filling_fraction))+interaction_energy*(1-2*filling_fraction))/96485.33212"},
+      {"key": "voltage_slope", "label": "Voltage slope per filling fraction", "unit": "V", "expression": "-(8.31446261815324*temperature/(filling_fraction*(1-filling_fraction))-2*interaction_energy)/96485.33212"},
+      {"key": "chemical_capacitance", "label": "Positive differential chemical capacitance", "unit": "F", "expression": "full_insertion_charge*96485.33212*filling_fraction*(1-filling_fraction)/(8.31446261815324*temperature-2*interaction_energy*filling_fraction*(1-filling_fraction))"}
+    ],
+    "constraints": [{"left": "interaction_energy", "op": "<", "right": "2*8.31446261815324*temperature", "message": "The single-phase model requires interaction energy below the critical 2RT value"}],
+    "example": {"inputs": {"midpoint_voltage": 3.5, "temperature": 298.15, "interaction_energy": 3000, "filling_fraction": 0.3, "full_insertion_charge": 10800}, "expected": {"equilibrium_voltage": 3.5093321437299303, "voltage_slope": -0.06015999692680433, "chemical_capacitance": 179521.28576635703}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "batteries.sand_depletion_limit",
+    "title": "Sand electrolyte-depletion charging limit",
+    "category": "Battery design",
+    "level": "expert",
+    "description": "Estimate the semi-infinite electrolyte depletion time and areal charge under constant lithium-plating current density.",
+    "formula": "ts = (pi D/4)[F c0/(j(1-tplus))]^2; qs = j ts; ell = sqrt(D ts)",
+    "assumptions": ["Planar one-dimensional semi-infinite transport, initially uniform binary monovalent electrolyte, constant current density and transport coefficients.", "Diffusivity is the effective salt/ambipolar diffusivity appropriate to the model, not automatically tracer diffusion or conductivity converted by an ideal-ion assumption.", "The diffusion length must be much smaller than the distance to the counter boundary. This model is not the finite-cell limiting-current solution.", "At or below the finite-cell limiting current, a real finite cell may never reach depletion; do not report this semi-infinite time as its actual lifetime.", "No convection, SEI nonuniformity, changing active area, concentrated-solution thermodynamics or electroconvection is included.", "Sand time is a transport-depletion threshold, not a safe-charge rating or guaranteed dendrite-onset time. F=96485.33212 C/mol."],
+    "references": [{"title": "Ellison and Grey, Engineering considerations for practical lithium-air electrolytes, Ionic transport, equations (31)-(32), PDF page 6 and discussion pages 18-19", "url": "https://api.repository.cam.ac.uk/server/api/core/bitstreams/a34f3449-0c37-4b97-a66f-3f24697e9426/content"}],
+    "inputs": [
+      {"key": "salt_diffusivity", "label": "Effective electrolyte salt diffusivity", "unit": "m^2/s", "default": 1e-10, "min": 0, "exclusive_min": true},
+      {"key": "salt_concentration", "label": "Initial monovalent salt concentration", "unit": "mol/m^3", "default": 1000, "min": 0, "exclusive_min": true},
+      {"key": "plating_current_density", "label": "Constant plating current density", "unit": "A/m^2", "default": 100, "min": 0, "exclusive_min": true},
+      {"key": "cation_transference", "label": "Lithium cation transference fraction", "unit": "1", "default": 0.4, "min": 0, "max": 1, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "sand_time", "label": "Semi-infinite surface depletion time", "unit": "s", "expression": "(sqrt(pi)*sqrt(salt_diffusivity)*96485.33212*(salt_concentration/plating_current_density)/(2*(1-cation_transference)))^2"},
+      {"key": "sand_areal_charge", "label": "Areal charge passed by depletion", "unit": "C/m^2", "expression": "plating_current_density*sand_time"},
+      {"key": "diffusion_length", "label": "Diffusion length at depletion", "unit": "m", "expression": "sqrt(salt_diffusivity)*sqrt(sand_time)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"salt_diffusivity": 1e-10, "salt_concentration": 1000, "plating_current_density": 100, "cation_transference": 0.4}, "expected": {"sand_time": 203.10002310425608, "sand_areal_charge": 20310.002310425607, "diffusion_length": 0.0001425131653933264}, "relative_tolerance": 0.000001}
+  }
+]

@@ -1,0 +1,436 @@
+{
+  "baseline_commit": "29f9c2b",
+  "researchers": 16,
+  "new_definitions": 100,
+  "levels": {
+    "intermediate": 39,
+    "expert": 35,
+    "basic": 26
+  },
+  "verification": "Parent checked complete JSON structure, IDs, finite all-output examples and expression name/dependency availability; no production acceptance claimed at research gate.",
+  "handoffs": [
+    {
+      "lane": "sensors",
+      "count": 7,
+      "levels": {
+        "basic": 3,
+        "intermediate": 3,
+        "expert": 1
+      },
+      "files": [
+        "research/expansion/sensors.json",
+        "research/expansion/sensors.md"
+      ],
+      "ids": [
+        "sensors.ntc_steinhart_hart",
+        "sensors.platinum_callendar_van_dusen",
+        "sensors.type_t_cold_junction_emf",
+        "sensors.hall_plate_angle",
+        "sensors.amr_angular_resistance",
+        "sensors.hydrogen_activity_electrode",
+        "sensors.differential_gap_capacitor"
+      ],
+      "handoff": "Complete definitions, source evidence, independent all-output examples, boundaries, invalid cases and seven exact-key diagrams published. COMMUNICATION.md handoff appended.",
+      "novelty": "Distinct material/chemical/geometric transduction; no generic TCR, bridge, amplifier or fixed-gap displacement-current duplication. Hall and AMR have different mechanisms, terminals and angular symmetry. Battery boundary confirmed.",
+      "checks_skipped": "No builds, tests, lint, formatters, backend/UI execution, hardware checks or commits. Parent should execute examples, boundary cases and native diagram review.",
+      "risks": "AMR primary document accessed through a mirror. Actual calibration, sensor ratings and nonideal effects remain device-specific; limits documented. No unresolved implementation prerequisite."
+    },
+    {
+      "lane": "opto",
+      "count": 7,
+      "levels": {
+        "basic": 2,
+        "intermediate": 2,
+        "expert": 3
+      },
+      "ids": [
+        "opto.photodiode_quantum_conversion",
+        "opto.lambertian_target_irradiance",
+        "opto.layer_absorption_capture",
+        "opto.gaussian_aperture_capture",
+        "opto.step_index_mode_cutoff",
+        "opto.fiber_gaussian_dispersion",
+        "opto.sipm_finite_cell_response"
+      ],
+      "files": [
+        "research/expansion/opto.json",
+        "research/expansion/opto.md"
+      ],
+      "handoff": "Appended claims and complete handoff to COMMUNICATION.md. Seven complete output examples independently derived with 60-digit Decimal arithmetic. Each item includes primary-source evidence, domain limits, tester cases and exact-key diagram specification.",
+      "novelty": "Seven distinct optical mechanisms; no baseline inverse, LED ballast, shot noise or amplifier model. Precision confirmed electronics boundary. Current bus claims show no collision.",
+      "unresolved_risks": [
+        "Hardware-specific QE, absorption, refractive indices, dispersion and SiPM calibration remain required.",
+        "Paraxial, weak-guidance and linear-dispersion approximation limits are explicit.",
+        "Hamamatsu reports measured SiPM over-saturation beyond the ideal finite-cell model; caveat retained prominently."
+      ],
+      "checks_not_run": "No builds, tests, lint, formatters, engine/UI execution or commits. Parent owns numerical and native-diagram verification."
+    },
+    {
+      "lane": "oscillators",
+      "count": 7,
+      "levels": {
+        "basic": 2,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "ids": [
+        "oscillators.timer_555_astable",
+        "oscillators.comparator_rc_oscillator",
+        "oscillators.triangle_integrator_oscillator",
+        "oscillators.wien_bridge_balance",
+        "oscillators.loaded_rc_phase_shift",
+        "oscillators.cross_coupled_lc_startup",
+        "oscillators.pierce_crystal_startup"
+      ],
+      "files": [
+        "research/expansion/oscillators.json",
+        "research/expansion/oscillators.md"
+      ],
+      "bus": "COMMUNICATION.md claims and complete handoff appended.",
+      "novelty": "Seven distinct autonomous active-loop models; no passive resonance, delay, divider, ordinary filter response, inverse or separate crystal-load-only count.",
+      "critical_handoff": [
+        "RC phase-shift third R terminates at virtual ground; no extra third-node shunt.",
+        "LC parameters are differential; gm is per transistor.",
+        "Pierce input requires actual inverter gm, never Gm_crit_max.",
+        "Failed startup and gain-margin designs remain signed diagnostic results."
+      ],
+      "evidence": "Primary manufacturer/university material read; complete 50-digit Decimal-derived nominal output maps, boundary cases and exact-key circuit specifications delivered.",
+      "unresolved_blockers": [],
+      "skipped": "No builds, tests, lint, formatting, engine/UI/hardware runs or commits.",
+      "risks": "Real-device tolerances, amplitude stabilization, crystal drive and hardware startup robustness remain unverified. Parent owns execution and native diagram checks."
+    },
+    {
+      "lane": "rf",
+      "count": 7,
+      "levels": {
+        "basic": 2,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "ids": [
+        "rf.matched_t_attenuator",
+        "rf.lowpass_l_match",
+        "rf.free_space_link_budget",
+        "rf.first_fresnel_clearance",
+        "rf.circular_aperture_gain",
+        "rf.two_tone_im3",
+        "rf.monostatic_radar_return"
+      ],
+      "files": [
+        "research/expansion/rf.json",
+        "research/expansion/rf.md"
+      ],
+      "bus": "COMMUNICATION.md:726",
+      "deliverables": "Seven sourced definitions, complete independent numeric examples, physical limits, boundary/error scenarios and exact-key diagram specifications.",
+      "novelty": "Adds matched-pad synthesis, lumped reactive matching, spatial link loss, Fresnel geometry, aperture gain, cubic mixing and target scattering. Preserves all baseline models. EMC retains short-wire radiation.",
+      "unresolved_risks": "No known collision or missing source prerequisite. Hardware accuracy depends on parasitics, aperture efficiency, RCS, propagation environment and characterized amplifier linearity.",
+      "checks": "Independent arithmetic only. Skipped builds/tests/lint/formatters/backend/UI execution. Parent should verify every example, domain edge and rendered diagram."
+    },
+    {
+      "lane": "batteries",
+      "count": 6,
+      "levels": {
+        "basic": 2,
+        "intermediate": 1,
+        "expert": 3
+      },
+      "ids": [
+        "batteries.series_weakest_cell",
+        "batteries.coulomb_state_cycle",
+        "batteries.peukert_runtime",
+        "batteries.kinetic_charge_recovery",
+        "batteries.intercalation_regular_solution",
+        "batteries.sand_depletion_limit"
+      ],
+      "files": [
+        "research/expansion/batteries.json",
+        "research/expansion/batteries.md"
+      ],
+      "bus": "Claims and final handoff appended to COMMUNICATION.md.",
+      "novelty": "Six distinct battery mechanisms; no baseline replacements or generic electrical rearrangements. Sensors confirmed intercalation/Nernst boundary. Protection and motor scopes remain separate.",
+      "deliverables": "Complete independent examples, sourced equations, physical domains, boundary/invalid cases and six exact-key diagram specifications. Existing expression primitives suffice.",
+      "not_checked": "No builds, tests, lint, formatters, backend execution or UI rendering; numerical derivation only.",
+      "risks": "Cell-specific calibration and synchronized SOC remain necessary. Regular-solution model excludes two-phase behavior; Sand model requires semi-infinite transport geometry. Inaccessible sources and readable replacements documented."
+    },
+    {
+      "lane": "protection",
+      "count": 6,
+      "levels": {
+        "basic": 1,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "ids": [
+        "protection.fuse_pulse_coordination",
+        "protection.tvs_surge_load_line",
+        "protection.mov_power_law_pulse",
+        "protection.scr_crowbar_trigger_latch",
+        "protection.copper_adiabatic_fault_limit",
+        "protection.foldback_fault_envelope"
+      ],
+      "files": [
+        "research/expansion/protection.json",
+        "research/expansion/protection.md"
+      ],
+      "bus": "COMMUNICATION.md:776-782",
+      "novelty": "Combined both fuse I²t uses per Main. Other models add avalanche load-line coupling, nonlinear MOV conduction, regenerative SCR latch behavior, temperature-integrated copper withstand, and foldback fault/stress optimization. Cables confirmed ownership; no baseline or neighboring collision identified.",
+      "evidence": "Seven primary manufacturer documents actually read. Six complete independent numerical examples, physical limits, boundary/error cases and exact-key diagram specifications supplied. Failed source access disclosed.",
+      "checks": "Skipped builds, tests, lint, formatters, engine/UI runs and commits. Parent should execute complete vectors and boundary cases, then inspect six diagrams.",
+      "risks": "No unresolved source or ownership blocker. Device characterization, waveform matching, transient dynamics and real fault containment remain hardware-specific; no certification claim."
+    },
+    {
+      "lane": "converters",
+      "count": 6,
+      "levels": {
+        "basic": 1,
+        "intermediate": 2,
+        "expert": 3
+      },
+      "ids": [
+        "converters.inverting_charge_pump",
+        "converters.sepic_ccm_stress",
+        "converters.forward_reset_winding",
+        "converters.flyback_dcm_demagnetization",
+        "converters.llc_half_bridge_fha",
+        "converters.dual_active_bridge_power"
+      ],
+      "files": [
+        "research/expansion/converters.json",
+        "research/expansion/converters.md"
+      ],
+      "handoff": "COMMUNICATION.md:747–752 records delivery. Every model includes sourced limits, complete independent output examples, boundary/error scenarios and exact-key circuit-diagram specifications.",
+      "novelty": "Six distinct topology models; no buck/boost/LDO, simple transformer-ratio, inverse or compensator duplicates. Control confirmed boundary; no unresolved overlap.",
+      "sources": "Actually read seven TI/onsemi manufacturer documents. Failed ADI/ST/TI accesses disclosed; accessible alternatives support all models.",
+      "checks": "Skipped builds, tests, lint, formatters, engine/UI runs and commits. Parent should execute examples/boundaries and inspect native diagrams.",
+      "risks": "Approximate charge-pump resistance, SEPIC small-ripple assumptions, forward CCM prerequisite, ideal flyback losses, LLC FHA accuracy and DAB circulating-current/ZVS limits remain explicit. No unresolved research blocker."
+    },
+    {
+      "lane": "control",
+      "count": 6,
+      "levels": {
+        "basic": 1,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "ids": [
+        "control.delay_phase_budget",
+        "control.loop_sensitivity",
+        "control.lead_crossover_synthesis",
+        "control.pi_pole_placement",
+        "control.peak_current_slope_compensation",
+        "control.integral_two_lag_stability"
+      ],
+      "files": [
+        "research/expansion/control.json",
+        "research/expansion/control.md"
+      ],
+      "handoff": "Claims and final handoff appended to COMMUNICATION.md. Complete independent examples, source equations, physical limits, boundary cases and six exact-key diagram specifications included.",
+      "novelty": "Distinct delay, sensitivity, lead, PI, sampled-current and cubic-stability mechanisms. No baseline GBW/RLC/filter/boost-RHP duplication. Converter boundary confirmed; no current bus collision.",
+      "checks_not_run": "No builds, tests, lint, formatters, engine or UI runs. Parent owns verification.",
+      "risks": "Ideal LTI/local CCM assumptions require real plant validation. Source-access failures documented; inaccessible sources excluded. No engine extension requested."
+    },
+    {
+      "lane": "emc",
+      "count": 6,
+      "ids": [
+        "emc.thin_slot_shielding",
+        "emc.rc_common_mode_conversion",
+        "emc.trapezoid_conducted_harmonic",
+        "emc.sinusoidal_dither_occupancy",
+        "emc.ringing_rc_snubber",
+        "emc.short_cable_radiation"
+      ],
+      "files": [
+        "research/expansion/emc.json",
+        "research/expansion/emc.md"
+      ],
+      "levels": {
+        "basic": 1,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "deliverables": "Six sourced models, complete independent numeric examples, physical limits, boundary/error cases, exact-key diagram specifications, and claims/handoff bus entries.",
+      "novelty": "Aperture leakage; coupled-filter mode conversion; trapezoidal spectral generation; FM spectral redistribution; two-measurement snubber identification/design; unintended current-element radiation. RF/logic boundaries confirmed. Uniform-loop pickup rejected as baseline inverse.",
+      "unresolved_risks": "No source or ownership blocker. Practical accuracy requires enclosure characterization, receiver/detector modeling, snubber bench tuning, and justified cable current distribution. All six explicitly estimate-not-compliance.",
+      "skipped": "No production edits, builds, tests, lint, formatters, engine/UI execution or commits. Parent must execute examples, boundary cases and diagram inspection."
+    },
+    {
+      "lane": "cables",
+      "count": 6,
+      "levels": {
+        "basic": 2,
+        "intermediate": 2,
+        "expert": 2
+      },
+      "ids": [
+        "cables.twin_lead_geometry",
+        "cables.lossy_rlgc_line",
+        "cables.radial_insulation_stress",
+        "cables.hertz_holm_contact",
+        "cables.contact_hotspot_temperature",
+        "cables.cantilever_contact_spring"
+      ],
+      "files": [
+        "research/expansion/cables.json",
+        "research/expansion/cables.md"
+      ],
+      "bus": "COMMUNICATION.md:719–724 contains final handoff; initial claims also recorded.",
+      "deliverables": "Six sourced definitions, complete independent numeric examples, physical/domain limits, boundary scenarios and model-specific exact-key diagram specifications.",
+      "novelty": "Balanced round-wire geometry; distributed RLGC loss; radial dielectric stress; Hertz/Holm contact constriction; Kohlrausch contact heating; connector beam elasticity. No existing impedance/delay/reflection/DC-copper model duplicated. Protection retains adiabatic fault withstand.",
+      "verification": "Independent arithmetic only. No builds, tests, lint, formatters, backend/UI execution or commits.",
+      "risks": "Material-specific limits and idealized contact/insulation geometry require qualification. Parent must run numerical/domain checks and inspect rendered diagrams; extreme binary64 scaling remains unverified."
+    },
+    {
+      "lane": "precision",
+      "count": 6,
+      "levels": {
+        "basic": 2,
+        "intermediate": 2,
+        "expert": 2
+      },
+      "files": [
+        "research/expansion/precision.json",
+        "research/expansion/precision.md"
+      ],
+      "ids": [
+        "precision.bjt_mirror_base_current",
+        "precision.instrumentation_internal_headroom",
+        "precision.transimpedance_butterworth",
+        "precision.howland_mismatch_load",
+        "precision.brokaw_first_order_trim",
+        "precision.log114_current_ratio"
+      ],
+      "deliverables": "Six sourced circuit models, complete independently derived examples, physical/domain limits, tester cases and exact-key topology diagrams. Bus claims and handoff appended.",
+      "novelty": "Adds current-mirror base loading, instrumentation internal clipping, capacitive TIA damping, Howland signed output conductance, Brokaw temperature cancellation and logarithmic current compression. No baseline-stage/noise/transducer duplicates; Opto confirmed boundary.",
+      "checks_not_run": "No builds, tests, lint, formatters, engine/UI/hardware runs or commits. Parent must execute examples and boundary cases.",
+      "risks": "No unresolved source or overlap blocker. Actual compensation, matching, leakage, reference startup and temperature curvature require hardware-specific validation."
+    },
+    {
+      "lane": "logic",
+      "count": 6,
+      "levels": {
+        "basic": 2,
+        "intermediate": 2,
+        "expert": 2
+      },
+      "files": [
+        "research/expansion/logic.json",
+        "research/expansion/logic.md"
+      ],
+      "ids": [
+        "logic.guaranteed_noise_margins",
+        "logic.dc_current_fanout",
+        "logic.cmos_package_power",
+        "logic.synchronizer_metastability",
+        "logic.three_stage_logical_effort",
+        "logic.fifo_envelope_depth"
+      ],
+      "deliverables": "Complete sourced definitions, independent full-output examples, physical limits, boundary/error cases and six exact-key diagram specifications. Claims and handoff appended to COMMUNICATION.md.",
+      "novelty": "Adds voltage recognition, current loading, characterized CMOS package power, metastability statistics, gate-size optimization and hardware FIFO storage sizing. Excludes baseline interface timing and neighboring jitter/spectrum models.",
+      "checks_skipped": "No builds, tests, lint, formatters, backend/UI execution or commits. Parent should run complete examples, boundary/domain scenarios and diagram inspection.",
+      "risks": "Requires part-specific guarantees/Cpd, characterized metastability constants and time origin, realistic gate-sizing limits, and valid FIFO arrival/service envelopes. No unresolved cross-lane collision identified."
+    },
+    {
+      "lane": "motors",
+      "count": 6,
+      "levels": {
+        "basic": 1,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "files": [
+        "research/expansion/motors.json",
+        "research/expansion/motors.md"
+      ],
+      "ids": [
+        "motors.pm_dc_load_equilibrium",
+        "motors.stepper_static_microstep",
+        "motors.geared_axis_acceleration",
+        "motors.resistive_dynamic_braking",
+        "motors.salient_pmsm_dq_operating_point",
+        "motors.induction_slip_power"
+      ],
+      "deliverable": "Six sourced coupled models, complete independent output examples, domain/limit scenarios, exact-key diagrams and bus handoff.",
+      "novelty": "Adds back-EMF equilibrium, spatial stepper stiffness, geared acceleration, generator braking, salient dq coupling and induction slip energy partition. No baseline or neighboring-lane duplication identified.",
+      "checks_not_run": "No builds, tests, lint, formatters, backend/UI/hardware runs or commits. Independent arithmetic only.",
+      "risks": "Validate motor ratings/calibration, stepper current normalization, braking time-scale separation, dq peak conventions and stator-referred induction inputs. No unresolved source or collision blocker."
+    },
+    {
+      "lane": "passives",
+      "count": 6,
+      "ids": [
+        "passives.mlcc_logarithmic_aging",
+        "passives.dielectric_absorption_recovery",
+        "passives.mlcc_bias_charge_energy",
+        "passives.resistor_excess_noise",
+        "passives.negative_vcr_divider",
+        "passives.nonideal_r2r_ladder"
+      ],
+      "files": [
+        "research/expansion/passives.json",
+        "research/expansion/passives.md"
+      ],
+      "levels": {
+        "basic": 1,
+        "intermediate": 2,
+        "expert": 3
+      },
+      "delivered": "Six sourced models, complete independent numerical examples, domain/boundary scenarios, mandatory exact-key diagrams, and COMMUNICATION.md claim/handoff entries.",
+      "novelty": "Adds material aging, hidden polarization history, nonlinear differential capacitance, bias-driven flicker noise, implicit VCR equilibrium, and component-level nonideal ladder weights. Explicit comparisons distinguish existing RC, TCR, noise, divider and ideal-DAC models.",
+      "checks_skipped": "No builds, tests, lint, formatters, backend/UI runs, production edits or commits. Parent should execute complete examples, boundary cases and diagram inspection.",
+      "risks": "Requires calibrated component fits; single-branch absorption, reversible linear C(V), 1/f noise band, negative-VCR law and constant switch resistance remain explicit limits. No unresolved source or cross-lane blocker."
+    },
+    {
+      "lane": "cores",
+      "count": 6,
+      "ids": [
+        "cores.single_layer_air_solenoid",
+        "cores.square_planar_spiral",
+        "cores.bobbin_layer_fit",
+        "cores.sinusoidal_steinmetz_loss",
+        "cores.lamination_eddy_loss",
+        "cores.thin_foil_winding_loss"
+      ],
+      "files": [
+        "research/expansion/cores.json",
+        "research/expansion/cores.md"
+      ],
+      "levels": {
+        "basic": 2,
+        "intermediate": 2,
+        "expert": 2
+      },
+      "handoff": "COMMUNICATION.md:700–705",
+      "novelty": "Finite cylindrical and planar current-sheet geometries, discrete insulated winding construction, calibrated total core loss, classical lamination eddy heat, and series-foil proximity loss. No baseline inverse or neighboring-lane collision identified.",
+      "numerics": "All outputs have independent numeric examples. Thin-foil DC limit and representable dimensional excess-loss underflow case documented; existing expression primitives suffice.",
+      "not_checked": "No production edits, builds, tests, lint, formatters, engine/UI runs or commits.",
+      "risks": "Wheeler original scan challenge-blocked; university equation and separately corroborated inch units were read. Material calibration, physical approximation limits and thermal/insulation ratings remain application-specific."
+    },
+    {
+      "lane": "measurement",
+      "count": 6,
+      "levels": {
+        "basic": 1,
+        "intermediate": 3,
+        "expert": 2
+      },
+      "ids": [
+        "measurement.dmm_accuracy_bound",
+        "measurement.delta_resistance",
+        "measurement.compensated_probe_loading",
+        "measurement.rectangular_aperture_response",
+        "measurement.sampling_jitter_snr",
+        "measurement.correlated_voltage_ratio"
+      ],
+      "files": [
+        "research/expansion/measurement.json",
+        "research/expansion/measurement.md"
+      ],
+      "bus_entry": "COMMUNICATION.md:754",
+      "novelty": "Six distinct measurement processes; baseline exclusions and neighboring claims checked. No overlap found. Complete sourced examples, limits, tester scenarios and exact-key diagrams supplied.",
+      "prerequisite": "Main-approved sinc(x), with sinc(0)=1; Main owns engine implementation.",
+      "checks": "Independent numeric derivations only. No builds, tests, lint, formatters, engine runs or native inspection.",
+      "risks": "Probe parasitics, thermal-drift curvature, first-order jitter/ratio approximations and uncertainty coverage remain explicit physical limits."
+    }
+  ]
+}

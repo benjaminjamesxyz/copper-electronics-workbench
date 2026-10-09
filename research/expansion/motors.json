@@ -1,0 +1,266 @@
+[
+  {
+    "id": "motors.pm_dc_load_equilibrium",
+    "title": "PM DC motor loaded torque-speed equilibrium",
+    "category": "Electromechanical drives",
+    "level": "basic",
+    "description": "Find the coupled electrical and mechanical operating point of a permanent-magnet DC motor with constant shaft load and viscous drag.",
+    "formula": "V=RI+K omega; K I=Tload+b omega; omega=(K V-R Tload)/(K^2+R b)",
+    "assumptions": [
+      "Steady forward motoring or stall; constant opposing load torque and linear viscous drag. No static-friction threshold is modeled.",
+      "motor_constant is both torque constant in N m/A and back-EMF constant in V s/rad, numerically equal in coherent SI units.",
+      "Permanent flux, fixed winding temperature, ideal brushes, no magnetic saturation, iron loss or commutation ripple. Check motor continuous/stall current and mechanical ratings separately."
+    ],
+    "references": [
+      {"title": "Auburn University, Modeling Electrical-Mechanical Systems (DC Motors), slides 12-16", "url": "https://eng.auburn.edu/~dmbevly/mech3140/Modeling_DC_Motors.pdf"},
+      {"title": "University of Ottawa, ELG4139 DC Drives, torque equation and steady torque-speed characteristics", "url": "https://www.site.uottawa.ca/~rhabash/ELG4139DCDrives.pdf"}
+    ],
+    "inputs": [
+      {"key": "voltage", "label": "Applied armature voltage", "unit": "V", "default": 24, "min": 0},
+      {"key": "armature_resistance", "label": "Armature resistance at operating temperature", "unit": "ohm", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "motor_constant", "label": "SI torque and back-EMF constant", "unit": "N m/A", "default": 0.1, "min": 0, "exclusive_min": true},
+      {"key": "viscous_drag", "label": "Viscous drag coefficient", "unit": "N m s/rad", "default": 0.001, "min": 0},
+      {"key": "load_torque", "label": "Opposing shaft load torque", "unit": "N m", "default": 0.2, "min": 0}
+    ],
+    "outputs": [
+      {"key": "speed", "label": "Steady mechanical angular speed", "unit": "rad/s", "expression": "(motor_constant*voltage-armature_resistance*load_torque)/(motor_constant^2+armature_resistance*viscous_drag)"},
+      {"key": "current", "label": "Armature current", "unit": "A", "expression": "(load_torque+viscous_drag*speed)/motor_constant"},
+      {"key": "back_emf", "label": "Back EMF", "unit": "V", "expression": "motor_constant*speed"},
+      {"key": "shaft_power", "label": "Power delivered to shaft load", "unit": "W", "expression": "load_torque*speed"},
+      {"key": "copper_loss", "label": "Armature copper loss", "unit": "W", "expression": "armature_resistance*current^2"},
+      {"key": "friction_loss", "label": "Viscous mechanical loss", "unit": "W", "expression": "viscous_drag*speed^2"}
+    ],
+    "constraints": [
+      {"left": "motor_constant*voltage", "op": ">=", "right": "armature_resistance*load_torque", "message": "Load torque must not exceed the applied-voltage stall torque in this forward-motoring model"}
+    ],
+    "example": {
+      "inputs": {"voltage": 24, "armature_resistance": 2, "motor_constant": 0.1, "viscous_drag": 0.001, "load_torque": 0.2},
+      "expected": {"speed": 166.66666666666667, "current": 3.6666666666666667, "back_emf": 16.666666666666668, "shaft_power": 33.333333333333336, "copper_loss": 26.88888888888889, "friction_loss": 27.77777777777778},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "motors.stepper_static_microstep",
+    "title": "Stepper microstep torque and static load deflection",
+    "category": "Electromechanical drives",
+    "level": "intermediate",
+    "description": "Distinguish commanded microstep resolution from static positioning accuracy using the sinusoidal torque-angle law of a two-phase stepper.",
+    "formula": "alpha=2 pi/S; delta_micro=alpha/m; Tinc=Th sin(pi/(2m)); delta_load=(4/S) asin(Tload/Th); stiffness=(S/4) sqrt((Th-Tload)(Th+Tload))",
+    "assumptions": [
+      "Ideal two-phase sinusoidal torque-angle law with constant current-vector magnitude; four full steps per electrical cycle.",
+      "holding_torque is the peak torque at the same current-vector magnitude used during microstepping, not a mismatched two-phase-current nameplate value.",
+      "Static stable branch only, with load strictly below holding torque. Ignores detent torque, friction, harmonics, current quantization, elastic compliance and resonance.",
+      "Incremental torque is the torque immediately after one commanded microstep from an initially aligned unloaded rotor held fixed. It is not the torque change of an already loaded rotor and does not guarantee motion."
+    ],
+    "references": [
+      {"title": "FAULHABER Application Note 015, Microstepping, equations 1-2 and Accuracy vs. resolution", "url": "https://www.faulhaber.com/fileadmin/Import/Media/AN015_EN.pdf"}
+    ],
+    "inputs": [
+      {"key": "full_steps_per_turn", "label": "Full steps per mechanical revolution", "unit": "steps/rev", "default": 200, "min": 4},
+      {"key": "microsteps_per_step", "label": "Microsteps per full step", "unit": "1", "default": 16, "min": 1},
+      {"key": "holding_torque", "label": "Holding torque at operating current vector", "unit": "N m", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "load_torque", "label": "Static opposing load torque", "unit": "N m", "default": 0.1, "min": 0}
+    ],
+    "outputs": [
+      {"key": "microstep_angle", "label": "Commanded mechanical microstep angle", "unit": "rad", "expression": "2*pi/full_steps_per_turn/microsteps_per_step"},
+      {"key": "incremental_torque", "label": "One-microstep torque from unloaded alignment", "unit": "N m", "expression": "holding_torque*sin(pi/(2*microsteps_per_step))"},
+      {"key": "load_lag", "label": "Static mechanical lag behind commanded field", "unit": "rad", "expression": "4/full_steps_per_turn*asin(load_torque/holding_torque)"},
+      {"key": "angular_stiffness", "label": "Local restoring stiffness at loaded equilibrium", "unit": "N m/rad", "expression": "full_steps_per_turn/4*sqrt(holding_torque-load_torque)*sqrt(holding_torque+load_torque)"}
+    ],
+    "constraints": [
+      {"left": "full_steps_per_turn/4", "op": "==", "right": "floor(full_steps_per_turn/4)", "message": "The ideal two-phase model requires an integer number of electrical cycles, or a multiple of four full steps per revolution"},
+      {"left": "microsteps_per_step", "op": "==", "right": "floor(microsteps_per_step)", "message": "Microsteps per full step must be an integer"},
+      {"left": "load_torque", "op": "<", "right": "holding_torque", "message": "Static load must remain strictly below holding torque for positive restoring stiffness"}
+    ],
+    "example": {
+      "inputs": {"full_steps_per_turn": 200, "microsteps_per_step": 16, "holding_torque": 0.5, "load_torque": 0.1},
+      "expected": {"microstep_angle": 0.001963495408493621, "incremental_torque": 0.0490085701647803, "load_lag": 0.004027158415806616, "angular_stiffness": 24.49489742783178},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "motors.geared_axis_acceleration",
+    "title": "Geared-axis acceleration current and voltage requirement",
+    "category": "Electromechanical drives",
+    "level": "intermediate",
+    "description": "Size a PM DC motor drive for a positive constant-acceleration load ramp through a fixed-ratio lossy gearbox.",
+    "formula": "n=omega_motor/omega_load; alpha_load=(omega_final-omega_initial)/t; Jref=Jload/n^2; Tmotor=Jmotor*n*alpha_load+(Jload*alpha_load+Tload)/(eta*n); I=Tmotor/K; Vfinal=K*n*omega_final+R*I",
+    "assumptions": [
+      "Positive-direction motoring with nondecreasing load speed, constant acceleration, constant opposing load torque, and constant forward gearbox efficiency.",
+      "motor_inertia includes rotor and all input-side gearbox inertia. load_inertia includes all output-side rotating inertia. Gear compliance, backlash and shaft resonance are neglected.",
+      "Reflected inertia is a kinetic-energy equivalence, Jload/n^2; efficiency changes demanded torque, not that physical inertia.",
+      "PM DC torque and back-EMF constants are numerically equal in SI. Current regulation is ideal during the ramp; required voltage excludes L di/dt at the acceleration discontinuities, brush drop and PWM overhead.",
+      "Check peak current, speed, gear tooth strength, thermal duty and actual transient voltage headroom separately. This is not a deceleration or back-driving efficiency model."
+    ],
+    "references": [
+      {"title": "Oriental Motor, How to Address Increased Loads in Both Size and Weight, page 1 inertia reflection and output torque", "url": "https://www.orientalmotor.com/stepper-motors/technology/pdf/Increase-Load-Weight.pdf"},
+      {"title": "Oriental Motor, Motor Sizing Calculations, Torque and Acceleration Torque", "url": "https://www.orientalmotor.com/technology/motor-sizing-calculations.html"},
+      {"title": "Auburn University, Modeling Electrical-Mechanical Systems (DC Motors), slides 12-16", "url": "https://eng.auburn.edu/~dmbevly/mech3140/Modeling_DC_Motors.pdf"}
+    ],
+    "inputs": [
+      {"key": "motor_inertia", "label": "Motor and input-side inertia", "unit": "kg m^2", "default": 0.0002, "min": 0},
+      {"key": "load_inertia", "label": "Load and output-side inertia", "unit": "kg m^2", "default": 0.02, "min": 0},
+      {"key": "gear_ratio", "label": "Motor-speed to load-speed ratio", "unit": "1", "default": 10, "min": 0, "exclusive_min": true},
+      {"key": "gear_efficiency", "label": "Forward gearbox efficiency", "unit": "1", "default": 0.9, "min": 0, "exclusive_min": true, "max": 1},
+      {"key": "load_torque", "label": "Opposing output-shaft load torque", "unit": "N m", "default": 0.4, "min": 0},
+      {"key": "initial_speed", "label": "Initial load angular speed", "unit": "rad/s", "default": 0, "min": 0},
+      {"key": "final_speed", "label": "Final load angular speed", "unit": "rad/s", "default": 20, "min": 0},
+      {"key": "ramp_time", "label": "Constant-acceleration ramp duration", "unit": "s", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "motor_constant", "label": "SI torque and back-EMF constant", "unit": "N m/A", "default": 0.08, "min": 0, "exclusive_min": true},
+      {"key": "armature_resistance", "label": "Armature resistance at operating temperature", "unit": "ohm", "default": 1, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "reflected_inertia", "label": "Load inertia referred to motor shaft", "unit": "kg m^2", "expression": "load_inertia/gear_ratio/gear_ratio"},
+      {"key": "motor_acceleration", "label": "Motor angular acceleration", "unit": "rad/s^2", "expression": "gear_ratio*(final_speed-initial_speed)/ramp_time"},
+      {"key": "motor_torque", "label": "Required electromagnetic motor torque", "unit": "N m", "expression": "motor_inertia*motor_acceleration+(load_inertia*(final_speed-initial_speed)/ramp_time+load_torque)/gear_efficiency/gear_ratio"},
+      {"key": "armature_current", "label": "Required armature current during ramp", "unit": "A", "expression": "motor_torque/motor_constant"},
+      {"key": "motor_final_speed", "label": "Motor speed at ramp end", "unit": "rad/s", "expression": "gear_ratio*final_speed"},
+      {"key": "required_final_voltage", "label": "Required armature voltage just before ramp end", "unit": "V", "expression": "motor_constant*motor_final_speed+armature_resistance*armature_current"}
+    ],
+    "constraints": [
+      {"left": "motor_inertia+load_inertia", "op": ">", "right": "0", "message": "At least one shaft inertia must be positive"},
+      {"left": "final_speed", "op": ">=", "right": "initial_speed", "message": "Final load speed must not be below initial speed in this motoring ramp model"}
+    ],
+    "example": {
+      "inputs": {"motor_inertia": 0.0002, "load_inertia": 0.02, "gear_ratio": 10, "gear_efficiency": 0.9, "load_torque": 0.4, "initial_speed": 0, "final_speed": 20, "ramp_time": 0.5, "motor_constant": 0.08, "armature_resistance": 1},
+      "expected": {"reflected_inertia": 0.0002, "motor_acceleration": 400, "motor_torque": 0.21333333333333335, "armature_current": 2.6666666666666665, "motor_final_speed": 200, "required_final_voltage": 18.666666666666668},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "motors.resistive_dynamic_braking",
+    "title": "PM motor resistive dynamic braking transient",
+    "category": "Electromechanical drives",
+    "level": "intermediate",
+    "description": "Predict passive electrical braking of rotating inertia, including speed, braking torque, travel and the energy split between winding and external resistor.",
+    "formula": "Rsum=Ra+Rb; i=K omega/Rsum; J domega/dt=-K i; tau=J Rsum/K^2; omega=omega0 exp(-t/tau); Eheat=J omega0^2 [1-exp(-2t/tau)]/2",
+    "assumptions": [
+      "Supply disconnected; armature and brake resistor form a closed series generator circuit. Positive braking_current leaves the generator positive terminal, so electromagnetic_torque is negative for positive speed.",
+      "Constant permanent flux and resistance, rigid total shaft inertia, negligible mechanical drag and no external driving/load torque.",
+      "Reduced-order quasistatic electrical model: L/(Ra+Rb) must be much shorter than J(Ra+Rb)/K^2. The initial electrical switching boundary layer is excluded; t=0 is the reduced-model initial state.",
+      "No switching-clamp, resistor pulse-rating, brush-drop, thermal or demagnetization model. A passive brake loses holding torque as speed vanishes and never reaches exactly zero speed in finite time."
+    ],
+    "references": [
+      {"title": "Auburn University, Modeling Electrical-Mechanical Systems (DC Motors), slides 12-16 coupled equations", "url": "https://eng.auburn.edu/~dmbevly/mech3140/Modeling_DC_Motors.pdf"},
+      {"title": "University of Illinois, Krein power electronics text, section 19.7.2 dynamic versus regenerative braking", "url": "https://krein-textbook.ece.illinois.edu/ch19doc.html"}
+    ],
+    "inputs": [
+      {"key": "inertia", "label": "Total rotating inertia", "unit": "kg m^2", "default": 0.002, "min": 0, "exclusive_min": true},
+      {"key": "armature_resistance", "label": "Armature resistance", "unit": "ohm", "default": 1, "min": 0, "exclusive_min": true},
+      {"key": "brake_resistance", "label": "External brake resistance", "unit": "ohm", "default": 3, "min": 0},
+      {"key": "motor_constant", "label": "SI torque and back-EMF constant", "unit": "N m/A", "default": 0.1, "min": 0, "exclusive_min": true},
+      {"key": "initial_speed", "label": "Initial mechanical angular speed", "unit": "rad/s", "default": 100, "min": 0},
+      {"key": "time", "label": "Elapsed braking time", "unit": "s", "default": 0.8, "min": 0}
+    ],
+    "outputs": [
+      {"key": "mechanical_tau", "label": "Electromechanical braking time constant", "unit": "s", "expression": "inertia*(armature_resistance+brake_resistance)/motor_constant/motor_constant"},
+      {"key": "speed", "label": "Mechanical speed at elapsed time", "unit": "rad/s", "expression": "initial_speed*exp(-time/mechanical_tau)"},
+      {"key": "braking_current", "label": "Generator current into braking circuit", "unit": "A", "expression": "motor_constant*speed/(armature_resistance+brake_resistance)"},
+      {"key": "electromagnetic_torque", "label": "Signed electromagnetic braking torque", "unit": "N m", "expression": "-motor_constant*braking_current"},
+      {"key": "angular_travel", "label": "Angular travel during braking interval", "unit": "rad", "expression": "initial_speed*time*exprel(-time/mechanical_tau)"},
+      {"key": "brake_energy", "label": "Energy deposited in external brake resistor", "unit": "J", "expression": "inertia*initial_speed^2/2*(brake_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"},
+      {"key": "winding_energy", "label": "Energy deposited in winding resistance", "unit": "J", "expression": "inertia*initial_speed^2/2*(armature_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"inertia": 0.002, "armature_resistance": 1, "brake_resistance": 3, "motor_constant": 0.1, "initial_speed": 100, "time": 0.8},
+      "expected": {"mechanical_tau": 0.8, "speed": 36.787944117144235, "braking_current": 0.9196986029286058, "electromagnetic_torque": -0.09196986029286059, "angular_travel": 50.56964470628461, "brake_energy": 6.484985375725405, "winding_energy": 2.161661791908468},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "motors.salient_pmsm_dq_operating_point",
+    "title": "Salient PMSM steady dq torque and voltage",
+    "category": "Electromechanical drives",
+    "level": "expert",
+    "description": "Find the torque, phase current and required phase voltage of a sinusoidal permanent-magnet machine, including saliency and cross-axis back EMF.",
+    "formula": "we=p wm; vd=Rs id-we Lq iq; vq=Rs iq+we(Ld id+psi); Te=1.5 p [psi+(Ld-Lq)id]iq; Pconv=Te wm; Pcu=1.5 Rs(id^2+iq^2)",
+    "assumptions": [
+      "Balanced sinusoidal three-phase windings with zero zero-sequence current; amplitude-invariant 2/3 Park transform aligned to rotor permanent-magnet flux.",
+      "d_current and q_current are peak-equivalent dq quantities, not phase RMS values. Inductances and resistance are per-phase quantities in the same convention; magnet_flux is peak permanent-magnet flux linkage.",
+      "Steady dq currents and speed; neglect current derivatives, saturation, cross saturation, iron loss, mechanical drag, harmonics and inverter switching/dead time.",
+      "Signed speed and currents are allowed, including generating operation. Negative d current can weaken flux, but magnet demagnetization/current/speed limits require manufacturer data; this calculator does not certify feasibility.",
+      "phase_voltage_peak is winding phase-to-neutral fundamental peak, not line-to-line RMS or DC-link voltage. No inverter-modulation assumption is made."
+    ],
+    "references": [
+      {"title": "MathWorks PMSM (DQ0), Equations and original non-orthogonal Park transform", "url": "https://www.mathworks.com/help/simscape-electrical/ref/pmsmdq0.html"}
+    ],
+    "inputs": [
+      {"key": "pole_pairs", "label": "Rotor pole pairs", "unit": "1", "default": 4, "min": 1},
+      {"key": "mechanical_speed", "label": "Signed mechanical angular speed", "unit": "rad/s", "default": 100},
+      {"key": "stator_resistance", "label": "Per-phase stator resistance", "unit": "ohm", "default": 0.2, "min": 0},
+      {"key": "d_inductance", "label": "Direct-axis inductance", "unit": "H", "default": 0.0005, "min": 0, "exclusive_min": true},
+      {"key": "q_inductance", "label": "Quadrature-axis inductance", "unit": "H", "default": 0.001, "min": 0, "exclusive_min": true},
+      {"key": "magnet_flux", "label": "Peak permanent-magnet flux linkage", "unit": "Wb", "default": 0.05, "min": 0, "exclusive_min": true},
+      {"key": "d_current", "label": "Signed direct-axis current", "unit": "A", "default": -5},
+      {"key": "q_current", "label": "Signed quadrature-axis current", "unit": "A", "default": 10}
+    ],
+    "outputs": [
+      {"key": "electrical_speed", "label": "Signed electrical angular speed", "unit": "rad/s", "expression": "pole_pairs*mechanical_speed"},
+      {"key": "d_voltage", "label": "Required direct-axis voltage", "unit": "V", "expression": "stator_resistance*d_current-electrical_speed*q_inductance*q_current"},
+      {"key": "q_voltage", "label": "Required quadrature-axis voltage", "unit": "V", "expression": "stator_resistance*q_current+electrical_speed*(d_inductance*d_current+magnet_flux)"},
+      {"key": "phase_voltage_peak", "label": "Required phase-to-neutral fundamental peak voltage", "unit": "V", "expression": "hypot(d_voltage,q_voltage)"},
+      {"key": "phase_current_peak", "label": "Phase current peak", "unit": "A", "expression": "hypot(d_current,q_current)"},
+      {"key": "electromagnetic_torque", "label": "Signed electromagnetic torque", "unit": "N m", "expression": "1.5*pole_pairs*(magnet_flux+(d_inductance-q_inductance)*d_current)*q_current"},
+      {"key": "converted_power", "label": "Signed electromechanical conversion power", "unit": "W", "expression": "electromagnetic_torque*mechanical_speed"},
+      {"key": "stator_copper_loss", "label": "Three-phase stator copper loss", "unit": "W", "expression": "1.5*stator_resistance*phase_current_peak^2"}
+    ],
+    "constraints": [
+      {"left": "pole_pairs", "op": "==", "right": "floor(pole_pairs)", "message": "Pole pairs must be an integer"}
+    ],
+    "example": {
+      "inputs": {"pole_pairs": 4, "mechanical_speed": 100, "stator_resistance": 0.2, "d_inductance": 0.0005, "q_inductance": 0.001, "magnet_flux": 0.05, "d_current": -5, "q_current": 10},
+      "expected": {"electrical_speed": 400, "d_voltage": -5, "q_voltage": 21, "phase_voltage_peak": 21.587033144922902, "phase_current_peak": 11.180339887498949, "electromagnetic_torque": 3.15, "converted_power": 315, "stator_copper_loss": 37.5},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "motors.induction_slip_power",
+    "title": "Induction motor slip torque and air-gap power split",
+    "category": "Electromechanical drives",
+    "level": "expert",
+    "description": "Use a stator-referred per-phase Thevenin equivalent to predict induction-motor rotor current, torque, slip heating and breakdown capability.",
+    "formula": "ws=2 pi f/p; D=hypot(R2+s Rth,s(Xth+X2)); I2=Vth s/D; Pag=3(Vth/D)^2 R2 s; Te=Pag/ws; Pcu2=s Pag; Pconv=(1-s)Pag; smax=R2/hypot(Rth,Xth+X2)",
+    "assumptions": [
+      "Balanced sinusoidal three-phase steady state, positive motoring slip from zero through one. Supply frequency is electrical; pole_pairs converts synchronous electrical speed to mechanical speed.",
+      "thevenin_voltage is per-phase RMS voltage seen from the rotor branch after reducing the stator and magnetizing network. All resistances/reactances are stator-referred at the entered frequency.",
+      "rotor_current is the stator-referred rotor-branch RMS current, not stator line current. Rotor skin effect, saturation, core loss and parameter heating are ignored.",
+      "converted_power is gross developed mechanical power before bearing, windage and other shaft losses. Rotor copper loss is only the slip-dependent rotor component, not total machine loss.",
+      "breakdown_slip and breakdown_torque describe the unconstrained positive-slip maximum of this equivalent circuit. If breakdown_slip exceeds one, that maximum lies outside the entered motoring interval; do not treat it as reachable starting torque.",
+      "The slip-multiplied algebra includes the exact synchronous no-torque limit without dividing by slip. This is not a startup transient or a speed-controller stability calculation."
+    ],
+    "references": [
+      {"title": "MIT 6.685 Electric Machines, Kirtley Class Notes 10, sections 2-2.2 equivalent circuit and peak torque", "url": "https://ocw.mit.edu/courses/6-685-electric-machines-fall-2013/d834469bd6c3f56c6bec451d76176156_MIT6_685F13_chapter10.pdf"}
+    ],
+    "inputs": [
+      {"key": "frequency", "label": "Electrical supply frequency", "unit": "Hz", "default": 50, "min": 0, "exclusive_min": true},
+      {"key": "pole_pairs", "label": "Rotor pole pairs", "unit": "1", "default": 2, "min": 1},
+      {"key": "slip", "label": "Motoring slip", "unit": "1", "default": 0.05, "min": 0, "max": 1},
+      {"key": "thevenin_voltage", "label": "Per-phase Thevenin RMS voltage", "unit": "V", "default": 220, "min": 0},
+      {"key": "thevenin_resistance", "label": "Stator Thevenin resistance", "unit": "ohm", "default": 0.5, "min": 0},
+      {"key": "thevenin_reactance", "label": "Stator Thevenin reactance at supply frequency", "unit": "ohm", "default": 1, "min": 0},
+      {"key": "rotor_resistance", "label": "Stator-referred rotor resistance", "unit": "ohm", "default": 0.4, "min": 0, "exclusive_min": true},
+      {"key": "rotor_reactance", "label": "Stator-referred rotor leakage reactance", "unit": "ohm", "default": 1, "min": 0}
+    ],
+    "outputs": [
+      {"key": "synchronous_speed", "label": "Synchronous mechanical angular speed", "unit": "rad/s", "expression": "2*pi*frequency/pole_pairs"},
+      {"key": "rotor_speed", "label": "Rotor mechanical angular speed", "unit": "rad/s", "expression": "(1-slip)*synchronous_speed"},
+      {"key": "rotor_current", "label": "Stator-referred rotor-branch RMS current", "unit": "A", "expression": "thevenin_voltage*(slip/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance)))"},
+      {"key": "air_gap_power", "label": "Three-phase air-gap power", "unit": "W", "expression": "3*(thevenin_voltage/hypot(rotor_resistance+slip*thevenin_resistance,slip*(thevenin_reactance+rotor_reactance)))^2*rotor_resistance*slip"},
+      {"key": "electromagnetic_torque", "label": "Developed electromagnetic torque", "unit": "N m", "expression": "air_gap_power/synchronous_speed"},
+      {"key": "rotor_copper_loss", "label": "Three-phase rotor copper loss", "unit": "W", "expression": "slip*air_gap_power"},
+      {"key": "converted_power", "label": "Gross converted mechanical power", "unit": "W", "expression": "(1-slip)*air_gap_power"},
+      {"key": "breakdown_slip", "label": "Unconstrained peak-torque slip", "unit": "1", "expression": "rotor_resistance/hypot(thevenin_resistance,thevenin_reactance+rotor_reactance)"},
+      {"key": "breakdown_torque", "label": "Unconstrained peak electromagnetic torque", "unit": "N m", "expression": "3*thevenin_voltage^2/(2*synchronous_speed*(thevenin_resistance+hypot(thevenin_resistance,thevenin_reactance+rotor_reactance)))"}
+    ],
+    "constraints": [
+      {"left": "pole_pairs", "op": "==", "right": "floor(pole_pairs)", "message": "Pole pairs must be an integer"},
+      {"left": "thevenin_reactance+rotor_reactance", "op": ">", "right": "0", "message": "The induction-machine equivalent circuit requires positive total leakage reactance"}
+    ],
+    "example": {
+      "inputs": {"frequency": 50, "pole_pairs": 2, "slip": 0.05, "thevenin_voltage": 220, "thevenin_resistance": 0.5, "thevenin_reactance": 1, "rotor_resistance": 0.4, "rotor_reactance": 1},
+      "expected": {"synchronous_speed": 157.07963267948966, "rotor_speed": 149.22565104551518, "rotor_current": 25.1943267098102, "air_gap_power": 15234.098360655737, "electromagnetic_torque": 96.98328230585997, "rotor_copper_loss": 761.7049180327869, "converted_power": 14472.39344262295, "breakdown_slip": 0.19402850002906638, "breakdown_torque": 180.43194441580198},
+      "relative_tolerance": 0.000001
+    }
+  }
+]

@@ -1,0 +1,213 @@
+[
+  {
+    "id": "logic.guaranteed_noise_margins",
+    "title": "Guaranteed logic-level noise margins with ground offset",
+    "category": "Digital logic and interfaces",
+    "level": "basic",
+    "description": "Check high and low recognition margins between a driver and receiver using guaranteed voltage limits, a signed ground offset and adverse line-noise bounds. Negative results identify incompatible corners.",
+    "formula": "DeltaG = GND_receiver - GND_driver; NMH = VOH_min - DeltaG - VIH_min - noise_high; NML = VIL_max - VOL_max + DeltaG - noise_low; NM = min(NMH,NML)",
+    "assumptions": [
+      "Single-ended positive logic; all driver levels reference driver ground and receiver thresholds reference receiver ground. Positive ground_offset raises receiver ground.",
+      "Use worst-case voltage guarantees at the actual supply, temperature and loading. noise_high is an adverse downward voltage disturbance; noise_low is an adverse upward disturbance, both entered as positive magnitudes.",
+      "A nonnegative result checks logic recognition only. Separately check input absolute/recommended voltage limits, power-off tolerance, current fanout, edge rates, ringing and timing. Zero margin leaves no extra noise allowance."
+    ],
+    "references": [
+      {"title": "Texas Instruments SZZA036C, section 5 and Figure 50: logic compatibility", "url": "https://www.ti.com/lit/an/szza036c/szza036c.pdf"},
+      {"title": "Texas Instruments SCAA029, Figure 23: DC noise margin", "url": "https://www.ti.com/lit/pdf/scaa029"}
+    ],
+    "inputs": [
+      {"key": "output_high_min", "label": "Guaranteed driver high minimum", "unit": "V", "default": 2.4, "min": 0},
+      {"key": "output_low_max", "label": "Guaranteed driver low maximum", "unit": "V", "default": 0.4, "min": 0},
+      {"key": "input_high_min", "label": "Receiver guaranteed high threshold", "unit": "V", "default": 2.0, "min": 0},
+      {"key": "input_low_max", "label": "Receiver guaranteed low threshold", "unit": "V", "default": 0.8, "min": 0},
+      {"key": "ground_offset", "label": "Receiver ground minus driver ground", "unit": "V", "default": 0.1},
+      {"key": "high_noise", "label": "Adverse high-state noise magnitude", "unit": "V", "default": 0.1, "min": 0},
+      {"key": "low_noise", "label": "Adverse low-state noise magnitude", "unit": "V", "default": 0.1, "min": 0}
+    ],
+    "outputs": [
+      {"key": "high_margin", "label": "Remaining high-state noise margin", "unit": "V", "expression": "output_high_min-ground_offset-input_high_min-high_noise"},
+      {"key": "low_margin", "label": "Remaining low-state noise margin", "unit": "V", "expression": "input_low_max-output_low_max+ground_offset-low_noise"},
+      {"key": "minimum_margin", "label": "Worst remaining recognition margin", "unit": "V", "expression": "min(high_margin,low_margin)"}
+    ],
+    "constraints": [
+      {"left": "output_high_min", "op": ">", "right": "output_low_max", "message": "Driver high guarantee must exceed its low guarantee"},
+      {"left": "input_high_min", "op": ">", "right": "input_low_max", "message": "Receiver high threshold must exceed its low threshold"}
+    ],
+    "example": {"inputs": {"output_high_min": 2.4, "output_low_max": 0.4, "input_high_min": 2.0, "input_low_max": 0.8, "ground_offset": 0.1, "high_noise": 0.1, "low_noise": 0.1}, "expected": {"high_margin": 0.2, "low_margin": 0.4, "minimum_margin": 0.2}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "logic.dc_current_fanout",
+    "title": "Logic output DC-current fanout",
+    "category": "Digital logic and interfaces",
+    "level": "basic",
+    "description": "Find the maximum whole number of identical receiver inputs that a logic output can drive in both states, and check current headroom for a proposed load count.",
+    "formula": "NH = floor(Isource/IIH); NL = floor(Isink/abs(IIL)); Nmax = min(NH,NL); headroom_H = Isource-N*IIH; headroom_L = Isink-N*abs(IIL)",
+    "assumptions": [
+      "Enter all currents as nonnegative magnitudes. In particular, convert negative datasheet IOH and IIL to positive magnitudes; their conventional terminal-current signs are not used in this budget.",
+      "Identical loads and worst-case input currents; driver limits must be guaranteed operating currents at the required VOH/VOL, not absolute-maximum current ratings.",
+      "This is DC fanout only. Capacitive loading, edge-rate limits, transient switching current, package current limits, voltage compatibility, bus hold and transmission-line behavior can impose a smaller practical load count.",
+      "Receiver current magnitudes must be strictly positive; an ideal zero-current receiver does not have a finite current-limited fanout. Zero driver capability and zero proposed loads are valid."
+    ],
+    "references": [
+      {"title": "Texas Instruments SZZA036C, sections 3.3, 4.6.12-4.6.14 and 5: terminal signs, input currents and loading", "url": "https://www.ti.com/lit/an/szza036c/szza036c.pdf"},
+      {"title": "Texas Instruments SCEA046B, Slow or Noisy Edges: heavily loaded output edge-rate limitation", "url": "https://www.ti.com/lit/pdf/scea046"}
+    ],
+    "inputs": [
+      {"key": "source_limit", "label": "Guaranteed high-state source-current magnitude", "unit": "A", "default": 0.004, "min": 0},
+      {"key": "sink_limit", "label": "Guaranteed low-state sink-current magnitude", "unit": "A", "default": 0.008, "min": 0},
+      {"key": "receiver_high_current", "label": "Worst-case high input-current magnitude", "unit": "A", "default": 0.00002, "min": 0, "exclusive_min": true},
+      {"key": "receiver_low_current", "label": "Worst-case low input-current magnitude", "unit": "A", "default": 0.0004, "min": 0, "exclusive_min": true},
+      {"key": "load_count", "label": "Proposed receiver count", "unit": "count", "default": 18, "min": 0}
+    ],
+    "outputs": [
+      {"key": "high_fanout", "label": "High-state integer fanout", "unit": "count", "expression": "floor(source_limit/receiver_high_current)"},
+      {"key": "low_fanout", "label": "Low-state integer fanout", "unit": "count", "expression": "floor(sink_limit/receiver_low_current)"},
+      {"key": "maximum_fanout", "label": "DC fanout valid in both states", "unit": "count", "expression": "min(high_fanout,low_fanout)"},
+      {"key": "source_headroom", "label": "High-state current headroom", "unit": "A", "expression": "source_limit-load_count*receiver_high_current"},
+      {"key": "sink_headroom", "label": "Low-state current headroom", "unit": "A", "expression": "sink_limit-load_count*receiver_low_current"}
+    ],
+    "constraints": [{"left": "load_count", "op": "==", "right": "floor(load_count)", "message": "Receiver count must be a whole number"}],
+    "example": {"inputs": {"source_limit": 0.004, "sink_limit": 0.008, "receiver_high_current": 0.00002, "receiver_low_current": 0.0004, "load_count": 18}, "expected": {"high_fanout": 200, "low_fanout": 20, "maximum_fanout": 20, "source_headroom": 0.00364, "sink_headroom": 0.0008}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "logic.cmos_package_power",
+    "title": "CMOS logic internal and output-load power budget",
+    "category": "Digital logic and interfaces",
+    "level": "intermediate",
+    "description": "Estimate a bank of identical CMOS logic sections using characterized per-section power-dissipation capacitance, separate input/output cycle rates, external loading and whole-package quiescent current.",
+    "formula": "Pstatic = V*Iq; Pinternal = N*Cpd*V^2*fi; Pload = N*CL*V^2*fo; Ptotal = Pstatic+Pinternal+Pload; Iaverage = Ptotal/V",
+    "assumptions": [
+      "Cpd is the manufacturer's characterized equivalent internal power-dissipation capacitance per active section, not the input pin capacitance. It includes internal node charging and through-current under its stated test conditions.",
+      "All active sections share the entered Cpd, external capacitance and cycle rates. Frequencies count full low-high-low cycles per second, equivalently low-to-high charging events, not both edges.",
+      "Rail-to-rail, sufficiently fast transitions; Cpd must match the supply, input slew, temperature, enabled state and switching pattern. Whole-package quiescent current is added once.",
+      "External loads are capacitive and charge fully. Excludes resistive termination power, intermediate input-level extra ICC, power-off injection, and thermal prediction. Ptotal is supply power, not a universal allocation of heat to the package."
+    ],
+    "references": [{"title": "Texas Instruments SCAA035B, equations 3-10 and Cpd testing considerations", "url": "https://www.ti.com/lit/pdf/scaa035"}],
+    "inputs": [
+      {"key": "supply_voltage", "label": "Logic supply voltage", "unit": "V", "default": 3.3, "min": 0, "exclusive_min": true},
+      {"key": "quiescent_current", "label": "Whole-package quiescent current", "unit": "A", "default": 0.00002, "min": 0},
+      {"key": "active_sections", "label": "Identical active sections", "unit": "count", "default": 8, "min": 1},
+      {"key": "power_capacitance", "label": "Internal Cpd per active section", "unit": "F", "default": 1.5e-11, "min": 0},
+      {"key": "input_cycle_rate", "label": "Input cycles per second per section", "unit": "Hz", "default": 20000000, "min": 0},
+      {"key": "load_capacitance", "label": "External capacitance per output", "unit": "F", "default": 2.5e-11, "min": 0},
+      {"key": "output_cycle_rate", "label": "Output charging cycles per second", "unit": "Hz", "default": 10000000, "min": 0}
+    ],
+    "outputs": [
+      {"key": "static_power", "label": "Package quiescent supply power", "unit": "W", "expression": "supply_voltage*quiescent_current"},
+      {"key": "internal_power", "label": "Internal switching supply power", "unit": "W", "expression": "active_sections*power_capacitance*input_cycle_rate*supply_voltage*supply_voltage"},
+      {"key": "load_power", "label": "External capacitive-load supply power", "unit": "W", "expression": "active_sections*load_capacitance*output_cycle_rate*supply_voltage*supply_voltage"},
+      {"key": "total_power", "label": "Total estimated supply power", "unit": "W", "expression": "static_power+internal_power+load_power"},
+      {"key": "average_current", "label": "Average estimated supply current", "unit": "A", "expression": "total_power/supply_voltage"}
+    ],
+    "constraints": [{"left": "active_sections", "op": "==", "right": "floor(active_sections)", "message": "Active section count must be a whole number"}],
+    "example": {"inputs": {"supply_voltage": 3.3, "quiescent_current": 0.00002, "active_sections": 8, "power_capacitance": 1.5e-11, "input_cycle_rate": 20000000, "load_capacitance": 2.5e-11, "output_cycle_rate": 10000000}, "expected": {"static_power": 0.000066, "internal_power": 0.026136, "load_power": 0.02178, "total_power": 0.047982, "average_current": 0.01454}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "logic.synchronizer_metastability",
+    "title": "Synchronizer metastability reliability budget",
+    "category": "Digital logic and interfaces",
+    "level": "expert",
+    "description": "Estimate single-chain and identical-chain system MTBF logarithmically, and compare available metastability resolution time with a required system reliability target.",
+    "formula": "MTBFchain = exp(tres/tau)/(T0*fclock*fdata); MTBFsystem = MTBFchain/N; trequired = max(0,tau*ln(MTBFtarget*N*T0*fclock*fdata)); margin = tres-trequired",
+    "assumptions": [
+      "T0 and tau are positive technology-characterized metastability fit parameters in seconds. Numerical defaults are illustrative, not specifications for any part or process.",
+      "fdata counts asynchronous transitions, not square-wave periods. The random relative phase and rare-event exponential resolution model must apply; T0*fdata must be less than one and in practice much less than one.",
+      "resolution_time is the effective available regeneration time under the same time-origin convention as the fitted T0/tau. Obtain it from characterized cells and routed timing, not merely the nominal clock period.",
+      "System estimate assumes N identical independent rare-failure chains; their failure rates add. This does not make separately synchronized bits coherent and does not guarantee pulse capture or correct CDC protocol.",
+      "MTBF outputs are log10(MTBF / 1 second), avoiding exponent overflow. No absolute lifetime or certification claim; correlated events, PVT changes and invalid fit extrapolation require a different model."
+    ],
+    "references": [{"title": "Stanford EE183, Ryan Donohue, Synchronization in Digital Logic Circuits: MTBF and synchronizer requirements, pages 1-4", "url": "https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf"}],
+    "inputs": [
+      {"key": "clock_frequency", "label": "Destination sampling clock frequency", "unit": "Hz", "default": 100000000, "min": 0, "exclusive_min": true},
+      {"key": "data_transition_rate", "label": "Asynchronous data transitions per second", "unit": "1/s", "default": 1000000, "min": 0, "exclusive_min": true},
+      {"key": "aperture_parameter", "label": "Characterized metastability T0 parameter", "unit": "s", "default": 1e-10, "min": 0, "exclusive_min": true},
+      {"key": "resolution_constant", "label": "Characterized regeneration time constant", "unit": "s", "default": 5e-11, "min": 0, "exclusive_min": true},
+      {"key": "resolution_time", "label": "Effective available resolution time", "unit": "s", "default": 2e-9, "min": 0},
+      {"key": "chain_count", "label": "Identical independent synchronizer chains", "unit": "count", "default": 100, "min": 1},
+      {"key": "target_system_mtbf", "label": "Required system mean time between failures", "unit": "s", "default": 31557600000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "log10_chain_mtbf", "label": "log10 of single-chain MTBF in seconds", "unit": "1", "expression": "(resolution_time/resolution_constant-ln(aperture_parameter)-ln(clock_frequency)-ln(data_transition_rate))/ln(10)"},
+      {"key": "log10_system_mtbf", "label": "log10 of system MTBF in seconds", "unit": "1", "expression": "log10_chain_mtbf-log10(chain_count)"},
+      {"key": "required_resolution_time", "label": "Resolution time required for target system MTBF", "unit": "s", "expression": "max(0,resolution_constant*(ln(target_system_mtbf)+ln(chain_count)+ln(aperture_parameter)+ln(clock_frequency)+ln(data_transition_rate)))"},
+      {"key": "resolution_margin", "label": "Available minus required resolution time", "unit": "s", "expression": "resolution_time-required_resolution_time"}
+    ],
+    "constraints": [
+      {"left": "chain_count", "op": "==", "right": "floor(chain_count)", "message": "Synchronizer chain count must be a whole number"},
+      {"left": "aperture_parameter", "op": "<", "right": "1/data_transition_rate", "message": "The aperture-times-transition-rate factor must be below one; rare-event characterization must also be valid"}
+    ],
+    "example": {"inputs": {"clock_frequency": 100000000, "data_transition_rate": 1000000, "aperture_parameter": 1e-10, "resolution_constant": 5e-11, "resolution_time": 2e-9, "chain_count": 100, "target_system_mtbf": 31557600000}, "expected": {"log10_chain_mtbf": 13.371779276130073, "log10_system_mtbf": 11.371779276130073, "required_resolution_time": 1.8995295421184684e-9, "resolution_margin": 1.0047045788153165e-10}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "logic.three_stage_logical_effort",
+    "title": "Three-stage CMOS logical-effort gate sizing",
+    "category": "Digital logic and interfaces",
+    "level": "expert",
+    "description": "Size the two internal input capacitances of a fixed unbranched three-gate CMOS path for minimum first-order delay, given its endpoint load and gate logical efforts.",
+    "formula": "F = g1*g2*g3*CL/C1; f = F^(1/3); C2 = C1*f/g1; C3 = CL*g3/f; D = 3*f+P; tpath = tau*D",
+    "assumptions": [
+      "Exactly three fixed-topology static CMOS gates with no side branches or significant interconnect capacitance. Logical efforts are relative to an equal-drive reference inverter and are at least one in this ordinary static-CMOS model.",
+      "Gate input capacitance scales continuously with size; parasitic path delay P is the sum of all three normalized gate parasitics and is assumed independent of size. tau is a characterized process delay unit, not an RC component value.",
+      "Equal stage effort minimizes delay in the linear logical-effort model. Actual standard-cell choices, minimum size, asymmetric pin effort, input slew, routing, rise/fall imbalance and PVT require library timing or transistor-level simulation.",
+      "The result sizes gates for an already chosen stage count and logic polarity; it does not choose an optimal integer stage count or verify register setup."
+    ],
+    "references": [{"title": "David Harris, Logical Effort, pages 6-9 and 13-16: d=gh+p, equal stage effort and backward sizing", "url": "https://bears.ece.ucsb.edu/class/ece224a/Harris_logical_effort.pdf"}],
+    "inputs": [
+      {"key": "first_input_capacitance", "label": "Fixed first-stage input capacitance", "unit": "F", "default": 3e-15, "min": 0, "exclusive_min": true},
+      {"key": "final_load_capacitance", "label": "Third-stage output load capacitance", "unit": "F", "default": 1.44e-13, "min": 0, "exclusive_min": true},
+      {"key": "first_logical_effort", "label": "First-stage logical effort", "unit": "1", "default": 1.3333333333333333, "min": 1},
+      {"key": "second_logical_effort", "label": "Second-stage logical effort", "unit": "1", "default": 1, "min": 1},
+      {"key": "third_logical_effort", "label": "Third-stage logical effort", "unit": "1", "default": 1, "min": 1},
+      {"key": "path_parasitic_delay", "label": "Sum of normalized parasitic delays", "unit": "1", "default": 4, "min": 0},
+      {"key": "process_delay_unit", "label": "Characterized process delay unit", "unit": "s", "default": 2e-11, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "optimal_stage_effort", "label": "Equalized stage effort", "unit": "1", "expression": "exp((ln(first_logical_effort)+ln(second_logical_effort)+ln(third_logical_effort)+ln(final_load_capacitance)-ln(first_input_capacitance))/3)"},
+      {"key": "second_input_capacitance", "label": "Optimal second-stage input capacitance", "unit": "F", "expression": "first_input_capacitance*(optimal_stage_effort/first_logical_effort)"},
+      {"key": "third_input_capacitance", "label": "Optimal third-stage input capacitance", "unit": "F", "expression": "final_load_capacitance*(third_logical_effort/optimal_stage_effort)"},
+      {"key": "normalized_path_delay", "label": "Minimum normalized three-stage path delay", "unit": "1", "expression": "3*optimal_stage_effort+path_parasitic_delay"},
+      {"key": "path_delay", "label": "Estimated minimum path delay", "unit": "s", "expression": "normalized_path_delay*process_delay_unit"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"first_input_capacitance": 3e-15, "final_load_capacitance": 1.44e-13, "first_logical_effort": 1.3333333333333333, "second_logical_effort": 1, "third_logical_effort": 1, "path_parasitic_delay": 4, "process_delay_unit": 2e-11}, "expected": {"optimal_stage_effort": 4, "second_input_capacitance": 9e-15, "third_input_capacitance": 3.6e-14, "normalized_path_delay": 16, "path_delay": 3.2e-10}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "logic.fifo_envelope_depth",
+    "title": "Hardware FIFO depth from burst and service guarantees",
+    "category": "Digital logic and interfaces",
+    "level": "intermediate",
+    "description": "Size usable FIFO word storage and its bit capacity from a bounded burst/sustained arrival envelope and a guaranteed latency-rate read service; also estimate the FIFO delay bound.",
+    "formula": "alpha(t)=b+r*t; beta(t)=R*max(0,t-T); for R>=r, Bmax=b+r*T; usable_depth=ceil(Bmax); storage_bits=word_bits*usable_depth; delay_bound=T+b/R",
+    "assumptions": [
+      "One initially empty hardware FIFO with fixed-width words and FIFO-ordered service. The arrival bound b+r*t must hold for every time interval, not merely on average.",
+      "Read service must guarantee a rate-latency service curve R*max(0,t-T). service_latency includes all bounded arbitration stalls, CDC/empty-flag delay and one word-service interval for asynchronous completion phase.",
+      "The entered latency is at least 1/service_rate for this whole-word asynchronous service model. Service rate must be at least the sustained arrival rate; otherwise no finite perpetual-depth guarantee exists.",
+      "Calculated depth is a sufficient usable capacity under these envelopes, not necessarily the smallest depth for a known discrete schedule. Add implementation-reserved entries, ECC/metadata and vendor memory granularity separately; no implicit power-of-two rounding.",
+      "This sizes storage, not synchronizer reliability, Gray-pointer correctness, metastability containment or absolute interface timing. Unbounded stalls or an invalid arrival/service guarantee invalidate the result."
+    ],
+    "references": [
+      {"title": "Le Boudec and Thiran, Network Calculus, section 1.4.1, Theorems 1.4.1-1.4.2 and Figure 1.10", "url": "https://leboudec.github.io/netcal/latex/netCalBook.pdf"},
+      {"title": "Stanford EE183, Synchronization in Digital Logic Circuits, pages 5-7: dual-port hardware FIFOs and conservative pointer synchronization", "url": "https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf"}
+    ],
+    "inputs": [
+      {"key": "burst_words", "label": "Arrival-envelope burst allowance", "unit": "word", "default": 64, "min": 1},
+      {"key": "arrival_rate", "label": "Bounded sustained word arrival rate", "unit": "word/s", "default": 25000000, "min": 0},
+      {"key": "service_rate", "label": "Guaranteed read service rate", "unit": "word/s", "default": 50000000, "min": 0, "exclusive_min": true},
+      {"key": "service_latency", "label": "Guaranteed service latency including word phase", "unit": "s", "default": 1e-6, "min": 0, "exclusive_min": true},
+      {"key": "word_bits", "label": "Stored bits per word", "unit": "bit/word", "default": 32, "min": 1}
+    ],
+    "outputs": [
+      {"key": "backlog_bound", "label": "Arrival/service backlog upper bound", "unit": "word", "expression": "burst_words+arrival_rate*service_latency"},
+      {"key": "usable_depth", "label": "Sufficient whole-word usable FIFO depth", "unit": "word", "expression": "ceil(backlog_bound)"},
+      {"key": "storage_bits", "label": "Usable FIFO data storage", "unit": "bit", "expression": "word_bits*usable_depth"},
+      {"key": "delay_bound", "label": "FIFO word delay upper bound", "unit": "s", "expression": "service_latency+burst_words/service_rate"}
+    ],
+    "constraints": [
+      {"left": "burst_words", "op": "==", "right": "floor(burst_words)", "message": "Burst allowance must be a whole number of words"},
+      {"left": "word_bits", "op": "==", "right": "floor(word_bits)", "message": "Word width must be a whole number of bits"},
+      {"left": "service_rate", "op": ">=", "right": "arrival_rate", "message": "Guaranteed service rate must cover the sustained arrival rate"},
+      {"left": "service_latency", "op": ">=", "right": "1/service_rate", "message": "Whole-word asynchronous service latency must include at least one word-service interval"}
+    ],
+    "example": {"inputs": {"burst_words": 64, "arrival_rate": 25000000, "service_rate": 50000000, "service_latency": 1e-6, "word_bits": 32}, "expected": {"backlog_bound": 89, "usable_depth": 89, "storage_bits": 2848, "delay_bound": 2.28e-6}, "relative_tolerance": 0.000001}
+  }
+]
