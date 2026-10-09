@@ -153,3 +153,49 @@ Inputs: `current_one=1 A`, `voltage_one=320 V`, `current_two=100 A`, `voltage_tw
 ### Mandatory diagram
 
 Left x=24–340: current-pulse source feeding a two-terminal block “MOV”, positive top node and return below. Bind imposed pulse arrow to `pulse_current`, pulse-width bracket to `pulse_duration`, and MOV voltage bracket to `clamp_voltage`. Right x=390–674: logarithmic-current/logarithmic-voltage conceptual graph, straight fit segment between `(current_one,voltage_one)` and `(current_two,voltage_two)`. Bind endpoint labels to all four exact keys; identify slope as `voltage_exponent` on log axes. Place an energy annotation `integral v i dt` bound to `absorbed_energy` outside the geometry. Caption: “Power-law interpolation only between characterized MOV points; energy assumes an imposed rectangular current pulse. Static log-log sketch, not a live trace.”
+
+## 4. `protection.scr_crowbar_trigger_latch` — intermediate
+
+### Purpose and novelty
+
+Design a zener-triggered SCR crowbar with the correct gate-shunt/source loading and distinguish triggering, latching and holding. Closest baseline `bjt.saturated_switch_drive` computes sustained BJT base drive but has no regenerative latch or distinct holding boundary. Closest old zener sizing does not model a state transition that collapses its own trigger voltage. This model is not an SCR current-gain substitution for a BJT formula.
+
+### Topology and derivation
+
+The positive Thevenin fault source feeds node A through `source_resistance`. SCR A is this node, SCR K is return. A second branch runs A→`gate_resistance`→zener cathode, zener anode→G. `gate_shunt_resistance` runs G→K. The protected load is high impedance and omitted.
+
+Before turn-on, gate voltage is Vg, zener current is `Iz=Ig+Vg/Rgk`, and source resistance carries this same Iz. KVL therefore gives:
+
+- `trigger_source_voltage=Vz+Vg+(Rs+Rg)(Igt+Vg/Rgk)`.
+- `available_gate_current=(Vfault−Vz−Vg)/(Rs+Rg)−Vg/Rgk`.
+
+After turn-on, require `Von<Vz`; the trigger branch is off. Available on-state current is `(Vfault−Von)/Rs`. Subtract `latching_current` for `latch_margin`. A falling source reaches the quasi-static holding boundary at `Von+Rs holding_current`.
+
+P4 distinguishes these device states; the resistor network is derived here. A sufficient gate pulse must persist until anode current exceeds IL. Constant drops, negligible loop inductance and adequate turn-on duration are assumptions, not a prediction of the event's switching dynamics. The source must be capable of the required gate current; this is enforced. A negative latch margin is allowed to expose inadequate anode current. The current/voltage parameters must be appropriate corners for a real part; the illustrative values are not a part recommendation.
+
+### Complete independent example
+
+Inputs: `zener_voltage=12 V`, `gate_voltage=0.8 V`, `gate_trigger_current=0.005 A`, `gate_resistance=100 ohm`, `gate_shunt_resistance=1000 ohm`, `fault_voltage=18 V`, `source_resistance=10 ohm`, `on_voltage=1.2 V`, `latching_current=0.05 A`, `holding_current=0.02 A`.
+
+Required zener current is `0.005+0.8/1000=0.0058 A`.
+
+| Output key | Independent result |
+|---|---:|
+| `trigger_source_voltage` | `12+0.8+110×0.0058 = 13.438 V` |
+| `available_gate_current` | `5.2/110−0.0008 = 0.04647272727272727 A` |
+| `available_anode_current` | `(18−1.2)/10 = 1.68 A` |
+| `latch_margin` | `1.68−0.05 = 1.63 A` |
+| `holding_release_voltage` | `1.2+10×0.02 = 1.4 V` |
+
+### Tester cases
+
+- Nominal above; source resistance must contribute to trigger loading, not only anode current.
+- Set fault source exactly `13.438 V`: gate current is `0.005 A`, available anode current `1.2238 A`, latch margin `1.1738 A`, release boundary unchanged.
+- Set `latching_current=2 A`, keeping holding at `0.02 A`: trigger remains valid, latch margin `−0.32 A`; no assertion that it latches.
+- Holding equal to latching is accepted as the model's limiting case. Setting holding above latching rejects.
+- Reject source below the computed trigger requirement, zero source/gate/shunt resistance, nonpositive gate requirement, or `on_voltage>=zener_voltage`.
+- Larger Rgk reduces wasted shunt current; the finite value must remain part of the gate-current equation.
+
+### Mandatory diagram
+
+Use x=30–660 for an electrically complete circuit, not a decorative switch icon. Source at left, Rs in top rail, explicit node A after Rs. At x≈530 put a three-terminal outlined block “SCR” with A top, K bottom, G left; use named pins and ordinary wires, because the shared primitives have no native SCR glyph. K joins return. The gate branch runs from node A through Rg and a block “Vz, reverse avalanche” into G; clearly mark zener cathode toward Rg/A, anode toward G. Shunt Rgk connects G to K with explicit junctions. Bind labels to `fault_voltage`, `source_resistance`, `gate_resistance`, `zener_voltage`, `gate_shunt_resistance`, `available_gate_current`, and `available_anode_current`. Put a compact separate state legend using `latching_current` and `holding_current`. Caption explains positive A→K current, gate current vanishing after clamp, and the required gate pulse until IL. Never depict a two-terminal diode as a complete SCR or connect the gate directly to the cathode wire.

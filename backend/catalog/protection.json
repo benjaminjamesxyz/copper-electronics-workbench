@@ -480,5 +480,181 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "protection.scr_crowbar_trigger_latch",
+    "title": "Zener-triggered SCR crowbar latch window",
+    "category": "Protection",
+    "level": "intermediate",
+    "description": "Account for gate-shunt and source loading when finding a crowbar trigger threshold, then check available anode latching current and the holding-current release boundary.",
+    "formula": "Vtrip = Vz+Vg+(Rs+Rg)(Igt+Vg/Rgk); Ig = (Vfault-Vz-Vg)/(Rs+Rg)-Vg/Rgk; Ia = (Vfault-Von)/Rs; Vrelease = Von+Rs Ih",
+    "assumptions": [
+      "A positive Thevenin fault source feeds the SCR anode through Rs. Anode to gate has series Rg and reverse-biased zener; Rgk shunts gate to cathode. Cathode is the return.",
+      "Protected-load current, zener slope resistance and leakage are neglected. Zener and gate drops are constant values at the relevant currents and temperature.",
+      "The gate pulse lasts until the SCR anode current reaches the specified latching current. Loop inductance, turn-on time, dI/dt and dV/dt immunity require separate dynamic checks.",
+      "After turn-on, Von<Vz turns off the trigger branch. Available anode current is a hypothetical on-state current; a negative latch margin indicates that reliable latching is not established.",
+      "The release voltage is a quasi-static holding-current boundary for the assumed constant on-state drop, not a guaranteed turn-off delay. Fuse clearing, SCR surge/SOA, gate power and fault interruption remain separate; no safety certification."
+    ],
+    "references": [
+      {
+        "title": "STMicroelectronics AN4607 Rev 1, sections 1.1, 1.2 and 2.12; manufacturer PDF mirrored by Octopart",
+        "url": "https://datasheet.octopart.com/TXN612RG-STMicroelectronics-datasheet-97040648.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "zener_voltage",
+        "label": "Zener avalanche drop",
+        "unit": "V",
+        "default": 12,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gate_voltage",
+        "label": "Gate-cathode trigger drop",
+        "unit": "V",
+        "default": 0.8,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gate_trigger_current",
+        "label": "Required SCR gate trigger current",
+        "unit": "A",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gate_resistance",
+        "label": "Series gate resistance",
+        "unit": "ohm",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gate_shunt_resistance",
+        "label": "Gate-cathode shunt resistance",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fault_voltage",
+        "label": "Open-circuit fault-source voltage",
+        "unit": "V",
+        "default": 18,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "source_resistance",
+        "label": "Fault-source resistance",
+        "unit": "ohm",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "on_voltage",
+        "label": "SCR on-state voltage approximation",
+        "unit": "V",
+        "default": 1.2,
+        "min": 0
+      },
+      {
+        "key": "latching_current",
+        "label": "Required anode latching current",
+        "unit": "A",
+        "default": 0.05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "holding_current",
+        "label": "Anode holding current",
+        "unit": "A",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "trigger_source_voltage",
+        "label": "Source voltage needed for gate triggering",
+        "unit": "V",
+        "expression": "zener_voltage+gate_voltage+(source_resistance+gate_resistance)*(gate_trigger_current+gate_voltage/gate_shunt_resistance)"
+      },
+      {
+        "key": "available_gate_current",
+        "label": "Pre-turn-on gate current at fault voltage",
+        "unit": "A",
+        "expression": "(fault_voltage-zener_voltage-gate_voltage)/(source_resistance+gate_resistance)-gate_voltage/gate_shunt_resistance"
+      },
+      {
+        "key": "available_anode_current",
+        "label": "Available on-state anode current",
+        "unit": "A",
+        "expression": "(fault_voltage-on_voltage)/source_resistance"
+      },
+      {
+        "key": "latch_margin",
+        "label": "Available anode current minus latching current",
+        "unit": "A",
+        "expression": "available_anode_current-latching_current"
+      },
+      {
+        "key": "holding_release_voltage",
+        "label": "Quasi-static source holding boundary",
+        "unit": "V",
+        "expression": "on_voltage+source_resistance*holding_current"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "holding_current",
+        "op": "<=",
+        "right": "latching_current",
+        "message": "Holding current cannot exceed the specified latching current in this SCR model"
+      },
+      {
+        "left": "on_voltage",
+        "op": "<",
+        "right": "zener_voltage",
+        "message": "The trigger zener must cease avalanche after the SCR turns on"
+      },
+      {
+        "left": "fault_voltage",
+        "op": ">=",
+        "right": "zener_voltage+gate_voltage+(source_resistance+gate_resistance)*(gate_trigger_current+gate_voltage/gate_shunt_resistance)",
+        "message": "The fault source cannot supply the required gate trigger current"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "zener_voltage": 12,
+        "gate_voltage": 0.8,
+        "gate_trigger_current": 0.005,
+        "gate_resistance": 100,
+        "gate_shunt_resistance": 1000,
+        "fault_voltage": 18,
+        "source_resistance": 10,
+        "on_voltage": 1.2,
+        "latching_current": 0.05,
+        "holding_current": 0.02
+      },
+      "expected": {
+        "trigger_source_voltage": 13.438,
+        "available_gate_current": 0.04647272727272727,
+        "available_anode_current": 1.68,
+        "latch_margin": 1.63,
+        "holding_release_voltage": 1.4
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
