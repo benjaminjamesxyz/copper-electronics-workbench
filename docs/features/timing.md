@@ -328,3 +328,49 @@ Cross-input/model constraints (evaluated before outputs):
 | `latest_transition` | Latest output transition | s | `2.7925887222397808e-06` | `-time_constant*ln(1-threshold_max/v_supply)+gate_delay_max` |
 | `timing_window` | Output transition uncertainty window | s | `1.3962943611198904e-06` | `latest_transition-earliest_transition` |
 
+## 5. Synchronous register setup slack — intermediate
+
+**ID:** `timing.synchronous_setup_slack`
+
+**Purpose:** Compute setup headroom for a one-cycle register-to-register data path with explicit skew sign.
+
+**Derivation:** Relative to the launch clock at time zero, data arrives at `clock_to_q + path_delay`. Capture occurs at `clock_period + clock_skew`, where skew is **capture minus launch clock arrival**. Data must arrive setup time before capture, further reduced by worst-case uncertainty:
+
+`available_time = clock_period + clock_skew - setup_time - uncertainty`;
+`arrival_time = clock_to_q + path_delay`;
+`setup_slack = available_time - arrival_time`.
+
+Positive skew helps setup. Positive slack is headroom; negative slack is a violation. A cell library can legitimately specify negative setup time, so setup_time is intentionally signed.
+
+**Dimensions/domain:** Every input/output is seconds. Clock period positive, clock-to-Q/path delay/uncertainty nonnegative, skew and setup signed. Uncertainty must be an appropriate worst-case setup penalty, not an RMS jitter number. Model assumes related clocks, one-cycle capture and characterized maximum delays. It does not replace STA or perform hold, multicycle, CDC, recovery/removal, OCV or common-clock-path calculations.
+
+**Independent example:** T = 10 ns, CQ = 0.5 ns, path = 7 ns, setup = 0.3 ns, skew = +0.2 ns, uncertainty = 0.1 ns:
+
+- Latest arrival allowed `= 10+0.2-0.3-0.1 = 9.8 ns`.
+- Actual worst arrival `= 0.5+7 = 7.5 ns`.
+- Slack `= 9.8-7.5 = +2.3 ns`.
+
+**Primary source:** [UMBC, Ryan Robucci, Physical Design Flow and Timing Analysis](https://eclipse.umbc.edu/robucci/cmpeRSD/lectures/Physical_Design_Flow_and_Timing_Analysis/Physical_Design_Flow_and_Timing_Analysis.html), sections 20–23 explicitly define positive capture-later skew and setup slack with uncertainty.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `clock_period` | Launch-to-capture clock period | s | `1e-08` | > 0 |
+| `clock_to_q` | Maximum source clock-to-Q delay | s | `5e-10` | >= 0 |
+| `path_delay` | Maximum logic and routing delay | s | `7e-09` | >= 0 |
+| `setup_time` | Destination register setup time | s | `3e-10` | Any finite signed value |
+| `clock_skew` | Capture-minus-launch clock skew | s | `2e-10` | Any finite signed value |
+| `uncertainty` | Worst-case setup uncertainty | s | `1e-10` | >= 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- No cross-input restriction: signed setup time, clock skew and resulting slack remain admissible.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `available_time` | Latest allowed data arrival relative to launch | s | `9.8e-09` | `clock_period+clock_skew-setup_time-uncertainty` |
+| `arrival_time` | Worst data arrival relative to launch | s | `7.5e-09` | `clock_to_q+path_delay` |
+| `setup_slack` | Setup slack (negative means violation) | s | `2.3e-09` | `available_time-arrival_time` |
+
