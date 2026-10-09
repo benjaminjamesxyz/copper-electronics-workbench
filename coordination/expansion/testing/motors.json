@@ -1,0 +1,1190 @@
+{
+  "lane": "motors",
+  "base": "4c46fa1",
+  "file": "backend/tests/motors.rs",
+  "authored_tests": 27,
+  "behaviors_covered": {
+    "motors.pm_dc_load_equilibrium": [
+      "Complete non-default equilibrium and both constitutive equations; power conservation",
+      "Ideal unloaded, exact stall, unenergized limits",
+      "Every scalar/relational guard, exact input keys, all nonfinite values and valid recovery",
+      "Finite unloaded solution with underflowing K\u00b2/KV"
+    ],
+    "motors.stepper_static_microstep": [
+      "Complete 30-electrical-degree loaded oracle and torque substitution",
+      "Resolution changes do not change static lag/stiffness; minimum 4-step and m=1 limits",
+      "Last representable stable load preserves positive stiffness; integer and strict-load guards",
+      "Finite stiffness despite torque-sum overflow; representable subnormal incremental torque"
+    ],
+    "motors.geared_axis_acceleration": [
+      "Complete lossy two-inertia torque/current/end-voltage oracle and kinetic-energy reflection",
+      "Lossless, constant-speed, unity ratio, zero load and either single zero inertia",
+      "Every scalar/coupled guard and recovery, including two-zero inertias and decreasing ramp",
+      "Admitted huge positive inertias with finite zero-speed outputs"
+    ],
+    "motors.resistive_dynamic_braking": [
+      "Complete generator sign, time constant, angular integral and energy partition",
+      "Exact zero and tiny time, long-time limit, shorted brake and stationary rotor",
+      "Every scalar guard, exact input keys, all nonfinite values and recovery",
+      "Finite dimensional heat despite speed-square underflow; finite travel despite elapsed-time product overflow"
+    ],
+    "motors.salient_pmsm_dq_operating_point": [
+      "Complete motoring and generating maps, saliency torque and peak-current normalization",
+      "Power identity, equal-inductance surface-magnet limit, standstill, zero current with back EMF",
+      "Lossless resistance, reverse signed speed, positive d current; integer/scalar guards",
+      "Resistance-weighted copper loss must survive current-square underflow and overflow"
+    ],
+    "motors.induction_slip_power": [
+      "Complete original positive-slip per-phase RMS circuit oracle and power/torque identities",
+      "Exact synchronous, locked rotor, zero excitation; neighboring slips bracket peak",
+      "Rotor resistance changes peak slip, not peak torque; unconstrained peak above one; zero stator resistance",
+      "Either leakage reactance may be zero, total may not; guards and recovery",
+      "Finite tiny-voltage maximum torque; finite zero/tiny-slip air-gap power with small rotor resistance"
+    ]
+  },
+  "verification": {
+    "executed": false,
+    "review": "Independent arithmetic and source analysis only. No build, test, lint, formatter, calculator process or native execution. Passing status is not claimed.",
+    "parent_checks": [
+      "cargo test --manifest-path backend/Cargo.toml --test motors",
+      "Execute parent_json_lines_scenarios in order through one actual JSON-lines process after production remediation.",
+      "Run integrated full suite and native acceptance after the full QA wave."
+    ]
+  },
+  "untested_gaps": [
+    "Main must compile and execute the 27 authored tests; ten strict numerical regression cases expose suspected finite-output conditioning defects.",
+    "Desktop rendering, packaged execution and cross-platform acceptance remain Main/reviewer-owned; tester did not inspect native pixels.",
+    "No physical hardware, calibration, winding thermal model, motor ratings, current-loop transient or nonlinear saturation validation.",
+    "The source equations are inherited primary-source evidence from research; this tester did not freshly retrieve every source."
+  ],
+  "suspected_defects": [
+    {
+      "finding": "dc_underflowed_equilibrium",
+      "id": "motors.pm_dc_load_equilibrium",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:68",
+      "inputs": {
+        "voltage": 1e-200,
+        "armature_resistance": 1,
+        "motor_constant": 1e-200,
+        "viscous_drag": 0,
+        "load_torque": 0
+      },
+      "expected_outputs": {
+        "speed": 1,
+        "current": 0,
+        "back_emf": 1e-200,
+        "shaft_power": 0,
+        "copper_loss": 0,
+        "friction_loss": 0
+      },
+      "contradiction": "KV and K\u00b2 both underflow before division even though V/K=1.",
+      "minimal_correction": "Scale the coupled linear system before products/squares; retain stall and zero cases.",
+      "evidence": "Independent T2MotorsRun derivation; corroborates V2MotorsRun analogous 1e-170 vector. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "brake_underflowed_kinetic_energy",
+      "id": "motors.resistive_dynamic_braking",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:527",
+      "inputs": {
+        "inertia": 1e+200,
+        "armature_resistance": 1,
+        "brake_resistance": 1,
+        "motor_constant": 1e+100,
+        "initial_speed": 1e-170,
+        "time": 2
+      },
+      "expected_outputs": {
+        "mechanical_tau": 2,
+        "speed": 3.6787944117144233e-171,
+        "braking_current": 1.8393972058572115e-71,
+        "electromagnetic_torque": -1.839397205857212e+29,
+        "angular_travel": 1.2642411176571154e-170,
+        "brake_energy": 2.1616617919084683e-141,
+        "winding_energy": 2.1616617919084683e-141
+      },
+      "contradiction": "initial_speed\u00b2 underflows although J omega0\u00b2/2=5e-141 J; both heat outputs lose real energy.",
+      "minimal_correction": "Evaluate dimensionally scaled kinetic energy before squaring; apply heat partition without losing finite heat.",
+      "evidence": "Independent T2MotorsRun energy derivation; winding counterpart at line 533. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "pmsm_underflowed_copper_loss",
+      "id": "motors.salient_pmsm_dq_operating_point",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:683",
+      "inputs": {
+        "pole_pairs": 1,
+        "mechanical_speed": 0,
+        "stator_resistance": 1e+200,
+        "d_inductance": 1,
+        "q_inductance": 1,
+        "magnet_flux": 1,
+        "d_current": 1e-200,
+        "q_current": 0
+      },
+      "expected_outputs": {
+        "electrical_speed": 0,
+        "d_voltage": 1,
+        "q_voltage": 0,
+        "phase_voltage_peak": 1,
+        "phase_current_peak": 1e-200,
+        "electromagnetic_torque": 0,
+        "converted_power": 0,
+        "stator_copper_loss": 1.5e-200
+      },
+      "contradiction": "Ipeak\u00b2 underflows; at standstill terminal power 1.5 vd id=1.5e-200 W must become copper loss.",
+      "minimal_correction": "Use scaled products for resistance-weighted squared current, including admitted zero resistance.",
+      "evidence": "Independent T2MotorsRun terminal-power derivation. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "induction_underflowed_breakdown_torque",
+      "id": "motors.induction_slip_power",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:853",
+      "inputs": {
+        "frequency": 1,
+        "pole_pairs": 1,
+        "slip": 1,
+        "thevenin_voltage": 1e-170,
+        "thevenin_resistance": 0,
+        "thevenin_reactance": 1e-200,
+        "rotor_resistance": 1e-200,
+        "rotor_reactance": 0
+      },
+      "expected_outputs": {
+        "synchronous_speed": 6.283185307179586,
+        "rotor_speed": 0,
+        "rotor_current": 7.071067811865475e+29,
+        "air_gap_power": 1.5e-140,
+        "electromagnetic_torque": 2.3873241463784304e-141,
+        "rotor_copper_loss": 1.5e-140,
+        "converted_power": 0,
+        "breakdown_slip": 1,
+        "breakdown_torque": 2.3873241463784304e-141
+      },
+      "contradiction": "Vth\u00b2 underflows although maximum-power match gives Pag=1.5e-140 W and peak torque=7.5e-141/pi.",
+      "minimal_correction": "Scale voltage and impedance before forming maximum torque; preserve finite products.",
+      "evidence": "Independent T2MotorsRun original RMS circuit derivation. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "stepper_overflowed_torque_sum",
+      "id": "motors.stepper_static_microstep",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:201",
+      "inputs": {
+        "full_steps_per_turn": 4,
+        "microsteps_per_step": 1,
+        "holding_torque": 1e+308,
+        "load_torque": 9e+307
+      },
+      "expected_outputs": {
+        "microstep_angle": 1.5707963267948966,
+        "incremental_torque": 1e+308,
+        "load_lag": 1.1197695149986342,
+        "angular_stiffness": 4.358898943540673e+307
+      },
+      "contradiction": "H+Tload overflows even though H sqrt(1-(Tload/H)\u00b2) is finite.",
+      "minimal_correction": "Use scaled sum/difference roots, retaining accuracy next to holding torque.",
+      "evidence": "V2MotorsRun counterexample independently checked by the torque-angle derivative. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "stepper_overflowed_microstep_denominator",
+      "id": "motors.stepper_static_microstep",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:189",
+      "inputs": {
+        "full_steps_per_turn": 4,
+        "microsteps_per_step": 1e+308,
+        "holding_torque": 0.5,
+        "load_torque": 0
+      },
+      "expected_outputs": {
+        "microstep_angle": 1.5707963267948964e-308,
+        "incremental_torque": 7.853981633974485e-309,
+        "load_lag": 0,
+        "angular_stiffness": 0.5
+      },
+      "contradiction": "2*m overflows and erases representable subnormal incremental torque.",
+      "minimal_correction": "Divide pi/2 by m before evaluating sine.",
+      "evidence": "V2MotorsRun counterexample; sin(x)=x to binary64 accuracy at this angle. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "gear_overflowed_positive_inertia_guard",
+      "id": "motors.geared_axis_acceleration",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:386",
+      "inputs": {
+        "motor_inertia": 1e+308,
+        "load_inertia": 1e+308,
+        "gear_ratio": 1,
+        "gear_efficiency": 1,
+        "load_torque": 0,
+        "initial_speed": 0,
+        "final_speed": 0,
+        "ramp_time": 1,
+        "motor_constant": 1,
+        "armature_resistance": 1
+      },
+      "expected_outputs": {
+        "reflected_inertia": 1e+308,
+        "motor_acceleration": 0,
+        "motor_torque": 0,
+        "armature_current": 0,
+        "motor_final_speed": 0,
+        "required_final_voltage": 0
+      },
+      "contradiction": "Jm+Jl overflows in the positivity guard although either inertia is positive and all outputs are finite.",
+      "minimal_correction": "Express at-least-one-positive without summing both nonnegative inertias.",
+      "evidence": "V2MotorsRun counterexample; zero acceleration and load eliminate all torque terms. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "brake_overflowed_travel_product",
+      "id": "motors.resistive_dynamic_braking",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:521",
+      "inputs": {
+        "inertia": 0.002,
+        "armature_resistance": 1,
+        "brake_resistance": 3,
+        "motor_constant": 0.1,
+        "initial_speed": 100,
+        "time": 1e+307
+      },
+      "expected_outputs": {
+        "mechanical_tau": 0.8,
+        "speed": 0,
+        "braking_current": 0,
+        "electromagnetic_torque": 0,
+        "angular_travel": 80,
+        "brake_energy": 7.5,
+        "winding_energy": 2.5
+      },
+      "contradiction": "omega0*time overflows before multiplication by exprel, despite finite travel limit omega0*tau=80.",
+      "minimal_correction": "Use scaled exponential integral without the unbounded omega0*time intermediate.",
+      "evidence": "V2MotorsRun counterexample; integrated deceleration and energy limits independently derived. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "pmsm_overflowed_current_square",
+      "id": "motors.salient_pmsm_dq_operating_point",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:683",
+      "inputs": {
+        "pole_pairs": 1,
+        "mechanical_speed": 0,
+        "stator_resistance": 1e-200,
+        "d_inductance": 1,
+        "q_inductance": 1,
+        "magnet_flux": 1,
+        "d_current": 1e+155,
+        "q_current": 0
+      },
+      "expected_outputs": {
+        "electrical_speed": 0,
+        "d_voltage": 1e-45,
+        "q_voltage": 0,
+        "phase_voltage_peak": 1e-45,
+        "phase_current_peak": 1e+155,
+        "electromagnetic_torque": 0,
+        "converted_power": 0,
+        "stator_copper_loss": 1.5e+110
+      },
+      "contradiction": "Ipeak\u00b2 overflows despite finite resistive voltage and copper loss.",
+      "minimal_correction": "Scale resistance-weighted square; same root cause as current-square underflow.",
+      "evidence": "V2MotorsRun counterexample; terminal-power identity independently checked. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    },
+    {
+      "finding": "induction_overflowed_air_gap_intermediate",
+      "id": "motors.induction_slip_power",
+      "severity": "medium",
+      "source": "backend/catalog/motors.json:823",
+      "inputs": {
+        "frequency": 50,
+        "pole_pairs": 2,
+        "slip": 1e-200,
+        "thevenin_voltage": 220,
+        "thevenin_resistance": 0.5,
+        "thevenin_reactance": 1,
+        "rotor_resistance": 1e-200,
+        "rotor_reactance": 1
+      },
+      "expected_outputs": {
+        "synchronous_speed": 157.07963267948966,
+        "rotor_speed": 157.07963267948966,
+        "rotor_current": 88,
+        "air_gap_power": 23232,
+        "electromagnetic_torque": 147.8995055164365,
+        "rotor_copper_loss": 2.3232e-196,
+        "converted_power": 23232,
+        "breakdown_slip": 4.8507125007266596e-201,
+        "breakdown_torque": 180.43194441580198
+      },
+      "contradiction": "(Vth/D)\u00b2 overflows although the original circuit is 1.5+j2 ohm and I2=88 A.",
+      "minimal_correction": "Use dimensionally scaled air-gap power preserving both zero slip and tiny positive slip without R2/s overflow.",
+      "evidence": "V2MotorsRun counterexample; original positive-slip RMS circuit independently checked. Static source/binary64 analysis only; calculator and regression not executed.",
+      "status": "Open on 4c46fa1; strict success/full-output regression authored. Main owns production remediation."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select every owned ID; enter each non-default successful process vector and compare every displayed output with receipt oracles.",
+    "Enter each adjacent invalid/recovery vector: clear stale outputs on error and recalculate correctly without restarting.",
+    "Show signed negative PMSM conversion power and braking torque; preserve peak dq versus RMS induction units.",
+    "Show tiny brake heat and subnormal incremental torque in scientific notation rather than rounding to exact zero.",
+    "Show exact zero-slip induction and peak-slip values above one without clipping; native pixel certification remains reviewer-owned."
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "invalid_pm_dc_load_equilibrium",
+      "request": {
+        "command": "calculate",
+        "id": "motors.pm_dc_load_equilibrium",
+        "inputs": {
+          "voltage": 14,
+          "armature_resistance": 2,
+          "motor_constant": 0.5,
+          "viscous_drag": 0.025,
+          "load_torque": 4
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "load exceeds stall torque; the immediately following complete vector must recover in the same process."
+    },
+    {
+      "name": "recover_nondefault_pm_dc_load_equilibrium",
+      "request": {
+        "command": "calculate",
+        "id": "motors.pm_dc_load_equilibrium",
+        "inputs": {
+          "voltage": 14,
+          "armature_resistance": 2,
+          "motor_constant": 0.5,
+          "viscous_drag": 0.025,
+          "load_torque": 0.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Solve V=RI+K omega and K I=Tload+b omega backwards from omega=20 and I=2, then close the 28 W power budget.",
+      "expected_outputs": {
+        "speed": 20,
+        "current": 2,
+        "back_emf": 10,
+        "shaft_power": 10,
+        "copper_loss": 8,
+        "friction_loss": 10
+      }
+    },
+    {
+      "name": "invalid_stepper_static_microstep",
+      "request": {
+        "command": "calculate",
+        "id": "motors.stepper_static_microstep",
+        "inputs": {
+          "full_steps_per_turn": 100,
+          "microsteps_per_step": 3,
+          "holding_torque": 2,
+          "load_torque": 2
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "holding-torque equality is not stable; the immediately following complete vector must recover in the same process."
+    },
+    {
+      "name": "recover_nondefault_stepper_static_microstep",
+      "request": {
+        "command": "calculate",
+        "id": "motors.stepper_static_microstep",
+        "inputs": {
+          "full_steps_per_turn": 100,
+          "microsteps_per_step": 3,
+          "holding_torque": 2,
+          "load_torque": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "A 100-step motor has 25 electrical cycles/rev; half holding torque requires 30 electrical degrees lag and a cosine restoring derivative.",
+      "expected_outputs": {
+        "microstep_angle": 0.020943951023931952,
+        "incremental_torque": 1,
+        "load_lag": 0.020943951023931952,
+        "angular_stiffness": 43.30127018922193
+      }
+    },
+    {
+      "name": "invalid_geared_axis_acceleration",
+      "request": {
+        "command": "calculate",
+        "id": "motors.geared_axis_acceleration",
+        "inputs": {
+          "motor_inertia": 0,
+          "load_inertia": 0,
+          "gear_ratio": 4,
+          "gear_efficiency": 0.5,
+          "load_torque": 0.4,
+          "initial_speed": 2,
+          "final_speed": 6,
+          "ramp_time": 2,
+          "motor_constant": 0.2,
+          "armature_resistance": 3
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "both inertias zero; the immediately following complete vector must recover in the same process."
+    },
+    {
+      "name": "recover_nondefault_geared_axis_acceleration",
+      "request": {
+        "command": "calculate",
+        "id": "motors.geared_axis_acceleration",
+        "inputs": {
+          "motor_inertia": 0.01,
+          "load_inertia": 0.16,
+          "gear_ratio": 4,
+          "gear_efficiency": 0.5,
+          "load_torque": 0.4,
+          "initial_speed": 2,
+          "final_speed": 6,
+          "ramp_time": 2,
+          "motor_constant": 0.2,
+          "armature_resistance": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Newton-Euler load acceleration=2, rotor torque=.08, output demand=.72, efficiency-adjusted input demand=.36; energy reflection excludes efficiency.",
+      "expected_outputs": {
+        "reflected_inertia": 0.01,
+        "motor_acceleration": 8,
+        "motor_torque": 0.44,
+        "armature_current": 2.2,
+        "motor_final_speed": 24,
+        "required_final_voltage": 11.4
+      }
+    },
+    {
+      "name": "invalid_resistive_dynamic_braking",
+      "request": {
+        "command": "calculate",
+        "id": "motors.resistive_dynamic_braking",
+        "inputs": {
+          "inertia": 0.5,
+          "armature_resistance": 1,
+          "brake_resistance": 3,
+          "motor_constant": 1,
+          "initial_speed": 8,
+          "time": -1
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "negative elapsed time; the immediately following complete vector must recover in the same process."
+    },
+    {
+      "name": "recover_nondefault_resistive_dynamic_braking",
+      "request": {
+        "command": "calculate",
+        "id": "motors.resistive_dynamic_braking",
+        "inputs": {
+          "inertia": 0.5,
+          "armature_resistance": 1,
+          "brake_resistance": 3,
+          "motor_constant": 1,
+          "initial_speed": 8,
+          "time": 2
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Generator damping gives tau=2 s and one e-fold; integrate the initial 16 J kinetic-energy budget and divide heat 3:1.",
+      "expected_outputs": {
+        "mechanical_tau": 2,
+        "speed": 2.9430355293715387,
+        "braking_current": 0.7357588823428847,
+        "electromagnetic_torque": -0.7357588823428847,
+        "angular_travel": 10.113928941256923,
+        "brake_energy": 10.375976601160648,
+        "winding_energy": 3.458658867053549
+      }
+    },
+    {
+      "name": "invalid_salient_pmsm_dq_operating_point",
+      "request": {
+        "command": "calculate",
+        "id": "motors.salient_pmsm_dq_operating_point",
+        "inputs": {
+          "pole_pairs": 1.5,
+          "mechanical_speed": 50,
+          "stator_resistance": 0.5,
+          "d_inductance": 0.01,
+          "q_inductance": 0.02,
+          "magnet_flux": 0.1,
+          "d_current": -3,
+          "q_current": 4
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "fractional pole pairs; the immediately following complete vector must recover in the same process."
+    },
+    {
+      "name": "recover_nondefault_salient_pmsm_dq_operating_point",
+      "request": {
+        "command": "calculate",
+        "id": "motors.salient_pmsm_dq_operating_point",
+        "inputs": {
+          "pole_pairs": 2,
+          "mechanical_speed": 50,
+          "stator_resistance": 0.5,
+          "d_inductance": 0.01,
+          "q_inductance": 0.02,
+          "magnet_flux": 0.1,
+          "d_current": -3,
+          "q_current": 4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Peak current is the 3-4-5 triangle; PM torque 1.2 plus reluctance torque .36; terminal dq power=96.75 W.",
+      "expected_outputs": {
+        "electrical_speed": 100,
+        "d_voltage": -9.5,
+        "q_voltage": 9,
+        "phase_voltage_peak": 13.0862523283024,
+        "phase_current_peak": 5,
+        "electromagnetic_torque": 1.56,
+        "converted_power": 78,
+        "stator_copper_loss": 18.75
+      }
+    },
+    {
+      "name": "invalid_induction_slip_power",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 60,
+          "pole_pairs": 3,
+          "slip": 0.25,
+          "thevenin_voltage": 20,
+          "thevenin_resistance": 3,
+          "thevenin_reactance": 0,
+          "rotor_resistance": 1,
+          "rotor_reactance": 0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "zero total leakage reactance; the immediately following complete vector must recover in the same process."
+    },
+    {
+      "name": "recover_nondefault_induction_slip_power",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 60,
+          "pole_pairs": 3,
+          "slip": 0.25,
+          "thevenin_voltage": 20,
+          "thevenin_resistance": 3,
+          "thevenin_reactance": 1,
+          "rotor_resistance": 1,
+          "rotor_reactance": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Original positive-slip RMS rotor circuit is 7+j4 ohm, with R2/s=4; heat is one quarter of air-gap power. Rth+jX has magnitude 5.",
+      "expected_outputs": {
+        "synchronous_speed": 125.66370614359172,
+        "rotor_speed": 94.24777960769379,
+        "rotor_current": 2.4806946917841692,
+        "air_gap_power": 73.84615384615384,
+        "electromagnetic_torque": 0.5876490206469981,
+        "rotor_copper_loss": 18.46153846153846,
+        "converted_power": 55.38461538461539,
+        "breakdown_slip": 0.2,
+        "breakdown_torque": 0.5968310365946076
+      }
+    },
+    {
+      "name": "dc_stall",
+      "request": {
+        "command": "calculate",
+        "id": "motors.pm_dc_load_equilibrium",
+        "inputs": {
+          "voltage": 14,
+          "armature_resistance": 2,
+          "motor_constant": 0.5,
+          "viscous_drag": 0.025,
+          "load_torque": 3.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Exact KV=R Tload; stall is admitted, not a continuous-rating claim.",
+      "expected_outputs": {
+        "speed": 0,
+        "current": 7,
+        "back_emf": 0,
+        "shaft_power": 0,
+        "copper_loss": 98,
+        "friction_loss": 0
+      }
+    },
+    {
+      "name": "dc_unloaded",
+      "request": {
+        "command": "calculate",
+        "id": "motors.pm_dc_load_equilibrium",
+        "inputs": {
+          "voltage": 14,
+          "armature_resistance": 2,
+          "motor_constant": 0.5,
+          "viscous_drag": 0,
+          "load_torque": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Ideal unloaded V/K speed; zero loss and current.",
+      "expected_outputs": {
+        "speed": 28,
+        "current": 0,
+        "back_emf": 14,
+        "shaft_power": 0,
+        "copper_loss": 0,
+        "friction_loss": 0
+      }
+    },
+    {
+      "name": "stepper_full_step_minimum_cycles",
+      "request": {
+        "command": "calculate",
+        "id": "motors.stepper_static_microstep",
+        "inputs": {
+          "full_steps_per_turn": 4,
+          "microsteps_per_step": 1,
+          "holding_torque": 2,
+          "load_torque": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Minimum integer electrical cycle and full-step aligned torque.",
+      "expected_outputs": {
+        "microstep_angle": 1.5707963267948966,
+        "incremental_torque": 2,
+        "load_lag": 0,
+        "angular_stiffness": 2
+      }
+    },
+    {
+      "name": "gear_constant_speed",
+      "request": {
+        "command": "calculate",
+        "id": "motors.geared_axis_acceleration",
+        "inputs": {
+          "motor_inertia": 0.01,
+          "load_inertia": 0.16,
+          "gear_ratio": 4,
+          "gear_efficiency": 0.5,
+          "load_torque": 0.4,
+          "initial_speed": 6,
+          "final_speed": 6,
+          "ramp_time": 2,
+          "motor_constant": 0.2,
+          "armature_resistance": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "No acceleration torque; efficiency acts only on output load.",
+      "expected_outputs": {
+        "reflected_inertia": 0.01,
+        "motor_acceleration": 0,
+        "motor_torque": 0.2,
+        "armature_current": 1,
+        "motor_final_speed": 24,
+        "required_final_voltage": 7.8
+      }
+    },
+    {
+      "name": "brake_initial",
+      "request": {
+        "command": "calculate",
+        "id": "motors.resistive_dynamic_braking",
+        "inputs": {
+          "inertia": 0.5,
+          "armature_resistance": 1,
+          "brake_resistance": 3,
+          "motor_constant": 1,
+          "initial_speed": 8,
+          "time": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Reduced-model initial state preserves positive current and negative braking torque.",
+      "expected_outputs": {
+        "mechanical_tau": 2,
+        "speed": 8,
+        "braking_current": 2,
+        "electromagnetic_torque": -2,
+        "angular_travel": 0,
+        "brake_energy": 0,
+        "winding_energy": 0
+      }
+    },
+    {
+      "name": "brake_tiny_time",
+      "request": {
+        "command": "calculate",
+        "id": "motors.resistive_dynamic_braking",
+        "inputs": {
+          "inertia": 0.5,
+          "armature_resistance": 1,
+          "brake_resistance": 3,
+          "motor_constant": 1,
+          "initial_speed": 8,
+          "time": 1e-20
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Initial omega=8, Rb I\u00b2=12 and Ra I\u00b2=4; first-order error below binary64 precision. Relative-only tolerance preserves tiny positive values.",
+      "expected_outputs": {
+        "mechanical_tau": 2,
+        "speed": 8,
+        "braking_current": 2,
+        "electromagnetic_torque": -2,
+        "angular_travel": 8e-20,
+        "brake_energy": 1.2e-19,
+        "winding_energy": 4e-20
+      }
+    },
+    {
+      "name": "pmsm_generation",
+      "request": {
+        "command": "calculate",
+        "id": "motors.salient_pmsm_dq_operating_point",
+        "inputs": {
+          "pole_pairs": 2,
+          "mechanical_speed": 50,
+          "stator_resistance": 0.5,
+          "d_inductance": 0.01,
+          "q_inductance": 0.02,
+          "magnet_flux": 0.1,
+          "d_current": -3,
+          "q_current": -4
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Negative q current reverses both PM and saliency torque; terminal power -59.25 W.",
+      "expected_outputs": {
+        "electrical_speed": 100,
+        "d_voltage": 6.5,
+        "q_voltage": 5,
+        "phase_voltage_peak": 8.200609733428363,
+        "phase_current_peak": 5,
+        "electromagnetic_torque": -1.56,
+        "converted_power": -78,
+        "stator_copper_loss": 18.75
+      }
+    },
+    {
+      "name": "induction_zero_slip",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 60,
+          "pole_pairs": 3,
+          "slip": 0,
+          "thevenin_voltage": 20,
+          "thevenin_resistance": 3,
+          "thevenin_reactance": 1,
+          "rotor_resistance": 1,
+          "rotor_reactance": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Synchronous zero-current limit must not divide by slip; peak quantities remain defined.",
+      "expected_outputs": {
+        "synchronous_speed": 125.66370614359172,
+        "rotor_speed": 125.66370614359172,
+        "rotor_current": 0,
+        "air_gap_power": 0,
+        "electromagnetic_torque": 0,
+        "rotor_copper_loss": 0,
+        "converted_power": 0,
+        "breakdown_slip": 0.2,
+        "breakdown_torque": 0.5968310365946076
+      }
+    },
+    {
+      "name": "induction_locked_rotor",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 60,
+          "pole_pairs": 3,
+          "slip": 1,
+          "thevenin_voltage": 20,
+          "thevenin_resistance": 3,
+          "thevenin_reactance": 1,
+          "rotor_resistance": 1,
+          "rotor_reactance": 3
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Locked-rotor air-gap power is entirely rotor heat, not mechanical output.",
+      "expected_outputs": {
+        "synchronous_speed": 125.66370614359172,
+        "rotor_speed": 0,
+        "rotor_current": 3.5355339059327373,
+        "air_gap_power": 37.5,
+        "electromagnetic_torque": 0.2984155182973038,
+        "rotor_copper_loss": 37.5,
+        "converted_power": 0,
+        "breakdown_slip": 0.2,
+        "breakdown_torque": 0.5968310365946076
+      }
+    },
+    {
+      "name": "dc_underflowed_equilibrium",
+      "request": {
+        "command": "calculate",
+        "id": "motors.pm_dc_load_equilibrium",
+        "inputs": {
+          "voltage": 1e-200,
+          "armature_resistance": 1,
+          "motor_constant": 1e-200,
+          "viscous_drag": 0,
+          "load_torque": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "KV and K\u00b2 both underflow before division even though V/K=1. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "speed": 1,
+        "current": 0,
+        "back_emf": 1e-200,
+        "shaft_power": 0,
+        "copper_loss": 0,
+        "friction_loss": 0
+      }
+    },
+    {
+      "name": "brake_underflowed_kinetic_energy",
+      "request": {
+        "command": "calculate",
+        "id": "motors.resistive_dynamic_braking",
+        "inputs": {
+          "inertia": 1e+200,
+          "armature_resistance": 1,
+          "brake_resistance": 1,
+          "motor_constant": 1e+100,
+          "initial_speed": 1e-170,
+          "time": 2
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "initial_speed\u00b2 underflows although J omega0\u00b2/2=5e-141 J; both heat outputs lose real energy. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "mechanical_tau": 2,
+        "speed": 3.6787944117144233e-171,
+        "braking_current": 1.8393972058572115e-71,
+        "electromagnetic_torque": -1.839397205857212e+29,
+        "angular_travel": 1.2642411176571154e-170,
+        "brake_energy": 2.1616617919084683e-141,
+        "winding_energy": 2.1616617919084683e-141
+      }
+    },
+    {
+      "name": "pmsm_underflowed_copper_loss",
+      "request": {
+        "command": "calculate",
+        "id": "motors.salient_pmsm_dq_operating_point",
+        "inputs": {
+          "pole_pairs": 1,
+          "mechanical_speed": 0,
+          "stator_resistance": 1e+200,
+          "d_inductance": 1,
+          "q_inductance": 1,
+          "magnet_flux": 1,
+          "d_current": 1e-200,
+          "q_current": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Ipeak\u00b2 underflows; at standstill terminal power 1.5 vd id=1.5e-200 W must become copper loss. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "electrical_speed": 0,
+        "d_voltage": 1,
+        "q_voltage": 0,
+        "phase_voltage_peak": 1,
+        "phase_current_peak": 1e-200,
+        "electromagnetic_torque": 0,
+        "converted_power": 0,
+        "stator_copper_loss": 1.5e-200
+      }
+    },
+    {
+      "name": "induction_underflowed_breakdown_torque",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 1,
+          "pole_pairs": 1,
+          "slip": 1,
+          "thevenin_voltage": 1e-170,
+          "thevenin_resistance": 0,
+          "thevenin_reactance": 1e-200,
+          "rotor_resistance": 1e-200,
+          "rotor_reactance": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Vth\u00b2 underflows although maximum-power match gives Pag=1.5e-140 W and peak torque=7.5e-141/pi. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "synchronous_speed": 6.283185307179586,
+        "rotor_speed": 0,
+        "rotor_current": 7.071067811865475e+29,
+        "air_gap_power": 1.5e-140,
+        "electromagnetic_torque": 2.3873241463784304e-141,
+        "rotor_copper_loss": 1.5e-140,
+        "converted_power": 0,
+        "breakdown_slip": 1,
+        "breakdown_torque": 2.3873241463784304e-141
+      }
+    },
+    {
+      "name": "stepper_overflowed_torque_sum",
+      "request": {
+        "command": "calculate",
+        "id": "motors.stepper_static_microstep",
+        "inputs": {
+          "full_steps_per_turn": 4,
+          "microsteps_per_step": 1,
+          "holding_torque": 1e+308,
+          "load_torque": 9e+307
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "H+Tload overflows even though H sqrt(1-(Tload/H)\u00b2) is finite. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "microstep_angle": 1.5707963267948966,
+        "incremental_torque": 1e+308,
+        "load_lag": 1.1197695149986342,
+        "angular_stiffness": 4.358898943540673e+307
+      }
+    },
+    {
+      "name": "stepper_overflowed_microstep_denominator",
+      "request": {
+        "command": "calculate",
+        "id": "motors.stepper_static_microstep",
+        "inputs": {
+          "full_steps_per_turn": 4,
+          "microsteps_per_step": 1e+308,
+          "holding_torque": 0.5,
+          "load_torque": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "2*m overflows and erases representable subnormal incremental torque. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "microstep_angle": 1.5707963267948964e-308,
+        "incremental_torque": 7.853981633974485e-309,
+        "load_lag": 0,
+        "angular_stiffness": 0.5
+      }
+    },
+    {
+      "name": "gear_overflowed_positive_inertia_guard",
+      "request": {
+        "command": "calculate",
+        "id": "motors.geared_axis_acceleration",
+        "inputs": {
+          "motor_inertia": 1e+308,
+          "load_inertia": 1e+308,
+          "gear_ratio": 1,
+          "gear_efficiency": 1,
+          "load_torque": 0,
+          "initial_speed": 0,
+          "final_speed": 0,
+          "ramp_time": 1,
+          "motor_constant": 1,
+          "armature_resistance": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Jm+Jl overflows in the positivity guard although either inertia is positive and all outputs are finite. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "reflected_inertia": 1e+308,
+        "motor_acceleration": 0,
+        "motor_torque": 0,
+        "armature_current": 0,
+        "motor_final_speed": 0,
+        "required_final_voltage": 0
+      }
+    },
+    {
+      "name": "brake_overflowed_travel_product",
+      "request": {
+        "command": "calculate",
+        "id": "motors.resistive_dynamic_braking",
+        "inputs": {
+          "inertia": 0.002,
+          "armature_resistance": 1,
+          "brake_resistance": 3,
+          "motor_constant": 0.1,
+          "initial_speed": 100,
+          "time": 1e+307
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "omega0*time overflows before multiplication by exprel, despite finite travel limit omega0*tau=80. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "mechanical_tau": 0.8,
+        "speed": 0,
+        "braking_current": 0,
+        "electromagnetic_torque": 0,
+        "angular_travel": 80,
+        "brake_energy": 7.5,
+        "winding_energy": 2.5
+      }
+    },
+    {
+      "name": "pmsm_overflowed_current_square",
+      "request": {
+        "command": "calculate",
+        "id": "motors.salient_pmsm_dq_operating_point",
+        "inputs": {
+          "pole_pairs": 1,
+          "mechanical_speed": 0,
+          "stator_resistance": 1e-200,
+          "d_inductance": 1,
+          "q_inductance": 1,
+          "magnet_flux": 1,
+          "d_current": 1e+155,
+          "q_current": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Ipeak\u00b2 overflows despite finite resistive voltage and copper loss. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "electrical_speed": 0,
+        "d_voltage": 1e-45,
+        "q_voltage": 0,
+        "phase_voltage_peak": 1e-45,
+        "phase_current_peak": 1e+155,
+        "electromagnetic_torque": 0,
+        "converted_power": 0,
+        "stator_copper_loss": 1.5e+110
+      }
+    },
+    {
+      "name": "induction_overflowed_air_gap_intermediate",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 50,
+          "pole_pairs": 2,
+          "slip": 1e-200,
+          "thevenin_voltage": 220,
+          "thevenin_resistance": 0.5,
+          "thevenin_reactance": 1,
+          "rotor_resistance": 1e-200,
+          "rotor_reactance": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "(Vth/D)\u00b2 overflows although the original circuit is 1.5+j2 ohm and I2=88 A. These are finite model outputs, not a request to impose artificial domain bounds.",
+      "expected_outputs": {
+        "synchronous_speed": 157.07963267948966,
+        "rotor_speed": 157.07963267948966,
+        "rotor_current": 88,
+        "air_gap_power": 23232,
+        "electromagnetic_torque": 147.8995055164365,
+        "rotor_copper_loss": 2.3232e-196,
+        "converted_power": 23232,
+        "breakdown_slip": 4.8507125007266596e-201,
+        "breakdown_torque": 180.43194441580198
+      }
+    },
+    {
+      "name": "induction_small_resistance_exact_zero_slip",
+      "request": {
+        "command": "calculate",
+        "id": "motors.induction_slip_power",
+        "inputs": {
+          "frequency": 50,
+          "pole_pairs": 2,
+          "slip": 0,
+          "thevenin_voltage": 220,
+          "thevenin_resistance": 0.5,
+          "thevenin_reactance": 1,
+          "rotor_resistance": 1e-200,
+          "rotor_reactance": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "At exact synchronous speed, rotor branch is open; no overflowed voltage/resistance intermediate may reject finite zero power.",
+      "expected_outputs": {
+        "synchronous_speed": 157.07963267948966,
+        "rotor_speed": 157.07963267948966,
+        "rotor_current": 0,
+        "air_gap_power": 0,
+        "electromagnetic_torque": 0,
+        "rotor_copper_loss": 0,
+        "converted_power": 0,
+        "breakdown_slip": 4.8507125007266596e-201,
+        "breakdown_torque": 180.43194441580198
+      }
+    }
+  ],
+  "oracle_provenance": {
+    "sources": [
+      "research/expansion/motors.md:48-64 (Auburn/Ottawa SI balances)",
+      "research/expansion/motors.md:103-121 (FAULHABER sinusoidal stepper law)",
+      "research/expansion/motors.md:160-172 (Oriental Motor/Newton-Euler gear sizing)",
+      "research/expansion/motors.md:210-224 (generator damping and energy conservation)",
+      "research/expansion/motors.md:265-281 (MathWorks amplitude-invariant Park convention)",
+      "research/expansion/motors.md:323-343 (MIT original RMS rotor circuit)"
+    ],
+    "independence": "Six purpose-built non-default full-output maps, original physical equations and conservation identities; no catalog default/example-output loading. Python math evaluates only independently derived constants for this receipt, never the Rust model.",
+    "tolerances": "Relative 1e-12 only, including tiny nonzero values. Exact algebraic zero expected outputs have no absolute floor. No approximate cancellation zero needs an absolute allowance."
+  }
+}
