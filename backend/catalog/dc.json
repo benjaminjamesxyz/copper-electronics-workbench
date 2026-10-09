@@ -208,5 +208,128 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "dc.two_source_node",
+    "title": "Two-source resistive node with load",
+    "category": "DC circuits and resistor networks",
+    "level": "expert",
+    "description": "Find a passive summing-node voltage and signed source currents when two independently driven resistor branches feed a grounded resistive load.",
+    "formula": "G = 1/R1+1/R2+1/Rl; Vnode = (V1/R1+V2/R2)/G; I1 = (V1-Vnode)/R1; I2 = (V2-Vnode)/R2; Il = Vnode/Rl",
+    "assumptions": [
+      "Each ideal voltage source is referenced to the same ground and connects to the node through its own positive resistor; the load connects node to ground.",
+      "Sources must be capable of sinking as well as sourcing the calculated currents; a negative source current is backfeed, not an error.",
+      "No op-amp, virtual ground, isolation diode, switching behavior, current limit or extra load is included; this is a direct KCL/Millman solution.",
+      "All three resistances are 1e-9 to 1e12 ohm and both source voltages are between -1e6 and 1e6 V; near cancellation can lose relative floating-point precision."
+    ],
+    "references": [
+      {
+        "title": "Rich Kozick, Bucknell ELEC 101: Outline of the Nodal Analysis Method",
+        "url": "https://www.eg.bucknell.edu/~kozick/elec10105/nodevoltage.html"
+      },
+      {
+        "title": "William & Mary, Analog Electronics Chapter 2, two-source three-resistor circuit and Kirchhoff's point law",
+        "url": "https://physics.wm.edu/~evmik/classes/Physics_252_Analog_Electronics/lab_manuals/LabManual_Chpt2.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_1",
+        "label": "Signed source 1 voltage",
+        "unit": "V",
+        "default": 12.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "r_1",
+        "label": "Source 1 series resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "v_2",
+        "label": "Signed source 2 voltage",
+        "unit": "V",
+        "default": 3.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "r_2",
+        "label": "Source 2 series resistance",
+        "unit": "ohm",
+        "default": 2000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_load",
+        "label": "Node-to-ground load resistance",
+        "unit": "ohm",
+        "default": 2000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "g_total",
+        "label": "Total conductance at node",
+        "unit": "S",
+        "expression": "1/r_1+1/r_2+1/r_load"
+      },
+      {
+        "key": "v_node",
+        "label": "Loaded summing-node voltage",
+        "unit": "V",
+        "expression": "(v_1/r_1+v_2/r_2)/g_total"
+      },
+      {
+        "key": "i_source_1",
+        "label": "Source 1 current toward node",
+        "unit": "A",
+        "expression": "(v_1-v_node)/r_1"
+      },
+      {
+        "key": "i_source_2",
+        "label": "Source 2 current toward node",
+        "unit": "A",
+        "expression": "(v_2-v_node)/r_2"
+      },
+      {
+        "key": "i_load",
+        "label": "Load current toward ground",
+        "unit": "A",
+        "expression": "v_node/r_load"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "min(r_1,min(r_2,r_load))",
+        "op": ">",
+        "right": "0",
+        "message": "Source resistances and finite grounded load resistance must be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "v_1": 12.0,
+        "r_1": 1000.0,
+        "v_2": 3.0,
+        "r_2": 2000.0,
+        "r_load": 2000.0
+      },
+      "expected": {
+        "g_total": 0.002,
+        "v_node": 6.75,
+        "i_source_1": 0.00525,
+        "i_source_2": -0.001875,
+        "i_load": 0.003375
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

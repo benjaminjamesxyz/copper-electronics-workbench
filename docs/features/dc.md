@@ -101,3 +101,40 @@ These equations are this report's explicit derivation from S4's divider equivale
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 8. `dc.two_source_node` — Two-source resistive node with load (expert)
+
+**Design question:** What voltage and backfeed currents occur when two independently driven source/resistor branches share a resistively loaded node?
+
+**Topology:** Source 1 voltage `V1` connects through `R1` to the node; source 2 voltage `V2` connects through `R2`; `Rl` connects the node to common ground. Both ideal source voltages are specified relative to this same ground. Positive source current flows toward the node; positive load current flows toward ground.
+
+**Derivation:** Signed KCL is
+
+`(V1-V)/R1 + (V2-V)/R2 = V/Rl`.
+
+Collect terms: `G = 1/R1+1/R2+1/Rl`, `Vnode = (V1/R1+V2/R2)/G`; then `I1 = (V1-Vnode)/R1`, `I2 = (V2-Vnode)/R2`, `Il = Vnode/Rl`. This is Millman's conductance-weighted node solution with the load treated as a zero-volt branch. Sources: S7's nodal method and S5's directly relevant two-source/three-resistor circuit. This is **passive summing**, not an op-amp summing amplifier or virtual-ground circuit.
+
+**Inputs:** `v_1`, `v_2` (V); `r_1`, `r_2`, `r_load` (ohm). **Outputs:** `g_total` (S), `v_node` (V), `i_source_1`, `i_source_2`, `i_load` (A).
+
+**Domain and limitations:** Positive finite branch/load resistances guarantee `G > 0`. Signed source voltages and signed source currents are necessary: an opposing source can sink current. Ideal-source assumptions are only applicable if the actual sources can support those calculated sink currents; diode-isolated supplies or non-sinking regulators need different models. Node-voltage cancellation is allowed but can lose relative floating-point accuracy near zero. No active amplifier, transients or current limits are included.
+
+**Independent example/default:** `V1 = 12 V`, `R1 = 1000 ohm`, `V2 = 3 V`, `R2 = Rl = 2000 ohm`.
+
+- Multiplying original KCL by 2000 gives `2(12-V)+(3-V) = V`, hence `27 = 4V`, or `Vnode = 6.75 V`.
+- `G = 1/1000+1/2000+1/2000 = 0.002 S`.
+- `I1 = (12-6.75)/1000 = 0.00525 A`.
+- `I2 = (3-6.75)/2000 = -0.001875 A`, meaning source 2 must sink 1.875 mA.
+- `Il = 6.75/2000 = 0.003375 A`.
+- KCL cross-check: `0.00525-0.001875 = 0.003375 A`.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `g_total` | `0.002` | S |
+| `v_node` | `6.75` | V |
+| `i_source_1` | `0.00525` | A |
+| `i_source_2` | `-0.001875` | A |
+| `i_load` | `0.003375` | A |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+
