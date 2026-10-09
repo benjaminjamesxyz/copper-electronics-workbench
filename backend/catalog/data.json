@@ -74,5 +74,46 @@
       "expected": {"quantization_step": 0.001953125, "code": 574, "reconstructed_v": 0.1220703125, "error_v": -0.0009296875, "absolute_error_v": 0.0009296875},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.bandlimited_quantization_snr",
+    "title": "Bandlimited ideal quantization SNR",
+    "category": "ADC DAC and sampled systems",
+    "level": "expert",
+    "description": "Estimate ideal sine-wave SNR after digital filtering to a specified noise bandwidth, including signal backoff and white-quantization-noise process gain.",
+    "formula": "OSR = f_s/(2B); SNR_linear = a*2^N*sqrt((3/2)*OSR); SNR_dB = 20 log10(SNR_linear); process_gain_dB = 10 log10(OSR)",
+    "assumptions": [
+      "Quantization error is approximately zero-mean white noise, uniformly distributed between -q/2 and +q/2, with total variance q^2/12.",
+      "The sine-wave peak-to-peak amplitude is a times the converter full-scale span and remains in the linear input range.",
+      "The sine lies within a unity-gain digital passband whose one-sided equivalent noise bandwidth is B; noise outside B is rejected.",
+      "The sine spans at least 16 LSBs as a conservative applicability screen; this does not guarantee uncorrelated error for coherent tones or undithered inputs.",
+      "No noise shaping, overload, harmonic distortion, thermal/reference noise, clock jitter or analog noise budget is modeled. Raising sample rate without filtering does not provide this process gain."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLAP082, Signal Acquisition and Conditioning Seminar section 2, slide 2-15: q/sqrt(12) and ideal sine SNR", "url": "https://www.ti.com/lit/ml/slap082/slap082.pdf"},
+      {"title": "Texas Instruments SLAA694A, General Oversampling of MSP ADCs for Higher Resolution, section 2.2 and equation 4", "url": "https://www.ti.com/lit/an/slaa694a/slaa694a.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "Nominal resolution", "unit": "bit", "default": 12, "min": 4, "max": 32},
+      {"key": "sample_rate", "label": "Sampling rate", "unit": "Hz", "default": 1000000, "min": 1e-9, "max": 1e12},
+      {"key": "noise_bandwidth", "label": "One-sided digital noise bandwidth", "unit": "Hz", "default": 20000, "min": 1e-9, "max": 1e12},
+      {"key": "amplitude_fraction", "label": "Sine peak-to-peak fraction of full scale", "unit": "1", "default": 0.8, "min": 1e-6, "max": 1}
+    ],
+    "outputs": [
+      {"key": "oversampling_ratio", "label": "Noise-bandwidth oversampling ratio", "unit": "1", "expression": "sample_rate/(2*noise_bandwidth)"},
+      {"key": "snr_linear", "label": "Signal RMS to in-band quantization RMS ratio", "unit": "1", "expression": "amplitude_fraction*2^bits*sqrt(1.5*oversampling_ratio)"},
+      {"key": "process_gain_db", "label": "White-noise filtering process gain", "unit": "dB", "expression": "10*log10(oversampling_ratio)"},
+      {"key": "snr_db", "label": "Ideal in-band quantization SNR", "unit": "dB", "expression": "20*log10(snr_linear)"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "sample_rate", "op": ">=", "right": "2*noise_bandwidth", "message": "Digital noise bandwidth must not exceed the Nyquist bandwidth."},
+      {"left": "amplitude_fraction*2^bits", "op": ">=", "right": "16", "message": "The sine must span at least 16 LSBs for this quantization-noise approximation."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "sample_rate": 1000000, "noise_bandwidth": 20000, "amplitude_fraction": 0.8},
+      "expected": {"oversampling_ratio": 25, "snr_linear": 20066.219972879797, "process_gain_db": 13.979400086720377, "snr_db": 86.04931137647155},
+      "relative_tolerance": 0.000001
+    }
   }
 ]

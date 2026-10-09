@@ -64,3 +64,28 @@ All inputs must be finite and exactly match each definition's keys. Bounds and i
 The absolute error is below q/2=0.0009765625 V. All original example values and tolerance are retained.
 
 **Parent verification scenarios (not exercised here):** full example; lower endpoint and exact interior bin boundaries; midpoint zero error; below-low/excluded-high rejection; fractional-bit and small/reversed-span rejection; normalized upper-edge rejection; large-offset narrow-span lower endpoint must return q/2, not zero.
+
+## `data.bandlimited_quantization_snr` — Bandlimited ideal quantization SNR
+
+**Level/purpose:** Expert. Predict quantization-only sine SNR after digital noise-bandwidth filtering, including amplitude backoff and process gain.
+
+**Derivation/units:** Let q [V] be the ideal LSB, N [bit] resolution and a [1] the sine peak-to-peak/full-scale ratio. Uniform error between ±q/2 has variance `(1/q) integral(error^2 d(error)) = q^2/12`. White noise in the full one-sided Nyquist band retains power fraction `2B/f_s` in the unity-gain passband's equivalent noise bandwidth B [Hz]. With `oversampling_ratio=OSR=f_s/(2B)` [1], retained noise RMS is `q/sqrt(12 OSR)` [V]. Sine RMS is `a*2^N*q/(2 sqrt(2))` [V], so `snr_linear=a*2^N*sqrt(1.5 OSR)` [RMS amplitude ratio, 1]. Sequential outputs then give `process_gain_db=10 log10(OSR)` [dB] and `snr_db=20 log10(snr_linear)` [dB]. This linear output is an amplitude ratio, not a power ratio.
+
+Equivalently SNR [dB] is `N*20 log10(2)+10 log10(1.5)+20 log10(a)+10 log10(OSR)`. S4 slide 2-15 supports q/sqrt(12) and sine SNR; S1 §2.2 equation 4 supports filtering process gain. Exact logarithmic coefficients replace rounded 6.02 and 1.76.
+
+**Assumptions:** Approximately white, uncorrelated, zero-mean uniform quantization error; a sine inside the converter's linear range and unity-gain digital passband. No noise shaping, overload, distortion, thermal/reference noise, jitter or analog noise budget. Oversampling alone without digital bandwidth restriction earns no process gain. Coherent undithered tones may violate the white-error approximation.
+
+**Domain/error rationale:** Integer `bits` ∈ [4,32]; `sample_rate` and `noise_bandwidth` each ∈ [1e-9,1e12] Hz; `amplitude_fraction` ∈ [1e-6,1]. Require `sample_rate >= 2*noise_bandwidth` (OSR≥1) and `amplitude_fraction*2^bits >=16`. The latter is a conservative disclosed applicability screen, not manufacturer assurance of uncorrelated noise. Positive bandwidth/amplitude guard divisors and logarithms; bounds keep all products/root/log arguments finite. B is equivalent noise bandwidth, not automatically a −3 dB cutoff.
+
+**Independent example/default:** `bits=12`, `sample_rate=1000000 Hz`, `noise_bandwidth=20000 Hz`, `amplitude_fraction=0.8`.
+
+| Output | Worked substitution | Expected |
+|---|---|---|
+| `oversampling_ratio` | 1000000/(2×20000) | 25 |
+| `snr_linear` | 0.8×4096×sqrt(37.5) | 20066.219972879797 |
+| `process_gain_db` | 10 log10(25) | 13.979400086720377 dB |
+| `snr_db` | 20 log10(20066.219972879797) | 86.04931137647155 dB |
+
+At a=1 and B=f_s/2 the equation reduces to ideal full-Nyquist sine SNR. The example's full-scale/unfiltered 12-bit SNR is about 74.0081 dB; amplitude backoff contributes −1.9382 dB and filtering +13.9794 dB.
+
+**Parent verification scenarios (not exercised here):** example; OSR=1/full-scale identity; doubled sample rate at fixed B gives +10 log10(2) dB; amplitude halving gives −20 log10(2) dB where the 16-LSB screen permits it; fractional bits, B>Nyquist and <16-LSB rejection; exact 16-LSB boundary.
