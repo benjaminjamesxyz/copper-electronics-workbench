@@ -120,5 +120,76 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "sensors.platinum_callendar_van_dusen",
+    "title": "Platinum RTD nonlinear resistance response",
+    "category": "Sensor transduction",
+    "level": "intermediate",
+    "description": "Predict platinum RTD resistance and sensitivity including the subzero quartic term.",
+    "formula": "R=R0[1+A t+B t^2+C(u-100)u^3], u=min(t,0); A=3.9083e-3, B=-5.775e-7, C=-4.183e-12",
+    "assumptions": [
+      "Nominal IEC 60751 platinum coefficient family, not a calibration or a guarantee of sensor tolerance class.",
+      "Temperature is explicitly degrees Celsius; reference resistance is at 0 degrees Celsius.",
+      "Valid reference-function range is -200 to 850 degrees Celsius; a particular package may have a narrower rating.",
+      "Neglect self-heating, lead resistance, hysteresis and strain. Linear-model error compares against R0(1+A t), not a separate calculator."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SDAA150, section 1.2.2.1, equations 21 and 23–26",
+        "url": "https://www.ti.com/document-viewer/lit/html/SDAA150/GUID-D7335C6E-A97D-4849-80CC-6781C31A787C.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "zero_resistance",
+        "label": "Resistance at 0 degrees Celsius",
+        "unit": "ohm",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature_celsius",
+        "label": "Sensor temperature",
+        "unit": "degC",
+        "default": -100,
+        "min": -200,
+        "max": 850
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resistance",
+        "label": "RTD resistance",
+        "unit": "ohm",
+        "expression": "zero_resistance*(1+3.9083e-3*temperature_celsius-5.775e-7*temperature_celsius^2-4.183e-12*(min(temperature_celsius,0)-100)*min(temperature_celsius,0)^3)"
+      },
+      {
+        "key": "resistance_sensitivity",
+        "label": "Local resistance sensitivity",
+        "unit": "ohm/K",
+        "expression": "zero_resistance*(3.9083e-3-1.155e-6*temperature_celsius-4.183e-12*(4*min(temperature_celsius,0)-300)*min(temperature_celsius,0)^2)"
+      },
+      {
+        "key": "linear_model_error",
+        "label": "Resistance minus tangent model at zero",
+        "unit": "ohm",
+        "expression": "zero_resistance*(-5.775e-7*temperature_celsius^2-4.183e-12*(min(temperature_celsius,0)-100)*min(temperature_celsius,0)^3)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "zero_resistance": 100,
+        "temperature_celsius": -100
+      },
+      "expected": {
+        "resistance": 60.25584,
+        "resistance_sensitivity": 0.4053081,
+        "linear_model_error": -0.66116
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
