@@ -1,0 +1,82 @@
+[
+  {
+    "id": "noise.johnson_resistor",
+    "title": "Resistor Johnson noise",
+    "category": "Noise measurement and analog budgets",
+    "level": "basic",
+    "description": "Estimate open-circuit thermal voltage-noise density and integrated RMS noise of a resistor.",
+    "formula": "e_n = sqrt(4 k T R); v_rms = e_n sqrt(B)",
+    "assumptions": [
+      "Classical Johnson-Nyquist approximation: h f is much smaller than k T at every relevant frequency.",
+      "R is real and constant over the band; reported voltage is open circuit, not the voltage delivered to a matched load.",
+      "B is the one-sided equivalent noise bandwidth in Hz, not necessarily the -3 dB bandwidth.",
+      "Excludes resistor excess/flicker noise, parasitic reactance and externally coupled noise."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLVA043B, Thermal Noise and Integrating Noise",
+        "url": "https://www.ti.com/lit/an/slva043b/slva043b.pdf"
+      },
+      {
+        "title": "NIST CODATA: exact Boltzmann constant",
+        "url": "https://physics.nist.gov/cgi-bin/cuu/Value?k"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "resistance",
+        "label": "Resistance",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "temperature",
+        "label": "Absolute temperature",
+        "unit": "K",
+        "default": 300.0,
+        "min": 0.0,
+        "exclusive_min": true,
+        "max": 2000.0
+      },
+      {
+        "key": "bandwidth",
+        "label": "Equivalent noise bandwidth",
+        "unit": "Hz",
+        "default": 20000.0,
+        "min": 0.0,
+        "exclusive_min": true,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "voltage_noise_density",
+        "label": "Open-circuit voltage-noise density",
+        "unit": "V/sqrt(Hz)",
+        "expression": "sqrt(4*1.380649e-23*temperature*resistance)"
+      },
+      {
+        "key": "voltage_noise_rms",
+        "label": "Open-circuit RMS voltage noise",
+        "unit": "V",
+        "expression": "voltage_noise_density*sqrt(bandwidth)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "resistance": 10000.0,
+        "temperature": 300.0,
+        "bandwidth": 20000.0
+      },
+      "expected": {
+        "voltage_noise_density": 1.2871591976131002e-08,
+        "voltage_noise_rms": 1.8203179941977172e-06
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
