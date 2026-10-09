@@ -1,0 +1,585 @@
+{
+  "lane": "logic",
+  "base": "4c46fa1",
+  "file": "backend/tests/logic.rs",
+  "authored_tests": 28,
+  "behaviors_covered": {
+    "logic.guaranteed_noise_margins": [
+      "All outputs from non-default binary-exact voltage budget",
+      "Both ground signs, total-budget invariance, zero margin, negative high and low diagnostics, no-noise limit",
+      "Every scalar/coupled invalid bound, missing/extra/nonfinite inputs, complete valid recovery"
+    ],
+    "logic.dc_current_fanout": [
+      "All outputs from independent source/sink conservation",
+      "Both bottlenecks, fractional floor and adjacent binary64 threshold, exact source/sink exhaustion, overload signs, zero loads and capabilities",
+      "Positive receiver-current constraints, integer counts, missing/extra/nonfinite inputs and full recovery"
+    ],
+    "logic.cmos_package_power": [
+      "Every output from full-cycle charge, no factor-of-two and leakage counted once",
+      "Static-only, no output switching, zero capacitance/current, tiny 7.5e-22 W dynamic power",
+      "Rate/voltage/section scaling; all scalar/integer/missing/extra/nonfinite guards and recovery"
+    ],
+    "logic.synchronizer_metastability": [
+      "Every output from one encounter per second and exp(-8) survival, independent chain failure-rate sum",
+      "Zero/short/large time, signed margin, target floor, chain/target scaling",
+      "Aperture equality/excess and every scalar/integer/missing/extra/nonfinite guard with recovery",
+      "Failing subnormal-rate reciprocal and finite-log exponent-overflow regressions; equal subnormal-time stability"
+    ],
+    "logic.three_stage_logical_effort": [
+      "Every output for unequal efforts 2,1.5,3 with direct stage delay oracle",
+      "Direct perturbation minimization, equal effort, endpoint scaling down to 1e-27 F, zero parasitic, inverter/equal/downsize limits",
+      "Every input-domain/missing/extra/nonfinite guard and full recovery"
+    ],
+    "logic.fifo_envelope_depth": [
+      "Every output from independent vertical/horizontal envelope geometry",
+      "Equal rates, burst only, exact word-phase equality, ceil adjacent integers, capacity minimality",
+      "Failing positive sub-ULP arrival ceiling regression",
+      "Unstable service, short word phase, fractional counts, scalar/missing/extra/nonfinite inputs and full recovery"
+    ]
+  },
+  "changes_reach": [
+    "backend/tests/logic.rs",
+    "coordination/expansion/testing/logic.json",
+    "Root COMMUNICATION.md append only, not committed"
+  ],
+  "oracle_sources": [
+    "research/expansion/logic.md and .json; docs/features/logic.md; logic backlog acceptance",
+    "TI guaranteed-level/current and full-cycle Cpd laws cited in research; direct hand arithmetic with non-default vectors",
+    "Stanford exponential survival law and summed independent failure rates; no catalog expected values loaded",
+    "Harris stage-delay objective and AM-GM equal-effort minimum; Network Calculus vertical/horizontal gaps"
+  ],
+  "verification": {
+    "executed": false,
+    "details": "Authored only. No build, tests, lint, formatter, engine/process execution or native launch. Independent Python arithmetic used only to serialize numerical reference scenarios; it did not call production."
+  },
+  "untested_gaps": [
+    "Main must compile and execute cargo test --test logic after integrating; three regression tests deliberately expose suspected snapshot defects.",
+    "Main must execute the ordered JSON-lines scenarios in one real process, and verify desktop error clearing and recovery.",
+    "Native pixel review belongs to V2LogicRun; no tester image approval is claimed.",
+    "No real-part calibration, hardware measurements, physical envelope validity, CDC certification or other-platform acceptance."
+  ],
+  "suspected_defects": [
+    {
+      "key": "LOGIC-T1",
+      "id": "logic.fifo_envelope_depth",
+      "severity": "high",
+      "location": "backend/catalog/logic.json: usable_depth expression ceil(backlog_bound)",
+      "inputs": {
+        "burst_words": 64,
+        "arrival_rate": 1e-09,
+        "service_rate": 1000000.0,
+        "service_latency": 1e-06,
+        "word_bits": 8
+      },
+      "expected_outputs": {
+        "backlog_bound": 64,
+        "usable_depth": 65,
+        "storage_bits": 520,
+        "delay_bound": 6.5e-05
+      },
+      "evidence": "Independent binary64 spacing analysis: positive rT=1e-15 is below half an ULP at 64; ceil of rounded sum loses required word. Not executed.",
+      "minimal_correction": "Preserve integer burst separately from ceil(arrival_rate*service_latency), without epsilon.",
+      "test": "fifo_positive_sub_ulp_arrivals_still_require_one_more_word"
+    },
+    {
+      "key": "LOGIC-T2",
+      "id": "logic.synchronizer_metastability",
+      "severity": "medium",
+      "location": "backend/catalog/logic.json: aperture_parameter < 1/data_transition_rate constraint",
+      "inputs": {
+        "clock_frequency": 1048576,
+        "data_transition_rate": 1e-310,
+        "aperture_parameter": 9.313225746154785e-10,
+        "resolution_constant": 1e-10,
+        "resolution_time": 8e-10,
+        "chain_count": 16,
+        "target_system_mtbf": 64
+      },
+      "expected_outputs": {
+        "log10_chain_mtbf": 316.4846558118658,
+        "log10_system_mtbf": 315.2805358292099,
+        "required_resolution_time": 0,
+        "resolution_margin": 8e-10
+      },
+      "evidence": "V2LogicRun source finding independently covered: reciprocal overflows for 1e-310, while log outputs and aperture-factor domain are valid. Not executed.",
+      "minimal_correction": "Compare aperture-times-transition-rate against one without reciprocal overflow.",
+      "test": "metastability_subnormal_transition_rate_keeps_finite_logarithms"
+    },
+    {
+      "key": "LOGIC-T3",
+      "id": "logic.synchronizer_metastability",
+      "severity": "medium",
+      "location": "backend/catalog/logic.json: log10_chain_mtbf expression",
+      "inputs": {
+        "clock_frequency": 1048576,
+        "data_transition_rate": 1024,
+        "aperture_parameter": 9.313225746154785e-10,
+        "resolution_constant": 5e-11,
+        "resolution_time": 1e+298,
+        "chain_count": 16,
+        "target_system_mtbf": 64
+      },
+      "expected_outputs": {
+        "log10_chain_mtbf": 8.685889638065035e+307,
+        "log10_system_mtbf": 8.685889638065035e+307,
+        "required_resolution_time": 3.4657359027997266e-10,
+        "resolution_margin": 1e+298
+      },
+      "evidence": "V2LogicRun source finding independently covered: ratio 2e308 overflows before /ln(10), but final log approximately 8.685889638065036e307 is representable. Not executed.",
+      "minimal_correction": "Use scaled logarithmic evaluation, preserving equal subnormal resolution/tau operands.",
+      "test": "metastability_representable_log_mtbf_survives_raw_exponent_overflow"
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "guaranteed_noise_margins_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "logic.guaranteed_noise_margins",
+        "inputs": {
+          "output_high_min": 0.25,
+          "output_low_max": 0.25,
+          "input_high_min": 2.5,
+          "input_low_max": 0.75,
+          "ground_offset": 0.125,
+          "high_noise": 0.125,
+          "low_noise": 0.25
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain and clear stale output; immediately follow with complete independent valid vector."
+    },
+    {
+      "name": "guaranteed_noise_margins_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.guaranteed_noise_margins",
+        "inputs": {
+          "output_high_min": 3.25,
+          "output_low_max": 0.25,
+          "input_high_min": 2.5,
+          "input_low_max": 0.75,
+          "ground_offset": 0.125,
+          "high_noise": 0.125,
+          "low_noise": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Receiver-reference conversion subtracts 0.125 V; remaining high/low budgets are 0.5/0.375 V.",
+      "expected_outputs": {
+        "high_margin": 0.5,
+        "low_margin": 0.375,
+        "minimum_margin": 0.375
+      }
+    },
+    {
+      "name": "dc_current_fanout_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "logic.dc_current_fanout",
+        "inputs": {
+          "source_limit": 0.015625,
+          "sink_limit": 0.0234375,
+          "receiver_high_current": 0.001953125,
+          "receiver_low_current": 0.00390625,
+          "load_count": 6.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain and clear stale output; immediately follow with complete independent valid vector."
+    },
+    {
+      "name": "dc_current_fanout_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.dc_current_fanout",
+        "inputs": {
+          "source_limit": 0.015625,
+          "sink_limit": 0.0234375,
+          "receiver_high_current": 0.001953125,
+          "receiver_low_current": 0.00390625,
+          "load_count": 7
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Binary-exact current conservation gives eight source loads but six sink loads; proposed seven retains negative sink headroom.",
+      "expected_outputs": {
+        "high_fanout": 8,
+        "low_fanout": 6,
+        "maximum_fanout": 6,
+        "source_headroom": 0.001953125,
+        "sink_headroom": -0.00390625
+      }
+    },
+    {
+      "name": "cmos_package_power_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "logic.cmos_package_power",
+        "inputs": {
+          "supply_voltage": 2.5,
+          "quiescent_current": 4e-06,
+          "active_sections": 1.5,
+          "power_capacitance": 8e-12,
+          "input_cycle_rate": 5000000.0,
+          "load_capacitance": 1.2e-11,
+          "output_cycle_rate": 2000000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain and clear stale output; immediately follow with complete independent valid vector."
+    },
+    {
+      "name": "cmos_package_power_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.cmos_package_power",
+        "inputs": {
+          "supply_voltage": 2.5,
+          "quiescent_current": 4e-06,
+          "active_sections": 3,
+          "power_capacitance": 8e-12,
+          "input_cycle_rate": 5000000.0,
+          "load_capacitance": 1.2e-11,
+          "output_cycle_rate": 2000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Full-cycle charge budget gives 300+180 uA dynamic demand plus 4 uA package leakage once.",
+      "expected_outputs": {
+        "static_power": 1e-05,
+        "internal_power": 0.00075,
+        "load_power": 0.00045,
+        "total_power": 0.00121,
+        "average_current": 0.000484
+      }
+    },
+    {
+      "name": "synchronizer_metastability_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "logic.synchronizer_metastability",
+        "inputs": {
+          "clock_frequency": 1048576,
+          "data_transition_rate": 1024,
+          "aperture_parameter": 0.0009765625,
+          "resolution_constant": 1e-10,
+          "resolution_time": 8e-10,
+          "chain_count": 16,
+          "target_system_mtbf": 64
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain and clear stale output; immediately follow with complete independent valid vector."
+    },
+    {
+      "name": "synchronizer_metastability_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.synchronizer_metastability",
+        "inputs": {
+          "clock_frequency": 1048576,
+          "data_transition_rate": 1024,
+          "aperture_parameter": 9.313225746154785e-10,
+          "resolution_constant": 1e-10,
+          "resolution_time": 8e-10,
+          "chain_count": 16,
+          "target_system_mtbf": 64
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "One aperture encounter/s, survival probability exp(-8), sixteen independent failure rates; target demands ln(1024) time constants.",
+      "expected_outputs": {
+        "log10_chain_mtbf": 3.4743558552260145,
+        "log10_system_mtbf": 2.27023587257009,
+        "required_resolution_time": 6.931471805599453e-10,
+        "resolution_margin": 1.0685281944005471e-10
+      }
+    },
+    {
+      "name": "three_stage_logical_effort_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "logic.three_stage_logical_effort",
+        "inputs": {
+          "first_input_capacitance": 1e-15,
+          "final_load_capacitance": 2.4e-14,
+          "first_logical_effort": 2,
+          "second_logical_effort": 0.999,
+          "third_logical_effort": 3,
+          "path_parasitic_delay": 6,
+          "process_delay_unit": 8e-12
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain and clear stale output; immediately follow with complete independent valid vector."
+    },
+    {
+      "name": "three_stage_logical_effort_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.three_stage_logical_effort",
+        "inputs": {
+          "first_input_capacitance": 1e-15,
+          "final_load_capacitance": 2.4e-14,
+          "first_logical_effort": 2,
+          "second_logical_effort": 1.5,
+          "third_logical_effort": 3,
+          "path_parasitic_delay": 6,
+          "process_delay_unit": 8e-12
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Direct efforts 2*(3/1), 1.5*(12/3), 3*(24/12) all equal six; AM-GM minimizes sum at 18 plus six parasitics.",
+      "expected_outputs": {
+        "optimal_stage_effort": 6,
+        "second_input_capacitance": 3e-15,
+        "third_input_capacitance": 1.2e-14,
+        "normalized_path_delay": 24,
+        "path_delay": 1.92e-10
+      }
+    },
+    {
+      "name": "fifo_envelope_depth_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "logic.fifo_envelope_depth",
+        "inputs": {
+          "burst_words": 7,
+          "arrival_rate": 8.125,
+          "service_rate": 8,
+          "service_latency": 0.625,
+          "word_bits": 12
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain and clear stale output; immediately follow with complete independent valid vector."
+    },
+    {
+      "name": "fifo_envelope_depth_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.fifo_envelope_depth",
+        "inputs": {
+          "burst_words": 7,
+          "arrival_rate": 3,
+          "service_rate": 8,
+          "service_latency": 0.625,
+          "word_bits": 12
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Envelope vertical gap peaks at T=0.625 with 8.875 words; nine 12-bit entries and horizontal gap 1.5 s.",
+      "expected_outputs": {
+        "backlog_bound": 8.875,
+        "usable_depth": 9,
+        "storage_bits": 108,
+        "delay_bound": 1.5
+      }
+    },
+    {
+      "name": "noise_negative_diagnostic",
+      "request": {
+        "command": "calculate",
+        "id": "logic.guaranteed_noise_margins",
+        "inputs": {
+          "output_high_min": 3.25,
+          "output_low_max": 0.25,
+          "input_high_min": 2.5,
+          "input_low_max": 0.75,
+          "ground_offset": 0.75,
+          "high_noise": 0.125,
+          "low_noise": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Incompatible voltage budget is a signed result, not an error.",
+      "expected_outputs": {
+        "high_margin": -0.125,
+        "low_margin": 1,
+        "minimum_margin": -0.125
+      }
+    },
+    {
+      "name": "fifo_short_word_phase",
+      "request": {
+        "command": "calculate",
+        "id": "logic.fifo_envelope_depth",
+        "inputs": {
+          "burst_words": 7,
+          "arrival_rate": 3,
+          "service_rate": 8,
+          "service_latency": 0.124,
+          "word_bits": 12
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Whole-word service period is 0.125 s; smaller guaranteed latency is inadmissible."
+    },
+    {
+      "name": "fifo_minimum_word_phase_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "logic.fifo_envelope_depth",
+        "inputs": {
+          "burst_words": 7,
+          "arrival_rate": 3,
+          "service_rate": 8,
+          "service_latency": 0.125,
+          "word_bits": 12
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Equality admits phase boundary; fractional storage bound rounds upward.",
+      "expected_outputs": {
+        "backlog_bound": 7.375,
+        "usable_depth": 8,
+        "storage_bits": 96,
+        "delay_bound": 1
+      }
+    },
+    {
+      "name": "fifo_equal_rates",
+      "request": {
+        "command": "calculate",
+        "id": "logic.fifo_envelope_depth",
+        "inputs": {
+          "burst_words": 7,
+          "arrival_rate": 8,
+          "service_rate": 8,
+          "service_latency": 0.625,
+          "word_bits": 12
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "After latency the arrival and service slopes match; backlog stays bounded.",
+      "expected_outputs": {
+        "backlog_bound": 12,
+        "usable_depth": 12,
+        "storage_bits": 144,
+        "delay_bound": 1.5
+      }
+    },
+    {
+      "name": "fifo_sub_ulp_positive_arrival_regression",
+      "request": {
+        "command": "calculate",
+        "id": "logic.fifo_envelope_depth",
+        "inputs": {
+          "burst_words": 64,
+          "arrival_rate": 1e-09,
+          "service_rate": 1000000.0,
+          "service_latency": 1e-06,
+          "word_bits": 8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Integral b plus strictly positive rT requires one extra word even when displayed backlog rounds to b; known suspected baseline defect.",
+      "expected_outputs": {
+        "backlog_bound": 64,
+        "usable_depth": 65,
+        "storage_bits": 520,
+        "delay_bound": 6.5e-05
+      }
+    },
+    {
+      "name": "metastability_subnormal_rate_regression",
+      "request": {
+        "command": "calculate",
+        "id": "logic.synchronizer_metastability",
+        "inputs": {
+          "clock_frequency": 1048576,
+          "data_transition_rate": 1e-310,
+          "aperture_parameter": 9.313225746154785e-10,
+          "resolution_constant": 1e-10,
+          "resolution_time": 8e-10,
+          "chain_count": 16,
+          "target_system_mtbf": 64
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reciprocal guard must not reject a positive tiny transition rate with finite logarithmic outputs; known suspected baseline defect.",
+      "expected_outputs": {
+        "log10_chain_mtbf": 316.4846558118658,
+        "log10_system_mtbf": 315.2805358292099,
+        "required_resolution_time": 0,
+        "resolution_margin": 8e-10
+      }
+    },
+    {
+      "name": "metastability_finite_log_overflow_regression",
+      "request": {
+        "command": "calculate",
+        "id": "logic.synchronizer_metastability",
+        "inputs": {
+          "clock_frequency": 1048576,
+          "data_transition_rate": 1024,
+          "aperture_parameter": 9.313225746154785e-10,
+          "resolution_constant": 5e-11,
+          "resolution_time": 1e+298,
+          "chain_count": 16,
+          "target_system_mtbf": 64
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Raw exponent overflows but base-ten logarithm is representable; known suspected baseline defect.",
+      "expected_outputs": {
+        "log10_chain_mtbf": 8.685889638065035e+307,
+        "log10_system_mtbf": 8.685889638065035e+307,
+        "required_resolution_time": 3.4657359027997266e-10,
+        "resolution_margin": 1e+298
+      }
+    },
+    {
+      "name": "metastability_equal_subnormal_times",
+      "request": {
+        "command": "calculate",
+        "id": "logic.synchronizer_metastability",
+        "inputs": {
+          "clock_frequency": 1048576,
+          "data_transition_rate": 1024,
+          "aperture_parameter": 9.313225746154785e-10,
+          "resolution_constant": 1e-310,
+          "resolution_time": 1e-310,
+          "chain_count": 16,
+          "target_system_mtbf": 0.001
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Equal subnormal fitted times retain unit exponent; overflow repair must not erase tiny operands.",
+      "expected_outputs": {
+        "log10_chain_mtbf": 0.4342944819032518,
+        "log10_system_mtbf": -0.769825500752673,
+        "required_resolution_time": 0,
+        "resolution_margin": 1e-310
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select each of six logic models; enter corresponding non-default recovery vector and compare every output with this receipt.",
+    "Show negative noise/current/resolution diagnostics without rejecting or clamping them.",
+    "Enter unordered voltage levels, fractional count, aperture-factor equality, invalid effort, unstable FIFO service and short FIFO phase; then recover using adjacent valid requests.",
+    "Display tiny gate capacitances and power, finite logarithmic huge MTBF, and corrected conservative FIFO depth using scientific notation where needed.",
+    "Inspect every actual image using V2LogicRun review; no source-only pixel approval."
+  ]
+}
