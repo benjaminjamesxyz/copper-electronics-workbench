@@ -30,5 +30,49 @@
       "expected": {"code_count": 4096, "lsb_v": 0.0008056640625},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.adc_quantization_error",
+    "title": "Ideal ADC code and quantization error",
+    "category": "ADC DAC and sampled systems",
+    "level": "intermediate",
+    "description": "Quantize a specific input voltage using an explicitly defined uniform midrise transfer, then report its midpoint reconstruction and signed error.",
+    "formula": "q = (V_high - V_low)/2^N; k = floor((V_in - V_low)/q); V_hat = V_low + (k + 1/2)q; error = (k + 1/2)q - (V_in - V_low) = V_hat - V_in",
+    "assumptions": [
+      "Uniform midrise model: bin k is [V_low+kq, V_low+(k+1)q), reconstructed at its midpoint.",
+      "The input is inside the nonsaturated interval V_low <= V_in < V_high; the upper endpoint is excluded.",
+      "Unsigned straight-binary code labels are used even when the analog interval is bipolar.",
+      "This explicit midpoint convention is not a universal device transfer curve; consult device transition specifications. Offset, INL, DNL, noise and saturation behavior are excluded.",
+      "Signed error is evaluated in coordinates relative to the lower endpoint to avoid subtracting a rounded absolute reconstruction from the input. Absolute reconstruction can round to the endpoint/input when the bin is smaller than their binary64 spacing."
+    ],
+    "references": [
+      {"title": "University of Texas at Austin EE445S, Lecture 8 Quantization notes, midrise quantization and error analysis", "url": "https://users.ece.utexas.edu/~bevans/courses/realtime/lectures/08_Quantization/notes/2020-12-02%20Lecture%208%20Quantization.pdf"},
+      {"title": "Texas Instruments ADCPro User Guide SBAU128C, appendix A.1.1 ADC transfer and quantization error", "url": "https://www.ti.com/lit/ug/sbau128c/sbau128c.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "Resolution", "unit": "bit", "default": 10, "min": 1, "max": 32},
+      {"key": "v_low", "label": "Lower input endpoint", "unit": "V", "default": -1, "min": -1000, "max": 1000},
+      {"key": "v_high", "label": "Upper input endpoint", "unit": "V", "default": 1, "min": -1000, "max": 1000},
+      {"key": "v_in", "label": "Analog input", "unit": "V", "default": 0.123, "min": -1000, "max": 1000}
+    ],
+    "outputs": [
+      {"key": "quantization_step", "label": "Bin width", "unit": "V", "expression": "(v_high-v_low)/2^bits"},
+      {"key": "code", "label": "Unsigned output code", "unit": "count", "expression": "floor((v_in-v_low)/quantization_step)"},
+      {"key": "reconstructed_v", "label": "Bin midpoint reconstruction", "unit": "V", "expression": "v_low+(code+0.5)*quantization_step"},
+      {"key": "error_v", "label": "Reconstruction minus input", "unit": "V", "expression": "(code+0.5)*quantization_step-(v_in-v_low)"},
+      {"key": "absolute_error_v", "label": "Absolute quantization error", "unit": "V", "expression": "abs(error_v)"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "v_high-v_low", "op": ">=", "right": "1e-9", "message": "The upper endpoint must exceed the lower endpoint by at least 1 nV."},
+      {"left": "v_in", "op": ">=", "right": "v_low", "message": "Input must not lie below the nonsaturated converter interval."},
+      {"left": "(v_in-v_low)/(v_high-v_low)", "op": "<", "right": "1", "message": "Input must remain below full scale after floating-point normalization."},
+      {"left": "v_in", "op": "<", "right": "v_high", "message": "Input must be below the excluded upper endpoint."}
+    ],
+    "example": {
+      "inputs": {"bits": 10, "v_low": -1, "v_high": 1, "v_in": 0.123},
+      "expected": {"quantization_step": 0.001953125, "code": 574, "reconstructed_v": 0.1220703125, "error_v": -0.0009296875, "absolute_error_v": 0.0009296875},
+      "relative_tolerance": 0.000001
+    }
   }
 ]

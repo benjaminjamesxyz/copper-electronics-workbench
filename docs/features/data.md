@@ -38,3 +38,29 @@ All inputs must be finite and exactly match each definition's keys. Bounds and i
 | `lsb_v` | 3.3/4096 | 0.0008056640625 V (805.6640625 µV) |
 
 **Parent verification scenarios (not exercised here):** full example, one-bit and 32-bit boundaries, span scaling, fractional-bit rejection and span-range rejection.
+
+## `data.adc_quantization_error` — Ideal ADC code and quantization error
+
+**Level/purpose:** Intermediate; discrete-boundary risk. Quantize a particular voltage, reconstruct the selected bin midpoint and report signed/absolute error. This is not merely bin spacing.
+
+**Model/formulas and units:** Integer resolution N [bit] gives `quantization_step=q=(V_high−V_low)/2^N` [V]. Bin k covers `[V_low+kq,V_low+(k+1)q)`. Sequential outputs are `code=k=floor((V_in−V_low)/q)` [count], `reconstructed_v=V_hat=V_low+(k+1/2)q` [V], `error_v=(k+1/2)q−(V_in−V_low)` [V], then `absolute_error_v=abs(error_v)` [V]. Algebraically the signed error is V_hat−V_in, giving `−q/2 < error <= q/2` in the exact model. S2 supports the explicit midrise convention; S3 A.1.1 supports half-LSB ideal error.
+
+**Assumptions:** Uniform ideal midrise bins, unsigned straight-binary labels even for bipolar analog input. Midpoint reconstruction is neither bottom-edge reconstruction nor universal hardware behavior. Offset, INL, DNL, noise and saturation are excluded; consult device transition specifications.
+
+**Domain/error rationale:** Integer `bits` ∈ [1,32]; all voltages ∈ [−1000,1000] V; span at least 1e-9 V. Require `v_low <= v_in < v_high`. The normalized fraction must also stay below one, rejecting an upper-edge value indistinguishable from full scale after binary64 normalization. Ordered constraints reject reversed/too-small spans before dividing. No out-of-range saturation fallback.
+
+**Numerical correction:** The researched expression subtracted the rounded absolute reconstruction from V_in. At N=32, V_low=999 V, V_high=999.000000001 V and V_in=V_low, the half-LSB is approximately 1.16e-19 V, far below the roughly 1.14e-13 V spacing of binary64 values near 999 V. Absolute reconstruction therefore rounds back to V_low; its direct subtraction would falsely return zero. The implemented lower-endpoint-relative error retains q/2 at that boundary without excluding an admissible narrow span. Absolute reconstruction is necessarily rounded, so subtracting displayed voltages need not recover the accurately evaluated local error. Ordinary floating-point uncertainty still applies close to discontinuous bin transitions; this is not extra ADC accuracy.
+
+**Independent example/default:** `bits=10`, `v_low=−1 V`, `v_high=1 V`, `v_in=0.123 V`.
+
+| Output | Worked substitution | Expected |
+|---|---|---|
+| `quantization_step` | 2/1024 | 0.001953125 V |
+| `code` | floor((0.123+1)×512)=floor(574.976) | 574 count |
+| `reconstructed_v` | −1+574.5/512 | 0.1220703125 V |
+| `error_v` | 574.5/512−1.123 | −0.0009296875 V |
+| `absolute_error_v` | abs(−0.0009296875) | 0.0009296875 V |
+
+The absolute error is below q/2=0.0009765625 V. All original example values and tolerance are retained.
+
+**Parent verification scenarios (not exercised here):** full example; lower endpoint and exact interior bin boundaries; midpoint zero error; below-low/excluded-high rejection; fractional-bit and small/reversed-span rejection; normalized upper-edge rejection; large-offset narrow-span lower endpoint must return q/2, not zero.
