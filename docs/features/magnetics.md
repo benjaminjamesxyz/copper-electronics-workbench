@@ -265,6 +265,61 @@ All inputs are the default/worked input column above; every result is named belo
 | `skin_depth` | Field amplitude skin depth | m | 0.0002089806784938892 |
 
 
+## `magnetics.coupled_coil_inductance` — Mutual and series-connected coupled-coil inductance (intermediate)
+
+ID: `magnetics.coupled_coil_inductance`.
+
+**Question:** How does imperfect coupling change the inductance when two windings are placed in series in either polarity?
+
+**Derivation:** The coupling definition is k = M/√(L1 L2), where the sign of mutual contribution is supplied by the dot convention. For a reciprocal linear pair, λ1 = L1 i1 ± M i2 and λ2 = L2 i2 ± M i1. Series current is common; adding the induced voltages gives Leq = L1 + L2 ± 2M. Passivity imposes M² ≤ L1 L2, so magnitude k is in [0,1].
+
+**Formula and outputs:**
+
+- `mutual_inductance = coupling*sqrt(inductance_one)*sqrt(inductance_two)` [H].
+- `series_aiding = inductance_one+inductance_two+2*mutual_inductance` [H].
+- `series_opposing = ((inductance_one-inductance_two)/(sqrt(inductance_one)+sqrt(inductance_two)))^2+2*(1-coupling)*sqrt(inductance_one)*sqrt(inductance_two)` [H].
+
+The last expression is algebraically identical to L1 + L2 - 2M, but avoids subtracting nearly equal large terms when the windings are close to perfectly coupled. It is not a clamp or fabricated fallback. At equal L and k = 1, the ideal opposing result is exactly zero. For arbitrary unequal L and k = 1, it is (√L1 - √L2)², evaluated with the rationalized difference below.
+
+**Input units/domain:** L1, L2 [H] > 0; k [1] in [0,1]. Obtain self-inductances with the other winding open, not shorted, and at matching bias/frequency. The bounds alone guard all square roots and guarantee a passive inductance matrix, so no extra constraints are needed.
+
+**Limitations:** Linear reciprocal coils; no saturation, significant dispersion, losses or winding capacitance. Dot polarity determines which actual physical series connection is aiding; both numerical possibilities are returned to avoid a conditional selector. Near-perfect opposing cancellation leaves parasitics dominant in real hardware. This is not the ideal turns-ratio calculator: it explicitly retains nonunity coupling and finite self-inductances.
+
+**Worked example/defaults:** L1 = 100 µH = 0.0001 H, L2 = 400 µH = 0.0004 H, k = 0.9.
+
+- √(L1 L2) = √(4 × 10^-8 H²) = 0.0002 H.
+- M = 0.9 × 0.0002 = **0.00018 H** (180 µH).
+- Laiding = 0.0005 + 0.00036 = **0.00086 H** (860 µH).
+- Lopposing = 0.0005 - 0.00036 = **0.00014 H** (140 µH).
+- Independent stable-form reduction: (0.01 - 0.02)² + 2 × 0.1 × 0.0002 = 0.0001 + 0.00004 = 0.00014 H.
+
+**Sources:** [Berkeley §3.2.2, equations 3.6–3.8](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2007/EECS-2007-3.pdf) defines k and M; [MIT §9.7 terminal relations](https://www.mit.edu/course/6/6.013_book/www/chapter9/9.7.html) supplies the linear linkage matrix from which the two series configurations are derived.
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `inductance_one` | Winding one open-circuit self-inductance | H | 0.0001 | > 0.0 |
+| `inductance_two` | Winding two open-circuit self-inductance | H | 0.0004 | > 0.0 |
+| `coupling` | Coupling coefficient magnitude | 1 | 0.9 | >= 0.0; <= 1.0 |
+
+**Model-domain and error rationale:** Strictly positive self-inductances guard both square roots and their positive sum. Coupling magnitude between zero and one, inclusive, enforces the passive reciprocal matrix. At zero coupling M is exactly zero; at equal self-inductances and k=1 the opposing inductance is exactly zero without clamping. Dot convention sets the physical aiding/opposing connection, not the sign of the coupling input.
+
+**Additional constraints:** none; input bounds fully guard this model.
+
+**Conditioning derivation:** sqrt(L1 L2)=sqrt(L1)*sqrt(L2) avoids an unrepresentable product even when the geometric mean is representable. Also sqrt(L1)-sqrt(L2)=(L1-L2)/(sqrt(L1)+sqrt(L2)); rationalizing before squaring preserves a small positive opposing mismatch when separately rounded roots would become equal. Thus Lopposing=((L1-L2)/(sqrt(L1)+sqrt(L2)))²+2(1-k)sqrt(L1)sqrt(L2). At L1=L2=1e200 H and k=0.5, independent algebra gives M=5e199 H, Laiding=3e200 H and Lopposing=1e200 H; the original product overflows. At L1=L2=1e-200 H and k=0.5 the corresponding results are 5e-201 H, 3e-200 H and 1e-200 H; forming L1 L2 would underflow. These are mathematical conditioning probes, not practical coil designs. No clamp or extra outputs are introduced.
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `mutual_inductance` | Mutual inductance magnitude | H | 0.00018 |
+| `series_aiding` | Series-aiding inductance | H | 0.00086 |
+| `series_opposing` | Series-opposing inductance | H | 0.00014 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.

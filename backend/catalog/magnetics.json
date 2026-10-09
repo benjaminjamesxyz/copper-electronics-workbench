@@ -473,5 +473,90 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.coupled_coil_inductance",
+    "title": "Mutual and series-connected coupled-coil inductance",
+    "category": "Magnetics and transformers",
+    "level": "intermediate",
+    "description": "Predict mutual inductance and both series polarities from two self-inductances and coupling coefficient.",
+    "formula": "M = k sqrt(L1 L2); Laiding = L1+L2+2M; Lopposing = L1+L2-2M",
+    "assumptions": [
+      "Two passive reciprocal linear coils, with self-inductances measured with the other winding open at the same operating frequency and bias.",
+      "Coupling coefficient is a magnitude between 0 and 1; dot convention and wiring determine aiding versus opposing.",
+      "No saturation, significant frequency dispersion, winding capacitance or resistive losses. Opposing mode may be dominated by parasitics near perfect coupling.",
+      "At k=1 and equal self-inductances the ideal opposing value is zero; this does not imply a real physical winding has zero parasitic inductance.",
+      "Separate square roots avoid forming L1*L2; the root-difference term is rationalized as (L1-L2)/(sqrt(L1)+sqrt(L2)) to preserve small unequal-winding mismatch. No clamp is used."
+    ],
+    "references": [
+      {
+        "title": "UC Berkeley EECS-2007-3, section 3.2.2, equations 3.6–3.8: Mutual inductance and coupling coefficient",
+        "url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2007/EECS-2007-3.pdf"
+      },
+      {
+        "title": "MIT Electromagnetic Fields and Energy, section 9.7: Linear two-winding flux-linkage matrix",
+        "url": "https://www.mit.edu/course/6/6.013_book/www/chapter9/9.7.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "inductance_one",
+        "label": "Winding one open-circuit self-inductance",
+        "unit": "H",
+        "default": 0.0001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "inductance_two",
+        "label": "Winding two open-circuit self-inductance",
+        "unit": "H",
+        "default": 0.0004,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "coupling",
+        "label": "Coupling coefficient magnitude",
+        "unit": "1",
+        "default": 0.9,
+        "min": 0.0,
+        "max": 1.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "mutual_inductance",
+        "label": "Mutual inductance magnitude",
+        "unit": "H",
+        "expression": "coupling*sqrt(inductance_one)*sqrt(inductance_two)"
+      },
+      {
+        "key": "series_aiding",
+        "label": "Series-aiding inductance",
+        "unit": "H",
+        "expression": "inductance_one+inductance_two+2*mutual_inductance"
+      },
+      {
+        "key": "series_opposing",
+        "label": "Series-opposing inductance",
+        "unit": "H",
+        "expression": "((inductance_one-inductance_two)/(sqrt(inductance_one)+sqrt(inductance_two)))^2+2*(1-coupling)*sqrt(inductance_one)*sqrt(inductance_two)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "inductance_one": 0.0001,
+        "inductance_two": 0.0004,
+        "coupling": 0.9
+      },
+      "expected": {
+        "mutual_inductance": 0.00018,
+        "series_aiding": 0.00086,
+        "series_opposing": 0.00014
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
