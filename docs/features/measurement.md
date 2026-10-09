@@ -104,3 +104,53 @@ Right half: timing strip with three equal-spaced sample markers `+I, −I, +I`; 
 
 Caption: “Keep sense polarity fixed while reversing force current. Equally spaced +I, −I, +I readings cancel constant and linear thermal EMF after settling; curved drift and self-heating remain.”
 
+
+## `measurement.compensated_probe_loading`
+
+### Purpose, evidence and derived model
+
+[University of Cincinnati, ECECS 349 Measurements Lab supplementary notes](https://homepages.uc.edu/~ferendam/Courses/EE_349/Scope_PROBE.htm), Figures 1–3, defines the probe as Rp parallel Cp, scope as Ri parallel scope capacitance, and coax cable as additional parallel capacitance. Its text states the compensated 10× divider becomes independent of frequency. [Tektronix, ABCs of Probes Primer](https://www.tek.com/en/documents/whitepaper/abcs-probes-primer), “Zero Signal Source Loading,” “Compensate Your Probes” and input-impedance discussion, documents finite loading, over/under compensation and frequency-dependent tip impedance.
+
+The finite real source resistance is an independent extension of those explicit circuit models. With `tp=Rp Cp`, `ti=Ri Ci`, `Zp=Rp/(1+s tp)` and `Zi=Ri/(1+s ti)`:
+
+`H(s)=Zi/(Rs+Zp+Zi)=Ri(1+s tp)/(A+s B+s² C)`.
+
+Here `A=Rs+Rp+Ri` Ω, `B=Rs(tp+ti)+Rp ti+Ri tp` Ω·s, and `C=Rs tp ti` Ω·s². At `s=jω`, the denominator has real part `A−ω²C` and imaginary part `ωB`. Magnitude follows from these two orthogonal parts. The JSON normalizes both by A and uses `hypot`, avoiding raw squares of resistance-weighted terms.
+
+`matched_probe_capacitance = Ri Ci/Rp` F makes `tp=ti`. `dc_gain=Ri/A` is dimensionless. `ac_gain=|H(jω)|`. `scope_voltage=source_voltage*ac_gain` is the voltage actually reaching the scope connector before its 10× display scaling.
+
+At matched time constants τ, cancellation gives `H(s)=Ri/[A+s Rs τ]`. Thus matching preserves the tip-to-scope ratio but cannot eliminate source loading. This is the essential distinction from a renamed resistive divider.
+
+The model is lumped, not a broadband prediction for a long probe cable. Use only where cable electrical length, lead inductance and scope input-amplifier response are negligible. Those facts cannot be inferred from the scalar R/C entries, so no arbitrary maximum frequency is claimed. Cp=0 explicitly describes an uncompensated probe; frequency=0 and Rs=0 are valid limits.
+
+### Complete independent example
+
+Inputs: `source_voltage=1 V peak`, `source_resistance=1000 Ω`, `probe_resistance=9e6 Ω`, `probe_capacitance=10e-12 F`, `scope_resistance=1e6 Ω`, `scope_capacitance=90e-12 F`, `frequency=1e6 Hz`.
+
+Both arm time constants equal `90e-6 s`. Therefore A=10,001,000 Ω and `ω Rs τ = 565486.6776461628 Ω`. Independently use the matched circuit reduction, not the catalog's general expression:
+
+- `matched_probe_capacitance = 90e-12*(1e6/9e6) = 1e-11 F`.
+- `dc_gain = 1e6/10001000 = 0.0999900009999 V/V`.
+- `ac_gain = 1e6 / sqrt(10001000² + 565486.6776461628²) = 0.09983054361596318 V/V`.
+- `scope_voltage = 1*ac_gain = 0.09983054361596318 V peak`.
+
+A separate complex-impedance evaluation `Zi/(Rs+Zp+Zi)` produced the same independent oracle in Python. This was numerical research, not application execution.
+
+### Tester handoff
+
+- Nominal: assert all four outputs.
+- Set frequency=0: AC gain equals DC gain and output is 0.0999900009999 V; matched capacitance stays 10 pF.
+- Set source resistance=0 with matched arms: DC gain=AC gain=0.1, scope voltage=0.1 V, independently of frequency within lumped validity.
+- Under-compensated test: Rs=0, Cp=5 pF, others nominal. Matched capacitance remains 10 pF, DC gain=.1, AC gain and output=0.05263181693942273.
+- Over-compensated test: Rs=0, Cp=20 pF, others nominal. Matched capacitance=10 pF, DC gain=.1, AC gain and output=0.1818180179402501. Do not clamp AC gain to DC gain.
+- Cp=0, others nominal: AC gain and output=0.00019646537529400082; valid uncompensated limit.
+- Source voltage=0 yields scope voltage=0 without changing gains. Reject negative source voltage, resistance, capacitance or frequency; Rp, Ri and Ci must be strictly positive.
+
+### Mandatory diagram specification
+
+Use the entire circuit width with an ideal source at x≈60, series Rs at x≈160, probe tip at x≈240, scope node at x≈480, and grounded return y≈230. From probe tip to scope node draw two parallel paths: Rp at y≈100 and Cp at y≈170, with junction dots at both ends. Neither is a ground shunt. From scope node to the return draw two distinct parallel branches Ri and Ci. Break wires at all part bodies. Put a separate output arrow from the scope node to the return, + at the node, bound to `scope_voltage`.
+
+Quantity bindings: source=`source_voltage`; series Rs=`source_resistance`; probe resistor=`probe_resistance`; bridging capacitor=`probe_capacitance`; shunt resistor=`scope_resistance`; shunt capacitor=`scope_capacitance`. Frequency label uses `frequency`. A small compensation callout uses `matched_probe_capacitance` with the explicit relation `Rp Cp = Ri Ci`; gain quantities can remain in the accessible legend.
+
+Caption: “Two parallel-RC arms form the compensated divider. Ci includes lumped cable capacitance. Matching the arm time constants does not remove finite-Rs source loading; the scope output is before readout scaling.”
+
