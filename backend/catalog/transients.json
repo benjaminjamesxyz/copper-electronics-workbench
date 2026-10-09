@@ -856,5 +856,173 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "transients.capacitor_charge_sharing",
+    "title": "Two-capacitor charge redistribution through resistance",
+    "category": "Passive transients",
+    "level": "intermediate",
+    "description": "Predict common final voltage, redistribution current, individual capacitor trajectories, transferred charge, and irreversible energy loss when two initially charged capacitors are connected through resistance.",
+    "formula": "Ceq=C1C2/(C1+C2); tau=R Ceq; Vf=(C1V1+C2V2)/(C1+C2); deltaV(t)=(V1-V2)exp(-t/tau); Eloss=Ceq(V1-V2)^2/2",
+    "assumptions": [
+      "Capacitors share a common negative reference and their positive terminals are joined through positive R; no external source or load remains connected.",
+      "C1 and C2 are linear; R includes switch resistance and ESR, with parasitic inductance negligible on the redistribution time scale.",
+      "Zero resistance is excluded: the ideal zero-R two-capacitor paradox is outside this dissipative model.",
+      "The general unequal-capacitance result is derived from charge conservation and the capacitor energy law; the cited Berkeley example presents equal-capacitance and voltage-source limits. No switched-capacitor converter or MOSFET bootstrap sizing is performed.",
+      "Transferred charge and accumulated loss use expm1 for short-time exponential differences. Individual node voltages combine initial-state exponential decay with equilibrium-voltage buildup, preserving t=0 continuity and small residuals when equilibrium is zero; adding a tiny increment to a nonzero absolute voltage remains subject to machine resolution."
+    ],
+    "references": [
+      {
+        "title": "UC Berkeley Wen Chuen Liu: Hybrid Switched-Capacitor Converters, section 3.1 Two-Capacitor Problem",
+        "url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2021/EECS-2021-25.pdf"
+      },
+      {
+        "title": "MIT 6.200: Capacitor constitutive equation and natural response",
+        "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "c_one",
+        "label": "First capacitance",
+        "unit": "F",
+        "default": 0.0001,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "c_two",
+        "label": "Second capacitance",
+        "unit": "F",
+        "default": 0.0002,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "r",
+        "label": "Redistribution resistance",
+        "unit": "ohm",
+        "default": 10.0,
+        "min": 0.001,
+        "max": 1000000000.0
+      },
+      {
+        "key": "v_one",
+        "label": "First initial voltage",
+        "unit": "V",
+        "default": 8.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "v_two",
+        "label": "Second initial voltage",
+        "unit": "V",
+        "default": 2.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "time",
+        "label": "Elapsed time",
+        "unit": "s",
+        "default": 0.0006666666666666668,
+        "min": 0.0,
+        "max": 1000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "equivalent_capacitance",
+        "label": "Redistribution-mode capacitance",
+        "unit": "F",
+        "expression": "c_one*c_two/(c_one+c_two)"
+      },
+      {
+        "key": "tau",
+        "label": "Redistribution time constant",
+        "unit": "s",
+        "expression": "r*equivalent_capacitance"
+      },
+      {
+        "key": "final_voltage",
+        "label": "Common final voltage",
+        "unit": "V",
+        "expression": "(c_one*v_one+c_two*v_two)/(c_one+c_two)"
+      },
+      {
+        "key": "voltage_one",
+        "label": "First capacitor voltage at t",
+        "unit": "V",
+        "expression": "v_one*exp(-time/tau)+final_voltage*(-expm1(-time/tau))"
+      },
+      {
+        "key": "voltage_two",
+        "label": "Second capacitor voltage at t",
+        "unit": "V",
+        "expression": "v_two*exp(-time/tau)+final_voltage*(-expm1(-time/tau))"
+      },
+      {
+        "key": "current",
+        "label": "Current from capacitor one to two",
+        "unit": "A",
+        "expression": "(v_one-v_two)/r*exp(-time/tau)"
+      },
+      {
+        "key": "transferred_charge",
+        "label": "Signed transferred charge by t",
+        "unit": "C",
+        "expression": "equivalent_capacitance*(v_one-v_two)*(-expm1(-time/tau))"
+      },
+      {
+        "key": "initial_energy",
+        "label": "Initial capacitor energy",
+        "unit": "J",
+        "expression": "(c_one*v_one^2+c_two*v_two^2)/2"
+      },
+      {
+        "key": "final_energy",
+        "label": "Asymptotic capacitor energy",
+        "unit": "J",
+        "expression": "(c_one+c_two)*final_voltage^2/2"
+      },
+      {
+        "key": "total_loss",
+        "label": "Asymptotic redistribution energy loss",
+        "unit": "J",
+        "expression": "equivalent_capacitance*(v_one-v_two)^2/2"
+      },
+      {
+        "key": "dissipated_energy",
+        "label": "Resistor energy accumulated by t",
+        "unit": "J",
+        "expression": "total_loss*(-expm1(-2*time/tau))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "c_one": 0.0001,
+        "c_two": 0.0002,
+        "r": 10.0,
+        "v_one": 8.0,
+        "v_two": 2.0,
+        "time": 0.0006666666666666668
+      },
+      "expected": {
+        "equivalent_capacitance": 6.666666666666667e-05,
+        "tau": 0.0006666666666666668,
+        "final_voltage": 4.0,
+        "voltage_one": 5.471517764685769,
+        "voltage_two": 3.2642411176571153,
+        "current": 0.2207276647028654,
+        "transferred_charge": 0.0002528482235314231,
+        "initial_energy": 0.0036,
+        "final_energy": 0.0024,
+        "total_loss": 0.0012,
+        "dissipated_energy": 0.0010375976601160648
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

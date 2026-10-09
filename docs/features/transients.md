@@ -458,3 +458,90 @@ All input values for this independent example are `{"c":0.0001,"current":0.01,"v
 | `stored_energy` | J | 0.00045 | `c*capacitor_voltage^2/2` |
 | `energy_change` | J | 0.0004 | `charge_change*(v_initial+charge_change/(2*c))` |
 
+
+## `transients.capacitor_charge_sharing` — isolated redistribution between unequal capacitors
+
+**Level:** intermediate. **Design purpose:** predict equalized voltage, initial/current pulse decay and irreversible redistribution loss between two isolated capacitor banks. Sources: [Berkeley section 3.1](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2021/EECS-2021-25.pdf), [MIT capacitor dynamics](https://circuits.mit.edu/F25/psets/05/rc_tutorial).
+
+### Model and independent unequal-capacitance derivation
+
+The capacitors have a common negative reference; connect their positive nodes through R. No source or load remains connected. Let `DeltaV=V1−V2` initially, and positive current flow from one to two.
+
+Conservation of charge gives `C1 v1+C2 v2=C1 V1+C2 V2`, hence
+
+`Vf=(C1 V1+C2 V2)/(C1+C2)`.
+
+Using `dv1/dt=−i/C1`, `dv2/dt=i/C2` and `i=(v1−v2)/R`, the voltage difference obeys
+
+`d(v1−v2)/dt = −(v1−v2)/(R Ceq)`, where `Ceq=C1 C2/(C1+C2)`.
+
+Consequently
+
+`tau=R Ceq`,
+
+`v1(t)=Vf+[C2/(C1+C2)] DeltaV exp(−t/tau)`,
+
+`v2(t)=Vf−[C1/(C1+C2)] DeltaV exp(−t/tau)`,
+
+`i(t)=DeltaV exp(−t/tau)/R`,
+
+`Qtransfer(t)=Ceq DeltaV[1−exp(−t/tau)]`.
+
+Initial energy is `(C1 V1²+C2 V2²)/2`; final energy is `(C1+C2)Vf²/2`. Their difference simplifies to
+
+`Eloss=Ceq DeltaV²/2`.
+
+At finite t, integrated resistive dissipation is `Eloss[1−exp(−2t/tau)]`. The Berkeley source presents equal-C and source-limit cases; the unequal-C extension here follows from the displayed conservation law, not an unsupported claim about the source.
+
+### Domain and limitations
+
+`C1>0`, `C2>0`, `R>0`, `t>=0`. Signed initial voltages are allowed, as is `V1=V2` with zero redistribution. Zero R is excluded because ideal instantaneous connection is not this dissipative model. Parasitic inductance can change peak current and waveform substantially. Switch resistance/ESR may be lumped into R only when their linear approximation is appropriate. No charge pump, converter efficiency or bootstrap capacitance is calculated.
+
+### Independent worked example
+
+`C1=100 microF`, `C2=200 microF`, `R=10 ohm`, `V1=8 V`, `V2=2 V`, `t=2/3 ms`.
+
+- `Ceq=(100×200/300) microF=66.66666666666667 microF`.
+- `tau=0.0006666666666666668 s`, so `t/tau=1` to rounding.
+- `Vf=(100×8+200×2)/300=4 V`.
+- `v1=4+4 exp(−1)=5.471517764685769 V`.
+- `v2=4−2 exp(−1)=3.264241117657115 V`.
+- `i=0.6 exp(−1)=0.2207276647028654 A`.
+- `Qtransfer=400 microC×(1−exp(−1))=252.8482235314231 microC`.
+- Initial energy `=0.0036 J`; final energy `=0.0024 J`.
+- Total loss `=0.0012 J`; loss accumulated at t `=0.0012(1−exp(−2))=0.001037597660116065 J`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `c_one` | F | 0.0001 | [1e-15, 1.0] |
+| `c_two` | F | 0.0002 | [1e-15, 1.0] |
+| `r` | ohm | 10.0 | [0.001, 1000000000.0] |
+| `v_one` | V | 8.0 | [-1000000.0, 1000000.0] |
+| `v_two` | V | 2.0 | [-1000000.0, 1000000.0] |
+| `time` | s | 0.0006666666666666668 | [0.0, 1000000000.0] |
+
+Initial-state decay plus equilibrium buildup (`v_i=Vi exp(−t/tau)+Vf[−expm1(−t/tau)]`) and `−expm1(−t/tau)` charge transfer preserve startup continuity; accumulated energy uses `−expm1(−2t/tau)`. At t=0 the original node voltages and zero transferred charge/loss are returned. Equal initial voltages produce no current, charge transfer or loss; either voltage polarity and either transfer direction are supported. Positive capacitor minima protect both the total-capacitance divisor and tau; positive resistance excludes the nonphysical ideal instantaneous zero-R connection. Total charge and `initial_energy=final_energy+total_loss` are independent conservation identities. Very small corrections to nonzero absolute node voltages may still round away.
+
+No additional relational constraint is needed: positive component minima protect divisors, time is nonnegative, and any logarithm has an explicit positive tolerance bound. Signed excitations and valid zero boundaries are not rejected.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"c_one":0.0001,"c_two":0.0002,"r":10.0,"v_one":8.0,"v_two":2.0,"time":0.0006666666666666668}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `equivalent_capacitance` | F | 6.666666666666667e-05 | `c_one*c_two/(c_one+c_two)` |
+| `tau` | s | 0.0006666666666666668 | `r*equivalent_capacitance` |
+| `final_voltage` | V | 4.0 | `(c_one*v_one+c_two*v_two)/(c_one+c_two)` |
+| `voltage_one` | V | 5.471517764685769 | `v_one*exp(-time/tau)+final_voltage*(-expm1(-time/tau))` |
+| `voltage_two` | V | 3.2642411176571153 | `v_two*exp(-time/tau)+final_voltage*(-expm1(-time/tau))` |
+| `current` | A | 0.2207276647028654 | `(v_one-v_two)/r*exp(-time/tau)` |
+| `transferred_charge` | C | 0.0002528482235314231 | `equivalent_capacitance*(v_one-v_two)*(-expm1(-time/tau))` |
+| `initial_energy` | J | 0.0036 | `(c_one*v_one^2+c_two*v_two^2)/2` |
+| `final_energy` | J | 0.0024 | `(c_one+c_two)*final_voltage^2/2` |
+| `total_loss` | J | 0.0012 | `equivalent_capacitance*(v_one-v_two)^2/2` |
+| `dissipated_energy` | J | 0.0010375976601160648 | `total_loss*(-expm1(-2*time/tau))` |
+
