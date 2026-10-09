@@ -1,0 +1,128 @@
+[
+  {
+    "id": "motors.pm_dc_load_equilibrium",
+    "title": "PM DC motor loaded torque-speed equilibrium",
+    "category": "Electromechanical drives",
+    "level": "basic",
+    "description": "Find the coupled electrical and mechanical operating point of a permanent-magnet DC motor with constant shaft load and viscous drag.",
+    "formula": "V=RI+K omega; K I=Tload+b omega; omega=(K V-R Tload)/(K^2+R b)",
+    "assumptions": [
+      "Steady forward motoring or stall; constant opposing load torque and linear viscous drag. No static-friction threshold is modeled.",
+      "motor_constant is both torque constant in N m/A and back-EMF constant in V s/rad, numerically equal in coherent SI units.",
+      "Permanent flux, fixed winding temperature, ideal brushes, no magnetic saturation, iron loss or commutation ripple. Check motor continuous/stall current and mechanical ratings separately."
+    ],
+    "references": [
+      {
+        "title": "Auburn University, Modeling Electrical-Mechanical Systems (DC Motors), slides 12-16",
+        "url": "https://eng.auburn.edu/~dmbevly/mech3140/Modeling_DC_Motors.pdf"
+      },
+      {
+        "title": "University of Ottawa, ELG4139 DC Drives, torque equation and steady torque-speed characteristics",
+        "url": "https://www.site.uottawa.ca/~rhabash/ELG4139DCDrives.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "voltage",
+        "label": "Applied armature voltage",
+        "unit": "V",
+        "default": 24,
+        "min": 0
+      },
+      {
+        "key": "armature_resistance",
+        "label": "Armature resistance at operating temperature",
+        "unit": "ohm",
+        "default": 2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "motor_constant",
+        "label": "SI torque and back-EMF constant",
+        "unit": "N m/A",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "viscous_drag",
+        "label": "Viscous drag coefficient",
+        "unit": "N m s/rad",
+        "default": 0.001,
+        "min": 0
+      },
+      {
+        "key": "load_torque",
+        "label": "Opposing shaft load torque",
+        "unit": "N m",
+        "default": 0.2,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "speed",
+        "label": "Steady mechanical angular speed",
+        "unit": "rad/s",
+        "expression": "(motor_constant*voltage-armature_resistance*load_torque)/(motor_constant^2+armature_resistance*viscous_drag)"
+      },
+      {
+        "key": "current",
+        "label": "Armature current",
+        "unit": "A",
+        "expression": "(load_torque+viscous_drag*speed)/motor_constant"
+      },
+      {
+        "key": "back_emf",
+        "label": "Back EMF",
+        "unit": "V",
+        "expression": "motor_constant*speed"
+      },
+      {
+        "key": "shaft_power",
+        "label": "Power delivered to shaft load",
+        "unit": "W",
+        "expression": "load_torque*speed"
+      },
+      {
+        "key": "copper_loss",
+        "label": "Armature copper loss",
+        "unit": "W",
+        "expression": "armature_resistance*current^2"
+      },
+      {
+        "key": "friction_loss",
+        "label": "Viscous mechanical loss",
+        "unit": "W",
+        "expression": "viscous_drag*speed^2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "motor_constant*voltage",
+        "op": ">=",
+        "right": "armature_resistance*load_torque",
+        "message": "Load torque must not exceed the applied-voltage stall torque in this forward-motoring model"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "voltage": 24,
+        "armature_resistance": 2,
+        "motor_constant": 0.1,
+        "viscous_drag": 0.001,
+        "load_torque": 0.2
+      },
+      "expected": {
+        "speed": 166.66666666666666,
+        "current": 3.6666666666666665,
+        "back_emf": 16.666666666666668,
+        "shaft_power": 33.333333333333336,
+        "copper_loss": 26.88888888888889,
+        "friction_loss": 27.77777777777778
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]

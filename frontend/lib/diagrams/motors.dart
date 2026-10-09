@@ -1,0 +1,36 @@
+import 'primitives.dart';
+
+const motorsDiagrams = <String, CalculatorDiagram>{
+  'motors.pm_dc_load_equilibrium': CalculatorDiagram(
+    title: 'Loaded DC motor: voltage and torque balance',
+    caption: 'At steady speed, back EMF and winding drop sum to applied voltage. Torque balances load and viscous drag. Positive current enters the motor. Dashed coupling is mechanical, not wiring; no acceleration or brush drop is modeled.',
+    marks: [
+      Part(CircuitPart.voltageSource, 65, 140, width: 60, height: 40, turns: 1),
+      Wire([65, 110, 65, 80, 155, 80]),
+      Part(CircuitPart.resistor, 185, 80),
+      Wire([215, 80, 305, 80, 305, 110]),
+      Part(CircuitPart.voltageSource, 305, 140, width: 60, height: 40, turns: 1),
+      Wire([305, 170, 305, 210, 65, 210, 65, 170]),
+      Label(22, 131, 'V', quantity: 'voltage'),
+      Label(171, 99, 'Ra', quantity: 'armature_resistance'),
+      Label(269, 131, 'E', quantity: 'back_emf'),
+      Wire([110,  50, 245, 50], arrow: true, ink: DiagramInk.input),
+      Label(173, 22, 'I', quantity: 'current'),
+      Wire([330, 140, 411, 140], arrow: true, dashed: true),
+      Part(CircuitPart.circle, 450, 140, width: 76, height: 76),
+      Label(433, 130, 'PM'),
+      Wire([488, 140, 565, 140]),
+      Part(CircuitPart.block, 610, 140, width: 90, height: 50),
+      Label(590, 130, 'load'),
+      Wire([480, 77, 555, 77], arrow: true),
+      Label(488, 49, 'omega', quantity: 'speed'),
+      Wire([640, 190, 545, 190], arrow: true),
+      Label(567, 208, 'Tload', quantity: 'load_torque'),
+      Wire([500, 190, 410, 190], arrow: true),
+      Label(416, 208, 'b omega'),
+      Label(365, 240, 'K', quantity: 'motor_constant'),
+      Label(414, 240, 'b', quantity: 'viscous_drag'),
+      Label(76, 240, 'E = K omega; T = K I'),
+    ],
+  ),
+};
