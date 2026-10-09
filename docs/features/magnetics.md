@@ -147,6 +147,75 @@ All inputs are the default/worked input column above; every result is named belo
 | `inner_flux_density` | Peak field at core inner radius | T | 0.01 |
 
 
+## `magnetics.gapped_core_inductance` — Finite-permeability gapped-core inductance (expert)
+
+ID: `magnetics.gapped_core_inductance`.
+
+**Question:** What inductance and peak flux result when neither core reluctance nor gap reluctance is discarded?
+
+**Derivation:** Let the rectangular flux area A = w h. Flux continuity gives the same Φ through the core and narrow air gap. With core path lc **excluding** gaps and total series gap g, Ampère's law gives
+
+N I = Hc lc + Hg g = Φ[lc/(mu0 mur A) + g/(mu0 A)].
+
+Define Rc = lc/(mu0 mur A), Rg = g/(mu0 A); Φ = N I/(Rc+Rg). Therefore L = N Φ/I = N²/(Rc+Rg) and Bpk = Φpk/A. This retains finite core permeability. The often quoted gap-dominant formula mu0 N² A/g follows only if g ≫ lc/mur; that simplification is not used here.
+
+**Formula and sequential outputs:**
+
+1. `core_reluctance = core_length/(4*pi*1e-7*relative_permeability*pole_width*pole_height)` [A/Wb].
+2. `gap_reluctance = gap_length/(4*pi*1e-7*pole_width*pole_height)` [A/Wb].
+3. `inductance = turns^2/(core_reluctance+gap_reluctance)` [H].
+4. `peak_flux_density = turns*peak_current/((core_reluctance+gap_reluctance)*pole_width*pole_height)` [T].
+
+**Input units/domain:** lc, w, h, g [m] > 0; mur [1] ≥ 1; N [turn] ≥ 1 integral; Ipk [A] ≥ 0; linear_flux_limit [T] > 0. Geometry screens require g ≤ 0.1 min(w,h) and g ≤ 0.1 lc. Field guard uses the input-only equivalent mu0 N Ipk/(lc/mur+g) ≤ limit.
+
+**Approximation disclosure:** The 0.1 geometry screens are conservative catalog choices, not thresholds stated by MIT, error guarantees or standard compliance. The source requires the gap to be small relative to its cross-sectional dimensions. Equal core/gap area, uniform linear core, one series path, no fringing/leakage or parallel return branches are assumed. Fringing can materially increase effective gap area even for accepted geometry; actual core datasheet AL, bias curves or finite-element analysis may be needed. Total g is the sum of series gaps, not each individual gap; lc already excludes them.
+
+**Worked example/defaults:** lc = 0.1 m, w = h = 0.01 m, A = 10^-4 m², g = 0.0005 m, mur = 2000, N = 100, Ipk = 1 A, limit = 0.3 T.
+
+- Rc = 0.1/[(4π × 10^-7) × 2000 × 10^-4] = **397887.35772973834 A/Wb**.
+- Rg = 0.0005/[(4π × 10^-7) × 10^-4] = **3978873.5772973835 A/Wb**.
+- Rc is one tenth of Rg; omitting it would overestimate L by 10% relative to the retained-core result.
+- L = 10000/(Rc+Rg) = **0.0022847946571562133 H**.
+- Bpk = mu0 × 100/(0.1/2000 + 0.0005) = **0.22847946571562133 T**.
+- Geometry: 0.0005 ≤ 0.001 and ≤ 0.01 m; predicted Bpk < 0.3 T.
+
+**Sources:** [MIT §9.7 example 9.7.1](https://www.mit.edu/course/6/6.013_book/www/chapter9/9.7.html); [MIT Lecture 11 section C](https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf).
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `core_length` | Core magnetic path length excluding gaps | m | 0.1 | > 0.0 |
+| `pole_width` | Rectangular pole width | m | 0.01 | > 0.0 |
+| `pole_height` | Rectangular pole height | m | 0.01 | > 0.0 |
+| `gap_length` | Total series air-gap length | m | 0.0005 | > 0.0 |
+| `relative_permeability` | Linear core relative permeability | 1 | 2000.0 | >= 1.0 |
+| `turns` | Winding turns | turn | 100.0 | >= 1.0 |
+| `peak_current` | Peak winding current | A | 1.0 | >= 0.0 |
+| `linear_flux_limit` | Material linear-region flux limit | T | 0.3 | > 0.0 |
+
+**Model-domain and error rationale:** Positive lengths, pole dimensions and total gap make both reluctances and their sum positive. Relative permeability at least one defines this core model. Integer turns represent winding counts. Both independent 0.1 geometry screens enforce the selected no-fringing/lumped approximation; neither is a sourced standard or error guarantee. Nonnegative peak current includes zero field; the input-only peak-field guard rejects the supplied linear-limit violation.
+
+**Pre-output, input-only constraints:**
+
+- `floor(turns) == turns` — Turns must be a positive integer.
+- `gap_length <= 0.1*min(pole_width,pole_height)` — Gap is too large relative to pole dimensions for the selected no-fringing approximation.
+- `gap_length <= 0.1*core_length` — Gap is too large relative to core path for this lumped magnetic model.
+- `4*pi*1e-7*turns*peak_current/(core_length/relative_permeability+gap_length) <= linear_flux_limit` — Predicted field exceeds the supplied linear-material limit.
+
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `core_reluctance` | Core reluctance | A/Wb | 397887.35772973835 |
+| `gap_reluctance` | Gap reluctance | A/Wb | 3978873.5772973835 |
+| `inductance` | Gapped-core inductance | H | 0.0022847946571562133 |
+| `peak_flux_density` | Peak core flux density | T | 0.22847946571562133 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.

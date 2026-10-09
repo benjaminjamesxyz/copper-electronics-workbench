@@ -231,5 +231,164 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.gapped_core_inductance",
+    "title": "Finite-permeability gapped-core inductance",
+    "category": "Magnetics and transformers",
+    "level": "expert",
+    "description": "Estimate inductance with both core and total air-gap reluctance retained and check peak core flux.",
+    "formula": "Rc = lc/(mu0 mur w h); Rg = g/(mu0 w h); L = N²/(Rc+Rg); Bpk = N Ipk/((Rc+Rg) w h)",
+    "assumptions": [
+      "Single series magnetic path with uniform rectangular cross section; core length excludes air gaps and gap input is the total series gap length.",
+      "Homogeneous linear core, negligible leakage/fringing, equal core and gap flux areas; no parallel return paths.",
+      "The catalog conservatively requires total gap <= 0.1 times the smaller pole dimension and <= 0.1 times core path length. This is an approximation-screening rule, not an error guarantee or standard.",
+      "Peak flux must remain below the user-supplied linearity limit. Real fringing and bias-dependent permeability need manufacturer data or field analysis.",
+      "Use mu0 = 4 pi times 1e-7 H/m; no gap-dominant approximation is imposed."
+    ],
+    "references": [
+      {
+        "title": "MIT Electromagnetic Fields and Energy, section 9.7, example 9.7.1: Finite-permeability air-gap field",
+        "url": "https://www.mit.edu/course/6/6.013_book/www/chapter9/9.7.html"
+      },
+      {
+        "title": "MIT 6.014 Lecture 11, section C: Gap, flux continuity and inductance",
+        "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "core_length",
+        "label": "Core magnetic path length excluding gaps",
+        "unit": "m",
+        "default": 0.1,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "pole_width",
+        "label": "Rectangular pole width",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "pole_height",
+        "label": "Rectangular pole height",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gap_length",
+        "label": "Total series air-gap length",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permeability",
+        "label": "Linear core relative permeability",
+        "unit": "1",
+        "default": 2000.0,
+        "min": 1.0
+      },
+      {
+        "key": "turns",
+        "label": "Winding turns",
+        "unit": "turn",
+        "default": 100.0,
+        "min": 1.0
+      },
+      {
+        "key": "peak_current",
+        "label": "Peak winding current",
+        "unit": "A",
+        "default": 1.0,
+        "min": 0.0
+      },
+      {
+        "key": "linear_flux_limit",
+        "label": "Material linear-region flux limit",
+        "unit": "T",
+        "default": 0.3,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "core_reluctance",
+        "label": "Core reluctance",
+        "unit": "A/Wb",
+        "expression": "core_length/(4*pi*1e-7*relative_permeability*pole_width*pole_height)"
+      },
+      {
+        "key": "gap_reluctance",
+        "label": "Gap reluctance",
+        "unit": "A/Wb",
+        "expression": "gap_length/(4*pi*1e-7*pole_width*pole_height)"
+      },
+      {
+        "key": "inductance",
+        "label": "Gapped-core inductance",
+        "unit": "H",
+        "expression": "turns^2/(core_reluctance+gap_reluctance)"
+      },
+      {
+        "key": "peak_flux_density",
+        "label": "Peak core flux density",
+        "unit": "T",
+        "expression": "turns*peak_current/((core_reluctance+gap_reluctance)*pole_width*pole_height)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "floor(turns)",
+        "op": "==",
+        "right": "turns",
+        "message": "Turns must be a positive integer"
+      },
+      {
+        "left": "gap_length",
+        "op": "<=",
+        "right": "0.1*min(pole_width,pole_height)",
+        "message": "Gap is too large relative to pole dimensions for the selected no-fringing approximation"
+      },
+      {
+        "left": "gap_length",
+        "op": "<=",
+        "right": "0.1*core_length",
+        "message": "Gap is too large relative to core path for this lumped magnetic model"
+      },
+      {
+        "left": "4*pi*1e-7*turns*peak_current/(core_length/relative_permeability+gap_length)",
+        "op": "<=",
+        "right": "linear_flux_limit",
+        "message": "Predicted field exceeds the supplied linear-material limit"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "core_length": 0.1,
+        "pole_width": 0.01,
+        "pole_height": 0.01,
+        "gap_length": 0.0005,
+        "relative_permeability": 2000.0,
+        "turns": 100.0,
+        "peak_current": 1.0,
+        "linear_flux_limit": 0.3
+      },
+      "expected": {
+        "core_reluctance": 397887.35772973835,
+        "gap_reluctance": 3978873.5772973835,
+        "inductance": 0.0022847946571562133,
+        "peak_flux_density": 0.22847946571562133
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
