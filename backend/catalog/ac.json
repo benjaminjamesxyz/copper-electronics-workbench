@@ -46,5 +46,28 @@
     ],
     "constraints": [{"left": "inductance", "op": ">", "right": "capacitance*coil_resistance^2", "message": "Positive-frequency phase resonance requires L > C r^2"}],
     "example": {"inputs": {"coil_resistance": 30.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"resonance_frequency": 1518.2413931464207, "ideal_lc_frequency": 1591.5494309189535, "resonance_resistance": 333.3333333333333, "source_current_rms": 0.015, "coil_current_rms": 0.05, "copper_loss": 0.075}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.capacitor_reactance",
+    "title": "Ideal capacitor AC reactance and current",
+    "category": "AC impedance and resonance",
+    "level": "basic",
+    "description": "Estimate an ideal capacitor's impedance and RMS AC current loading, with capacitive sign convention explicit.",
+    "formula": "X_C = 1/(2 pi f C); Im(Z_C) = -X_C; I_rms = V_rms/X_C",
+    "assumptions": ["Linear lumped ideal capacitor in sinusoidal steady state; no ESR, leakage, dielectric loss or ESL.", "Frequency must be below self-resonance; voltage/current ratings and dielectric bias dependence require component data."],
+    "references": [{"title": "MIT OCW, Alternating-Current Circuits, section 12.2.3", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "capacitance", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "reactance_magnitude", "label": "Capacitive reactance magnitude", "unit": "ohm", "expression": "1/(2*pi*frequency*capacitance)"},
+      {"key": "impedance_imaginary", "label": "Imaginary impedance", "unit": "ohm", "expression": "-reactance_magnitude"},
+      {"key": "current_rms", "label": "Capacitor RMS current", "unit": "A", "expression": "voltage_rms/reactance_magnitude"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "-pi/2"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"reactance_magnitude": 159.15494309189535, "impedance_imaginary": -159.15494309189535, "current_rms": 0.031415926535897934, "impedance_phase": -1.5707963267948966}, "relative_tolerance": 0.000001}
   }
 ]

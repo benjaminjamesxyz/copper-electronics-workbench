@@ -59,3 +59,24 @@ Adding branch admittances gives Y = r/[r²+(omega L)²] + j{omega C - omega L/[r
 | `copper_loss` | 0.075 | W |
 
 Reactive circulating currents cancel, so coil current exceeds source current without creating power. **Parent verification scenarios:** Reject L<=Cr² and r=0; verify zero net susceptance and V²/Zr=Icoil²r; V=0 remains valid.
+
+## `ac.capacitor_reactance` — ideal capacitor AC loading (basic)
+
+**Purpose/topology:** Determine an ideal capacitor's signed imaginary impedance and positive current/reactance magnitudes.
+
+From i=C dv/dt, I=j omega C V, so ZC=1/(j omega C)=-j/(omega C). XC=1/(2 pi f C)>0; Im(ZC)=-XC; I_rms=V_rms/XC; impedance phase=-pi/2. Reciprocal omega C has units V/A=ohm. Source: [M1], §12.2.3, equations 12.2.18–12.2.24.
+
+**Domain/error rationale:** f,C positive within shared bounds guard reciprocals; DC is excluded because ideal capacitive impedance diverges. V>=0 includes zero drive (phase remains the component impedance phase). The negative imaginary sign prevents misuse of positive XC in complex sums.
+
+**Assumptions/limits:** Linear lumped ideal capacitor, one sinusoidal frequency, no ESR, leakage, dielectric loss, ESL or bias dependence. Stay below self-resonance; voltage/current ratings must come from the actual component, not the numerical envelopes.
+
+**Complete independent example inputs:** `frequency=1000 Hz`, `capacitance=1e-6 F`, `voltage_rms=5 V`. omega C=0.00628318530718 S; its reciprocal gives XC, and the independent constitutive current omega C V gives I.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `reactance_magnitude` | 159.15494309189535 | ohm |
+| `impedance_imaginary` | -159.15494309189535 | ohm |
+| `current_rms` | 0.031415926535897934 | A RMS |
+| `impedance_phase` | -1.5707963267948966 | rad |
+
+**Parent verification scenarios:** Increasing frequency reduces XC and increases current; V=0; reject f=0/C=0; confirm negative imaginary impedance and phase.
