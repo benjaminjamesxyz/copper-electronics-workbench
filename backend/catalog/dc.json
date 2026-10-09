@@ -629,5 +629,114 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "dc.resistive_source_matching",
+    "title": "Resistive source loading and maximum-power match",
+    "category": "DC circuits and resistor networks",
+    "level": "intermediate",
+    "description": "Evaluate voltage droop and load/source-resistance losses, then find the positive resistive load that maximizes delivered power for a fixed Thevenin source.",
+    "formula": "I = Vth/(Rs+Rl); Vl = I Rl; Pl = I^2 Rl; Ps = I^2 Rs; Rmatch = Rs; Pmax = Vth^2/(4 Rs)",
+    "assumptions": [
+      "Fixed ideal Thevenin voltage in series with constant positive source resistance, feeding a finite positive resistor.",
+      "Matching maximizes load power, not efficiency; half the source power is lost in Rs at the match. This is not regulator or converter efficiency or RF matching.",
+      "No current limit, battery chemistry, nonlinear regulation, reactive load or safe-short-circuit guarantee.",
+      "At zero source voltage every load produces zero power; Rs is still a valid but nonunique maximizing load.",
+      "1e-9 <= Rs,Rl <= 1e12 ohm and abs(Vth) <= 1e6 V are numerical bounds, not device ratings."
+    ],
+    "references": [
+      {
+        "title": "University of Colorado Boulder, PHYS 3330 Lab 2, section 2.4 Input and Output Impedance",
+        "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab2/"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_thevenin",
+        "label": "Signed open-circuit source voltage",
+        "unit": "V",
+        "default": 9.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "r_source",
+        "label": "Source series resistance",
+        "unit": "ohm",
+        "default": 3.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_load",
+        "label": "Actual load resistance",
+        "unit": "ohm",
+        "default": 6.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "current",
+        "label": "Load current",
+        "unit": "A",
+        "expression": "v_thevenin/(r_source+r_load)"
+      },
+      {
+        "key": "v_load",
+        "label": "Loaded terminal voltage",
+        "unit": "V",
+        "expression": "current*r_load"
+      },
+      {
+        "key": "p_load",
+        "label": "Actual load power",
+        "unit": "W",
+        "expression": "current^2*r_load"
+      },
+      {
+        "key": "p_source_resistance",
+        "label": "Source-resistance dissipation",
+        "unit": "W",
+        "expression": "current^2*r_source"
+      },
+      {
+        "key": "r_match",
+        "label": "Maximum-power load resistance",
+        "unit": "ohm",
+        "expression": "r_source"
+      },
+      {
+        "key": "p_maximum",
+        "label": "Maximum available resistive-load power",
+        "unit": "W",
+        "expression": "v_thevenin^2/(4*r_source)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "min(r_source,r_load)",
+        "op": ">",
+        "right": "0",
+        "message": "Source and load resistance must both be positive for this matching model."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "v_thevenin": 9.0,
+        "r_source": 3.0,
+        "r_load": 6.0
+      },
+      "expected": {
+        "current": 1.0,
+        "v_load": 6.0,
+        "p_load": 6.0,
+        "p_source_resistance": 3.0,
+        "r_match": 3.0,
+        "p_maximum": 6.75
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

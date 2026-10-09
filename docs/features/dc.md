@@ -230,3 +230,36 @@ The fractional attenuation is `error = Rout/(Rout+Rload)`. Defining it from resi
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 5. `dc.resistive_source_matching` — Resistive source loading and maximum-power match (intermediate)
+
+**Design question:** For a fixed source with internal resistance, how much power reaches the current load, and which purely resistive load extracts maximum power?
+
+**Derivation:** KVL gives `I = Vth/(Rs+Rl)`, `Vl = I Rl`, `Pl = I^2 Rl`, and internal loss `Ps = I^2 Rs`. Keeping `Vth` and `Rs` fixed,
+
+`Pl(Rl) = Vth^2 Rl/(Rs+Rl)^2`.
+
+Its derivative is `dPl/dRl = Vth^2 (Rs-Rl)/(Rs+Rl)^3`; it increases below `Rl = Rs` and decreases above it when the excitation is nonzero. Thus `Rmatch = Rs`, `Pmax = Vth^2/(4Rs)`. Source: S4, §2.4. This optimization is not an inverse rearrangement of the divider equation, nor converter efficiency or RF reactive matching.
+
+**Inputs:** `v_thevenin` (V), `r_source`, `r_load` (ohm). **Outputs:** `current` (A); `v_load` (V); `p_load`, `p_source_resistance`, `p_maximum` (W); `r_match` (ohm).
+
+**Domain and limitations:** Positive finite `Rs` and `Rl`; ideal zero internal resistance is excluded because maximum available power would be unbounded in this model. At zero voltage, every load yields zero power and the reported match is nonunique but valid. Real current limiting, electrochemical source variation, regulation and reactive loads are not modeled. At match the source resistor dissipates the same power as the load; maximum watts is not maximum efficiency or a recommendation to waste power.
+
+**Independent example/default:** `Vth = 9 V`, `Rs = 3 ohm`, `Rl = 6 ohm`.
+
+- KVL: `I = 9/(3+6) = 1 A`; load voltage is `6 V`.
+- Load power is `1^2 × 6 = 6 W`; internal loss is `1^2 × 3 = 3 W`; total `9 W` equals `Vth I`.
+- Matching at `Rl = 3 ohm` produces `I = 9/6 = 1.5 A`, giving `Pmax = 1.5^2 × 3 = 6.75 W`; `r_match = 3 ohm`.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `current` | `1.0` | A |
+| `v_load` | `6.0` | V |
+| `p_load` | `6.0` | W |
+| `p_source_resistance` | `3.0` | W |
+| `r_match` | `3.0` | ohm |
+| `p_maximum` | `6.75` | W |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+
