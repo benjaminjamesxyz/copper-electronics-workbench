@@ -604,5 +604,97 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "batteries.sand_depletion_limit",
+    "title": "Sand electrolyte-depletion charging limit",
+    "category": "Battery design",
+    "level": "expert",
+    "description": "Estimate the semi-infinite electrolyte depletion time and areal charge under constant lithium-plating current density.",
+    "formula": "ts = (pi D/4)[F c0/(j(1-tplus))]^2; qs = j ts; ell = sqrt(D ts)",
+    "assumptions": [
+      "Planar one-dimensional semi-infinite transport, initially uniform binary monovalent electrolyte, constant current density and transport coefficients.",
+      "Diffusivity is the effective salt/ambipolar diffusivity appropriate to the model, not automatically tracer diffusion or conductivity converted by an ideal-ion assumption.",
+      "The diffusion length must be much smaller than the distance to the counter boundary. This model is not the finite-cell limiting-current solution.",
+      "At or below the finite-cell limiting current, a real finite cell may never reach depletion; do not report this semi-infinite time as its actual lifetime.",
+      "No convection, SEI nonuniformity, changing active area, concentrated-solution thermodynamics or electroconvection is included.",
+      "Sand time is a transport-depletion threshold, not a safe-charge rating or guaranteed dendrite-onset time. F=96485.33212 C/mol."
+    ],
+    "references": [
+      {
+        "title": "Ellison and Grey, Engineering considerations for practical lithium-air electrolytes, Ionic transport, equations (31)-(32), PDF page 6 and discussion pages 18-19",
+        "url": "https://api.repository.cam.ac.uk/server/api/core/bitstreams/a34f3449-0c37-4b97-a66f-3f24697e9426/content"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "salt_diffusivity",
+        "label": "Effective electrolyte salt diffusivity",
+        "unit": "m^2/s",
+        "default": 1e-10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "salt_concentration",
+        "label": "Initial monovalent salt concentration",
+        "unit": "mol/m^3",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plating_current_density",
+        "label": "Constant plating current density",
+        "unit": "A/m^2",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "cation_transference",
+        "label": "Lithium cation transference fraction",
+        "unit": "1",
+        "default": 0.4,
+        "min": 0,
+        "max": 1,
+        "exclusive_max": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "sand_time",
+        "label": "Semi-infinite surface depletion time",
+        "unit": "s",
+        "expression": "(sqrt(pi)*sqrt(salt_diffusivity)*96485.33212*(salt_concentration/plating_current_density)/(2*(1-cation_transference)))^2"
+      },
+      {
+        "key": "sand_areal_charge",
+        "label": "Areal charge passed by depletion",
+        "unit": "C/m^2",
+        "expression": "plating_current_density*sand_time"
+      },
+      {
+        "key": "diffusion_length",
+        "label": "Diffusion length at depletion",
+        "unit": "m",
+        "expression": "sqrt(salt_diffusivity)*sqrt(sand_time)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "salt_diffusivity": 1e-10,
+        "salt_concentration": 1000,
+        "plating_current_density": 100,
+        "cation_transference": 0.4
+      },
+      "expected": {
+        "sand_time": 203.10002310425608,
+        "sand_areal_charge": 20310.002310425607,
+        "diffusion_length": 0.0001425131653933264
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

@@ -222,3 +222,45 @@ Nominal: assert all outputs. At `x=.5`, voltage equals `midpoint_voltage` exactl
 
 Occupied and vacant sites illustrate insertion with separate ion and electron paths, a pair-interaction bracket, and a schematic single-phase voltage curve and tangent. Occupancy is not pack SOC.
 
+## 6. `batteries.sand_depletion_limit` — expert
+
+### Purpose and novelty
+
+Estimate an electrolyte transport limit during constant-current lithium plating: time for initially uniform electrolyte concentration at a planar consuming interface to reach zero. No baseline model describes electrochemical mass transport. It differs from KiBaM, which fits lumped accessible/bound charge; Sand time uses diffusivity, concentration and transference to predict local depletion. It is not fuse I²t or a protection trip rating.
+
+### Equation, convention and physical limits
+
+Cambridge paper equation (31) states, for cation charge number one:
+
+`ts=(pi D/4)[F c0/(j(1-tplus))]^2`.
+
+`qs=j ts` and `ell=sqrt(D ts)` are supporting areal-charge and diffusion-length outputs of the same model, not separate calculations. `D` is effective salt/ambipolar diffusivity in m²/s, `c0` is mol/m³, positive `j` is plating-current magnitude in A/m², and `tplus` is the cation transference fraction. `qs` is C/m², not cell Ah. The surface consumes cations; the ionic concentration gradient supplies them from bulk electrolyte. The squared combination has units s.
+
+Require `D,c0,j>0` and `0<=tplus<1`. The derivation presumes one-dimensional planar semi-infinite transport, constant coefficients, initially uniform concentration and no convection. The physical counter boundary must be far beyond `ell`. The catalog intentionally models an ideal semi-infinite domain; it does not pretend to infer finite-cell applicability from an unspecified separator. A supplied device geometry must be checked independently against the reported length. As an example, a 5 mm transport region is much longer than the nominal 0.143 mm diffusion length, unlike a 20 µm separator.
+
+The same source's equation (32) gives finite-cell `jlim=2 F c0 D/[(1-tplus)L]` and explains that below it a finite cell need not deplete. That is a physical caveat, not another claimed calculator or hidden output. Never apply finite Sand time blindly below a finite cell's limiting current. At `tplus=1` this expression is singular; no finite depletion prediction exists in this model and the endpoint is rejected. Concentrated electrolytes can require different thermodynamics and transport definitions; do not substitute a tracer diffusivity or ideal-ion conductivity conversion without justification.
+
+No safe-charge certification is possible from Sand time. SEI, dendrites, roughness, field concentration, nucleation and thermal behavior can cause failure before or after the ideal depletion threshold. The actual cited paper explicitly warns that the lithium interface is more complex because of SEI inhomogeneity.
+
+### Complete independent example
+
+Inputs: `salt_diffusivity=1e-10 m²/s`, `salt_concentration=1000 mol/m³`, `plating_current_density=100 A/m²`, `cation_transference=.4`.
+
+- Effective consumption denominator `j(1-tplus)=100×.6=60 A/m²`.
+- `F c0/[j(1-tplus)]=96485.33212×1000/60=1608088.8686666666 s/m`.
+- `sand_time=(pi×1e-10/4)×1608088.8686666666²=203.10002310425608 s`.
+- `sand_areal_charge=100×203.10002310425608=20310.002310425607 C/m²`.
+- `diffusion_length=sqrt(1e-10×203.10002310425608)=.0001425131653933264 m`.
+
+This is an ideal long-domain plating example, not a recommended charge protocol. The nominal areal charge corresponds to approximately `.5642 mAh/cm²`, but that conversion is explanatory and not an extra catalog output.
+
+### Independent tester cases
+
+Nominal: assert all three outputs. Double current to `200 A/m²`: time divides by four, areal charge halves, diffusion length halves. Double concentration: time quadruples, areal charge quadruples, diffusion length doubles. Set transference to zero: time and areal charge are `.36` of nominal, diffusion length `.6` of nominal. As transference approaches one, predicted time and length grow without bound; finite geometry generally invalidates the physical approximation before the mathematical endpoint. Reject transference one, above one or below zero; reject zero/negative diffusivity, concentration or current. Do not produce a finite result for zero current or silently assign a special depletion time.
+
+### Sources and illustration
+
+- [Ellison and Grey, Engineering considerations for practical lithium-air electrolytes, Ionic transport, equations (31)-(32), PDF page 6 and discussion pages 18-19](https://api.repository.cam.ac.uk/server/api/core/bitstreams/a34f3449-0c37-4b97-a66f-3f24697e9426/content)
+
+Separate electron and cation paths terminate at a planar plating interface. Initial and depleted concentration profiles are schematic; the diffusion-length dimension is a scale, not a sharp front.
+
