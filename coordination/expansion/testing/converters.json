@@ -1,0 +1,1341 @@
+{
+  "lane": "converters",
+  "base": "4c46fa1",
+  "file": "backend/tests/converters.rs",
+  "authored_tests": 23,
+  "oracle_provenance": "Non-default vectors and all oracles derived independently outside the implementation: charge-per-cycle transport, piecewise triangular RMS integrals, volt-second reset balance, DCM energy/triangle identities, rectangular jXm||Rac impedance division for the LLC, and antisymmetric DAB current-segment integration. Source register inherited from research/expansion/converters.md; no renewed manufacturer retrieval claimed.",
+  "behaviors_covered": {
+    "converters.inverting_charge_pump": "Complete independent nondefault charge-per-cycle map; zero load, switching/ESR floor, strict rail collapse and recovery, zero-loss path, scalar/nonfinite/missing rejection.",
+    "converters.sepic_ccm_stress": "Complete independent on/off affine-current integral map; buck, unity and boost conversion, uncoupled unequal ripple, negligible ripple, both independent strict branch-valley boundaries and recovery.",
+    "converters.forward_reset_winding": "Complete nondefault volt-second reset map; fractional ratio, reset-ratio stress/duty tradeoff, frequency-only reset-time scaling, strict boundary recovery and binary-exact tiny idle margin.",
+    "converters.flyback_dcm_demagnetization": "Complete nondefault energy and full-period triangular integral map; input/output power and secondary-charge identities, strict DCM boundary recovery, tiny positive load, finite-output extreme regression.",
+    "converters.llc_half_bridge_fha": "Complete nondefault complex-impedance voltage-divider maps, capacitive sign, series resonance over loads and Lm<Lr, lower resonance unclamped gain, finite reflected-load regression.",
+    "converters.dual_active_bridge_power": "Complete nondefault piecewise-current power integral map; signed reversal, maxima, falling branch, mismatched-bus zero and \u00b1pi endpoints, tiny negative phase, frequency/inductance scaling, finite-power overflow regression.",
+    "shared": "Every input gets nonfinite, relevant zero/negative, missing-field rejection and immediate valid recovery. Existing common::calculate/assert_close only; all nonzero outputs use relative-only tolerances."
+  },
+  "verification": "NOT EXECUTED: no builds, Rust tests, lint, formatters, backend process, smoke or native launches. Only independent Python arithmetic derived receipt oracles. Main must execute cargo test --test converters and all 45 flat JSON-lines scenarios after integration; three source-derived regressions deliberately expect success at currently unstable expressions.",
+  "untested_gaps": [
+    "Main owns compilation, test execution, actual JSON-lines process recovery and all integrated/native checks.",
+    "Primary-source access evidence inherited from converter research; no renewed retrieval or hardware measurement performed.",
+    "Full binary64 domain, transient behavior, losses, saturation, thermal/device/isolation ratings and ZVS feasibility are not validated.",
+    "Pixel inspection belongs to V2ConvertersRun; this tester makes no native-image approval claim."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "converters.llc_half_bridge_fha",
+      "location": "backend/catalog/converters.json:660",
+      "inputs": {
+        "vin": 3e+155,
+        "primary_secondary_ratio": 1e+155,
+        "resonant_inductance": 4e-05,
+        "magnetizing_inductance": 0.00012,
+        "resonant_capacitance": 2.5e-07,
+        "switching_frequency": 50000.0,
+        "load_resistance": 1e-300
+      },
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 0.99345882657961,
+        "ac_load_resistance": 8105694691.387022,
+        "quality_factor": 1.5605214756132198e-09,
+        "inductance_ratio": 3.0,
+        "tank_gain": 1.0044234260013796,
+        "output_voltage": 1.5066351390020694,
+        "input_reactance": 37.53308701008506
+      },
+      "evidence": "Source-derived, not executed: primary_secondary_ratio^2 = 1e310 overflows before multiplication by Ro=1e-300. Rac is about 8.105694691e9 ohm and all eight outputs are representable.",
+      "minimal_correction": "Scale the reflected-load multiplication so the finite n\u00b2Ro product is formed without squaring n first; retain full positive domain.",
+      "regression": "llc_representable_reflected_load_must_not_overflow_ratio_square"
+    },
+    {
+      "severity": "medium",
+      "id": "converters.dual_active_bridge_power",
+      "location": "backend/catalog/converters.json:796,802",
+      "inputs": {
+        "primary_voltage": 2e+154,
+        "secondary_voltage": 2e+154,
+        "primary_secondary_ratio": 1,
+        "switching_frequency": 1,
+        "transfer_inductance": 1,
+        "phase_shift": 1.5707963267948966
+      },
+      "expected_outputs": {
+        "voltage_ratio": 1,
+        "transferred_power": 5e+307,
+        "maximum_power": 5e+307,
+        "primary_bus_current": 2.5e+153,
+        "secondary_bus_current": 2.5e+153,
+        "phase_delay": 0.25
+      },
+      "evidence": "Source-derived, not executed: 2e154*2e154 overflows before the phase weights or division by eight; final P and Pmax are 5e307 W.",
+      "minimal_correction": "Apply power scaling before forming overflowing bus products without excluding finite-output inputs.",
+      "regression": "dab_representable_power_must_apply_phase_before_overflowing_bus_product"
+    },
+    {
+      "severity": "medium",
+      "id": "converters.flyback_dcm_demagnetization",
+      "location": "backend/catalog/converters.json:492,498",
+      "inputs": {
+        "vin": 1e+100,
+        "vout": 1e+100,
+        "load_current": 1e-304,
+        "magnetizing_inductance": 1e+200,
+        "switching_frequency": 1e+200,
+        "primary_secondary_ratio": 1
+      },
+      "expected_outputs": {
+        "primary_peak_current": 1.4142135623730952e-302,
+        "duty": 0.014142135623730952,
+        "demagnetization_fraction": 0.014142135623730952,
+        "idle_fraction": 0.9717157287525381,
+        "primary_rms_current": 9.70983543414647e-304,
+        "secondary_rms_current": 9.70983543414647e-304,
+        "switch_blocking_voltage": 2e+100,
+        "diode_reverse_voltage": 2e+100
+      },
+      "evidence": "Source-derived, not executed: Lm*fs=1e400 overflows; Ipk/V is about 1.414e-402 and underflows. Combined duty and demagnetization fractions are each sqrt(2)*0.01, satisfying DCM.",
+      "minimal_correction": "Balance multiplicative scales in interval formulas; fixing only Lm*fs overflow is insufficient if Ipk/V still underflows.",
+      "regression": "flyback_representable_intervals_must_not_overflow_inductance_frequency_product"
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "independent_nondefault_inverting_charge_pump",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 8.0,
+          "load_current": 0.4,
+          "switching_frequency": 20000.0,
+          "flying_capacitance": 2.5e-05,
+          "switch_resistance": 0.5,
+          "flying_esr": 0.125,
+          "output_esr": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "20 uC per cycle gives 0.8 V transport drop; current-weighted ESR contributes another 0.5 V.",
+      "expected_outputs": {
+        "transport_resistance": 2.0,
+        "output_resistance": 3.25,
+        "voltage_droop": 1.3,
+        "output_voltage": -6.7
+      }
+    },
+    {
+      "name": "independent_nondefault_sepic_ccm_stress",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 0.00012,
+          "second_inductance": 8e-05
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Buck-like SEPIC: integrate on/off affine current endpoints, retaining unequal uncoupled ripple.",
+      "expected_outputs": {
+        "duty": 0.25,
+        "input_current": 1.0,
+        "input_ripple": 0.5000000000000001,
+        "second_ripple": 0.75,
+        "switch_peak_current": 4.625,
+        "switch_rms_current": 2.008121531016819,
+        "coupling_cap_rms_current": 1.7399263633843818,
+        "blocking_voltage": 32.0
+      }
+    },
+    {
+      "name": "independent_nondefault_forward_reset_winding",
+      "request": {
+        "command": "calculate",
+        "id": "converters.forward_reset_winding",
+        "inputs": {
+          "vin": 80.0,
+          "vout": 12.0,
+          "primary_secondary_ratio": 2.0,
+          "reset_primary_ratio": 0.5,
+          "switching_frequency": 80000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Primary on volt-seconds 24 V-period; reverse primary voltage 160 V requires 0.15 reset fraction.",
+      "expected_outputs": {
+        "duty": 0.3,
+        "reset_fraction": 0.15,
+        "duty_limit": 0.6666666666666666,
+        "idle_fraction": 0.5499999999999999,
+        "reset_time": 1.8749999999999998e-06,
+        "switch_blocking_voltage": 240.0
+      }
+    },
+    {
+      "name": "independent_nondefault_flyback_dcm_demagnetization",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 0.5,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "40 uJ per cycle requires 2 A primary peak; independently integrate full-period primary and secondary triangles.",
+      "expected_outputs": {
+        "primary_peak_current": 2.0,
+        "duty": 0.16666666666666666,
+        "demagnetization_fraction": 0.3333333333333333,
+        "idle_fraction": 0.5,
+        "primary_rms_current": 0.4714045207910317,
+        "secondary_rms_current": 1.0,
+        "switch_blocking_voltage": 36.0,
+        "diode_reverse_voltage": 24.0
+      }
+    },
+    {
+      "name": "independent_nondefault_llc_half_bridge_fha",
+      "request": {
+        "command": "calculate",
+        "id": "converters.llc_half_bridge_fha",
+        "inputs": {
+          "vin": 300.0,
+          "primary_secondary_ratio": 3.0,
+          "resonant_inductance": 4e-05,
+          "magnetizing_inductance": 0.00012,
+          "resonant_capacitance": 2.5e-07,
+          "switching_frequency": 50000.0,
+          "load_resistance": 6.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Complex admittance of Lm parallel Rac; use magnitude of voltage divider, not normalized catalog gain formula.",
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 0.99345882657961,
+        "ac_load_resistance": 43.77075133348991,
+        "quality_factor": 0.2889854584468926,
+        "inductance_ratio": 3.0,
+        "tank_gain": 1.0044161365662199,
+        "output_voltage": 50.22080682831099,
+        "input_reactance": 21.477584114761015
+      }
+    },
+    {
+      "name": "independent_nondefault_dual_active_bridge_power",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": 1.0471975511965976
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Integrate two inductor-current segments against primary bridge voltage with antisymmetric initial/final current.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": 1111.111111111111,
+        "maximum_power": 1250.0,
+        "primary_bus_current": 3.7037037037037037,
+        "secondary_bus_current": 13.88888888888889,
+        "phase_delay": 2.083333333333333e-06
+      }
+    },
+    {
+      "name": "pump_zero_load",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 8.0,
+          "load_current": 0,
+          "switching_frequency": 20000.0,
+          "flying_capacitance": 2.5e-05,
+          "switch_resistance": 0.5,
+          "flying_esr": 0.125,
+          "output_esr": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Admitted no-load limit preserves negative output and zero droop.",
+      "expected_outputs": {
+        "transport_resistance": 2.0,
+        "output_resistance": 3.25,
+        "voltage_droop": 0.0,
+        "output_voltage": -8.0
+      }
+    },
+    {
+      "name": "pump_double_frequency",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 8.0,
+          "load_current": 0.4,
+          "switching_frequency": 40000,
+          "flying_capacitance": 2.5e-05,
+          "switch_resistance": 0.5,
+          "flying_esr": 0.125,
+          "output_esr": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Only charge transport resistance halves; ESR and switch floor remain.",
+      "expected_outputs": {
+        "transport_resistance": 1.0,
+        "output_resistance": 2.25,
+        "voltage_droop": 0.9,
+        "output_voltage": -7.1
+      }
+    },
+    {
+      "name": "pump_collapse_5",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 5,
+          "load_current": 5,
+          "switching_frequency": 10000,
+          "flying_capacitance": 0.0001,
+          "switch_resistance": 0,
+          "flying_esr": 0,
+          "output_esr": 0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Negative output requires strict drop below Vin."
+    },
+    {
+      "name": "pump_recovery_after_5",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 5,
+          "load_current": 4.999,
+          "switching_frequency": 10000,
+          "flying_capacitance": 0.0001,
+          "switch_resistance": 0,
+          "flying_esr": 0,
+          "output_esr": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Adjacent valid rail must remain negative, without stale error state.",
+      "expected_outputs": {
+        "transport_resistance": 1.0,
+        "output_resistance": 1.0,
+        "voltage_droop": 4.999,
+        "output_voltage": -0.001000000000000334
+      }
+    },
+    {
+      "name": "pump_collapse_5.001",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 5,
+          "load_current": 5.001,
+          "switching_frequency": 10000,
+          "flying_capacitance": 0.0001,
+          "switch_resistance": 0,
+          "flying_esr": 0,
+          "output_esr": 0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Negative output requires strict drop below Vin."
+    },
+    {
+      "name": "pump_recovery_after_5.001",
+      "request": {
+        "command": "calculate",
+        "id": "converters.inverting_charge_pump",
+        "inputs": {
+          "vin": 5,
+          "load_current": 4.999,
+          "switching_frequency": 10000,
+          "flying_capacitance": 0.0001,
+          "switch_resistance": 0,
+          "flying_esr": 0,
+          "output_esr": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Adjacent valid rail must remain negative, without stale error state.",
+      "expected_outputs": {
+        "transport_resistance": 1.0,
+        "output_resistance": 1.0,
+        "voltage_droop": 4.999,
+        "output_voltage": -0.001000000000000334
+      }
+    },
+    {
+      "name": "sepic_input_inductance_invalid_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 3e-05,
+          "second_inductance": 8e-05
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Reject zero or reversed branch valley independently of the other branch."
+    },
+    {
+      "name": "sepic_input_inductance_recovery_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 3.003e-05,
+          "second_inductance": 8e-05
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Positive branch valley just inside strict CCM domain.",
+      "expected_outputs": {
+        "duty": 0.25,
+        "input_current": 1.0,
+        "input_ripple": 1.9980019980019983,
+        "second_ripple": 0.75,
+        "switch_peak_current": 5.374000999000999,
+        "switch_rms_current": 2.038951502309781,
+        "coupling_cap_rms_current": 1.8058846859645408,
+        "blocking_voltage": 32.0
+      }
+    },
+    {
+      "name": "sepic_input_inductance_invalid_0.999",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 2.997e-05,
+          "second_inductance": 8e-05
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Reject zero or reversed branch valley independently of the other branch."
+    },
+    {
+      "name": "sepic_input_inductance_recovery_0.999",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 3.003e-05,
+          "second_inductance": 8e-05
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Positive branch valley just inside strict CCM domain.",
+      "expected_outputs": {
+        "duty": 0.25,
+        "input_current": 1.0,
+        "input_ripple": 1.9980019980019983,
+        "second_ripple": 0.75,
+        "switch_peak_current": 5.374000999000999,
+        "switch_rms_current": 2.038951502309781,
+        "coupling_cap_rms_current": 1.8058846859645408,
+        "blocking_voltage": 32.0
+      }
+    },
+    {
+      "name": "sepic_second_inductance_invalid_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 0.00012,
+          "second_inductance": 1e-05
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Reject zero or reversed branch valley independently of the other branch."
+    },
+    {
+      "name": "sepic_second_inductance_recovery_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 0.00012,
+          "second_inductance": 1.0009999999999999e-05
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Positive branch valley just inside strict CCM domain.",
+      "expected_outputs": {
+        "duty": 0.25,
+        "input_current": 1.0,
+        "input_ripple": 0.5000000000000001,
+        "second_ripple": 5.994005994005995,
+        "switch_peak_current": 7.247002997002998,
+        "switch_rms_current": 2.2087520696565752,
+        "coupling_cap_rms_current": 1.9401358836441704,
+        "blocking_voltage": 32.0
+      }
+    },
+    {
+      "name": "sepic_second_inductance_invalid_0.999",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 0.00012,
+          "second_inductance": 9.990000000000001e-06
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Reject zero or reversed branch valley independently of the other branch."
+    },
+    {
+      "name": "sepic_second_inductance_recovery_0.999",
+      "request": {
+        "command": "calculate",
+        "id": "converters.sepic_ccm_stress",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 3.0,
+          "switching_frequency": 100000.0,
+          "input_inductance": 0.00012,
+          "second_inductance": 1.0009999999999999e-05
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Positive branch valley just inside strict CCM domain.",
+      "expected_outputs": {
+        "duty": 0.25,
+        "input_current": 1.0,
+        "input_ripple": 0.5000000000000001,
+        "second_ripple": 5.994005994005995,
+        "switch_peak_current": 7.247002997002998,
+        "switch_rms_current": 2.2087520696565752,
+        "coupling_cap_rms_current": 1.9401358836441704,
+        "blocking_voltage": 32.0
+      }
+    },
+    {
+      "name": "forward_reset_invalid_20.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.forward_reset_winding",
+        "inputs": {
+          "vin": 80.0,
+          "vout": 20.0,
+          "primary_secondary_ratio": 2.0,
+          "reset_primary_ratio": 1,
+          "switching_frequency": 80000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Equal reset winding must finish before one full period."
+    },
+    {
+      "name": "forward_reset_recovery_20.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.forward_reset_winding",
+        "inputs": {
+          "vin": 80.0,
+          "vout": 19.999,
+          "primary_secondary_ratio": 2.0,
+          "reset_primary_ratio": 1,
+          "switching_frequency": 80000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Small positive idle is admitted.",
+      "expected_outputs": {
+        "duty": 0.49997499999999995,
+        "reset_fraction": 0.49997499999999995,
+        "duty_limit": 0.5,
+        "idle_fraction": 5.0000000000105516e-05,
+        "reset_time": 6.2496875e-06,
+        "switch_blocking_voltage": 160.0
+      }
+    },
+    {
+      "name": "forward_reset_invalid_20.001",
+      "request": {
+        "command": "calculate",
+        "id": "converters.forward_reset_winding",
+        "inputs": {
+          "vin": 80.0,
+          "vout": 20.001,
+          "primary_secondary_ratio": 2.0,
+          "reset_primary_ratio": 1,
+          "switching_frequency": 80000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Equal reset winding must finish before one full period."
+    },
+    {
+      "name": "forward_reset_recovery_20.001",
+      "request": {
+        "command": "calculate",
+        "id": "converters.forward_reset_winding",
+        "inputs": {
+          "vin": 80.0,
+          "vout": 19.999,
+          "primary_secondary_ratio": 2.0,
+          "reset_primary_ratio": 1,
+          "switching_frequency": 80000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Small positive idle is admitted.",
+      "expected_outputs": {
+        "duty": 0.49997499999999995,
+        "reset_fraction": 0.49997499999999995,
+        "duty_limit": 0.5,
+        "idle_fraction": 5.0000000000105516e-05,
+        "reset_time": 6.2496875e-06,
+        "switch_blocking_voltage": 160.0
+      }
+    },
+    {
+      "name": "flyback_dcm_invalid_2.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 2.0,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "DCM requires strictly positive idle, not boundary conduction."
+    },
+    {
+      "name": "flyback_dcm_recovery_2.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 1.999,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Adjacent valid energy request must recover.",
+      "expected_outputs": {
+        "primary_peak_current": 3.99899987496874,
+        "duty": 0.3332499895807283,
+        "demagnetization_fraction": 0.6664999791614566,
+        "idle_fraction": 0.0002500312578149755,
+        "primary_rms_current": 1.332833302076821,
+        "secondary_rms_current": 2.8273663982693344,
+        "switch_blocking_voltage": 36.0,
+        "diode_reverse_voltage": 24.0
+      }
+    },
+    {
+      "name": "flyback_dcm_invalid_2.001",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 2.001,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "DCM requires strictly positive idle, not boundary conduction."
+    },
+    {
+      "name": "flyback_dcm_recovery_2.001",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 1.999,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Adjacent valid energy request must recover.",
+      "expected_outputs": {
+        "primary_peak_current": 3.99899987496874,
+        "duty": 0.3332499895807283,
+        "demagnetization_fraction": 0.6664999791614566,
+        "idle_fraction": 0.0002500312578149755,
+        "primary_rms_current": 1.332833302076821,
+        "secondary_rms_current": 2.8273663982693344,
+        "switch_blocking_voltage": 36.0,
+        "diode_reverse_voltage": 24.0
+      }
+    },
+    {
+      "name": "flyback_zero_load",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 0,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Fixed-frequency loaded DCM excludes exact zero load."
+    },
+    {
+      "name": "flyback_after_zero_load",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 24.0,
+          "vout": 8.0,
+          "load_current": 0.5,
+          "magnetizing_inductance": 2e-05,
+          "switching_frequency": 100000.0,
+          "primary_secondary_ratio": 1.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Recover after scalar load-domain rejection.",
+      "expected_outputs": {
+        "primary_peak_current": 2.0,
+        "duty": 0.16666666666666666,
+        "demagnetization_fraction": 0.3333333333333333,
+        "idle_fraction": 0.5,
+        "primary_rms_current": 0.4714045207910317,
+        "secondary_rms_current": 1.0,
+        "switch_blocking_voltage": 36.0,
+        "diode_reverse_voltage": 24.0
+      }
+    },
+    {
+      "name": "llc_zero_load_resistance",
+      "request": {
+        "command": "calculate",
+        "id": "converters.llc_half_bridge_fha",
+        "inputs": {
+          "vin": 300.0,
+          "primary_secondary_ratio": 3.0,
+          "resonant_inductance": 4e-05,
+          "magnetizing_inductance": 0.00012,
+          "resonant_capacitance": 2.5e-07,
+          "switching_frequency": 50000.0,
+          "load_resistance": 0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "Finite positive rectifier-equivalent load is required."
+    },
+    {
+      "name": "llc_capacitive_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "converters.llc_half_bridge_fha",
+        "inputs": {
+          "vin": 300.0,
+          "primary_secondary_ratio": 3.0,
+          "resonant_inductance": 4e-05,
+          "magnetizing_inductance": 0.00012,
+          "resonant_capacitance": 2.5e-07,
+          "switching_frequency": 10000,
+          "load_resistance": 6.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Signed negative input reactance is valid, not a ZVS guarantee.",
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 0.19869176531592203,
+        "ac_load_resistance": 43.77075133348991,
+        "quality_factor": 0.2889854584468926,
+        "inductance_ratio": 3.0,
+        "tank_gain": 0.1380063127552139,
+        "output_voltage": 6.900315637760696,
+        "input_reactance": -53.826158979837246
+      }
+    },
+    {
+      "name": "llc_resonance_load_0.1",
+      "request": {
+        "command": "calculate",
+        "id": "converters.llc_half_bridge_fha",
+        "inputs": {
+          "vin": 300.0,
+          "primary_secondary_ratio": 3.0,
+          "resonant_inductance": 4e-05,
+          "magnetizing_inductance": 0.00012,
+          "resonant_capacitance": 2.5e-07,
+          "switching_frequency": 50329.21210448704,
+          "load_resistance": 0.1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "At series resonance gain is one and output is 50 V despite load changes.",
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 1.0,
+        "ac_load_resistance": 0.729512522224832,
+        "quality_factor": 17.339127506813554,
+        "inductance_ratio": 3.0,
+        "tank_gain": 1.0000000000000002,
+        "output_voltage": 50.000000000000014,
+        "input_reactance": 0.01401921774300441
+      }
+    },
+    {
+      "name": "llc_resonance_load_1000000.0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.llc_half_bridge_fha",
+        "inputs": {
+          "vin": 300.0,
+          "primary_secondary_ratio": 3.0,
+          "resonant_inductance": 4e-05,
+          "magnetizing_inductance": 0.00012,
+          "resonant_capacitance": 2.5e-07,
+          "switching_frequency": 50329.21210448704,
+          "load_resistance": 1000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "At series resonance gain is one and output is 50 V despite load changes.",
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 1.0,
+        "ac_load_resistance": 7295125.2222483205,
+        "quality_factor": 1.7339127506813551e-06,
+        "inductance_ratio": 3.0,
+        "tank_gain": 1.0,
+        "output_voltage": 50.0,
+        "input_reactance": 37.94733192099377
+      }
+    },
+    {
+      "name": "dab_phase_invalid_3.141592654589793",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": 3.141592654589793
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "SPS phase outside closed [-pi,pi] domain."
+    },
+    {
+      "name": "dab_reverse_recovery_3.141592654589793",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": -1.5707963267948966
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Reverse power is admitted after domain error; maximum magnitude 1250 W.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": -1250.0,
+        "maximum_power": 1250.0,
+        "primary_bus_current": -4.166666666666667,
+        "secondary_bus_current": -15.625,
+        "phase_delay": -3.1249999999999997e-06
+      }
+    },
+    {
+      "name": "dab_phase_invalid_-3.141592654589793",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": -3.141592654589793
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-09,
+      "rationale": "SPS phase outside closed [-pi,pi] domain."
+    },
+    {
+      "name": "dab_reverse_recovery_-3.141592654589793",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": -1.5707963267948966
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Reverse power is admitted after domain error; maximum magnitude 1250 W.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": -1250.0,
+        "maximum_power": 1250.0,
+        "primary_bus_current": -4.166666666666667,
+        "secondary_bus_current": -15.625,
+        "phase_delay": -3.1249999999999997e-06
+      }
+    },
+    {
+      "name": "dab_limit_0",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": 0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Retain zero/full-angle endpoints and falling-power branch; mismatched bus ratio remains 2/3.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": 0.0,
+        "maximum_power": 1250.0,
+        "primary_bus_current": 0.0,
+        "secondary_bus_current": 0.0,
+        "phase_delay": 0.0
+      }
+    },
+    {
+      "name": "dab_limit_3.141592653589793",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": 3.141592653589793
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Retain zero/full-angle endpoints and falling-power branch; mismatched bus ratio remains 2/3.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": 0.0,
+        "maximum_power": 1250.0,
+        "primary_bus_current": 0.0,
+        "secondary_bus_current": 0.0,
+        "phase_delay": 6.2499999999999995e-06
+      }
+    },
+    {
+      "name": "dab_limit_-3.141592653589793",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": -3.141592653589793
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Retain zero/full-angle endpoints and falling-power branch; mismatched bus ratio remains 2/3.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": 0.0,
+        "maximum_power": 1250.0,
+        "primary_bus_current": 0.0,
+        "secondary_bus_current": 0.0,
+        "phase_delay": -6.2499999999999995e-06
+      }
+    },
+    {
+      "name": "dab_limit_2.0943951023931953",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 300.0,
+          "secondary_voltage": 80.0,
+          "primary_secondary_ratio": 2.5,
+          "switching_frequency": 80000.0,
+          "transfer_inductance": 7.5e-05,
+          "phase_shift": 2.0943951023931953
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Retain zero/full-angle endpoints and falling-power branch; mismatched bus ratio remains 2/3.",
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": 1111.1111111111115,
+        "maximum_power": 1250.0,
+        "primary_bus_current": 3.703703703703705,
+        "secondary_bus_current": 13.888888888888895,
+        "phase_delay": 4.166666666666666e-06
+      }
+    },
+    {
+      "name": "regression_llc_ratio_square_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "converters.llc_half_bridge_fha",
+        "inputs": {
+          "vin": 3e+155,
+          "primary_secondary_ratio": 1e+155,
+          "resonant_inductance": 4e-05,
+          "magnetizing_inductance": 0.00012,
+          "resonant_capacitance": 2.5e-07,
+          "switching_frequency": 50000.0,
+          "load_resistance": 1e-300
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Source-derived defect: n squared overflows but n*sqrt(Ro), Rac and all outputs remain finite; do not bless rejection.",
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 0.99345882657961,
+        "ac_load_resistance": 8105694691.387022,
+        "quality_factor": 1.5605214756132198e-09,
+        "inductance_ratio": 3.0,
+        "tank_gain": 1.0044234260013796,
+        "output_voltage": 1.5066351390020694,
+        "input_reactance": 37.53308701008506
+      }
+    },
+    {
+      "name": "regression_dab_bus_product_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "converters.dual_active_bridge_power",
+        "inputs": {
+          "primary_voltage": 2e+154,
+          "secondary_voltage": 2e+154,
+          "primary_secondary_ratio": 1,
+          "switching_frequency": 1,
+          "transfer_inductance": 1,
+          "phase_shift": 1.5707963267948966
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Source-derived defect: unscaled bus product overflows, but the physical 1/8 factor yields finite power.",
+      "expected_outputs": {
+        "voltage_ratio": 1,
+        "transferred_power": 5e+307,
+        "maximum_power": 5e+307,
+        "primary_bus_current": 2.5e+153,
+        "secondary_bus_current": 2.5e+153,
+        "phase_delay": 0.25
+      }
+    },
+    {
+      "name": "regression_flyback_lm_fs_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "converters.flyback_dcm_demagnetization",
+        "inputs": {
+          "vin": 1e+100,
+          "vout": 1e+100,
+          "load_current": 1e-304,
+          "magnetizing_inductance": 1e+200,
+          "switching_frequency": 1e+200,
+          "primary_secondary_ratio": 1
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-09,
+      "rationale": "Source-derived defect: Lm*fs overflows and Ipk/V underflows separately; physical intervals and all outputs remain finite.",
+      "expected_outputs": {
+        "primary_peak_current": 1.4142135623730952e-302,
+        "duty": 0.014142135623730952,
+        "demagnetization_fraction": 0.014142135623730952,
+        "idle_fraction": 0.9717157287525381,
+        "primary_rms_current": 9.70983543414647e-304,
+        "secondary_rms_current": 9.70983543414647e-304,
+        "switch_blocking_voltage": 2e+100,
+        "diode_reverse_voltage": 2e+100
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "converters.inverting_charge_pump",
+      "inputs": {
+        "vin": 8.0,
+        "load_current": 0.4,
+        "switching_frequency": 20000.0,
+        "flying_capacitance": 2.5e-05,
+        "switch_resistance": 0.5,
+        "flying_esr": 0.125,
+        "output_esr": 0.25
+      },
+      "expected_outputs": {
+        "transport_resistance": 2.0,
+        "output_resistance": 3.25,
+        "voltage_droop": 1.3,
+        "output_voltage": -6.7
+      },
+      "steps": [
+        "Select this exact calculator ID and inspect its registered native diagram and quantity legend.",
+        "Enter all supplied SI inputs, calculate, compare all outputs with relative tolerance 1e-9.",
+        "Apply the matching invalid-then-valid process vectors and verify visible error clears without stale results."
+      ]
+    },
+    {
+      "id": "converters.sepic_ccm_stress",
+      "inputs": {
+        "vin": 24.0,
+        "vout": 8.0,
+        "load_current": 3.0,
+        "switching_frequency": 100000.0,
+        "input_inductance": 0.00012,
+        "second_inductance": 8e-05
+      },
+      "expected_outputs": {
+        "duty": 0.25,
+        "input_current": 1.0,
+        "input_ripple": 0.5000000000000001,
+        "second_ripple": 0.75,
+        "switch_peak_current": 4.625,
+        "switch_rms_current": 2.008121531016819,
+        "coupling_cap_rms_current": 1.7399263633843818,
+        "blocking_voltage": 32.0
+      },
+      "steps": [
+        "Select this exact calculator ID and inspect its registered native diagram and quantity legend.",
+        "Enter all supplied SI inputs, calculate, compare all outputs with relative tolerance 1e-9.",
+        "Apply the matching invalid-then-valid process vectors and verify visible error clears without stale results."
+      ]
+    },
+    {
+      "id": "converters.forward_reset_winding",
+      "inputs": {
+        "vin": 80.0,
+        "vout": 12.0,
+        "primary_secondary_ratio": 2.0,
+        "reset_primary_ratio": 0.5,
+        "switching_frequency": 80000.0
+      },
+      "expected_outputs": {
+        "duty": 0.3,
+        "reset_fraction": 0.15,
+        "duty_limit": 0.6666666666666666,
+        "idle_fraction": 0.5499999999999999,
+        "reset_time": 1.8749999999999998e-06,
+        "switch_blocking_voltage": 240.0
+      },
+      "steps": [
+        "Select this exact calculator ID and inspect its registered native diagram and quantity legend.",
+        "Enter all supplied SI inputs, calculate, compare all outputs with relative tolerance 1e-9.",
+        "Apply the matching invalid-then-valid process vectors and verify visible error clears without stale results."
+      ]
+    },
+    {
+      "id": "converters.flyback_dcm_demagnetization",
+      "inputs": {
+        "vin": 24.0,
+        "vout": 8.0,
+        "load_current": 0.5,
+        "magnetizing_inductance": 2e-05,
+        "switching_frequency": 100000.0,
+        "primary_secondary_ratio": 1.5
+      },
+      "expected_outputs": {
+        "primary_peak_current": 2.0,
+        "duty": 0.16666666666666666,
+        "demagnetization_fraction": 0.3333333333333333,
+        "idle_fraction": 0.5,
+        "primary_rms_current": 0.4714045207910317,
+        "secondary_rms_current": 1.0,
+        "switch_blocking_voltage": 36.0,
+        "diode_reverse_voltage": 24.0
+      },
+      "steps": [
+        "Select this exact calculator ID and inspect its registered native diagram and quantity legend.",
+        "Enter all supplied SI inputs, calculate, compare all outputs with relative tolerance 1e-9.",
+        "Apply the matching invalid-then-valid process vectors and verify visible error clears without stale results."
+      ]
+    },
+    {
+      "id": "converters.llc_half_bridge_fha",
+      "inputs": {
+        "vin": 300.0,
+        "primary_secondary_ratio": 3.0,
+        "resonant_inductance": 4e-05,
+        "magnetizing_inductance": 0.00012,
+        "resonant_capacitance": 2.5e-07,
+        "switching_frequency": 50000.0,
+        "load_resistance": 6.0
+      },
+      "expected_outputs": {
+        "resonant_frequency": 50329.21210448704,
+        "normalized_frequency": 0.99345882657961,
+        "ac_load_resistance": 43.77075133348991,
+        "quality_factor": 0.2889854584468926,
+        "inductance_ratio": 3.0,
+        "tank_gain": 1.0044161365662199,
+        "output_voltage": 50.22080682831099,
+        "input_reactance": 21.477584114761015
+      },
+      "steps": [
+        "Select this exact calculator ID and inspect its registered native diagram and quantity legend.",
+        "Enter all supplied SI inputs, calculate, compare all outputs with relative tolerance 1e-9.",
+        "Apply the matching invalid-then-valid process vectors and verify visible error clears without stale results."
+      ]
+    },
+    {
+      "id": "converters.dual_active_bridge_power",
+      "inputs": {
+        "primary_voltage": 300.0,
+        "secondary_voltage": 80.0,
+        "primary_secondary_ratio": 2.5,
+        "switching_frequency": 80000.0,
+        "transfer_inductance": 7.5e-05,
+        "phase_shift": 1.0471975511965976
+      },
+      "expected_outputs": {
+        "voltage_ratio": 0.6666666666666666,
+        "transferred_power": 1111.111111111111,
+        "maximum_power": 1250.0,
+        "primary_bus_current": 3.7037037037037037,
+        "secondary_bus_current": 13.88888888888889,
+        "phase_delay": 2.083333333333333e-06
+      },
+      "steps": [
+        "Select this exact calculator ID and inspect its registered native diagram and quantity legend.",
+        "Enter all supplied SI inputs, calculate, compare all outputs with relative tolerance 1e-9.",
+        "Apply the matching invalid-then-valid process vectors and verify visible error clears without stale results."
+      ]
+    }
+  ]
+}
