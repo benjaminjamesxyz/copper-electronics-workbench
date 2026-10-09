@@ -1,0 +1,87 @@
+[
+  {
+    "id": "passives.mlcc_logarithmic_aging",
+    "title": "Ferroelectric capacitor logarithmic aging",
+    "category": "Nonideal passive components",
+    "level": "basic",
+    "description": "Estimate capacitance loss from a measured one-hour post-deaging value and a calibrated percent-per-decade aging rate.",
+    "formula": "d = log10(t/3600 s); loss = A d/100; C(t) = C_1h (1-loss)",
+    "assumptions": [
+      "Class II/III ferroelectric ceramic with an approximately constant logarithmic aging rate over the supplied interval.",
+      "Time is seconds since the last heating above the material Curie temperature; reference capacitance is measured at exactly one hour.",
+      "No subsequent deaging, temperature change or DC-bias change. Aging rate is percent of the one-hour reference per decade, not compounded percent of the preceding decade.",
+      "Use part-specific characterized aging data. This is not a lifetime or reliability prediction."
+    ],
+    "references": [
+      {
+        "title": "KYOCERA AVX / American Technical Ceramics, Dielectric Aging Phenomena, Calculating Aging Rate",
+        "url": "https://rfs.kyocera-avx.com/userFiles/uploads/pdfs/dielectric_aging.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "capacitance_one_hour",
+        "label": "Capacitance one hour after deaging",
+        "unit": "F",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "aging_percent_decade",
+        "label": "Aging rate per time decade",
+        "unit": "%/decade",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "age",
+        "label": "Time since last deaging",
+        "unit": "s",
+        "default": 36000000,
+        "min": 3600
+      }
+    ],
+    "outputs": [
+      {
+        "key": "elapsed_decades",
+        "label": "Decades after one-hour reference",
+        "unit": "decade",
+        "expression": "log1p((age-3600)/3600)/ln(10)"
+      },
+      {
+        "key": "fractional_loss",
+        "label": "Fractional capacitance loss",
+        "unit": "1",
+        "expression": "aging_percent_decade/100*elapsed_decades"
+      },
+      {
+        "key": "aged_capacitance",
+        "label": "Aged capacitance",
+        "unit": "F",
+        "expression": "capacitance_one_hour*(1-fractional_loss)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "aging_percent_decade/100*(log1p((age-3600)/3600)/ln(10))",
+        "op": "<",
+        "right": "1",
+        "message": "The logarithmic fit must retain positive capacitance."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "capacitance_one_hour": 1e-05,
+        "aging_percent_decade": 2,
+        "age": 36000000
+      },
+      "expected": {
+        "elapsed_decades": 4,
+        "fractional_loss": 0.08,
+        "aged_capacitance": 9.2e-06
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
