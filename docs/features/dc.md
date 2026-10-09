@@ -263,3 +263,36 @@ Its derivative is `dPl/dRl = Vth^2 (Rs-Rl)/(Rs+Rl)^3`; it increases below `Rl = 
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 7. `dc.delta_to_star` — Delta-to-star resistor equivalence (intermediate)
+
+**Design question:** How can a three-terminal resistor triangle be replaced by a star without changing the surrounding circuit's terminal behavior?
+
+**Topology:** Delta sides are `Rab` between a-b, `Rbc` between b-c, `Rca` between c-a. Star outputs `Ra`, `Rb`, `Rc` connect a, b, c respectively to a new **floating** center.
+
+**Derivation:** Let `S = Rab+Rbc+Rca`. With terminal c unconnected, the original a-b resistance is `Rab || (Rca+Rbc) = Rab(Rca+Rbc)/S`; in the star it is `Ra+Rb`. Equating each of the three terminal-pair resistances and solving gives
+
+`Ra = Rab Rca/S`; `Rb = Rab Rbc/S`; `Rc = Rbc Rca/S`.
+
+Each numerator uses the two delta sides incident at that terminal. Source: S6, pp. 54–61. Only this direction is counted; star-to-delta would merely invert the same physical equivalence.
+
+**Inputs:** `r_ab`, `r_bc`, `r_ca` (ohm). **Outputs:** `r_a`, `r_b`, `r_c` (ohm).
+
+**Domain and limitations:** All sides positive finite, ensuring `S > 0`. Equivalence is at the three original terminals only. Connecting or grounding the newly introduced star center changes the circuit and invalidates equivalence. No sources, internal taps, reactive arms or three-phase power are modeled.
+
+**Independent example/default:** `Rab = 300`, `Rbc = 600`, `Rca = 900 ohm`; `S = 1800 ohm`.
+
+- `Ra = 300 × 900/1800 = 150 ohm`.
+- `Rb = 300 × 600/1800 = 100 ohm`.
+- `Rc = 600 × 900/1800 = 300 ohm`.
+- Independent terminal-pair checks: `300 || 1500 = 250 = Ra+Rb`; `600 || 1200 = 400 = Rb+Rc`; `900 || 900 = 450 = Rc+Ra`, all in ohm.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `r_a` | `150.0` | ohm |
+| `r_b` | `100.0` | ohm |
+| `r_c` | `300.0` | ohm |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+

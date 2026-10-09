@@ -738,5 +738,92 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "dc.delta_to_star",
+    "title": "Delta-to-star resistor equivalence",
+    "category": "DC circuits and resistor networks",
+    "level": "intermediate",
+    "description": "Replace a three-terminal delta resistor network by an electrically equivalent star to simplify networks that cannot be directly reduced by series/parallel rules.",
+    "formula": "S = Rab+Rbc+Rca; Ra = Rab Rca/S; Rb = Rab Rbc/S; Rc = Rbc Rca/S",
+    "assumptions": [
+      "Rab connects terminals a-b, Rbc b-c, and Rca c-a; star outputs connect their named terminal to a new floating center.",
+      "Equivalence applies at the three original terminals; do not externally ground or connect the new star center.",
+      "The original delta has no accessible internal taps; resistors are linear and constant, with no active sources or reactive elements.",
+      "All resistances are 1e-9 to 1e12 ohm; this is topology reduction, not three-phase power or transformer modeling."
+    ],
+    "references": [
+      {
+        "title": "Loai G. Salem, UCSB ECE 10A Lecture 12, pages 54-61: Delta-to-Wye transformation",
+        "url": "https://web.ece.ucsb.edu/~parhami/pres_folder/10A_lecture12_notes.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_ab",
+        "label": "Delta resistance a-b",
+        "unit": "ohm",
+        "default": 300.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_bc",
+        "label": "Delta resistance b-c",
+        "unit": "ohm",
+        "default": 600.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_ca",
+        "label": "Delta resistance c-a",
+        "unit": "ohm",
+        "default": 900.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_a",
+        "label": "Star arm at terminal a",
+        "unit": "ohm",
+        "expression": "r_ab*r_ca/(r_ab+r_bc+r_ca)"
+      },
+      {
+        "key": "r_b",
+        "label": "Star arm at terminal b",
+        "unit": "ohm",
+        "expression": "r_ab*r_bc/(r_ab+r_bc+r_ca)"
+      },
+      {
+        "key": "r_c",
+        "label": "Star arm at terminal c",
+        "unit": "ohm",
+        "expression": "r_bc*r_ca/(r_ab+r_bc+r_ca)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "min(r_ab,min(r_bc,r_ca))",
+        "op": ">",
+        "right": "0",
+        "message": "All delta resistances must be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_ab": 300.0,
+        "r_bc": 600.0,
+        "r_ca": 900.0
+      },
+      "expected": {
+        "r_a": 150.0,
+        "r_b": 100.0,
+        "r_c": 300.0
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
