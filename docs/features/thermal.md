@@ -80,3 +80,78 @@ Complete independent example input vector (relative tolerance `1e-6`):
 }
 ```
 
+## `thermal.junction_feedback_equilibrium` — Junction temperature with electrothermal feedback
+
+**ID:** `thermal.junction_feedback_equilibrium`; **level:** expert. **References:** 1–3.
+
+### Model and derivation
+
+Let device dissipation near a fixed electrical operating point be approximated by
+
+`P(Tj) = P_ref [1 + beta (Tj − T_ref)]`.
+
+`P_ref` is watts, `beta` is fractional power change in 1/K, and `R_th` is the complete application junction-to-ambient resistance in K/W. This model can represent approximately constant-current conduction-dominated loss, or another experimentally fitted total-power characteristic; it does not compute electrical losses.
+
+The heat balance is `Tj − Ta = R_th P(Tj)`. Set `x=Tj−Ta`; then
+
+`x = R_th P_ref [1 + beta(Ta−T_ref) + beta x]`.
+
+Therefore
+
+- `g = R_th P_ref beta` (dimensionless feedback gain);
+- `Tj = Ta + R_th P_ref [1 + beta(Ta−T_ref)] / (1−g)`;
+- `P_eq = P_ref [1 + beta(Tj−T_ref)]`.
+
+For positive heat capacitance, a small temperature perturbation obeys `C d(deltaT)/dt = (P_ref beta − 1/R_th) deltaT`. Consequently `g<1` is the local stability condition. A formal algebraic root with `g>=1` is not a valid stable design result and is rejected.
+
+### Units, domain and limitations
+
+All temperatures K, power W, resistance K/W, `beta` 1/K. The fit minimum and maximum are K and must be ordered. Ambient and reference temperatures must lie in the entered fit interval. Reference power and thermal resistance are strictly positive; beta is nonnegative; fitted power at ambient must remain positive. The feedback guard is evaluated **before** division by `1−g`. Computed junction temperature must not exceed the fit maximum. The lower fit bound follows automatically because positive dissipation and `g<1` imply `Tj>Ta`.
+
+The interval is supplied from actual characterization, not inferred from the illustrative defaults. The chosen maximum should also respect the device's intended operating limit. The result is extremely sensitive to uncertain power/thermal coefficients near `g=1`. Datasheet JEDEC `R_theta_JA` is not a universal application resistance. Hotspots, temperature-dependent convection, protection behavior and nonlinear leakage/SOA are outside the model.
+
+### Independent worked example
+
+Inputs: `Ta=T_ref=298.15 K`, `P_ref=2 W`, `beta=0.004/K`, `R_th=20 K/W`, fit interval `[233.15,423.15] K`.
+
+`g=20×2×0.004=0.16`. Rise is `40/0.84 = 1000/21 = 47.6190476190476 K`. Thus **Tj=345.7690476190476 K** and **P_eq=2/0.84=2.380952380952381 W**. Independent balance check: `20×2.380952380952381=47.6190476190476 K`. The zero-feedback estimate would be 338.15 K, showing why this is not merely inverse heatsink sizing.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `ambient_temperature` | Ambient temperature | K | 298.15 | > 0 |
+| `reference_temperature` | Power reference temperature | K | 298.15 | > 0 |
+| `reference_power` | Device power at reference temperature | W | 2 | > 0 |
+| `power_coefficient` | Fractional power temperature coefficient | 1/K | 0.004 | >= 0 |
+| `thermal_resistance` | Application junction-to-ambient resistance | K/W | 20 | > 0 |
+| `fit_temperature_min` | Minimum validated model temperature | K | 233.15 | > 0 |
+| `fit_temperature_max` | Maximum validated model temperature | K | 423.15 | > 0 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `feedback_gain` | 1 | `thermal_resistance*reference_power*power_coefficient` | 0.16 |
+| `junction_temperature` | K | `ambient_temperature+thermal_resistance*reference_power*(1+power_coefficient*(ambient_temperature-reference_temperature))/(1-feedback_gain)` | 345.7690476190476 |
+| `equilibrium_power` | W | `reference_power*(1+power_coefficient*(ambient_temperature-reference_temperature))/(1-feedback_gain)` | 2.380952380952381 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "ambient_temperature": 298.15,
+  "reference_temperature": 298.15,
+  "reference_power": 2,
+  "power_coefficient": 0.004,
+  "thermal_resistance": 20,
+  "fit_temperature_min": 233.15,
+  "fit_temperature_max": 423.15
+}
+```
+
+### Numerical implementation
+
+Implementation evaluates equilibrium power directly as `P_ref[1+beta(Ta-T_ref)]/(1-g)`. This follows the same heat balance, but avoids subtracting rounded absolute junction/reference temperatures when evaluating fitted power. No model domain or example oracle changes.
+
