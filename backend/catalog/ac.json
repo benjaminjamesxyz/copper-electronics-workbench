@@ -148,5 +148,28 @@
     ],
     "constraints": [],
     "example": {"inputs": {"resistance": 10.0, "inductance": 0.01, "capacitance": 0.000001}, "expected": {"resonance_frequency": 1591.5494309189535, "quality_factor": 10.0, "bandwidth": 159.15494309189535, "upper_half_power": 1673.11509740738, "lower_half_power": 1513.9601543154847}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.sinusoidal_power_triangle",
+    "title": "Single-phase sinusoidal power triangle",
+    "category": "AC impedance and resonance",
+    "level": "basic",
+    "description": "Convert measured RMS voltage, RMS current and voltage-minus-current phase to apparent, real and signed reactive power.",
+    "formula": "S = V_rms I_rms; P = S cos(phi); Q = S sin(phi); PF = cos(phi)",
+    "assumptions": ["Single-phase equal-frequency sinusoidal voltage/current with no harmonic distortion.", "Passive-load phase is between -pi/2 and +pi/2; positive phase/reactive power means lagging inductive current.", "PF is displacement power factor; this equals true power factor only for the stated sinusoidal model.", "Both RMS quantities are positive so phase/power-factor interpretation is meaningful; this is electrical input power, not mechanical output power."],
+    "references": [{"title": "University of Illinois ECE 333, Power System Basics – AC Analysis, slides 45–48", "url": "https://courses.grainger.illinois.edu/ece333/fa2018/handouts/ECE_333_Lecture%202_Power%20System%20Basics.pdf"}],
+    "inputs": [
+      {"key": "voltage_rms", "label": "Load RMS voltage", "unit": "V", "default": 230.0, "min": 1e-9, "max": 1e9},
+      {"key": "current_rms", "label": "Load RMS current", "unit": "A", "default": 4.0, "min": 1e-12, "max": 1e9},
+      {"key": "phase", "label": "Voltage-minus-current phase", "unit": "rad", "default": 0.5235987755982988}
+    ],
+    "outputs": [
+      {"key": "apparent_power", "label": "Apparent power", "unit": "VA", "expression": "voltage_rms*current_rms"},
+      {"key": "real_power", "label": "Real power", "unit": "W", "expression": "apparent_power*cos(phase)"},
+      {"key": "reactive_power", "label": "Signed reactive power", "unit": "var", "expression": "apparent_power*sin(phase)"},
+      {"key": "power_factor", "label": "Displacement power factor", "unit": "1", "expression": "cos(phase)"}
+    ],
+    "constraints": [{"left": "abs(phase)", "op": "<=", "right": "pi/2", "message": "Passive load phase must be within -pi/2 to +pi/2 radians"}],
+    "example": {"inputs": {"voltage_rms": 230.0, "current_rms": 4.0, "phase": 0.5235987755982988}, "expected": {"apparent_power": 920.0, "real_power": 796.7433714816837, "reactive_power": 460.0, "power_factor": 0.8660254037844387}, "relative_tolerance": 0.000001}
   }
 ]

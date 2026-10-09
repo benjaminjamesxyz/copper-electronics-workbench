@@ -156,3 +156,24 @@ The catalog uses equivalent Hz arithmetic fH=sqrt(f0²+(bandwidth/2)²)+bandwidt
 | `lower_half_power` | 1513.9601543154847 | Hz |
 
 **Parent verification scenarios:** Low/high Q, fH-fL=bandwidth where resolved, fH fL=f0², positive low root at low Q, and rejection of zero R/L/C. Do not assert symmetric Hz endpoints.
+
+## `ac.sinusoidal_power_triangle` — measured single-phase power (basic)
+
+**Purpose/topology:** Convert single-phase measured RMS voltage/current and voltage-minus-current phase to apparent, real and signed reactive electrical input power.
+
+Set v(t)=sqrt(2)V cos(omega t), i(t)=sqrt(2)I cos(omega t-phi). Period averaging removes the double-frequency product term: P=VI cos(phi). Apparent S=VI and reactive Q=VI sin(phi), with P²+Q²=S², displacement PF=cos(phi). Units: V/A RMS, phi rad (not degrees), S VA, P W, Q var, PF `1`. Sources: [I], slides 45–48; [M1], equation 12.4.4 corroborates RMS average power.
+
+**Domain/error rationale:** Inclusive V=1e-9…1e9 V and I=1e-12…1e9 A keep amplitudes positive and products finite; zero amplitude is excluded because waveform phase/PF is undefined. The input-only constraint |phi|<=pi/2 enforces a passive load before trigonometric outputs. Purely reactive endpoints are admitted; floating-point cosine can leave a tiny positive residual instead of exact zero.
+
+**Assumptions/limits:** Voltage/current are equal-frequency undistorted sinusoids. Positive phi/Q indicates inductive lag; negative phi/Q is capacitive lead and is not clamped. Displacement PF equals true PF only in this model; harmonic true PF requires different measurements. Electrical input real power is not mechanical shaft power or efficiency, nor DC resistor-power synthesis.
+
+**Complete independent example inputs:** `voltage_rms=230 V`, `current_rms=4 A`, `phase=0.5235987755982988 rad` (=pi/6). S=230×4=920; P=920 sqrt(3)/2; Q=920/2; PF=sqrt(3)/2. This exact-angle construction independently derives every expected output.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `apparent_power` | 920.0 | VA |
+| `real_power` | 796.7433714816837 | W |
+| `reactive_power` | 460.0 | var |
+| `power_factor` | 0.8660254037844387 | 1 |
+
+**Parent verification scenarios:** P²+Q²=S², zero phase, negative leading Q, both purely reactive endpoints with scale-aware tolerance, rejected phase outside ±pi/2 and rejected zero amplitudes.
