@@ -1,0 +1,1215 @@
+{
+  "lane": "rf",
+  "base": "2cca03e",
+  "file": "backend/tests/rf.rs",
+  "authored_tests": 25,
+  "behaviors_covered": {
+    "rf.matched_t_attenuator": "All three nondefault outputs; terminated nodal input match and power conservation; tiny positive attenuation with independent hyperbolic asymptotes; impedance scaling and 400 dB attenuation; all scalar/nonfinite errors and complete recovery.",
+    "rf.lowpass_l_match": "All three nondefault outputs; independent complex load-admittance match; frequency scaling, representably adjacent resistances, equal/reversed rejection; finite-output ratio, frequency and denominator overflow regressions; all scalar/nonfinite errors and complete recovery.",
+    "rf.free_space_link_budget": "All three nondefault outputs via linear power density and effective receiving area; inverse-square distance, both antenna gains, zero loss, negative directional gain and signed/zero margin; both far-field branches at equality and one ulp below; all scalar/nonfinite errors and complete recovery.",
+    "rf.first_fresnel_clearance": "All three nondefault outputs via half-wavelength paraxial excess; TX/RX exchange, midpoint maximum, quadrupled carrier frequency, signed/zero obstruction, exact zero margin, closed fraction endpoints, both endpoint screens, overflow-resistant large geometry; all scalar/nonfinite errors and complete recovery.",
+    "rf.circular_aperture_gain": "All three nondefault outputs via collecting area and reciprocity; diameter/frequency square laws; half, unit and tiny positive efficiency; strict two-wavelength boundary and next-f64 acceptance; finite-output D*f overflow regression; all scalar/nonfinite errors and complete recovery.",
+    "rf.two_tone_im3": "All seven nondefault outputs with negative gain/IIP3; independent linear-power sum and cubic spur ratio; 1:3 slopes, intercept shift, very low input power, exact summed-output limit, one-ulp-below rejection, equal/reversed/octave tones and Pin>=IIP3 rejection, tiny positive lower mixing frequency; all scalar/nonfinite errors and complete recovery.",
+    "rf.monostatic_radar_return": "Both nondefault outputs from two separate spherical spreading stages and receive aperture; inverse-fourth range, twice antenna-gain effect, RCS scaling/tiny RCS, once-only total loss, signed/zero margin; both larger-dimension choices and ten-wavelength screen at equality/below; all scalar/nonfinite errors and complete recovery.",
+    "shared": "Nonfinite injection at all 36 input positions, positive-domain zero/negative rejection, bounded efficiencies/fractions and nonnegative losses; each scalar rejection immediately followed by fully checked nondefault output map. Shared common helper only."
+  },
+  "oracle_provenance": {
+    "method": "Independent algebra and Python scalar arithmetic, never catalog example outputs or expression evaluation. Research/feature/backlog sources were read; primary-source retrieval is inherited, not freshly claimed.",
+    "references": [
+      "research/expansion/rf.md",
+      "research/expansion/rf.json",
+      "docs/features/rf.md",
+      "coordination/expansion/BACKLOG.md:453-610"
+    ],
+    "tolerance_policy": "Rust nonzero numerical outputs generally 1e-12 relative, no absolute floor. Subnormal L-match C regressions use 1e-10 relative for quantization. Parent maps generally 1e-11, regressions 1e-10. Absolute 1e-12 applies only to zero dB margins from independent logarithm order and zero impedance imaginary part from cancellation of 40-ohm reactances."
+  },
+  "verification": "NOT EXECUTED. No builds, tests, lint, formatters, backend/process evaluation, smoke checks or native launches. Only source reading, independent oracle arithmetic and test/receipt authoring. Main must execute all 25 authored Rust tests and all 45 ordered JSON-lines scenarios; four finite-output regressions intentionally expect success despite statically identified snapshot defects.",
+  "untested_gaps": [
+    "All authored Rust tests and parent process scenarios await Main execution; compilation is not claimed.",
+    "Native UI, all RF diagram pixels, packaged desktop and accessibility acceptance remain reviewer/Main scope.",
+    "Hardware parasitics, measured aperture efficiency/RCS, propagation/multipath, and characterized amplifier linearity limits are not experimentally validated.",
+    "Binary64 extremes beyond the explicit regressions and platform-specific math-library behavior are not exhaustively covered."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "rf.lowpass_l_match",
+      "name": "denominator_overflow",
+      "location": "backend/catalog/rf.json:135",
+      "inputs": {
+        "source_resistance": 1e+100,
+        "load_resistance": 2e+100,
+        "frequency": 1e+210
+      },
+      "expected_outputs": {
+        "loaded_q": 1.0,
+        "series_inductance": 1.5915494309189535e-111,
+        "shunt_capacitance": 7.957747154596e-312
+      },
+      "evidence": "Static IEEE-754 analysis only; no engine/test execution. Q=1; finite L and subnormal C must survive f*Rl overflow.",
+      "predicted_actual": "Checked expression evaluation rejects an overflowing intermediate, although every requested output is finite.",
+      "minimal_correction": "Preserve representable final results with scaled positive arithmetic or log-domain products; retain adjacent-resistance subtraction and relative-only tiny-output tests.",
+      "regression_test": "l_match_representable_capacitance_despite_large_denominator"
+    },
+    {
+      "severity": "medium",
+      "id": "rf.lowpass_l_match",
+      "name": "ratio_overflow",
+      "location": "backend/catalog/rf.json:123",
+      "inputs": {
+        "source_resistance": 1e-200,
+        "load_resistance": 1e+200,
+        "frequency": 100000000.0
+      },
+      "expected_outputs": {
+        "loaded_q": 1e+200,
+        "series_inductance": 1.5915494309189535e-09,
+        "shunt_capacitance": 1.5915494309189535e-09
+      },
+      "evidence": "Static IEEE-754 analysis only; no engine/test execution. sqrt(1e400) is representable; sqrt of a prematurely overflowing resistance ratio must not reject.",
+      "predicted_actual": "Checked expression evaluation rejects an overflowing intermediate, although every requested output is finite.",
+      "minimal_correction": "Preserve representable final results with scaled positive arithmetic or log-domain products; retain adjacent-resistance subtraction and relative-only tiny-output tests.",
+      "regression_test": "l_match_representable_q_despite_resistance_ratio_overflow"
+    },
+    {
+      "severity": "medium",
+      "id": "rf.lowpass_l_match",
+      "name": "angular_frequency_overflow",
+      "location": "backend/catalog/rf.json:129",
+      "inputs": {
+        "source_resistance": 50.0,
+        "load_resistance": 200.0,
+        "frequency": 1e+308
+      },
+      "expected_outputs": {
+        "loaded_q": 1.7320508075688772,
+        "series_inductance": 1.37832223855448e-307,
+        "shunt_capacitance": 1.3783222385545e-311
+      },
+      "evidence": "Static IEEE-754 analysis only; no engine/test execution. Finite components must survive 2*pi*f overflow.",
+      "predicted_actual": "Checked expression evaluation rejects an overflowing intermediate, although every requested output is finite.",
+      "minimal_correction": "Preserve representable final results with scaled positive arithmetic or log-domain products; retain adjacent-resistance subtraction and relative-only tiny-output tests.",
+      "regression_test": "l_match_representable_components_despite_angular_frequency_overflow"
+    },
+    {
+      "severity": "medium",
+      "id": "rf.circular_aperture_gain",
+      "name": "diameter_frequency_overflow",
+      "location": "backend/catalog/rf.json:464",
+      "inputs": {
+        "diameter": 1e+100,
+        "frequency": 1e+210,
+        "aperture_efficiency": 1e-300
+      },
+      "expected_outputs": {
+        "effective_aperture": 7.853981633974483e-101,
+        "gain_linear": 1.0981415890099114e+304,
+        "gain_dbi": 3040.406583395324
+      },
+      "evidence": "Static IEEE-754 analysis only; no engine/test execution. Effective area and gain are finite despite D*f exceeding binary64; scale products or evaluate positive log magnitudes.",
+      "predicted_actual": "Checked expression evaluation rejects an overflowing intermediate, although every requested output is finite.",
+      "minimal_correction": "Preserve representable final results with scaled positive arithmetic or log-domain products; retain adjacent-resistance subtraction and relative-only tiny-output tests.",
+      "regression_test": "aperture_representable_gain_despite_diameter_frequency_overflow"
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "rf.matched_t_attenuator.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.matched_t_attenuator",
+        "inputs": {
+          "reference_impedance": 75.0,
+          "attenuation_db": 9.542425094393248
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "K=3; terminated nodal solution gives Zin=75 ohm and Vout/Vin=1/3, so power fraction=1/9.",
+      "expected_outputs": {
+        "series_resistance": 37.5,
+        "shunt_resistance": 56.25,
+        "power_transmission": 0.1111111111111111
+      }
+    },
+    {
+      "name": "rf.lowpass_l_match.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 20.0,
+          "load_resistance": 100.0,
+          "frequency": 2000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "20-ohm source and 100-ohm load give parallel impedance 20-j40 ohm; a +j40-ohm series element cancels it.",
+      "expected_outputs": {
+        "loaded_q": 2.0,
+        "series_inductance": 3.183098861837907e-06,
+        "shunt_capacitance": 1.5915494309189535e-09
+      }
+    },
+    {
+      "name": "rf.free_space_link_budget.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.free_space_link_budget",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance": 100.0,
+          "antenna_max_dimension": 1.0,
+          "transmit_power_dbm": 0.0,
+          "transmit_gain_dbi": -3.0,
+          "receive_gain_dbi": 5.0,
+          "total_loss_db": 2.0,
+          "sensitivity_dbm": -60.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Wavelength=1 m; isotropic receive area 1/(4*pi) divided by the 100 m sphere area gives transmitted power fraction. Gains and loss cancel.",
+      "expected_outputs": {
+        "free_space_loss_db": 61.984197280441926,
+        "received_power_dbm": -61.984197280441926,
+        "link_margin_db": -1.9841972804419257
+      }
+    },
+    {
+      "name": "rf.first_fresnel_clearance.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 200.0,
+          "distance_to_rx": 800.0,
+          "clearance_fraction": 0.5,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Half-wavelength paraxial path excess r^2/(2*200)+r^2/(2*800)=0.5 gives r=sqrt(160); signed gap=-1 m.",
+      "expected_outputs": {
+        "zone_radius": 12.649110640673518,
+        "required_clearance": 6.324555320336759,
+        "clearance_margin": -7.324555320336759
+      }
+    },
+    {
+      "name": "rf.circular_aperture_gain.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.circular_aperture_gain",
+        "inputs": {
+          "diameter": 4.0,
+          "frequency": 299792458.0,
+          "aperture_efficiency": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Quarter of a radius-2 m disk has effective area pi; reciprocity gives G=4*pi*Ae for wavelength=1 m.",
+      "expected_outputs": {
+        "effective_aperture": 3.141592653589793,
+        "gain_linear": 39.47841760435743,
+        "gain_dbi": 15.9635973671623
+      }
+    },
+    {
+      "name": "rf.two_tone_im3.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.two_tone_im3",
+        "inputs": {
+          "lower_frequency": 40000000.0,
+          "upper_frequency": 45000000.0,
+          "input_tone_power_dbm": -30.0,
+          "gain_db": -5.0,
+          "input_intercept_dbm": -10.0,
+          "maximum_total_linear_output_dbm": -30.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Pin/IIP3=0.01 linear power, giving spur/carrier=0.0001; sum two equal fundamental powers, not peak-envelope power.",
+      "expected_outputs": {
+        "lower_product_frequency": 35000000.0,
+        "upper_product_frequency": 50000000.0,
+        "output_tone_power_dbm": -35.0,
+        "output_intercept_dbm": -15.0,
+        "product_power_dbm": -75.0,
+        "carrier_to_product_db": 40.0,
+        "total_fundamental_power_dbm": -31.989700043360187
+      }
+    },
+    {
+      "name": "rf.monostatic_radar_return.nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 100.0,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 2.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "1 W with G=10 spreads twice over 100 m spheres, scatters through sigma=4 m^2, then collects through Ae=10/(4*pi).",
+      "expected_outputs": {
+        "received_power_dbm": -56.95569600738327,
+        "echo_margin_db": 13.044303992616733
+      }
+    },
+    {
+      "name": "rf.matched_t_attenuator.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.matched_t_attenuator",
+        "inputs": {
+          "reference_impedance": 75.0,
+          "attenuation_db": 0.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.matched_t_attenuator.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.matched_t_attenuator",
+        "inputs": {
+          "reference_impedance": 75.0,
+          "attenuation_db": 9.542425094393248
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. K=3; terminated nodal solution gives Zin=75 ohm and Vout/Vin=1/3, so power fraction=1/9.",
+      "expected_outputs": {
+        "series_resistance": 37.5,
+        "shunt_resistance": 56.25,
+        "power_transmission": 0.1111111111111111
+      }
+    },
+    {
+      "name": "rf.lowpass_l_match.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 20.0,
+          "load_resistance": 20.0,
+          "frequency": 2000000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.lowpass_l_match.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 20.0,
+          "load_resistance": 100.0,
+          "frequency": 2000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. 20-ohm source and 100-ohm load give parallel impedance 20-j40 ohm; a +j40-ohm series element cancels it.",
+      "expected_outputs": {
+        "loaded_q": 2.0,
+        "series_inductance": 3.183098861837907e-06,
+        "shunt_capacitance": 1.5915494309189535e-09
+      }
+    },
+    {
+      "name": "rf.free_space_link_budget.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.free_space_link_budget",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance": 9.999999999999998,
+          "antenna_max_dimension": 1.0,
+          "transmit_power_dbm": 0.0,
+          "transmit_gain_dbi": -3.0,
+          "receive_gain_dbi": 5.0,
+          "total_loss_db": 2.0,
+          "sensitivity_dbm": -60.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.free_space_link_budget.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.free_space_link_budget",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance": 100.0,
+          "antenna_max_dimension": 1.0,
+          "transmit_power_dbm": 0.0,
+          "transmit_gain_dbi": -3.0,
+          "receive_gain_dbi": 5.0,
+          "total_loss_db": 2.0,
+          "sensitivity_dbm": -60.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. Wavelength=1 m; isotropic receive area 1/(4*pi) divided by the 100 m sphere area gives transmitted power fraction. Gains and loss cancel.",
+      "expected_outputs": {
+        "free_space_loss_db": 61.984197280441926,
+        "received_power_dbm": -61.984197280441926,
+        "link_margin_db": -1.9841972804419257
+      }
+    },
+    {
+      "name": "rf.first_fresnel_clearance.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 99.99999999999999,
+          "distance_to_rx": 800.0,
+          "clearance_fraction": 0.5,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.first_fresnel_clearance.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 200.0,
+          "distance_to_rx": 800.0,
+          "clearance_fraction": 0.5,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. Half-wavelength paraxial path excess r^2/(2*200)+r^2/(2*800)=0.5 gives r=sqrt(160); signed gap=-1 m.",
+      "expected_outputs": {
+        "zone_radius": 12.649110640673518,
+        "required_clearance": 6.324555320336759,
+        "clearance_margin": -7.324555320336759
+      }
+    },
+    {
+      "name": "rf.circular_aperture_gain.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.circular_aperture_gain",
+        "inputs": {
+          "diameter": 2.0,
+          "frequency": 299792458.0,
+          "aperture_efficiency": 0.25
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.circular_aperture_gain.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.circular_aperture_gain",
+        "inputs": {
+          "diameter": 4.0,
+          "frequency": 299792458.0,
+          "aperture_efficiency": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. Quarter of a radius-2 m disk has effective area pi; reciprocity gives G=4*pi*Ae for wavelength=1 m.",
+      "expected_outputs": {
+        "effective_aperture": 3.141592653589793,
+        "gain_linear": 39.47841760435743,
+        "gain_dbi": 15.9635973671623
+      }
+    },
+    {
+      "name": "rf.two_tone_im3.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.two_tone_im3",
+        "inputs": {
+          "lower_frequency": 40000000.0,
+          "upper_frequency": 45000000.0,
+          "input_tone_power_dbm": -30.0,
+          "gain_db": -5.0,
+          "input_intercept_dbm": -10.0,
+          "maximum_total_linear_output_dbm": -34.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.two_tone_im3.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.two_tone_im3",
+        "inputs": {
+          "lower_frequency": 40000000.0,
+          "upper_frequency": 45000000.0,
+          "input_tone_power_dbm": -30.0,
+          "gain_db": -5.0,
+          "input_intercept_dbm": -10.0,
+          "maximum_total_linear_output_dbm": -30.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. Pin/IIP3=0.01 linear power, giving spur/carrier=0.0001; sum two equal fundamental powers, not peak-envelope power.",
+      "expected_outputs": {
+        "lower_product_frequency": 35000000.0,
+        "upper_product_frequency": 50000000.0,
+        "output_tone_power_dbm": -35.0,
+        "output_intercept_dbm": -15.0,
+        "product_power_dbm": -75.0,
+        "carrier_to_product_db": 40.0,
+        "total_fundamental_power_dbm": -31.989700043360187
+      }
+    },
+    {
+      "name": "rf.monostatic_radar_return.domain_rejection",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 9.999999999999998,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 2.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Reject the excluded domain rather than clamp or retain previous results."
+    },
+    {
+      "name": "rf.monostatic_radar_return.valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 100.0,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 2.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Immediately follow invalid input with a complete independent success; same process must recover. 1 W with G=10 spreads twice over 100 m spheres, scatters through sigma=4 m^2, then collects through Ae=10/(4*pi).",
+      "expected_outputs": {
+        "received_power_dbm": -56.95569600738327,
+        "echo_margin_db": 13.044303992616733
+      }
+    },
+    {
+      "name": "rf.free_space_link_budget.far_field_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.free_space_link_budget",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance": 10.0,
+          "antenna_max_dimension": 1.0,
+          "transmit_power_dbm": 0.0,
+          "transmit_gain_dbi": -3.0,
+          "receive_gain_dbi": 5.0,
+          "total_loss_db": 2.0,
+          "sensitivity_dbm": -60.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive equality at the ten-wavelength or aperture far-field screen.",
+      "expected_outputs": {
+        "free_space_loss_db": 41.984197280441926,
+        "received_power_dbm": -41.984197280441926,
+        "link_margin_db": 18.015802719558074
+      }
+    },
+    {
+      "name": "rf.free_space_link_budget.far_field_4.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.free_space_link_budget",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance": 32.0,
+          "antenna_max_dimension": 4.0,
+          "transmit_power_dbm": 0.0,
+          "transmit_gain_dbi": -3.0,
+          "receive_gain_dbi": 5.0,
+          "total_loss_db": 2.0,
+          "sensitivity_dbm": -60.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive equality at the ten-wavelength or aperture far-field screen.",
+      "expected_outputs": {
+        "free_space_loss_db": 52.087196846840044,
+        "received_power_dbm": -52.087196846840044,
+        "link_margin_db": 7.912803153159956
+      }
+    },
+    {
+      "name": "rf.first_fresnel_clearance.fraction_0.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 200.0,
+          "distance_to_rx": 800.0,
+          "clearance_fraction": 0.0,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Closed fraction endpoints preserve signed obstruction; exact zero from multiplication needs no floor.",
+      "expected_outputs": {
+        "zone_radius": 12.649110640673518,
+        "required_clearance": 0.0,
+        "clearance_margin": -1.0
+      }
+    },
+    {
+      "name": "rf.first_fresnel_clearance.fraction_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 200.0,
+          "distance_to_rx": 800.0,
+          "clearance_fraction": 1.0,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Closed fraction endpoints preserve signed obstruction; exact zero from multiplication needs no floor.",
+      "expected_outputs": {
+        "zone_radius": 12.649110640673518,
+        "required_clearance": 12.649110640673518,
+        "clearance_margin": -13.649110640673518
+      }
+    },
+    {
+      "name": "rf.first_fresnel_clearance.distance_from_tx_screen",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 100.0,
+          "distance_to_rx": 800.0,
+          "clearance_fraction": 0.5,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive 100-wavelength endpoint with complete outputs.",
+      "expected_outputs": {
+        "zone_radius": 9.428090415820634,
+        "required_clearance": 4.714045207910317,
+        "clearance_margin": -5.714045207910317
+      }
+    },
+    {
+      "name": "rf.first_fresnel_clearance.distance_to_rx_screen",
+      "request": {
+        "command": "calculate",
+        "id": "rf.first_fresnel_clearance",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance_from_tx": 200.0,
+          "distance_to_rx": 100.0,
+          "clearance_fraction": 0.5,
+          "available_clearance": -1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive 100-wavelength endpoint with complete outputs.",
+      "expected_outputs": {
+        "zone_radius": 8.16496580927726,
+        "required_clearance": 4.08248290463863,
+        "clearance_margin": -5.08248290463863
+      }
+    },
+    {
+      "name": "rf.circular_aperture_gain.strict_edge_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "rf.circular_aperture_gain",
+        "inputs": {
+          "diameter": 2.0000000000000004,
+          "frequency": 299792458.0,
+          "aperture_efficiency": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "First representable diameter above two wavelengths is admitted.",
+      "expected_outputs": {
+        "effective_aperture": 0.7853981633974486,
+        "gain_linear": 9.869604401089362,
+        "gain_dbi": 9.942997453882679
+      }
+    },
+    {
+      "name": "rf.two_tone_im3.below_total_limit",
+      "request": {
+        "command": "calculate",
+        "id": "rf.two_tone_im3",
+        "inputs": {
+          "lower_frequency": 40000000.0,
+          "upper_frequency": 45000000.0,
+          "input_tone_power_dbm": -30.0,
+          "gain_db": -5.0,
+          "input_intercept_dbm": -10.0,
+          "maximum_total_linear_output_dbm": -31.98970004336019
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "One representable step below actual summed-average power rejects even though each tone is below the limit."
+    },
+    {
+      "name": "rf.two_tone_im3.total_limit_equality",
+      "request": {
+        "command": "calculate",
+        "id": "rf.two_tone_im3",
+        "inputs": {
+          "lower_frequency": 40000000.0,
+          "upper_frequency": 45000000.0,
+          "input_tone_power_dbm": -30.0,
+          "gain_db": -5.0,
+          "input_intercept_dbm": -10.0,
+          "maximum_total_linear_output_dbm": -31.989700043360187
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive summed-average output limit recovers; this is not the per-tone or peak-envelope limit.",
+      "expected_outputs": {
+        "lower_product_frequency": 35000000.0,
+        "upper_product_frequency": 50000000.0,
+        "output_tone_power_dbm": -35.0,
+        "output_intercept_dbm": -15.0,
+        "product_power_dbm": -75.0,
+        "carrier_to_product_db": 40.0,
+        "total_fundamental_power_dbm": -31.989700043360187
+      }
+    },
+    {
+      "name": "rf.monostatic_radar_return.below_screen_1.0_2.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 9.999999999999998,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 2.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "The larger antenna/target dimension participates in the far-field screen."
+    },
+    {
+      "name": "rf.monostatic_radar_return.screen_recovery_1.0_2.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 10.0,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 2.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive screen equality with independent two-spreading-path power oracle.",
+      "expected_outputs": {
+        "received_power_dbm": -16.955696007383263,
+        "echo_margin_db": 53.04430399261673
+      }
+    },
+    {
+      "name": "rf.monostatic_radar_return.below_screen_1.0_4.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 31.999999999999996,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 4.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "The larger antenna/target dimension participates in the far-field screen."
+    },
+    {
+      "name": "rf.monostatic_radar_return.screen_recovery_1.0_4.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 32.0,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 4.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive screen equality with independent two-spreading-path power oracle.",
+      "expected_outputs": {
+        "received_power_dbm": -37.1616951401795,
+        "echo_margin_db": 32.8383048598205
+      }
+    },
+    {
+      "name": "rf.monostatic_radar_return.below_screen_4.0_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 31.999999999999996,
+          "antenna_max_dimension": 4.0,
+          "target_max_dimension": 1.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "The larger antenna/target dimension participates in the far-field screen."
+    },
+    {
+      "name": "rf.monostatic_radar_return.screen_recovery_4.0_1.0",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 32.0,
+          "antenna_max_dimension": 4.0,
+          "target_max_dimension": 1.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -70.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive screen equality with independent two-spreading-path power oracle.",
+      "expected_outputs": {
+        "received_power_dbm": -37.1616951401795,
+        "echo_margin_db": 32.8383048598205
+      }
+    },
+    {
+      "name": "rf.matched_t_attenuator.tiny_loss",
+      "request": {
+        "command": "calculate",
+        "id": "rf.matched_t_attenuator",
+        "inputs": {
+          "reference_impedance": 75.0,
+          "attenuation_db": 1e-12
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Small-a tanh/sinh asymptotes have <1e-26 relative truncation; preserve nonzero series arm.",
+      "expected_outputs": {
+        "series_resistance": 4.317347049363836e-12,
+        "shunt_resistance": 651441722854877.8,
+        "power_transmission": 0.9999999999997697
+      }
+    },
+    {
+      "name": "rf.lowpass_l_match.adjacent_resistances",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 64.0,
+          "load_resistance": 64.00000000000001,
+          "frequency": 4000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "One relative binary64 ulp gives Q=2^-26; no arbitrary minimum Q.",
+      "expected_outputs": {
+        "loaded_q": 1.4901161193847656e-08,
+        "series_inductance": 3.794549538895973e-14,
+        "shunt_capacitance": 9.264036960195245e-18
+      }
+    },
+    {
+      "name": "rf.circular_aperture_gain.tiny_efficiency",
+      "request": {
+        "command": "calculate",
+        "id": "rf.circular_aperture_gain",
+        "inputs": {
+          "diameter": 4.0,
+          "frequency": 299792458.0,
+          "aperture_efficiency": 1e-300
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Tiny positive effective area and gain remain nonzero; do not clamp negative dBi.",
+      "expected_outputs": {
+        "effective_aperture": 1.2566370614359172e-299,
+        "gain_linear": 1.5791367041742972e-298,
+        "gain_dbi": -2978.015802719558
+      }
+    },
+    {
+      "name": "rf.free_space_link_budget.zero_margin",
+      "request": {
+        "command": "calculate",
+        "id": "rf.free_space_link_budget",
+        "inputs": {
+          "frequency": 299792458.0,
+          "distance": 100.0,
+          "antenna_max_dimension": 1.0,
+          "transmit_power_dbm": 0.0,
+          "transmit_gain_dbi": -3.0,
+          "receive_gain_dbi": 5.0,
+          "total_loss_db": 2.0,
+          "sensitivity_dbm": -61.984197280441926
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Independent linear and logarithmic order permits 1e-12 dB cancellation roundoff only at the zero margin.",
+      "expected_outputs": {
+        "free_space_loss_db": 61.984197280441926,
+        "received_power_dbm": -61.984197280441926,
+        "link_margin_db": 0.0
+      },
+      "absolute_tolerances": {
+        "link_margin_db": 1e-12
+      }
+    },
+    {
+      "name": "rf.monostatic_radar_return.zero_margin",
+      "request": {
+        "command": "calculate",
+        "id": "rf.monostatic_radar_return",
+        "inputs": {
+          "frequency": 299792458.0,
+          "range": 100.0,
+          "antenna_max_dimension": 1.0,
+          "target_max_dimension": 2.0,
+          "transmit_power_dbm": 30.0,
+          "antenna_gain_dbi": 10.0,
+          "radar_cross_section": 4.0,
+          "total_loss_db": 0.0,
+          "receiver_threshold_dbm": -56.95569600738327
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Independent power-density and logarithmic order permits 1e-12 dB cancellation roundoff only at zero margin.",
+      "expected_outputs": {
+        "received_power_dbm": -56.95569600738327,
+        "echo_margin_db": 0.0
+      },
+      "absolute_tolerances": {
+        "echo_margin_db": 1e-12
+      }
+    },
+    {
+      "name": "rf.lowpass_l_match.denominator_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 1e+100,
+          "load_resistance": 2e+100,
+          "frequency": 1e+210
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Q=1; finite L and subnormal C must survive f*Rl overflow.",
+      "expected_outputs": {
+        "loaded_q": 1.0,
+        "series_inductance": 1.5915494309189535e-111,
+        "shunt_capacitance": 7.957747154596e-312
+      }
+    },
+    {
+      "name": "rf.lowpass_l_match.ratio_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 1e-200,
+          "load_resistance": 1e+200,
+          "frequency": 100000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "sqrt(1e400) is representable; sqrt of a prematurely overflowing resistance ratio must not reject.",
+      "expected_outputs": {
+        "loaded_q": 1e+200,
+        "series_inductance": 1.5915494309189535e-09,
+        "shunt_capacitance": 1.5915494309189535e-09
+      }
+    },
+    {
+      "name": "rf.lowpass_l_match.angular_frequency_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "rf.lowpass_l_match",
+        "inputs": {
+          "source_resistance": 50.0,
+          "load_resistance": 200.0,
+          "frequency": 1e+308
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Finite components must survive 2*pi*f overflow.",
+      "expected_outputs": {
+        "loaded_q": 1.7320508075688772,
+        "series_inductance": 1.37832223855448e-307,
+        "shunt_capacitance": 1.3783222385545e-311
+      }
+    },
+    {
+      "name": "rf.circular_aperture_gain.diameter_frequency_overflow",
+      "request": {
+        "command": "calculate",
+        "id": "rf.circular_aperture_gain",
+        "inputs": {
+          "diameter": 1e+100,
+          "frequency": 1e+210,
+          "aperture_efficiency": 1e-300
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Effective area and gain are finite despite D*f exceeding binary64; scale products or evaluate positive log magnitudes.",
+      "expected_outputs": {
+        "effective_aperture": 7.853981633974483e-101,
+        "gain_linear": 1.0981415890099114e+304,
+        "gain_dbi": 3040.406583395324
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "rf.matched_t_attenuator",
+      "inputs": {
+        "reference_impedance": 75.0,
+        "attenuation_db": 9.542425094393248
+      },
+      "expected_outputs": {
+        "series_resistance": 37.5,
+        "shunt_resistance": 56.25,
+        "power_transmission": 0.1111111111111111
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "K=3; terminated nodal solution gives Zin=75 ohm and Vout/Vin=1/3, so power fraction=1/9."
+    },
+    {
+      "id": "rf.lowpass_l_match",
+      "inputs": {
+        "source_resistance": 20.0,
+        "load_resistance": 100.0,
+        "frequency": 2000000.0
+      },
+      "expected_outputs": {
+        "loaded_q": 2.0,
+        "series_inductance": 3.183098861837907e-06,
+        "shunt_capacitance": 1.5915494309189535e-09
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "20-ohm source and 100-ohm load give parallel impedance 20-j40 ohm; a +j40-ohm series element cancels it."
+    },
+    {
+      "id": "rf.free_space_link_budget",
+      "inputs": {
+        "frequency": 299792458.0,
+        "distance": 100.0,
+        "antenna_max_dimension": 1.0,
+        "transmit_power_dbm": 0.0,
+        "transmit_gain_dbi": -3.0,
+        "receive_gain_dbi": 5.0,
+        "total_loss_db": 2.0,
+        "sensitivity_dbm": -60.0
+      },
+      "expected_outputs": {
+        "free_space_loss_db": 61.984197280441926,
+        "received_power_dbm": -61.984197280441926,
+        "link_margin_db": -1.9841972804419257
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "Wavelength=1 m; isotropic receive area 1/(4*pi) divided by the 100 m sphere area gives transmitted power fraction. Gains and loss cancel."
+    },
+    {
+      "id": "rf.first_fresnel_clearance",
+      "inputs": {
+        "frequency": 299792458.0,
+        "distance_from_tx": 200.0,
+        "distance_to_rx": 800.0,
+        "clearance_fraction": 0.5,
+        "available_clearance": -1.0
+      },
+      "expected_outputs": {
+        "zone_radius": 12.649110640673518,
+        "required_clearance": 6.324555320336759,
+        "clearance_margin": -7.324555320336759
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "Half-wavelength paraxial path excess r^2/(2*200)+r^2/(2*800)=0.5 gives r=sqrt(160); signed gap=-1 m."
+    },
+    {
+      "id": "rf.circular_aperture_gain",
+      "inputs": {
+        "diameter": 4.0,
+        "frequency": 299792458.0,
+        "aperture_efficiency": 0.25
+      },
+      "expected_outputs": {
+        "effective_aperture": 3.141592653589793,
+        "gain_linear": 39.47841760435743,
+        "gain_dbi": 15.9635973671623
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "Quarter of a radius-2 m disk has effective area pi; reciprocity gives G=4*pi*Ae for wavelength=1 m."
+    },
+    {
+      "id": "rf.two_tone_im3",
+      "inputs": {
+        "lower_frequency": 40000000.0,
+        "upper_frequency": 45000000.0,
+        "input_tone_power_dbm": -30.0,
+        "gain_db": -5.0,
+        "input_intercept_dbm": -10.0,
+        "maximum_total_linear_output_dbm": -30.0
+      },
+      "expected_outputs": {
+        "lower_product_frequency": 35000000.0,
+        "upper_product_frequency": 50000000.0,
+        "output_tone_power_dbm": -35.0,
+        "output_intercept_dbm": -15.0,
+        "product_power_dbm": -75.0,
+        "carrier_to_product_db": 40.0,
+        "total_fundamental_power_dbm": -31.989700043360187
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "Pin/IIP3=0.01 linear power, giving spur/carrier=0.0001; sum two equal fundamental powers, not peak-envelope power."
+    },
+    {
+      "id": "rf.monostatic_radar_return",
+      "inputs": {
+        "frequency": 299792458.0,
+        "range": 100.0,
+        "antenna_max_dimension": 1.0,
+        "target_max_dimension": 2.0,
+        "transmit_power_dbm": 30.0,
+        "antenna_gain_dbi": 10.0,
+        "radar_cross_section": 4.0,
+        "total_loss_db": 0.0,
+        "receiver_threshold_dbm": -70.0
+      },
+      "expected_outputs": {
+        "received_power_dbm": -56.95569600738327,
+        "echo_margin_db": 13.044303992616733
+      },
+      "steps": "Select exact ID, enter complete nondefault vector, calculate and inspect every output/unit. Apply this model\u2019s domain_rejection scenario; stale results must clear. Restore valid_recovery inputs and compare the complete map. Inspect diagram and quantity legends at normal and narrow/large-text layouts.",
+      "rationale": "1 W with G=10 spreads twice over 100 m spheres, scatters through sigma=4 m^2, then collects through Ae=10/(4*pi)."
+    }
+  ],
+  "communication": "Numerical findings and commit handoff appended to root COMMUNICATION.md, outside tester commit; V2RfRun notified. Production/shared/research/docs files intentionally unchanged under ownership contract."
+}
