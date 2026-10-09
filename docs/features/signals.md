@@ -316,7 +316,7 @@ At the load, voltage continuity gives V_L = V_i + V_r, and current continuity gi
 
 ### Executable conditioning
 
-For executable arithmetic, normalize both impedances by `M=max(RL,Z0)>0`, then use `Gamma=(RL/M-Z0/M)/(RL/M+Z0/M)`, `VL=[2*(RL/M)/(RL/M+Z0/M)]*Vi` and accepted fraction `[4*(RL/M)/(RL/M+Z0/M)]*[(Z0/M)/(RL/M+Z0/M)]`. This avoids overflow of the impedance sum and cancellation of `1+Gamma` near a short and `1-Gamma^2` near a short/open. Supporting output keys/order and all example values remain unchanged. A finite resistance ratio too extreme to represent can still underflow; no arbitrary resistance clamp or fake open is substituted.
+For executable arithmetic, normalize impedances by `M=max(RL,Z0)>0`, then use `Gamma=[(RL-Z0)/M]/(RL/M+Z0/M)`, `VL=[2*(RL/M)/(RL/M+Z0/M)]*Vi` and accepted fraction `[4*(RL/M)/(RL/M+Z0/M)]*[(Z0/M)/(RL/M+Z0/M)]`. Subtract the original nonnegative resistances before scaling the reflection numerator: their difference cannot overflow, and this preserves the small mismatch that would be rounded by subtracting independently normalized ratios near a match. For the representable inputs Z0=50 ohm and RL=50.00000000000001 ohm, the independently derived coefficient is 7.105427357601002e-17, not 2^-54. The normalized sum still avoids impedance-sum overflow, and the direct load-voltage/power products avoid cancellation of `1+Gamma` near a short and `1-Gamma^2` near a short/open. Supporting output keys/order, input domains and all nominal example values remain unchanged. A finite resistance ratio too extreme to represent can still underflow; no arbitrary resistance clamp or fake open is substituted.
 
 ### Catalog units, admissible inputs and output sequence
 
@@ -343,7 +343,7 @@ Outputs execute in the following order and may consume earlier outputs. Their ex
 
 | Output key | Meaning | Unit | Executable expression | Independent expected value |
 |---|---|---|---|---|
-| `reflection_coefficient` | Voltage reflection coefficient | 1 | `((load_resistance/max(load_resistance,line_impedance))-(line_impedance/max(load_resistance,line_impedance)))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance)))` | `0.2` |
+| `reflection_coefficient` | Voltage reflection coefficient | 1 | `((load_resistance-line_impedance)/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance)))` | `0.2` |
 | `reflected_voltage` | Reflected traveling-wave amplitude | V | `reflection_coefficient*incident_voltage` | `0.24` |
 | `load_voltage` | First-arrival load voltage | V | `(2*(load_resistance/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance))))*incident_voltage` | `1.44` |
 | `reflected_fraction` | Reflected power fraction | 1 | `reflection_coefficient^2` | `0.04` |

@@ -577,7 +577,7 @@
         "key": "reflection_coefficient",
         "label": "Voltage reflection coefficient",
         "unit": "1",
-        "expression": "((load_resistance/max(load_resistance,line_impedance))-(line_impedance/max(load_resistance,line_impedance)))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance)))"
+        "expression": "((load_resistance-line_impedance)/max(load_resistance,line_impedance))/((load_resistance/max(load_resistance,line_impedance))+(line_impedance/max(load_resistance,line_impedance)))"
       },
       {
         "key": "reflected_voltage",
