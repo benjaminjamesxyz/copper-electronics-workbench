@@ -96,5 +96,33 @@
     ],
     "constraints": [],
     "example": {"inputs": {"frequency": 1000.0, "resistance": 100.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"impedance_real": 100.0, "impedance_imaginary": -96.32309002009949, "impedance_magnitude": 138.84573335547688, "impedance_phase": -0.7666714810055317, "current_rms": 0.03601118939102619, "power_factor": 0.7202237878205238}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.parallel_rlc_impedance",
+    "title": "Parallel RLC admittance and impedance",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Calculate input impedance of three separate ideal R, L and C parallel branches using admittance addition.",
+    "formula": "Y = G+jB = 1/R + j(2 pi f C - 1/(2 pi f L)); Z = (G-jB)/(G^2+B^2)",
+    "assumptions": ["R, L and C are independent parallel branches, not a lossy series-RL coil branch.", "Linear lumped sinusoidal steady state; resistor is finite and positive, preventing infinite ideal-tank impedance.", "Positive impedance phase means current lags voltage; source RMS current is V_rms |Y|."],
+    "references": [{"title": "MIT OCW, Resonance, Bandwidth, Q Factor, parallel circuit section", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/5bcec4bfba5f2e99754b77509e9e7ab4_resonance_qfactr.pdf"}, {"title": "Georgia State University HyperPhysics, Parallel Resonant Circuits: admittance", "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/electric/parres.html"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "resistance", "label": "Parallel resistance", "unit": "ohm", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Parallel inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Parallel capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "conductance", "label": "Input conductance", "unit": "S", "expression": "1/resistance"},
+      {"key": "susceptance", "label": "Input susceptance", "unit": "S", "expression": "2*pi*frequency*capacitance-1/(2*pi*frequency*inductance)"},
+      {"key": "impedance_real", "label": "Real impedance", "unit": "ohm", "expression": "conductance/(conductance^2+susceptance^2)"},
+      {"key": "impedance_imaginary", "label": "Imaginary impedance", "unit": "ohm", "expression": "-susceptance/(conductance^2+susceptance^2)"},
+      {"key": "impedance_magnitude", "label": "Impedance magnitude", "unit": "ohm", "expression": "1/sqrt(conductance^2+susceptance^2)"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "-atan(susceptance/conductance)"},
+      {"key": "current_rms", "label": "Source RMS current", "unit": "A", "expression": "voltage_rms*sqrt(conductance^2+susceptance^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "resistance": 1000.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"conductance": 0.001, "susceptance": -0.009632309002009948, "impedance_real": 10.66309788872204, "impedance_imaginary": 102.71025378285057, "impedance_magnitude": 103.26227718156345, "impedance_phase": 1.4673496474397956, "current_rms": 0.04842039258158743}, "relative_tolerance": 0.000001}
   }
 ]

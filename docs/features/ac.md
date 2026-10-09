@@ -103,3 +103,27 @@ Series voltages add: Z=R+j omega L+1/(j omega C)=R+jX, X=omega L-1/(omega C). |Z
 | `power_factor` | 0.7202237878205238 | 1 |
 
 Negative phase identifies current lead. **Parent verification scenarios:** Compare independent complex impedance, below/above/resonant frequency signs and PF=1 at resonance; V=0; reject zero components/frequency/resistance.
+
+## `ac.parallel_rlc_impedance` — three parallel branches (intermediate)
+
+**Purpose/topology:** Determine source admittance/impedance and RMS current for independent parallel R, ideal L and ideal C branches, not a winding-loss series-RL branch.
+
+Parallel currents add: Y=1/R+1/(j omega L)+j omega C=G+jB, G=1/R, B=omega C-1/(omega L). Complex inversion yields Z=(G-jB)/(G²+B²). Thus Re(Z)=G/(G²+B²), Im(Z)=-B/(G²+B²), |Z|=1/sqrt(G²+B²), phase=-atan(B/G), I=V sqrt(G²+B²). G/B use S; impedance ohm; phase rad; current A RMS. Sources: [M2], parallel circuit/equation 1.20; [G], admittance definition/addition. Scalar equations expand these complex relations.
+
+**Domain/error rationale:** f,R,L,C strictly positive and finite within shared bounds; V>=0. G>0 guards inversion and atan even when B=0. At ideal resonance Z=R, not infinity; a shunt resistor still dissipates power. Near reactive cancellation, comparisons to zero require scale-aware tolerance.
+
+**Assumptions/limits:** Linear lumped single-frequency ideal branches. R is a **shunt** resistor; lossy series-RL coil topology belongs to `ac.lossy_coil_antiresonance`. No extra source/load impedance or parasitics are included.
+
+**Complete independent example inputs:** `frequency=1000 Hz`, `resistance=1000 ohm`, `inductance=0.01 H`, `capacitance=1e-6 F`, `voltage_rms=5 V`. Add branch admittances 0.001, -j0.01591549430919, +j0.00628318530718 S; independently invert their complex sum and compute its modulus/atan2. Source current is V times admittance modulus.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `conductance` | 0.001 | S |
+| `susceptance` | -0.009632309002009948 | S |
+| `impedance_real` | 10.66309788872204 | ohm |
+| `impedance_imaginary` | 102.71025378285057 | ohm |
+| `impedance_magnitude` | 103.26227718156345 | ohm |
+| `impedance_phase` | 1.4673496474397956 | rad |
+| `current_rms` | 0.04842039258158743 | A RMS |
+
+This result is inductive although the series example is capacitive at the same L/C/f: impedance and admittance sums differ physically. **Parent verification scenarios:** Independent admittance inversion/conjugate sign, B=0 => Z=R, V=0 and rejected zero inputs.
