@@ -1,0 +1,34 @@
+[
+  {
+    "id": "data.adc_lsb",
+    "title": "Ideal ADC LSB voltage",
+    "category": "ADC DAC and sampled systems",
+    "level": "basic",
+    "description": "Find the ideal code-bin width for an N-bit converter from its full-scale input span.",
+    "formula": "M = 2^N; q = V_span / M",
+    "assumptions": [
+      "Uniform ideal converter with 2^N code bins covering the specified full-scale span.",
+      "Full-scale span is the upper reference minus the lower reference, not the voltage of the highest reconstruction level.",
+      "Resolution does not establish accuracy; offset, gain, INL, DNL and noise are excluded."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLAA694A, General Oversampling of MSP ADCs for Higher Resolution, section 2.1, equation 1", "url": "https://www.ti.com/lit/an/slaa694a/slaa694a.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "Nominal resolution", "unit": "bit", "default": 12, "min": 1, "max": 32},
+      {"key": "full_scale_span", "label": "Full-scale input span", "unit": "V", "default": 3.3, "min": 1e-9, "max": 1e6}
+    ],
+    "outputs": [
+      {"key": "code_count", "label": "Number of code bins", "unit": "count", "expression": "2^bits"},
+      {"key": "lsb_v", "label": "Ideal LSB voltage", "unit": "V", "expression": "full_scale_span/code_count"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "full_scale_span": 3.3},
+      "expected": {"code_count": 4096, "lsb_v": 0.0008056640625},
+      "relative_tolerance": 0.000001
+    }
+  }
+]
