@@ -1,0 +1,1103 @@
+{
+  "lane": "oscillators",
+  "base": "4c46fa1",
+  "file": "backend/tests/oscillators.rs",
+  "authored_tests": 28,
+  "behaviors_covered": {
+    "oscillators.timer_555_astable": "Complete non-default charge/discharge oracle; C scaling, cycle identities, equal-resistor duty, RA/RB->0+, 100 kHz screen on both representable sides, tiny-C rejection and recovery; finite-time-constant overflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery.",
+    "oscillators.comparator_rc_oscillator": "Complete non-default asymmetric oracle; independent KCL and exponential endpoint checks, supply and threshold-resistor scaling, resistor swap, symmetric duty, 1e-16 hysteresis and overflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery.",
+    "oscillators.triangle_integrator_oscillator": "Complete non-default RT/RF=2.5 oracle (no false swing-ratio bound); capacitor charge balance, amplitude-invariant period, RT/RI scaling, tiny thresholds, finite-period overflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery.",
+    "oscillators.wien_bridge_balance": "Complete below-unity oracle; marginal/decaying/growing diagnostics, one-ulp positive excess, independent bridge/gain-network scaling, finite-RC frequency overflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery.",
+    "oscillators.loaded_rc_phase_shift": "Complete decaying oracle; loaded complex ladder beta=-1/29 with roundoff-only imaginary tolerance, marginal gain 29, C and R/RF scaling, finite-RC frequency overflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery.",
+    "oscillators.cross_coupled_lc_startup": "Complete non-default differential oracle; characteristic-polynomial real/imaginary balance, marginal/decaying/growing modes, positive and negative repeated-pole boundaries with recovery, startup-ratio overflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery.",
+    "oscillators.pierce_crystal_startup": "Complete failed-margin oracle; zero C0/Cs, ESR and frequency scaling, target=1, independently computed zero-headroom boundary, one-ulp positive external capacitance, CL<=Cs rejection/recovery, critical-gm square underflow regression. Every scalar invalid boundary and every NaN/+Inf/-Inf input is followed by fully asserted valid recovery."
+  },
+  "oracle_provenance": "Non-default vectors derived independently with 60-digit Decimal arithmetic, explicit 60-digit pi, and physical KCL/charge/characteristic laws. Source register inherited from research/expansion/oscillators.md; no renewed manufacturer retrieval claimed.",
+  "verification": "Not executed. No builds, tests, lint, formatter, backend process or native launches. Independent arithmetic only; all 28 Rust tests and 35 flat process scenarios await Main.",
+  "untested_gaps": [
+    "Main must compile and run the oscillator integration target and full integrated suite.",
+    "Main must run flat scenarios in one real JSON-lines process and inspect native scenarios; seven conditioning regressions are expected to expose current source defects, not observed failures.",
+    "No physical hardware validation, amplitude stabilization, comparator delay, device bandwidth or crystal drive-power qualification.",
+    "No exhaustive binary64 domain sweep; physical unrepresentability differs from avoidable intermediate failures."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "oscillators.timer_555_astable",
+      "location": "backend/catalog/oscillators.json:52",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "charge_resistance": 1e+308,
+        "discharge_resistance": 1e+308,
+        "timing_capacitance": 1e-308
+      },
+      "expected_outputs": {
+        "high_time": 1.3862943611198906,
+        "low_time": 0.6931471805599453,
+        "period": 2.0794415416798357,
+        "frequency": 0.4808983469629878,
+        "high_duty": 0.6666666666666666
+      },
+      "contradiction": "RA*C=RB*C=1 s; high interval traverses the same 2:1 threshold ratio through two resistors, low through one. RA+RB and RA+2RB overflow before finite C scaling.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "oscillators.comparator_rc_oscillator",
+      "location": "backend/catalog/oscillators.json:177",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "supply_voltage": 2.0,
+        "upper_resistance": 1.0,
+        "lower_resistance": 1.0,
+        "feedback_resistance": 1e+308,
+        "timing_resistance": 1e+150,
+        "timing_capacitance": 1e+150
+      },
+      "expected_outputs": {
+        "upper_threshold": 1.0,
+        "lower_threshold": 1.0,
+        "high_time": 1e-08,
+        "low_time": 1e-08,
+        "frequency": 50000000.0,
+        "high_duty": 0.5
+      },
+      "contradiction": "Symmetric supply/ground branches set both rounded thresholds to 1 V; hysteresis remains 1e-308 relative and gives 1e-8 s intervals. RF ratios and supply multiplication overflow; normalized conductances avoid this.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "oscillators.triangle_integrator_oscillator",
+      "location": "backend/catalog/oscillators.json:315",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "square_peak": 1.0,
+        "triangle_resistance": 1.0,
+        "feedback_resistance": 1.0,
+        "integrator_resistance": 1e+308,
+        "integrator_capacitance": 1e-308
+      },
+      "expected_outputs": {
+        "triangle_peak": 1.0,
+        "triangle_pp": 2.0,
+        "ramp_slew": 1.0,
+        "period": 4.0,
+        "frequency": 0.25
+      },
+      "contradiction": "RI*C=1 s and RT/RF=1; the 2 V ramp takes 2 s in each direction. 4*RI overflows before multiplication by C.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "oscillators.wien_bridge_balance",
+      "location": "backend/catalog/oscillators.json:401",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "bridge_resistance": 1e-310,
+        "bridge_capacitance": 1e+308,
+        "gain_resistance": 10000.0,
+        "feedback_resistance": 20200.0
+      },
+      "expected_outputs": {
+        "frequency": 15.915494309189533,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 20000.0,
+        "amplifier_gain": 3.02,
+        "loop_gain": 1.0066666666666666,
+        "loop_excess": 0.006666666666666667
+      },
+      "contradiction": "R*C=0.01 s, so omega=100 rad/s; divide-by-R first overflows despite finite final frequency. Vector supplied independently by V2OscillatorsRun.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "oscillators.loaded_rc_phase_shift",
+      "location": "backend/catalog/oscillators.json:507",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "section_resistance": 1e-310,
+        "section_capacitance": 1e+308,
+        "feedback_resistance": 3e-309
+      },
+      "expected_outputs": {
+        "frequency": 6.497473343613968,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 2.9e-309,
+        "amplifier_gain_magnitude": 30.0,
+        "loop_gain": 1.0344827586206897,
+        "loop_excess": 0.034482758620689655
+      },
+      "contradiction": "R*C=0.01 s and RF/R=30; coupled ladder has omega*RC=1/sqrt(6). Divide-by-R first overflows despite finite frequency. Vector supplied independently by V2OscillatorsRun.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "oscillators.cross_coupled_lc_startup",
+      "location": "backend/catalog/oscillators.json:634",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "tank_inductance": 1.0,
+        "tank_capacitance": 1.0,
+        "parallel_loss_resistance": 1e+308,
+        "transistor_transconductance": 2.0
+      },
+      "expected_outputs": {
+        "tank_frequency": 0.15915494309189535,
+        "negative_resistance": -1.0,
+        "critical_transconductance": 2e-308,
+        "startup_ratio": 1e+308,
+        "growth_rate": 0.5,
+        "startup_frequency": 0.13783222385544802
+      },
+      "contradiction": "Pair conductance is 1 S and loss 1e-308 S. Startup ratio is 1e308, not infinity; gm*Rp overflows before /2.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    },
+    {
+      "severity": "medium",
+      "id": "oscillators.pierce_crystal_startup",
+      "location": "backend/catalog/oscillators.json:765",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "crystal_frequency": 1e-100,
+        "crystal_esr": 1e+200,
+        "shunt_capacitance": 0.0,
+        "load_capacitance": 1e-100,
+        "stray_capacitance": 0.0,
+        "available_transconductance": 1e-198,
+        "margin_target": 1.0
+      },
+      "expected_outputs": {
+        "load_capacitor_each": 2e-100,
+        "critical_transconductance": 1.5791367041742974e-198,
+        "gain_margin": 0.6332573977646111,
+        "design_transconductance": 1.5791367041742974e-198,
+        "transconductance_headroom": -5.791367041742974e-199
+      },
+      "contradiction": "At f*CL=1e-200 S, multiplying ESR before squaring underflows is avoidable. Critical gm=16*pi^2*1e-200 S, all five outputs remain representable.",
+      "minimal_correction": "Evaluate with scale-aware multiplication/division or normalized ratios; do not add arbitrary physical bounds to hide finite-output arithmetic failures."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "timer_555_astable_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.timer_555_astable",
+        "inputs": {
+          "charge_resistance": 6000.0,
+          "discharge_resistance": 3000.0,
+          "timing_capacitance": 2.2e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "high_time": 0.00013724314175086918,
+        "low_time": 4.574771391695639e-05,
+        "period": 0.00018299085566782556,
+        "frequency": 5464.753942761225,
+        "high_duty": 0.75
+      }
+    },
+    {
+      "name": "timer_555_astable_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.timer_555_astable",
+        "inputs": {
+          "charge_resistance": 6000.0,
+          "discharge_resistance": 3000.0,
+          "timing_capacitance": 1e-12
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "timer_555_astable_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.timer_555_astable",
+        "inputs": {
+          "charge_resistance": 6000.0,
+          "discharge_resistance": 3000.0,
+          "timing_capacitance": 2.2e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "high_time": 0.00013724314175086918,
+        "low_time": 4.574771391695639e-05,
+        "period": 0.00018299085566782556,
+        "frequency": 5464.753942761225,
+        "high_duty": 0.75
+      }
+    },
+    {
+      "name": "comparator_rc_oscillator_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.comparator_rc_oscillator",
+        "inputs": {
+          "supply_voltage": 12.0,
+          "upper_resistance": 30000.0,
+          "lower_resistance": 10000.0,
+          "feedback_resistance": 10000.0,
+          "timing_resistance": 2000.0,
+          "timing_capacitance": 5e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "upper_threshold": 6.857142857142857,
+        "lower_threshold": 1.7142857142857142,
+        "high_time": 6.931471805599453e-05,
+        "low_time": 0.00013862943611198905,
+        "frequency": 4808.983469629878,
+        "high_duty": 0.3333333333333333
+      }
+    },
+    {
+      "name": "comparator_rc_oscillator_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.comparator_rc_oscillator",
+        "inputs": {
+          "supply_voltage": 0.0,
+          "upper_resistance": 30000.0,
+          "lower_resistance": 10000.0,
+          "feedback_resistance": 10000.0,
+          "timing_resistance": 2000.0,
+          "timing_capacitance": 5e-08
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "comparator_rc_oscillator_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.comparator_rc_oscillator",
+        "inputs": {
+          "supply_voltage": 12.0,
+          "upper_resistance": 30000.0,
+          "lower_resistance": 10000.0,
+          "feedback_resistance": 10000.0,
+          "timing_resistance": 2000.0,
+          "timing_capacitance": 5e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "upper_threshold": 6.857142857142857,
+        "lower_threshold": 1.7142857142857142,
+        "high_time": 6.931471805599453e-05,
+        "low_time": 0.00013862943611198905,
+        "frequency": 4808.983469629878,
+        "high_duty": 0.3333333333333333
+      }
+    },
+    {
+      "name": "triangle_integrator_oscillator_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.triangle_integrator_oscillator",
+        "inputs": {
+          "square_peak": 3.0,
+          "triangle_resistance": 30000.0,
+          "feedback_resistance": 12000.0,
+          "integrator_resistance": 4000.0,
+          "integrator_capacitance": 2.5e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "triangle_peak": 7.5,
+        "triangle_pp": 15.0,
+        "ramp_slew": 30000.0,
+        "period": 0.001,
+        "frequency": 1000.0
+      }
+    },
+    {
+      "name": "triangle_integrator_oscillator_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.triangle_integrator_oscillator",
+        "inputs": {
+          "square_peak": 0.0,
+          "triangle_resistance": 30000.0,
+          "feedback_resistance": 12000.0,
+          "integrator_resistance": 4000.0,
+          "integrator_capacitance": 2.5e-08
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "triangle_integrator_oscillator_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.triangle_integrator_oscillator",
+        "inputs": {
+          "square_peak": 3.0,
+          "triangle_resistance": 30000.0,
+          "feedback_resistance": 12000.0,
+          "integrator_resistance": 4000.0,
+          "integrator_capacitance": 2.5e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "triangle_peak": 7.5,
+        "triangle_pp": 15.0,
+        "ramp_slew": 30000.0,
+        "period": 0.001,
+        "frequency": 1000.0
+      }
+    },
+    {
+      "name": "wien_bridge_balance_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.wien_bridge_balance",
+        "inputs": {
+          "bridge_resistance": 2000.0,
+          "bridge_capacitance": 2.5e-08,
+          "gain_resistance": 4000.0,
+          "feedback_resistance": 6000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "frequency": 3183.0988618379065,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 8000.0,
+        "amplifier_gain": 2.5,
+        "loop_gain": 0.8333333333333334,
+        "loop_excess": -0.16666666666666666
+      }
+    },
+    {
+      "name": "wien_bridge_balance_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.wien_bridge_balance",
+        "inputs": {
+          "bridge_resistance": 0.0,
+          "bridge_capacitance": 2.5e-08,
+          "gain_resistance": 4000.0,
+          "feedback_resistance": 6000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "wien_bridge_balance_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.wien_bridge_balance",
+        "inputs": {
+          "bridge_resistance": 2000.0,
+          "bridge_capacitance": 2.5e-08,
+          "gain_resistance": 4000.0,
+          "feedback_resistance": 6000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "frequency": 3183.0988618379065,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 8000.0,
+        "amplifier_gain": 2.5,
+        "loop_gain": 0.8333333333333334,
+        "loop_excess": -0.16666666666666666
+      }
+    },
+    {
+      "name": "loaded_rc_phase_shift_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.loaded_rc_phase_shift",
+        "inputs": {
+          "section_resistance": 2000.0,
+          "section_capacitance": 2.5e-08,
+          "feedback_resistance": 56000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "frequency": 1299.4946687227934,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 58000.0,
+        "amplifier_gain_magnitude": 28.0,
+        "loop_gain": 0.9655172413793104,
+        "loop_excess": -0.034482758620689655
+      }
+    },
+    {
+      "name": "loaded_rc_phase_shift_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.loaded_rc_phase_shift",
+        "inputs": {
+          "section_resistance": 0.0,
+          "section_capacitance": 2.5e-08,
+          "feedback_resistance": 56000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "loaded_rc_phase_shift_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.loaded_rc_phase_shift",
+        "inputs": {
+          "section_resistance": 2000.0,
+          "section_capacitance": 2.5e-08,
+          "feedback_resistance": 56000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "frequency": 1299.4946687227934,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 58000.0,
+        "amplifier_gain_magnitude": 28.0,
+        "loop_gain": 0.9655172413793104,
+        "loop_excess": -0.034482758620689655
+      }
+    },
+    {
+      "name": "cross_coupled_lc_startup_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.cross_coupled_lc_startup",
+        "inputs": {
+          "tank_inductance": 0.25,
+          "tank_capacitance": 0.0625,
+          "parallel_loss_resistance": 4.0,
+          "transistor_transconductance": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "tank_frequency": 1.2732395447351628,
+        "negative_resistance": -1.0,
+        "critical_transconductance": 0.5,
+        "startup_ratio": 4.0,
+        "growth_rate": 6.0,
+        "startup_frequency": 0.8421687986955848
+      }
+    },
+    {
+      "name": "cross_coupled_lc_startup_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.cross_coupled_lc_startup",
+        "inputs": {
+          "tank_inductance": 1.0,
+          "tank_capacitance": 1.0,
+          "parallel_loss_resistance": 1.0,
+          "transistor_transconductance": 6.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "cross_coupled_lc_startup_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.cross_coupled_lc_startup",
+        "inputs": {
+          "tank_inductance": 0.25,
+          "tank_capacitance": 0.0625,
+          "parallel_loss_resistance": 4.0,
+          "transistor_transconductance": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "tank_frequency": 1.2732395447351628,
+        "negative_resistance": -1.0,
+        "critical_transconductance": 0.5,
+        "startup_ratio": 4.0,
+        "growth_rate": 6.0,
+        "startup_frequency": 0.8421687986955848
+      }
+    },
+    {
+      "name": "pierce_crystal_startup_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.pierce_crystal_startup",
+        "inputs": {
+          "crystal_frequency": 8000000.0,
+          "crystal_esr": 80.0,
+          "shunt_capacitance": 5e-12,
+          "load_capacitance": 2e-11,
+          "stray_capacitance": 4e-12,
+          "available_transconductance": 0.001,
+          "margin_target": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent 60-digit decimal calculation from physical model; not an implementation example.",
+      "expected_outputs": {
+        "load_capacitor_each": 3.2e-11,
+        "critical_transconductance": 0.0005053237453357752,
+        "gain_margin": 1.9789293680144096,
+        "design_transconductance": 0.0015159712360073255,
+        "transconductance_headroom": -0.0005159712360073255
+      }
+    },
+    {
+      "name": "pierce_crystal_startup_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.pierce_crystal_startup",
+        "inputs": {
+          "crystal_frequency": 8000000.0,
+          "crystal_esr": 80.0,
+          "shunt_capacitance": 5e-12,
+          "load_capacitance": 2e-11,
+          "stray_capacitance": 2e-11,
+          "available_transconductance": 0.001,
+          "margin_target": 3.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Invalid physical domain; reject without terminating the process."
+    },
+    {
+      "name": "pierce_crystal_startup_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.pierce_crystal_startup",
+        "inputs": {
+          "crystal_frequency": 8000000.0,
+          "crystal_esr": 80.0,
+          "shunt_capacitance": 5e-12,
+          "load_capacitance": 2e-11,
+          "stray_capacitance": 4e-12,
+          "available_transconductance": 0.001,
+          "margin_target": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "load_capacitor_each": 3.2e-11,
+        "critical_transconductance": 0.0005053237453357752,
+        "gain_margin": 1.9789293680144096,
+        "design_transconductance": 0.0015159712360073255,
+        "transconductance_headroom": -0.0005159712360073255
+      }
+    },
+    {
+      "name": "timer_555_astable_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.timer_555_astable",
+        "inputs": {
+          "charge_resistance": 1e+308,
+          "discharge_resistance": 1e+308,
+          "timing_capacitance": 1e-308
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "RA*C=RB*C=1 s; high interval traverses the same 2:1 threshold ratio through two resistors, low through one. RA+RB and RA+2RB overflow before finite C scaling. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "high_time": 1.3862943611198906,
+        "low_time": 0.6931471805599453,
+        "period": 2.0794415416798357,
+        "frequency": 0.4808983469629878,
+        "high_duty": 0.6666666666666666
+      }
+    },
+    {
+      "name": "timer_555_astable_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.timer_555_astable",
+        "inputs": {
+          "charge_resistance": 6000.0,
+          "discharge_resistance": 3000.0,
+          "timing_capacitance": 2.2e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "high_time": 0.00013724314175086918,
+        "low_time": 4.574771391695639e-05,
+        "period": 0.00018299085566782556,
+        "frequency": 5464.753942761225,
+        "high_duty": 0.75
+      }
+    },
+    {
+      "name": "comparator_rc_oscillator_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.comparator_rc_oscillator",
+        "inputs": {
+          "supply_voltage": 2.0,
+          "upper_resistance": 1.0,
+          "lower_resistance": 1.0,
+          "feedback_resistance": 1e+308,
+          "timing_resistance": 1e+150,
+          "timing_capacitance": 1e+150
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Symmetric supply/ground branches set both rounded thresholds to 1 V; hysteresis remains 1e-308 relative and gives 1e-8 s intervals. RF ratios and supply multiplication overflow; normalized conductances avoid this. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "upper_threshold": 1.0,
+        "lower_threshold": 1.0,
+        "high_time": 1e-08,
+        "low_time": 1e-08,
+        "frequency": 50000000.0,
+        "high_duty": 0.5
+      }
+    },
+    {
+      "name": "comparator_rc_oscillator_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.comparator_rc_oscillator",
+        "inputs": {
+          "supply_voltage": 12.0,
+          "upper_resistance": 30000.0,
+          "lower_resistance": 10000.0,
+          "feedback_resistance": 10000.0,
+          "timing_resistance": 2000.0,
+          "timing_capacitance": 5e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "upper_threshold": 6.857142857142857,
+        "lower_threshold": 1.7142857142857142,
+        "high_time": 6.931471805599453e-05,
+        "low_time": 0.00013862943611198905,
+        "frequency": 4808.983469629878,
+        "high_duty": 0.3333333333333333
+      }
+    },
+    {
+      "name": "triangle_integrator_oscillator_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.triangle_integrator_oscillator",
+        "inputs": {
+          "square_peak": 1.0,
+          "triangle_resistance": 1.0,
+          "feedback_resistance": 1.0,
+          "integrator_resistance": 1e+308,
+          "integrator_capacitance": 1e-308
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "RI*C=1 s and RT/RF=1; the 2 V ramp takes 2 s in each direction. 4*RI overflows before multiplication by C. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "triangle_peak": 1.0,
+        "triangle_pp": 2.0,
+        "ramp_slew": 1.0,
+        "period": 4.0,
+        "frequency": 0.25
+      }
+    },
+    {
+      "name": "triangle_integrator_oscillator_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.triangle_integrator_oscillator",
+        "inputs": {
+          "square_peak": 3.0,
+          "triangle_resistance": 30000.0,
+          "feedback_resistance": 12000.0,
+          "integrator_resistance": 4000.0,
+          "integrator_capacitance": 2.5e-08
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "triangle_peak": 7.5,
+        "triangle_pp": 15.0,
+        "ramp_slew": 30000.0,
+        "period": 0.001,
+        "frequency": 1000.0
+      }
+    },
+    {
+      "name": "wien_bridge_balance_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.wien_bridge_balance",
+        "inputs": {
+          "bridge_resistance": 1e-310,
+          "bridge_capacitance": 1e+308,
+          "gain_resistance": 10000.0,
+          "feedback_resistance": 20200.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "R*C=0.01 s, so omega=100 rad/s; divide-by-R first overflows despite finite final frequency. Vector supplied independently by V2OscillatorsRun. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "frequency": 15.915494309189533,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 20000.0,
+        "amplifier_gain": 3.02,
+        "loop_gain": 1.0066666666666666,
+        "loop_excess": 0.006666666666666667
+      }
+    },
+    {
+      "name": "wien_bridge_balance_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.wien_bridge_balance",
+        "inputs": {
+          "bridge_resistance": 2000.0,
+          "bridge_capacitance": 2.5e-08,
+          "gain_resistance": 4000.0,
+          "feedback_resistance": 6000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "frequency": 3183.0988618379065,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 8000.0,
+        "amplifier_gain": 2.5,
+        "loop_gain": 0.8333333333333334,
+        "loop_excess": -0.16666666666666666
+      }
+    },
+    {
+      "name": "loaded_rc_phase_shift_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.loaded_rc_phase_shift",
+        "inputs": {
+          "section_resistance": 1e-310,
+          "section_capacitance": 1e+308,
+          "feedback_resistance": 3e-309
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "R*C=0.01 s and RF/R=30; coupled ladder has omega*RC=1/sqrt(6). Divide-by-R first overflows despite finite frequency. Vector supplied independently by V2OscillatorsRun. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "frequency": 6.497473343613968,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 2.9e-309,
+        "amplifier_gain_magnitude": 30.0,
+        "loop_gain": 1.0344827586206897,
+        "loop_excess": 0.034482758620689655
+      }
+    },
+    {
+      "name": "loaded_rc_phase_shift_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.loaded_rc_phase_shift",
+        "inputs": {
+          "section_resistance": 2000.0,
+          "section_capacitance": 2.5e-08,
+          "feedback_resistance": 56000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "frequency": 1299.4946687227934,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 58000.0,
+        "amplifier_gain_magnitude": 28.0,
+        "loop_gain": 0.9655172413793104,
+        "loop_excess": -0.034482758620689655
+      }
+    },
+    {
+      "name": "cross_coupled_lc_startup_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.cross_coupled_lc_startup",
+        "inputs": {
+          "tank_inductance": 1.0,
+          "tank_capacitance": 1.0,
+          "parallel_loss_resistance": 1e+308,
+          "transistor_transconductance": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Pair conductance is 1 S and loss 1e-308 S. Startup ratio is 1e308, not infinity; gm*Rp overflows before /2. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "tank_frequency": 0.15915494309189535,
+        "negative_resistance": -1.0,
+        "critical_transconductance": 2e-308,
+        "startup_ratio": 1e+308,
+        "growth_rate": 0.5,
+        "startup_frequency": 0.13783222385544802
+      }
+    },
+    {
+      "name": "cross_coupled_lc_startup_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.cross_coupled_lc_startup",
+        "inputs": {
+          "tank_inductance": 0.25,
+          "tank_capacitance": 0.0625,
+          "parallel_loss_resistance": 4.0,
+          "transistor_transconductance": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "tank_frequency": 1.2732395447351628,
+        "negative_resistance": -1.0,
+        "critical_transconductance": 0.5,
+        "startup_ratio": 4.0,
+        "growth_rate": 6.0,
+        "startup_frequency": 0.8421687986955848
+      }
+    },
+    {
+      "name": "pierce_crystal_startup_finite_output_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.pierce_crystal_startup",
+        "inputs": {
+          "crystal_frequency": 1e-100,
+          "crystal_esr": 1e+200,
+          "shunt_capacitance": 0.0,
+          "load_capacitance": 1e-100,
+          "stray_capacitance": 0.0,
+          "available_transconductance": 1e-198,
+          "margin_target": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "At f*CL=1e-200 S, multiplying ESR before squaring underflows is avoidable. Critical gm=16*pi^2*1e-200 S, all five outputs remain representable. Deliberate regression; no passing runtime claim.",
+      "expected_outputs": {
+        "load_capacitor_each": 2e-100,
+        "critical_transconductance": 1.5791367041742974e-198,
+        "gain_margin": 0.6332573977646111,
+        "design_transconductance": 1.5791367041742974e-198,
+        "transconductance_headroom": -5.791367041742974e-199
+      }
+    },
+    {
+      "name": "pierce_crystal_startup_conditioning_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "oscillators.pierce_crystal_startup",
+        "inputs": {
+          "crystal_frequency": 8000000.0,
+          "crystal_esr": 80.0,
+          "shunt_capacitance": 5e-12,
+          "load_capacitance": 2e-11,
+          "stray_capacitance": 4e-12,
+          "available_transconductance": 0.001,
+          "margin_target": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Restore ordinary input after conditioning probe; process must remain usable.",
+      "expected_outputs": {
+        "load_capacitor_each": 3.2e-11,
+        "critical_transconductance": 0.0005053237453357752,
+        "gain_margin": 1.9789293680144096,
+        "design_transconductance": 0.0015159712360073255,
+        "transconductance_headroom": -0.0005159712360073255
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "oscillators.timer_555_astable",
+      "inputs": {
+        "charge_resistance": 6000.0,
+        "discharge_resistance": 3000.0,
+        "timing_capacitance": 2.2e-08
+      },
+      "expected_outputs": {
+        "high_time": 0.00013724314175086918,
+        "low_time": 4.574771391695639e-05,
+        "period": 0.00018299085566782556,
+        "frequency": 5464.753942761225,
+        "high_duty": 0.75
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    },
+    {
+      "id": "oscillators.comparator_rc_oscillator",
+      "inputs": {
+        "supply_voltage": 12.0,
+        "upper_resistance": 30000.0,
+        "lower_resistance": 10000.0,
+        "feedback_resistance": 10000.0,
+        "timing_resistance": 2000.0,
+        "timing_capacitance": 5e-08
+      },
+      "expected_outputs": {
+        "upper_threshold": 6.857142857142857,
+        "lower_threshold": 1.7142857142857142,
+        "high_time": 6.931471805599453e-05,
+        "low_time": 0.00013862943611198905,
+        "frequency": 4808.983469629878,
+        "high_duty": 0.3333333333333333
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    },
+    {
+      "id": "oscillators.triangle_integrator_oscillator",
+      "inputs": {
+        "square_peak": 3.0,
+        "triangle_resistance": 30000.0,
+        "feedback_resistance": 12000.0,
+        "integrator_resistance": 4000.0,
+        "integrator_capacitance": 2.5e-08
+      },
+      "expected_outputs": {
+        "triangle_peak": 7.5,
+        "triangle_pp": 15.0,
+        "ramp_slew": 30000.0,
+        "period": 0.001,
+        "frequency": 1000.0
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    },
+    {
+      "id": "oscillators.wien_bridge_balance",
+      "inputs": {
+        "bridge_resistance": 2000.0,
+        "bridge_capacitance": 2.5e-08,
+        "gain_resistance": 4000.0,
+        "feedback_resistance": 6000.0
+      },
+      "expected_outputs": {
+        "frequency": 3183.0988618379065,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 8000.0,
+        "amplifier_gain": 2.5,
+        "loop_gain": 0.8333333333333334,
+        "loop_excess": -0.16666666666666666
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    },
+    {
+      "id": "oscillators.loaded_rc_phase_shift",
+      "inputs": {
+        "section_resistance": 2000.0,
+        "section_capacitance": 2.5e-08,
+        "feedback_resistance": 56000.0
+      },
+      "expected_outputs": {
+        "frequency": 1299.4946687227934,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 58000.0,
+        "amplifier_gain_magnitude": 28.0,
+        "loop_gain": 0.9655172413793104,
+        "loop_excess": -0.034482758620689655
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    },
+    {
+      "id": "oscillators.cross_coupled_lc_startup",
+      "inputs": {
+        "tank_inductance": 0.25,
+        "tank_capacitance": 0.0625,
+        "parallel_loss_resistance": 4.0,
+        "transistor_transconductance": 2.0
+      },
+      "expected_outputs": {
+        "tank_frequency": 1.2732395447351628,
+        "negative_resistance": -1.0,
+        "critical_transconductance": 0.5,
+        "startup_ratio": 4.0,
+        "growth_rate": 6.0,
+        "startup_frequency": 0.8421687986955848
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    },
+    {
+      "id": "oscillators.pierce_crystal_startup",
+      "inputs": {
+        "crystal_frequency": 8000000.0,
+        "crystal_esr": 80.0,
+        "shunt_capacitance": 5e-12,
+        "load_capacitance": 2e-11,
+        "stray_capacitance": 4e-12,
+        "available_transconductance": 0.001,
+        "margin_target": 3.0
+      },
+      "expected_outputs": {
+        "load_capacitor_each": 3.2e-11,
+        "critical_transconductance": 0.0005053237453357752,
+        "gain_margin": 1.9789293680144096,
+        "design_transconductance": 0.0015159712360073255,
+        "transconductance_headroom": -0.0005159712360073255
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise corresponding invalid vector then restore inputs without reopening app. Inspect exact circuit labels, polarity and scrolling at narrow width and large text."
+    }
+  ]
+}
