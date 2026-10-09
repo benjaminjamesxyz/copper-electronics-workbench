@@ -101,12 +101,14 @@ Then L = N Φ/I = mu0 mur N² h ln(ro/ri)/(2π). The MIT worked example derives 
 
 **Formula and outputs:**
 
-- `inductance = 4*pi*1e-7*relative_permeability*turns^2*height*ln(outer_radius/inner_radius)/(2*pi)` [H].
+- `inductance = 4*pi*1e-7*relative_permeability*turns^2*height*log1p((outer_radius-inner_radius)/inner_radius)/(2*pi)` [H].
 - `inner_flux_density = 4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius)` [T].
 
 **Input units/domain:** ri, ro, h [m] > 0; ro > ri; mur [1] > 0; N [turn] ≥ 1 integral; Ipk [A] ≥ 0; linear_flux_limit [T] > 0. The expanded inner-field expression must be ≤ the limit. Distances are radii, not diameters; their ratio is identical if both are consistently converted, but the field guard requires actual radius.
 
 **Limitations:** Homogeneous ungapped rectangular core; evenly distributed winding; toroidal symmetry; negligible leakage, fringing, core losses and winding capacitance; real constant permeability appropriate to the current and frequency. The logarithmic formula is exact within that ideal field model, not exact for every manufactured toroid. It differs physically from the discrete-gap reluctance calculator below and is not an inverse rearrangement.
+
+**Thin-annulus conditioning:** The identity ln(ro/ri) = log1p((ro-ri)/ri) avoids rounding the near-unity radius ratio before the logarithm. The shared Rust `log1p` primitive preserves the small positive radial integral; no physical domain or geometry guard changes. For ri=3 m, ro=3.0000000000000004 m (the represented value 3+2^-51), h=0.005 m, mur=100, N=50, Ipk=0 A and limit=0.2 T, the independent result is L=0.00025 log1p(2^-51/3) ≈ **3.700743415417188e-20 H** and Binner=**0 T**. Forming ro/ri first loses radial-difference accuracy. This is an arithmetic conditioning probe, not a practical toroid design.
 
 **Worked example/defaults:** ri = 0.01 m, ro = 0.02 m, h = 0.005 m, mur = 100, N = 50, Ipk = 0.1 A, limit = 0.2 T.
 
@@ -226,11 +228,13 @@ ID: `magnetics.conductor_skin_depth`.
 
 **Formula/output:**
 
-`skin_depth = sqrt(1/(pi*frequency*4*pi*1e-7*relative_permeability*conductivity))` [m].
+`skin_depth = sqrt(1/(4*pi*pi*1e-7))/sqrt(frequency)/sqrt(conductivity)/sqrt(relative_permeability)` [m].
 
 **Input units/domain:** f [Hz] > 0; σ [S/m] > 0; mur [1] > 0; epsr [1] > 0. Constraint σ ≥ 100 × 2π f × eps0 × epsr ensures a catalog-selected conduction/displacement ratio of at least 100. This threshold is not a sourced universal standard: it makes the neglected term ≤ 1% of the conduction term, without claiming a complete device error bound. Relative permittivity is used only in this domain check.
 
 **Limitations:** Homogeneous isotropic conductor; real material coefficients suitable for frequency/temperature, no significant dispersion or complex magnetic permeability. Planar half-space reference depth, not a complete wire resistance model. A finite conductor thinner than delta does not suddenly stop conducting; currents simply approach a more uniform distribution. Proximity effect, roughness, anomalous skin effect, ferromagnetic loss, optical behavior and litz-wire benefit are not modeled. The 1/e definition refers to amplitude; Joule-power density decays as exp(-2z/delta).
+
+**Small-frequency conditioning:** Factoring the positive square roots uses delta = 1/sqrt(pi mu0)/sqrt(f)/sqrt(sigma)/sqrt(mur), avoiding overflow of delta squared before its square root. No positive-frequency floor or conductor-domain relaxation is introduced. For f=1e-310 Hz, sigma=1 S/m and mur=epsr=1, the independent finite depth is approximately **5.032921210448704e157 m**; the conductivity threshold is approximately 5.56e-319 S/m, so the domain check is satisfied. This deliberately extreme frequency is a numerical-range probe, not a practical conductor application.
 
 **Worked example/defaults:** f = 100000 Hz, σ = 5.8 × 10^7 S/m, mur = epsr = 1 (room-temperature copper approximation supported by the source).
 
@@ -275,7 +279,7 @@ ID: `magnetics.coupled_coil_inductance`.
 
 **Formula and outputs:**
 
-- `mutual_inductance = coupling*sqrt(inductance_one)*sqrt(inductance_two)` [H].
+- `mutual_inductance = coupling*(sqrt(inductance_one)*sqrt(inductance_two))` [H].
 - `series_aiding = inductance_one+inductance_two+2*mutual_inductance` [H].
 - `series_opposing = ((inductance_one-inductance_two)/(sqrt(inductance_one)+sqrt(inductance_two)))^2+2*(1-coupling)*sqrt(inductance_one)*sqrt(inductance_two)` [H].
 
@@ -308,6 +312,8 @@ The last expression is algebraically identical to L1 + L2 - 2M, but avoids subtr
 **Additional constraints:** none; input bounds fully guard this model.
 
 **Conditioning derivation:** sqrt(L1 L2)=sqrt(L1)*sqrt(L2) avoids an unrepresentable product even when the geometric mean is representable. Also sqrt(L1)-sqrt(L2)=(L1-L2)/(sqrt(L1)+sqrt(L2)); rationalizing before squaring preserves a small positive opposing mismatch when separately rounded roots would become equal. Thus Lopposing=((L1-L2)/(sqrt(L1)+sqrt(L2)))²+2(1-k)sqrt(L1)sqrt(L2). At L1=L2=1e200 H and k=0.5, independent algebra gives M=5e199 H, Laiding=3e200 H and Lopposing=1e200 H; the original product overflows. At L1=L2=1e-200 H and k=0.5 the corresponding results are 5e-201 H, 3e-200 H and 1e-200 H; forming L1 L2 would underflow. These are mathematical conditioning probes, not practical coil designs. No clamp or extra outputs are introduced.
+
+**Tiny-coupling evaluation order:** The geometric mean is completed before multiplying by k. Left-associating k*sqrt(L1)*sqrt(L2) can prematurely underflow and makes the result depend on winding order. For L1=1e-200 H, L2=1e200 H and k=1e-300, sqrt(L1)*sqrt(L2)=1 H and M=**1e-300 H** in either winding order; both series inductances round to approximately **1e200 H**. Grouping the geometric mean preserves the same passive model and nominal outputs without an artificial minimum coupling.
 
 ### Complete independent worked output oracle
 
@@ -383,10 +389,12 @@ ID: `magnetics.field_energy_density`.
 
 **Formula and outputs:**
 
-- `energy_density = flux_density^2/(2*4*pi*1e-7*relative_permeability)` [J/m³].
-- `field_energy = energy_density*volume` [J].
+- `energy_density = (flux_density/sqrt(2*4*pi*1e-7)/sqrt(relative_permeability))^2` [J/m³].
+- `field_energy = (flux_density*sqrt(volume)/sqrt(2*4*pi*1e-7)/sqrt(relative_permeability))^2` [J].
 
 **Input units/domain:** B [T] ≥ 0; mur [1] > 0; V [m³] > 0; linear_flux_limit [T] > 0; B ≤ limit. In air, mur ≈ 1. The field is homogeneous and permeability isotropic, real and constant; no hysteresis/nonlinear B-H behavior. The specified volume may be only an air gap, not the whole component. Different material regions must be integrated separately. No ability to validate user material curves is claimed.
+
+**Small-field conditioning:** Scale the field by sqrt(2 mu0) and sqrt(mur) before squaring, instead of forming a possibly underflowed B² first. The total energy is evaluated independently as [B sqrt(V)/sqrt(2 mu0)/sqrt(mur)]², so it does not amplify rounding of an already-subnormal reported density. The mathematical identity W=uV and output order remain unchanged; zero field still yields exact zero, with no floor or clamp. For B=1e-162 T, mur=1, V=1e300 m³ and limit=0.3 T, independent ideal arithmetic gives u≈**3.978873577297384e-319 J/m³** and W≈**3.978873577297384e-19 J**. The binary64 density is subnormal: comparisons need a quantization-aware absolute tolerance of a few least-subnormal units (one unit is approximately 4.94e-324 J/m³), not a universal 1e-6 absolute tolerance or an unattainable 1e-6 relative tolerance. The independently evaluated energy supports the normal 1e-6 relative arithmetic tolerance. These extreme inputs probe numerical range, not a practical field region.
 
 **Worked example/defaults:** B = 0.2 T, mur = 1, V = 5 × 10^-8 m³, limit = 0.3 T. The volume could represent A = 10^-4 m² and gap g = 0.0005 m, but its field is independently specified, not copied from the gapped example.
 

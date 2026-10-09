@@ -186,7 +186,7 @@
         "key": "inductance",
         "label": "Toroidal inductance",
         "unit": "H",
-        "expression": "4*pi*1e-7*relative_permeability*turns^2*height*ln(outer_radius/inner_radius)/(2*pi)"
+        "expression": "4*pi*1e-7*relative_permeability*turns^2*height*log1p((outer_radius-inner_radius)/inner_radius)/(2*pi)"
       },
       {
         "key": "inner_flux_density",
@@ -450,7 +450,7 @@
         "key": "skin_depth",
         "label": "Field amplitude skin depth",
         "unit": "m",
-        "expression": "sqrt(1/(pi*frequency*4*pi*1e-7*relative_permeability*conductivity))"
+        "expression": "sqrt(1/(4*pi*pi*1e-7))/sqrt(frequency)/sqrt(conductivity)/sqrt(relative_permeability)"
       }
     ],
     "constraints": [
@@ -529,7 +529,7 @@
         "key": "mutual_inductance",
         "label": "Mutual inductance magnitude",
         "unit": "H",
-        "expression": "coupling*sqrt(inductance_one)*sqrt(inductance_two)"
+        "expression": "coupling*(sqrt(inductance_one)*sqrt(inductance_two))"
       },
       {
         "key": "series_aiding",
@@ -726,13 +726,13 @@
         "key": "energy_density",
         "label": "Magnetic field energy density",
         "unit": "J/m^3",
-        "expression": "flux_density^2/(2*4*pi*1e-7*relative_permeability)"
+        "expression": "(flux_density/sqrt(2*4*pi*1e-7)/sqrt(relative_permeability))^2"
       },
       {
         "key": "field_energy",
         "label": "Energy in specified material volume",
         "unit": "J",
-        "expression": "energy_density*volume"
+        "expression": "(flux_density*sqrt(volume)/sqrt(2*4*pi*1e-7)/sqrt(relative_permeability))^2"
       }
     ],
     "constraints": [
