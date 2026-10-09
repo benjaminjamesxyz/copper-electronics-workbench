@@ -1,0 +1,86 @@
+[
+  {
+    "id": "mosfet.gate_charge_supply",
+    "title": "Gate-charge average supply current and drive power",
+    "category": "MOSFET and gate drive",
+    "level": "basic",
+    "description": "Estimate the cycle-average current and power drawn from a unipolar gate-driver supply by one MOSFET's gate charge.",
+    "formula": "I_supply = Q_g f_sw; E_drive = Q_g V_drive; P_drive = E_drive f_sw",
+    "assumptions": [
+      "One complete 0 V to V_drive to 0 V gate cycle per switching period; no energy-recovery driver or negative gate bias.",
+      "Q_g must come from a gate-charge curve at the actual drive voltage, drain voltage and load current; do not substitute C_iss V_drive.",
+      "Supply current is Q_g f_sw, not 2 Q_g f_sw: gate discharge flows through the sink path rather than drawing a second Q_g from the positive supply.",
+      "Power is dissipated across the driver, external resistor and MOSFET internal gate resistance, not wholly in the MOSFET channel. Driver quiescent and shoot-through consumption are excluded."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLUA618A, section 2.7, equation 9",
+        "url": "https://www.ti.com/lit/slua618"
+      },
+      {
+        "title": "Infineon OptiMOS device selection for synchronous rectification, equation 7",
+        "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-mosfet-optimos-device-selection-for-synchronous-rectification-applicationnotes-en.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "q_g",
+        "label": "Total gate charge at operating point",
+        "unit": "C",
+        "default": 6e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "f_sw",
+        "label": "Gate switching frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_drive",
+        "label": "Positive gate drive voltage",
+        "unit": "V",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "i_supply",
+        "label": "Average gate-charge supply current",
+        "unit": "A",
+        "expression": "q_g*f_sw"
+      },
+      {
+        "key": "e_drive",
+        "label": "Gate-drive energy per cycle",
+        "unit": "J",
+        "expression": "q_g*v_drive"
+      },
+      {
+        "key": "p_drive",
+        "label": "Gate-drive power",
+        "unit": "W",
+        "expression": "e_drive*f_sw"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "q_g": 4e-08,
+        "f_sw": 250000,
+        "v_drive": 12
+      },
+      "expected": {
+        "i_supply": 0.01,
+        "e_drive": 4.8e-07,
+        "p_drive": 0.12
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
