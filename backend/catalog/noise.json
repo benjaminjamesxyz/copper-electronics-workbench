@@ -211,4 +211,70 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "noise.uncorrelated_rms_sum",
+  "title": "Three-source RMS noise sum",
+  "category": "Noise measurement and analog budgets",
+  "level": "basic",
+  "description": "Combine three uncorrelated voltage-noise contributions already referred to the same circuit node and measurement band.",
+  "formula": "v_total = sqrt(v_1^2 + v_2^2 + v_3^2)",
+  "assumptions": [
+    "Contributions have zero mean and zero pairwise cross-correlation; Gaussian statistics are not required for the RMS identity.",
+    "All inputs are RMS voltages at the same reference node over the same measurement bandwidth and weighting.",
+    "Do not combine densities with integrated RMS values, or treat coherent ripple/interference as uncorrelated noise."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments SLVA043B, Adding Noise Sources, equations 4-6",
+      "url": "https://www.ti.com/lit/an/slva043b/slva043b.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "noise_one",
+      "label": "First RMS noise contribution",
+      "unit": "V",
+      "default": 3e-06,
+      "min": 0.0,
+      "max": 1000000.0
+    },
+    {
+      "key": "noise_two",
+      "label": "Second RMS noise contribution",
+      "unit": "V",
+      "default": 4e-06,
+      "min": 0.0,
+      "max": 1000000.0
+    },
+    {
+      "key": "noise_three",
+      "label": "Third RMS noise contribution",
+      "unit": "V",
+      "default": 1.2e-05,
+      "min": 0.0,
+      "max": 1000000.0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "total_noise_rms",
+      "label": "Combined RMS noise",
+      "unit": "V",
+      "expression": "sqrt(noise_one^2+noise_two^2+noise_three^2)"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "noise_one": 3e-06,
+      "noise_two": 4e-06,
+      "noise_three": 1.2e-05
+    },
+    "expected": {
+      "total_noise_rms": 1.3e-05
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

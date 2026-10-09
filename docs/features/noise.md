@@ -154,3 +154,30 @@ i_n=\sqrt{2qI}\quad[\mathrm{A/\sqrt{Hz}}],\qquad
 
 **Error rationale and output order:** Reject nonfinite values, negative current, nonpositive ENBW and inputs above the declared maxima. Positive bandwidth establishes the integration band; nonnegative current protects the square root, including the exact zero-current limit. Density precedes integrated RMS; no current absolute-value fallback silently accepts signed inputs.
 
+
+## Three-source uncorrelated RMS noise sum
+
+**ID:** `noise.uncorrelated_rms_sum` — **basic**. Source [S1, equations 4–6].
+
+For three zero-mean voltage processes x1, x2, x3 measured at the same node,
+
+\[
+\langle(x_1+x_2+x_3)^2\rangle=
+\sum_i\langle x_i^2\rangle+2\sum_{i<j}\langle x_ix_j\rangle.
+\]
+
+Zero pairwise correlation eliminates the cross terms, giving
+
+\[
+v_\mathrm{total}=\sqrt{v_1^2+v_2^2+v_3^2}.
+\]
+
+This calculation aggregates already established contributions; it does not generate Johnson/shot noise or apply gain transfers. It is therefore distinct from the source-specific and amplifier models.
+
+**Inputs/domain:** each RMS contribution is 0 to 1e6 V. Zero entries and an all-zero budget are valid. Units, reference node, bandwidth and weighting must agree. Gaussian statistics are not necessary for the variance identity. Coherent ripple, shared reference fluctuations and correlated input voltage/current noise cannot automatically be treated as independent.
+
+**Independent example:** 3, 4 and 12 microvolt RMS. Squared values sum to (9 + 16 + 144) microvolt² = 169 microvolt². `total_noise_rms` = **13 microvolt = 0.000013 V**, not the arithmetic sum of 19 microvolt.
+
+
+**Error rationale and sequential outputs:** Reject nonfinite, negative or above-1e6-V RMS contributions. Nonnegative inputs represent amplitudes; their squares keep the sole total-noise root nonnegative. Upper bounds bound squared sums. Individual zero inputs and the all-zero budget are admitted. Correlation, common-node and common-bandwidth requirements remain qualitative assumptions, not numeric validation.
+
