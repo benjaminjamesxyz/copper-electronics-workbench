@@ -69,5 +69,92 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "rf.lowpass_l_match",
+    "title": "Lumped low-pass L impedance match",
+    "category": "RF networks, antennas and links",
+    "level": "intermediate",
+    "description": "Match a lower real source resistance to a higher real load using a series inductor and a load-side shunt capacitor at one frequency.",
+    "formula": "Q=sqrt((Rl-Rs)/Rs); L=Rs Q/(2 pi f); C=Q/(2 pi f Rl)",
+    "assumptions": [
+      "This topology requires 0 < source resistance < load resistance; the capacitor is parallel with the load, not the source.",
+      "Source and load have no residual reactance at the design frequency.",
+      "Ideal lossless lumped components, electrically short interconnects and operation below component self-resonance.",
+      "The resistance ratio fixes loaded Q; Q is not the inductor component Q and does not specify an exact broadband return-loss bandwidth."
+    ],
+    "references": [
+      {
+        "title": "Michael Steer, Microwave and RF Design III, section 6.4.1, equations 1-10",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_%28Steer%29/06%3A_Chapter_6/6.4%3A_The_L_Matching_Network"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "source_resistance",
+        "label": "Lower source resistance",
+        "unit": "ohm",
+        "default": 50.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_resistance",
+        "label": "Higher load resistance",
+        "unit": "ohm",
+        "default": 200.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "frequency",
+        "label": "Match frequency",
+        "unit": "Hz",
+        "default": 100000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "loaded_q",
+        "label": "Matching-network loaded Q",
+        "unit": "1",
+        "expression": "sqrt((load_resistance-source_resistance)/source_resistance)"
+      },
+      {
+        "key": "series_inductance",
+        "label": "Series inductance",
+        "unit": "H",
+        "expression": "source_resistance*loaded_q/(2*pi*frequency)"
+      },
+      {
+        "key": "shunt_capacitance",
+        "label": "Load-side shunt capacitance",
+        "unit": "F",
+        "expression": "loaded_q/(2*pi*frequency*load_resistance)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "load_resistance",
+        "op": ">",
+        "right": "source_resistance",
+        "message": "This series-L, load-shunt-C topology requires load resistance greater than source resistance."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "source_resistance": 50.0,
+        "load_resistance": 200.0,
+        "frequency": 100000000.0
+      },
+      "expected": {
+        "loaded_q": 1.7320508075688772,
+        "series_inductance": 1.3783222385544804e-07,
+        "shunt_capacitance": 1.3783222385544801e-11
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

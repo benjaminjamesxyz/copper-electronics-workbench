@@ -69,3 +69,66 @@ Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outpu
 
 The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
 
+## 2. `rf.lowpass_l_match`
+
+### Purpose, novelty and evidence
+
+The nearest baseline `signals.quarter_wave_transformer` uses distributed phase propagation and a transmission-line section. This model instead synthesizes two **lumped** reactances whose parallel/series transformation cancels at the design frequency. `ac.series_rlc_impedance` evaluates a supplied circuit rather than synthesize a conjugate match. The new model is not a re-labeled quarter-wave section or a generic resonance calculation. S2, section 6.4.1, derives this exact orientation.
+
+### Equations and physical limits
+
+For `0 < source_resistance = Rs < load_resistance = Rl` and positive frequency `f`:
+
+`loaded_q = sqrt((Rl-Rs)/Rs)`;
+`series_inductance = Rs * loaded_q/(2 pi f)` H;
+`shunt_capacitance = loaded_q/(2 pi f Rl)` F.
+
+The input sees `j omega L + [Rl || 1/(j omega C)] = Rs`. The series inductive reactance is positive; the load-side capacitive reactance is negative. This is the low-pass/DC-passing orientation only. Both resistances must be real at the stated frequency. Equal resistances require no network; reversed ordering needs the other topology and is not silently accepted. Finite component Q, parasitic reactance and self-resonance shift the match. Loaded Q is not an exact return-loss bandwidth prediction.
+
+### Complete independent example
+
+Inputs: `source_resistance = 50 ohm`, `load_resistance = 200 ohm`, `frequency = 100000000 Hz`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `loaded_q` | `sqrt(200/50-1) = sqrt(3)` | `1.7320508075688772` |
+| `series_inductance` | `86.60254037844386/(2 pi * 1e8)` | `1.3783222385544804e-7 H` |
+| `shunt_capacitance` | `sqrt(3)/(2 pi * 1e8 * 200)` | `1.3783222385544801e-11 F` |
+
+The shunt capacitor has reactance `-115.47005383792516 ohm`. The parallel load/capacitor equivalent is `50 - j86.60254037844386 ohm`; adding the inductor gives `50 + j0 ohm`. This complex circuit identity is an independent tester oracle.
+
+### Nominal, limiting and invalid cases
+
+- `Rs=50`, `Rl=100`, `f=1e8` gives Q=1, L=`7.957747154594767e-8 H`, C=`1.5915494309189536e-11 F`.
+- Doubling frequency halves L and C without changing Q.
+- As `Rl -> Rs+`, all three outputs approach zero. Use a representably adjacent `Rl > Rs` to check `(Rl-Rs)/Rs`, not cancellation in `Rl/Rs-1`.
+- Reject `Rl=Rs`, `Rl<Rs`, nonpositive resistances/frequency and nonfinite values. Do not impose a minimum nonzero Q merely to simplify testing.
+
+### Catalog inputs and bounds
+
+| Key | Meaning | Unit | Default | Bounds |
+|---|---|---|---|---|
+| `source_resistance` | Lower source resistance | ohm | 50.0 | > 0.0 |
+| `load_resistance` | Higher load resistance | ohm | 200.0 | > 0.0 |
+| `frequency` | Match frequency | Hz | 100000000.0 | > 0.0 |
+
+All inputs must be finite. Constraints run before outputs; invalid domains return errors, not clamps.
+
+- `load_resistance > source_resistance`: This series-L, load-shunt-C topology requires load resistance greater than source resistance.
+
+### Executable output sequence
+
+| Key | Unit | Expression |
+|---|---|---|
+| `loaded_q` | 1 | `sqrt((load_resistance-source_resistance)/source_resistance)` |
+| `series_inductance` | H | `source_resistance*loaded_q/(2*pi*frequency)` |
+| `shunt_capacitance` | F | `loaded_q/(2*pi*frequency*load_resistance)` |
+
+Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outputs require an absolute tolerance. All defaults equal the full worked-example inputs above.
+
+### Sources and illustration
+
+- [Michael Steer, Microwave and RF Design III, section 6.4.1, equations 1-10](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_%28Steer%29/06%3A_Chapter_6/6.4%3A_The_L_Matching_Network)
+
+The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
+
