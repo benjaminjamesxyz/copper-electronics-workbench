@@ -694,5 +694,129 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "precision.brokaw_first_order_trim",
+  "title": "Brokaw bandgap first-order resistor trim",
+  "category": "Precision analog front ends",
+  "level": "intermediate",
+  "description": "Choose the common-emitter resistor that cancels the local VBE temperature slope in a Brokaw reference.",
+  "formula": "VT=kT/q; dVBE=VT ln(N); I=dVBE/R2; R1/R2=-slope_VBE/[2(k/q)ln(N)]; Vref=VBE+2(R1/R2)dVBE",
+  "assumptions": [
+    "Brokaw core: equal collector currents in Q1 and Q2; emitter area Q2/Q1=N>1; R2 lies between their emitters and R1 carries both emitter currents to ground.",
+    "Large beta approximates emitter currents by collector currents; equal-current mirror/servo, matched junction temperature and matched resistor temperature coefficients.",
+    "base_emitter_voltage and base_emitter_slope are characterized at the stated temperature along the actual biased operating trajectory. This is a local first-order trim, not a constant-current slope substituted into an unrelated bias condition.",
+    "Neglect VBE curvature, offset, mismatch, finite beta and self-heating. Startup and supply headroom are not designed here; assume the core has reached its nonzero regulated state. Verify process/current-density validity separately."
+  ],
+  "references": [
+    {
+      "title": "TI SLLA065: Figure 7 and equations 7-13, pages 12-14",
+      "url": "https://www.ti.com/lit/an/slla065/slla065.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "temperature",
+      "label": "Junction temperature",
+      "unit": "K",
+      "default": 300,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "area_ratio",
+      "label": "Emitter area ratio Q2/Q1",
+      "unit": "1",
+      "default": 8,
+      "min": 1,
+      "exclusive_min": true
+    },
+    {
+      "key": "ptat_resistance",
+      "label": "Emitter difference resistor R2",
+      "unit": "ohm",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "base_emitter_voltage",
+      "label": "Q1 VBE at trim temperature",
+      "unit": "V",
+      "default": 0.65,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "base_emitter_slope",
+      "label": "Local Q1 VBE temperature slope",
+      "unit": "V/K",
+      "default": -0.002
+    }
+  ],
+  "outputs": [
+    {
+      "key": "thermal_voltage",
+      "label": "Thermal voltage",
+      "unit": "V",
+      "expression": "1.380649e-23/1.602176634e-19*temperature"
+    },
+    {
+      "key": "delta_vbe",
+      "label": "Q1 minus Q2 base-emitter voltage",
+      "unit": "V",
+      "expression": "thermal_voltage*ln(area_ratio)"
+    },
+    {
+      "key": "branch_current",
+      "label": "Each collector current approximation",
+      "unit": "A",
+      "expression": "delta_vbe/ptat_resistance"
+    },
+    {
+      "key": "resistor_ratio",
+      "label": "Required R1/R2 ratio",
+      "unit": "1",
+      "expression": "-base_emitter_slope/(2*(1.380649e-23/1.602176634e-19)*ln(area_ratio))"
+    },
+    {
+      "key": "common_resistor",
+      "label": "Common emitter resistor R1",
+      "unit": "ohm",
+      "expression": "resistor_ratio*ptat_resistance"
+    },
+    {
+      "key": "reference_voltage",
+      "label": "First-order bandgap output",
+      "unit": "V",
+      "expression": "base_emitter_voltage-base_emitter_slope*temperature"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "base_emitter_slope",
+      "op": "<",
+      "right": "0",
+      "message": "VBE slope must be negative for positive-resistor PTAT cancellation"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "temperature": 300,
+      "area_ratio": 8,
+      "ptat_resistance": 10000,
+      "base_emitter_voltage": 0.65,
+      "base_emitter_slope": -0.002
+    },
+    "expected": {
+      "thermal_voltage": 0.025851999786435535,
+      "delta_vbe": 0.05375772229141229,
+      "branch_current": 5.375772229141229e-06,
+      "resistor_ratio": 5.580593581955471,
+      "common_resistor": 55805.93581955471,
+      "reference_voltage": 1.25
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]

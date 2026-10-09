@@ -256,3 +256,64 @@ Exact bindings: R1 `r_one`, R2 `r_two`, R3 `r_three`, R4 `r_four`; source ports 
 
 Caption: “Basic Howland pump: ratio mismatch creates signed output conductance. The load node and amplifier output are different nodes; current and voltage compliance are checked separately. DC model only.”
 
+
+## 5. `precision.brokaw_first_order_trim` — intermediate
+
+### Purpose and novelty
+
+Choose the common-emitter resistor for first-order PTAT/CTAT temperature cancellation in a Brokaw reference. Nearest baseline `thermal.resistor_tcr_drift` changes a single resistor with temperature; this active reference combines two junction densities and a resistor ratio to cancel a junction-voltage slope. It is not a sensor thermometer, generic Shockley forward-current inversion, zener shunt regulator or duplicate current mirror: the design output is the resistor ratio that synthesizes a compensated voltage.
+
+### Topology, derivation and physical limits
+
+Follow TI SLLA065 Figure 7's core relationship. Q2 has emitter area N times Q1. Their bases are joined at Vref. The equal-current collector servo makes their collector currents equal. Q1 emitter joins node E; Q2 emitter connects through R2 (`ptat_resistance`) to E. R1 (`common_resistor`) connects E to ground. R1 carries both emitter currents; this produces the factor of two that must not be omitted.
+
+An equivalent concrete servo implementation for the explanatory schematic uses two equal collector resistors to a positive supply. An op amp senses Q1 collector at plus and Q2 collector at minus, then drives the common base/Vref node. Equal collector voltages imply equal collector currents. The core equations are the same ideal large-beta equal-current conditions as the source. This sketch illustrates the nonzero operating state; its startup circuit and dynamic compensation are explicitly outside the calculation.
+
+Using exact SI constants k=1.380649e-23 J/K and q=1.602176634e-19 C:
+
+- `thermal_voltage = k T/q`.
+- `delta_vbe = (kT/q) ln(N) = VBE1-VBE2`.
+- `branch_current = delta_vbe/R2`.
+- `Vref = VBE1 + 2(R1/R2)(kT/q) ln(N)`.
+
+For local slope S=`base_emitter_slope`, set `dVref/dT=0`. Thus
+
+- `resistor_ratio = R1/R2 = -S/[2(k/q)ln(N)]`.
+- `common_resistor = resistor_ratio R2`.
+- `reference_voltage = base_emitter_voltage - S T`.
+
+The final expression is an algebraically simplified evaluation of the same synthesized reference, not a separate temperature extrapolation. Require T>0, N>1, R2>0, VBE>0 and S<0 so the synthesized R1 is positive. N need not be an integer in an integrated geometry model.
+
+VBE and its local slope must be characterized at the actual operating trajectory, including the PTAT bias current. A constant-current VBE slope should not be substituted without correcting its bias dependence. The supplied slope is a design characterization, not a universal -2 mV/K constant. Beta is large, junction temperature is common, collector currents match, and resistor temperature coefficients track. Curvature, finite beta, offsets, current-density limits, startup, supply headroom and self-heating are not predicted. The model is a local trim at the stated temperature, not full-range ppm/K certification.
+
+### Complete independent example
+
+Inputs: `temperature=300`, `area_ratio=8`, `ptat_resistance=10000`, `base_emitter_voltage=0.65`, `base_emitter_slope=-0.002`.
+
+`k/q=0.00008617333262145179 V/K`, `ln(8)=2.0794415416798357`. Delta VBE is 53.75772229141229 mV; each collector current is therefore 5.375772229141229 µA. The positive PTAT derivative must be 2 mV/K, so `R1/R2=5.580593581955471`. The total drop across R1 is 0.6 V and the reference output is 0.65+0.6=1.25 V.
+
+| Output key | Independent value |
+|---|---:|
+| `thermal_voltage` | 0.025851999786435535 V |
+| `delta_vbe` | 0.05375772229141229 V |
+| `branch_current` | 0.000005375772229141229 A |
+| `resistor_ratio` | 5.580593581955471 |
+| `common_resistor` | 55805.93581955471 ohm |
+| `reference_voltage` | 1.25 V |
+
+### Tester cases
+
+- Nominal: assert all values, `2 I R1=0.6 V` and the zero local derivative.
+- Area-ratio change: set N=64. Since ln(64)=2 ln(8), delta VBE and branch current double; R1/R2 and R1 halve; the synthesized reference remains 1.25 V.
+- Resistor scaling: double R2 at unchanged characterized VBE/slope; inferred current halves and synthesized R1 doubles. For physical use, recharacterize VBE/slope if this changes the real bias point.
+- Approaching N=1 from above: delta VBE/current tend to zero while required resistor ratio diverges. Exactly N=1 must reject, not divide by zero. Do not impose a made-up minimum N larger than 1.
+- Invalid: nonpositive T, R2 or VBE; N<=1; zero or positive VBE slope.
+
+### Mandatory diagram specification
+
+Draw Q1 and Q2 with joined bases at the right-hand Vref node. Q1 emitter joins E directly; Q2 emitter reaches E through R2. Draw R1 from E to ground and label the current in it as static “2I”. Above the collectors draw equal collector resistors to a supply rail and an op-amp servo sensing their lower ends, plus at Q1 collector and minus at Q2 collector. Servo output drives both bases and is Vref. Show no collector-base diode connection: this is not the two-transistor mirror picture.
+
+Exact bindings: N beside Q2 `area_ratio`; R2 `ptat_resistance`; R1 `common_resistor`; each collector arrow `branch_current`; Q1 base-emitter bracket `base_emitter_voltage`; Q1/Q2 VBE-difference annotation `delta_vbe`; output `reference_voltage`. An annotation “local VBE slope” binds `base_emitter_slope`; junction-temperature legend binds `temperature`. Equal collector resistor values and supply voltage are static topology labels, not invented calculated quantities. Place secondary results in the legend to keep the three-device circuit legible.
+
+Caption: “The equal-current servo forces a PTAT voltage across R2. R1 carries both emitter currents, so its contribution has a factor of two. Nonzero operating state and large beta are assumed; startup and curvature are not modeled.”
+
