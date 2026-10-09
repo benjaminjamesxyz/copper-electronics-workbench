@@ -575,3 +575,72 @@ Read coordination/CONTRACT.md and RESEARCH_BOARD.md. Append addressed findings, 
 - Updated archive: `frontend/copper-Linux.tar.gz`, SHA-256 `599cc23d49ce121a4032ab08e2339a1e7ce4735407fdbd5ea44dbd135095e17b`. Rust executable SHA-256 remains `88546a1db0e867064c91bde48b0b1d03c88e6d73c6153af17d082965a9bc2c7a`, identical to the previously verified numerical release.
 - Evidence: `coordination/diagram_evidence.json` and `coordination/desktop-illustrations-{circuit,wide,narrow}.png`. Illustrations are static explanatory models, not live plots or simulations. Windows/macOS native runtime and remote CI remain unverified.
 
+
+## Main → Expansion team: second sprint starts at 29f9c2b
+- User requested 100 more genuinely new hardware-design calculations, every one with an illustrative diagram. Preserve all 128 existing IDs/models/illustrations. Target is 228 total, not a replacement inventory.
+- Read `coordination/EXPANSION_CONTRACT.md`, the new allocation section in `RESEARCH_BOARD.md`, and `coordination/expansion/baseline.json` before selecting features. Sixteen disjoint prefixes reserve 7 items each for sensors/opto/oscillators/rf and 6 each for the twelve remaining lanes.
+- Sixteen researchers work in parallel first. Every item needs primary-source evidence, independent complete worked outputs, meaningful boundary/error cases, novelty comparison, and a concrete diagram specification. Parent maintains the common index and resolves overlaps; publish concerns here immediately.
+- After research completes, the scrum-master plans all 100 items. Sixteen isolated developer lanes then implement calculator+diagram+docs together. Sixteen tester lanes and sixteen reviewer lanes run independently after integration; parent owns check execution and native desktop evidence.
+- Shared Markdown bus is this root file even inside worktrees. Append with a fresh read/edit anchor; never replace another entry. Worker builds, tests, lint and formatters are prohibited mid-flight. Preserve the pre-existing untracked `.codegraph/` directory; do not stage it.
+
+## R2Motors → Main / expansion lanes: electromechanical model claims
+- Reserve six candidates: PM DC loaded torque-speed equilibrium; sinusoidal stepper microstep torque/deflection; geared-axis acceleration current sizing; passive dynamic-brake speed/energy transient; salient PMSM steady dq torque/voltage; induction-machine slip torque and air-gap energy split.
+- These require mechanical torque, speed, inertia or rotor slip; none counts generic resistance, RL buildup, semiconductor loss or capacitor energy. No solenoid/core geometry, converter controller, protection clamp or battery regeneration model is claimed.
+- Closest baseline exclusions inspected: DC source loading, RL step, resistor dissipation, magnetic field energy and AC impedance. The proposed machines add coupled electromechanical laws rather than inverse or renamed versions.
+
+
+## R2Sensors → Main / expansion lanes: transduction claims
+- Reserve seven models: Steinhart–Hart thermistor thermometry, full-range platinum Callendar–Van Dusen response, Type-T thermocouple cold-junction EMF, Hall-plate angular transduction, anisotropic magnetoresistive angular resistance, Nernst hydrogen-activity electrode, differential variable-gap capacitive displacement.
+- Hall transverse carrier deflection and AMR longitudinal scattering are distinct mechanisms, not inverse angle modes. Capacitive displacement predicts opposing moving gaps and differential sensitivity, not existing voltage-edge displacement current.
+- No amplifier stages, bridge solver, generic TCR, optical sensor, motor torque or magnetic coil model. Sources and numerical handoff follow in owned sensors files.
+## R2Control → Main / converters / motors: feedback model claims
+- Reserve six candidates: pure-delay phase-margin budget; complex loop sensitivity and disturbance rejection; phase-lead crossover synthesis; PI pole placement for a first-order voltage-domain plant; peak-current sampled perturbation slope compensation; integral-controller gain stability bound for a two-lag plant.
+- No amplifier GBW, RLC step, ordinary filter synthesis, boost RHP zero, converter steady-state sizing or electromechanical plant sizing. The last model uses the cubic Routh criterion; it is not another lead/PI inverse.
+- Baseline 128 formulas and expansion allocations read. Primary university lead/Routh and TI slope-compensation evidence read; delay/sensitivity/PI evidence collection continues.
+
+
+## R2Batteries → Main / expansion lanes: battery model claims
+- Reserve six models: weakest-cell three-series usable charge; charge-efficiency-aware coulomb state; Peukert constant-load runtime; kinetic two-reservoir charge/recovery; regular-solution intercalation voltage and chemical capacitance; Sand electrolyte-depletion charging limit.
+- No Ohm-law/energy rearrangements, converter loss, protection devices or motor regeneration. Sensor Nernst overlap communicated: battery lattice model includes pair interactions and phase-stability domain, not hydrogen-activity transduction.
+- Primary TI/Victron, Twente kinetic equations and MIT intercalation notes read. Sand paper retrieved through MIT repository after publisher HTTP 403; full evidence and independent examples follow.
+
+## R2Opto → Main / expansion lanes: optical model claims
+- Reserve seven models: unity-gain photodiode photon conversion; Lambertian target irradiance; dead-layer/active-layer optical absorption; Gaussian free-space aperture capture; step-index fiber mode cutoff; Gaussian pulse group-velocity dispersion; finite-cell SiPM pulse saturation.
+- No LED ballast, shot noise, transimpedance electronics, RF links or electrical transmission-line delays. Absorption predicts spatial photon capture, not supplied-QE conversion; fiber cutoff predicts guided-mode eligibility, not propagation delay.
+- Hamamatsu photodiode/SiPM notes and Newport radiation/Gaussian/fiber notes read. University pulse-dispersion evidence retrieval continues. Complete equations, examples, domains and exact-key diagram specifications follow in opto-owned files.
+
+## R2Logic → Main / expansion lanes: digital model claims
+- Reserve six: guaranteed logic-level noise margins; DC input-current fanout; CMOS package internal/load switching-power budget; synchronizer metastability MTBF; three-stage logical-effort gate sizing; hardware FIFO depth from burst/rate/latency envelopes.
+- None uses existing I2C/UART/setup/timer/Schmitt-delay or jitter models. Logical effort estimates sized CMOS gate delay, not register slack. FIFO sizes on-chip storage under an explicit arrival envelope and guaranteed service curve, not a clock divider.
+- CMOS power uses characterized internal Cpd plus external output loading, distinct from external MOSFET gate-charge supply and Coss turn-on loss. Metastability uses technology-characterized exponential resolution statistics, not thermal Arrhenius aging.
+- Primary TI logic/power reports, Stanford synchronizer lecture and Harris logical-effort lecture read. Intel AN42 fetch returned HTTP 403; replacement university evidence is accessible. FIFO primary university evidence collection continues.
+
+## R2Cables → Main / expansion lanes: cable and connector claims
+- Reserve six models: homogeneous twin-lead field geometry; exact lossy distributed RLGC line; cylindrical cable insulation electric stress; connector elastic Hertz/Holm constriction resistance; metallic contact Kohlrausch hotspot temperature; rectangular cantilever connector-contact force and elastic stress.
+- Distinct mechanisms: field geometry, distributed dissipation, insulation breakdown stress, microscopic current constriction, contact heat conduction, and connector spring elasticity. No DC copper, ideal delay/reflection, existing coax impedance, or adiabatic short-circuit withstand (Protection owns that).
+- Sources under review include Virginia Tech open electromagnetics, Auburn contact research, university contact-temperature evidence and Materion connector spring guidance. No claims on EMC shielding, intentional RF matching, coils or generic thermal-resistance networks.
+
+## R2Cores → Main / expansion lanes: winding and magnetic model claims
+- Reserve six models: Wheeler single-layer air solenoid; Mohan square planar spiral; insulated round-wire bobbin layer fit; calibrated sinusoidal Steinmetz loss; thin-lamination classical eddy loss; thin-foil multilayer AC winding loss.
+- Geometry models solve open air-winding and planar current-sheet fields, not old toroid/gapped-core reluctance. Loss models predict dissipated heat, not existing stored field energy, flux amplitude, coupling or skin-depth outputs. Construction predicts discrete turns/layers with insulation, not VA or turns ratio.
+- Primary Stanford spiral equations, Dartmouth loss analysis, MIT lamination derivation and TI winding construction read. Wheeler original Berkeley scan is challenge-blocked; university formula and independently stated inch units are accessible. No converter, EMC shield, motor torque or passive capacitor/resistor model claimed.
+
+## R2Rf → Main / expansion lanes: RF model claims
+- Reserve seven: symmetric matched T attenuator; lumped low-pass L impedance match; free-space radio link budget; first-Fresnel obstruction clearance; circular-aperture antenna gain; equal-tone third-order intermodulation; monostatic point-target radar return.
+- No reflection/coax/quarter-wave/Friis-noise duplication. Radio Friis is spatial propagation, not the baseline amplifier-noise cascade. Radar adds target scattering and two-way fourth-power range dependence.
+- EMC short-wire unintentional radiation stays EMC-owned; RF excludes short-dipole radiation. Aperture synthesis and Fresnel geometry remain distinct from link-power propagation. Primary-source reading and independent numerical derivations continue in owned research files.
+
+## R2Protection → Main / Cables / expansion lanes: protection model claims
+- Reserve six distinct candidates: combined fuse pulse/semiconductor I²t coordination; TVS avalanche load line; nonlinear MOV surge absorption; SCR crowbar trigger/latch design; material-temperature adiabatic fault withstand; transistor foldback current limiter.
+- Main rejected separate fuse pulse and semiconductor coordination counts; these are now one feature. Cables confirmed no overlap and leaves adiabatic fault heating here. No turn-off spike, recovery, generic RC, or EMC snubber model.
+- Each model will state manufacturer-data limits and remain an engineering estimate, never a safety-certification claim. Source-access failures are tracked; only actually read evidence supports the final research.
+
+## R2Measurement → Main / expansion lanes: metrology model claims
+- Reserve six: DMM percent-reading plus percent-range error bound; three-point current-reversal thermal-EMF cancellation; compensated passive oscilloscope probe loading; finite rectangular-aperture response; sampling-jitter SNR; correlated voltage-ratio uncertainty.
+- Probe model includes pole-zero compensation and finite source loading, not the old resistive loaded divider or single RC filter. Delta measurements cancel constant and linear thermal drift, not plain Ohm-law conversion. Covariance propagation is ratio-specific metrology, not a generic independent RMS noise sum.
+- Precision and logic notified. No ADC quantization, ENOB, alias, acquisition settling, amplifier stages or digital-interface model claimed.
+
+## R2Converters → Main / expansion lanes: topology claims
+- Reserve six models: single-flying-capacitor inverting charge pump; uncoupled-inductor SEPIC CCM stress; single-switch forward reset-winding duty limit; DCM flyback demagnetization and current stress; half-bridge LLC fundamental-harmonic loaded gain; dual-active-bridge single-phase-shift power transfer.
+- These add switched-capacitor charge transport, two-inductor energy transfer, reset-winding timing, isolated discontinuous energy transfer, nonlinear rectifier-equivalent resonant loading, and phase-shift bridge power exchange. No buck/boost/LDO sizing, compensators, coil geometry, loss fit or protection snubber.
+- Read TI SEPIC SLVA516A, forward SNVA603, flyback SSZTCW6, LLC SLUA733 and DAB TIDUES0F. LLC FHA equation and charge-pump source access are still being resolved. Control notified; no overlap found in current bus claims.

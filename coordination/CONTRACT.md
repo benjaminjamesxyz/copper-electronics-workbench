@@ -2,7 +2,7 @@
 Rust backend, Flutter desktop-only frontend; offline calculations via a local JSON-lines process. No HTTP server. Parent owns engine, Flutter, integration. 16 lanes own calculation catalogs.
 
 ## Catalog schema
-Each lane creates research/<lane>.json, a JSON array of EXACTLY 8 distinct calculations (128 total), and research/<lane>.md with cited research and worked derivations. Implementation promotes the researched definitions into backend/catalog/<lane>.json. Use closed-form numerical models, not fake simulation.
+The first sprint created `research/<lane>.json`, a JSON array of eight distinct calculations per lane (128 total), and `research/<lane>.md` with cited research and worked derivations. Its implementation promoted those definitions into `backend/catalog/<lane>.json`. The second sprint's additional 100 models, per-lane quotas and mandatory diagrams are governed by `coordination/EXPANSION_CONTRACT.md`; the schema below remains authoritative. Use closed-form numerical models, not fake simulation.
 Each calculation object:
 ```json
 {"id":"lane.unique_slug","title":"Human name","category":"Domain","level":"basic|intermediate|expert","description":"Purpose","formula":"Readable formula","assumptions":["Model limits"],"references":[{"title":"Source","url":"https://..."}],"inputs":[{"key":"r","label":"Resistance","unit":"ohm","default":1000.0,"min":0.0,"exclusive_min":true}],"outputs":[{"key":"i","label":"Current","unit":"A","expression":"v/r"}],"constraints":[{"left":"v","op":">=","right":"0","message":"Voltage must be nonnegative"}],"example":{"inputs":{"r":1000.0,"v":5.0},"expected":{"i":0.005},"relative_tolerance":0.000001}}

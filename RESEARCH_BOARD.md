@@ -1,4 +1,4 @@
-# Research board — completed 128-feature inventory
+# Research board — 128 delivered; 100-addition sprint
 
 All 16 research lanes completed eight calculators each: **128 actual unique IDs**, with **39 basic, 50 intermediate and 39 expert** models. Research, implementation and Linux desktop acceptance are complete. The scrum-master reconciled physical problem boundaries and retained every ID: supporting outputs, inverse modes, charge/discharge and empirical layer alternatives are not extra calculators. See [sprint execution and overlap decisions](coordination/SPRINT.md) and [128 explicit acceptance/owner/example backlog rows](coordination/BACKLOG.md).
 
@@ -199,4 +199,30 @@ All 128 inventory IDs now include a problem-specific labeled vector diagram abov
 Sixteen independent illustration-author worktrees and sixteen source/pixel review lanes completed the change. All 25 reported correctness/visual findings are closed. Final Linux acceptance rendered all 128 diagrams, checked narrow-window scrolling/text scaling, exercised the existing real-Rust workbench journey and built the refreshed release archive.
 
 See [illustration evidence](coordination/diagram_evidence.json), [review history and closure](coordination/diagram_reviews.json), [circuit surface](coordination/desktop-illustrations-circuit.png), [geometry surface](coordination/desktop-illustrations-wide.png) and [narrow scrolled surface](coordination/desktop-illustrations-narrow.png). The Rust models and the 128-feature inventory are unchanged.
+
+
+## Second sprint: 100 additional calculations with mandatory diagrams
+
+Baseline: `29f9c2b`, 128 live Rust catalog IDs, all illustrated. Target: 100 genuinely additional models, 228 total. The existing implementation is preserved. The following reservations prevent cross-lane duplication; every candidate must also pass the [actual baseline exclusion inventory](coordination/expansion/baseline.json). No inverse, renamed formula or extra output counts as another calculator.
+
+Contract: [expansion workflow, ownership and diagram requirements](coordination/EXPANSION_CONTRACT.md). Research is in progress; rows below are allocations, not completed features. Scrum planning follows the complete research wave; implementation follows the approved backlog.
+
+| Lane / ID prefix | New count | Research and diagram specifications | Status |
+|---|---:|---|---|
+| sensors | 7 | `research/expansion/sensors.md` | Reserved |
+| opto | 7 | `research/expansion/opto.md` | Reserved |
+| oscillators | 7 | `research/expansion/oscillators.md` | Reserved |
+| rf | 7 | `research/expansion/rf.md` | Reserved |
+| batteries | 6 | `research/expansion/batteries.md` | Reserved |
+| protection | 6 | `research/expansion/protection.md` | Reserved |
+| converters | 6 | `research/expansion/converters.md` | Reserved |
+| control | 6 | `research/expansion/control.md` | Reserved |
+| emc | 6 | `research/expansion/emc.md` | Reserved |
+| cables | 6 | `research/expansion/cables.md` | Reserved |
+| precision | 6 | `research/expansion/precision.md` | Reserved |
+| logic | 6 | `research/expansion/logic.md` | Reserved |
+| motors | 6 | `research/expansion/motors.md` | Reserved |
+| passives | 6 | `research/expansion/passives.md` | Reserved |
+| cores | 6 | `research/expansion/cores.md` | Reserved |
+| measurement | 6 | `research/expansion/measurement.md` | Reserved |
 

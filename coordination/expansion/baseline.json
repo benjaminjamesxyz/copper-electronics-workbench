@@ -1,0 +1,2556 @@
+{
+  "commit": "29f9c2b",
+  "calculation_count": 128,
+  "calculations": [
+    {
+      "id": "ac.inductor_reactance",
+      "title": "Ideal inductor AC reactance and current",
+      "category": "AC impedance and resonance",
+      "level": "basic",
+      "formula": "X_L = 2 pi f L; I_rms = V_rms / X_L; arg(Z_L) = +pi/2",
+      "inputs": [
+        "frequency",
+        "inductance",
+        "voltage_rms"
+      ],
+      "outputs": [
+        "reactance",
+        "current_rms",
+        "impedance_phase"
+      ]
+    },
+    {
+      "id": "ac.lossy_coil_antiresonance",
+      "title": "Lossy-coil parallel phase resonance",
+      "category": "AC impedance and resonance",
+      "level": "expert",
+      "formula": "Y = 1/(r+j omega L)+j omega C; omega_r = sqrt((L-C r^2)/(L^2 C)); Z_r = L/(C r)",
+      "inputs": [
+        "coil_resistance",
+        "inductance",
+        "capacitance",
+        "voltage_rms"
+      ],
+      "outputs": [
+        "resonance_frequency",
+        "ideal_lc_frequency",
+        "resonance_resistance",
+        "source_current_rms",
+        "coil_current_rms",
+        "copper_loss"
+      ]
+    },
+    {
+      "id": "ac.capacitor_reactance",
+      "title": "Ideal capacitor AC reactance and current",
+      "category": "AC impedance and resonance",
+      "level": "basic",
+      "formula": "X_C = 1/(2 pi f C); Im(Z_C) = -X_C; I_rms = V_rms/X_C",
+      "inputs": [
+        "frequency",
+        "capacitance",
+        "voltage_rms"
+      ],
+      "outputs": [
+        "reactance_magnitude",
+        "impedance_imaginary",
+        "current_rms",
+        "impedance_phase"
+      ]
+    },
+    {
+      "id": "ac.series_rlc_impedance",
+      "title": "Series RLC impedance, phase and current",
+      "category": "AC impedance and resonance",
+      "level": "intermediate",
+      "formula": "Z = R + j(2 pi f L - 1/(2 pi f C)); |Z| = sqrt(R^2 + X^2); phi = atan(X/R)",
+      "inputs": [
+        "frequency",
+        "resistance",
+        "inductance",
+        "capacitance",
+        "voltage_rms"
+      ],
+      "outputs": [
+        "impedance_real",
+        "impedance_imaginary",
+        "impedance_magnitude",
+        "impedance_phase",
+        "current_rms",
+        "power_factor"
+      ]
+    },
+    {
+      "id": "ac.parallel_rlc_impedance",
+      "title": "Parallel RLC admittance and impedance",
+      "category": "AC impedance and resonance",
+      "level": "intermediate",
+      "formula": "Y = G+jB = 1/R + j(2 pi f C - 1/(2 pi f L)); Z = (G-jB)/(G^2+B^2)",
+      "inputs": [
+        "frequency",
+        "resistance",
+        "inductance",
+        "capacitance",
+        "voltage_rms"
+      ],
+      "outputs": [
+        "conductance",
+        "susceptance",
+        "impedance_real",
+        "impedance_imaginary",
+        "impedance_magnitude",
+        "impedance_phase",
+        "current_rms"
+      ]
+    },
+    {
+      "id": "ac.series_resonator_bandwidth",
+      "title": "Series resonator frequency, Q and exact bandwidth",
+      "category": "AC impedance and resonance",
+      "level": "intermediate",
+      "formula": "omega_0 = 1/sqrt(LC); Q = omega_0 L/R; delta_omega = R/L; omega_H = sqrt(omega_0^2+(R/(2L))^2)+R/(2L); omega_L = omega_0^2/omega_H",
+      "inputs": [
+        "resistance",
+        "inductance",
+        "capacitance"
+      ],
+      "outputs": [
+        "resonance_frequency",
+        "quality_factor",
+        "bandwidth",
+        "upper_half_power",
+        "lower_half_power"
+      ]
+    },
+    {
+      "id": "ac.sinusoidal_power_triangle",
+      "title": "Single-phase sinusoidal power triangle",
+      "category": "AC impedance and resonance",
+      "level": "basic",
+      "formula": "S = V_rms I_rms; P = S cos(phi); Q = S sin(phi); PF = cos(phi)",
+      "inputs": [
+        "voltage_rms",
+        "current_rms",
+        "phase"
+      ],
+      "outputs": [
+        "apparent_power",
+        "real_power",
+        "reactive_power",
+        "power_factor"
+      ]
+    },
+    {
+      "id": "ac.shunt_power_factor_correction",
+      "title": "Single-phase shunt capacitor power-factor correction",
+      "category": "AC impedance and resonance",
+      "level": "intermediate",
+      "formula": "Q_C = P(sqrt(1-PF_initial^2)/PF_initial - sqrt(1-PF_target^2)/PF_target); C = Q_C/(2 pi f V_rms^2)",
+      "inputs": [
+        "real_power",
+        "voltage_rms",
+        "frequency",
+        "initial_pf",
+        "target_pf"
+      ],
+      "outputs": [
+        "capacitor_reactive_power",
+        "required_capacitance",
+        "initial_source_current",
+        "corrected_source_current",
+        "capacitor_current_rms"
+      ]
+    },
+    {
+      "id": "bjt.saturated_switch_drive",
+      "title": "Saturated BJT switch base-drive sizing",
+      "category": "Bipolar transistor design",
+      "level": "basic",
+      "formula": "Ib=Ic/beta_forced; Rb_max=(Vdrive_min-Vbe_sat_max)/Ib-Rdriver; Prb=Ib^2 Rb_max",
+      "inputs": [
+        "i_collector",
+        "beta_forced",
+        "v_drive_min",
+        "vbe_sat_max",
+        "r_driver",
+        "i_driver_max"
+      ],
+      "outputs": [
+        "i_base_required",
+        "r_base_max",
+        "p_base_resistor"
+      ]
+    },
+    {
+      "id": "bjt.early_output_resistance",
+      "title": "Early-effect incremental output resistance",
+      "category": "Bipolar transistor design",
+      "level": "expert",
+      "formula": "Ic=I0(1+Vce/VA); ro=(VA+Vce)/Ic; go=Ic/(VA+Vce); ro_approx=VA/Ic",
+      "inputs": [
+        "v_early",
+        "v_ce",
+        "v_be",
+        "i_collector"
+      ],
+      "outputs": [
+        "r_output",
+        "g_output",
+        "r_output_approx",
+        "approximation_relative_error"
+      ]
+    },
+    {
+      "id": "bjt.differential_pair_steering",
+      "title": "Matched BJT differential-pair current steering",
+      "category": "Bipolar transistor design",
+      "level": "expert",
+      "formula": "VT=kT/q; alpha=beta/(beta+1); x=Vdiff/VT; Ic1=alpha Itail exp(x)/(1+exp(x)); Ic2=alpha Itail/(1+exp(x)); d(Ic1-Ic2)/dVdiff=2 alpha Itail exp(x)/(VT(1+exp(x))^2); Idiff=alpha Itail expm1(x)/(1+exp(x))",
+      "inputs": [
+        "i_tail",
+        "beta",
+        "temperature",
+        "v_differential"
+      ],
+      "outputs": [
+        "v_thermal",
+        "alpha",
+        "current_ratio",
+        "i_collector_one",
+        "i_collector_two",
+        "i_difference",
+        "g_differential"
+      ]
+    },
+    {
+      "id": "bjt.divider_bias",
+      "title": "Loaded-divider BJT DC operating point",
+      "category": "Bipolar transistor design",
+      "level": "intermediate",
+      "formula": "Vth=Vcc Rbottom/(Rtop+Rbottom); Rth=Rtop||Rbottom; Ib=(Vth-Vbe)/(Rth+(beta+1)Re); Ic=beta Ib; Vce=Vcc-Ic Rc-(beta+1)Ib Re",
+      "inputs": [
+        "vcc",
+        "r_top",
+        "r_bottom",
+        "r_collector",
+        "r_emitter",
+        "beta",
+        "vbe"
+      ],
+      "outputs": [
+        "v_thevenin",
+        "r_thevenin",
+        "i_base",
+        "i_collector",
+        "i_emitter",
+        "v_emitter",
+        "v_base",
+        "v_collector",
+        "v_ce"
+      ]
+    },
+    {
+      "id": "bjt.hybrid_pi_parameters",
+      "title": "BJT hybrid-pi transconductance and input resistance",
+      "category": "Bipolar transistor design",
+      "level": "basic",
+      "formula": "VT=kT/q; gm=Ic/VT; rpi=beta_ac/gm",
+      "inputs": [
+        "i_collector",
+        "beta_ac",
+        "temperature"
+      ],
+      "outputs": [
+        "v_thermal",
+        "g_m",
+        "r_pi"
+      ]
+    },
+    {
+      "id": "bjt.emitter_degeneration_gain",
+      "title": "Loaded emitter-degenerated common-emitter gain",
+      "category": "Bipolar transistor design",
+      "level": "intermediate",
+      "formula": "RLc=Rc||RL; Rin=rpi+(beta+1)Re; Av_base=-beta RLc/Rin; Av_source=-beta RLc/(Rin+Rs)",
+      "inputs": [
+        "i_collector",
+        "beta_ac",
+        "temperature",
+        "r_collector",
+        "r_load",
+        "r_emitter",
+        "r_source",
+        "r_intrinsic_output"
+      ],
+      "outputs": [
+        "r_collector_load",
+        "r_input",
+        "gain_base",
+        "gain_source"
+      ]
+    },
+    {
+      "id": "bjt.terminal_dissipation",
+      "title": "BJT DC terminal power dissipation",
+      "category": "Bipolar transistor design",
+      "level": "basic",
+      "formula": "Pcollector=Vce Ic; Pbase=Vbe Ib; Ptotal=Pcollector+Pbase",
+      "inputs": [
+        "v_ce",
+        "i_collector",
+        "v_be",
+        "i_base"
+      ],
+      "outputs": [
+        "p_collector",
+        "p_base",
+        "p_total"
+      ]
+    },
+    {
+      "id": "bjt.emitter_follower_loading",
+      "title": "Loaded emitter-follower gain and input resistance",
+      "category": "Bipolar transistor design",
+      "level": "intermediate",
+      "formula": "REeff=RE||RL; Rin=rpi+(beta+1)REeff; Av_base=(beta+1)REeff/Rin; Av_source=(beta+1)REeff/(Rin+Rs)",
+      "inputs": [
+        "i_collector",
+        "beta_ac",
+        "temperature",
+        "r_emitter",
+        "r_load",
+        "r_source",
+        "r_intrinsic_output"
+      ],
+      "outputs": [
+        "r_emitter_effective",
+        "r_input",
+        "gain_base",
+        "gain_source"
+      ]
+    },
+    {
+      "id": "data.adc_lsb",
+      "title": "Ideal ADC LSB voltage",
+      "category": "ADC DAC and sampled systems",
+      "level": "basic",
+      "formula": "M = 2^N; q = V_span / M",
+      "inputs": [
+        "bits",
+        "full_scale_span"
+      ],
+      "outputs": [
+        "code_count",
+        "lsb_v"
+      ]
+    },
+    {
+      "id": "data.adc_quantization_error",
+      "title": "Ideal ADC code and quantization error",
+      "category": "ADC DAC and sampled systems",
+      "level": "intermediate",
+      "formula": "q = (V_high - V_low)/2^N; k = floor((V_in - V_low)/q); V_hat = V_low + (k + 1/2)q; error = (k + 1/2)q - (V_in - V_low) = V_hat - V_in",
+      "inputs": [
+        "bits",
+        "v_low",
+        "v_high",
+        "v_in"
+      ],
+      "outputs": [
+        "quantization_step",
+        "code",
+        "reconstructed_v",
+        "error_v",
+        "absolute_error_v"
+      ]
+    },
+    {
+      "id": "data.bandlimited_quantization_snr",
+      "title": "Bandlimited ideal quantization SNR",
+      "category": "ADC DAC and sampled systems",
+      "level": "expert",
+      "formula": "OSR = f_s/(2B); SNR_linear = a*2^N*sqrt((3/2)*OSR); SNR_dB = 20 log10(SNR_linear); process_gain_dB = 10 log10(OSR)",
+      "inputs": [
+        "bits",
+        "sample_rate",
+        "noise_bandwidth",
+        "amplitude_fraction"
+      ],
+      "outputs": [
+        "oversampling_ratio",
+        "snr_linear",
+        "process_gain_db",
+        "snr_db"
+      ]
+    },
+    {
+      "id": "data.sar_acquisition_settling",
+      "title": "SAR ADC half-LSB acquisition settling",
+      "category": "ADC DAC and sampled systems",
+      "level": "expert",
+      "formula": "tau = (R_source + R_switch) C_sample; alpha = abs(step)/V_span; t_min = tau ln(alpha * 2^(N+1))",
+      "inputs": [
+        "bits",
+        "source_resistance",
+        "switch_resistance",
+        "sample_capacitance",
+        "step_fraction"
+      ],
+      "outputs": [
+        "time_constant_s",
+        "required_time_constants",
+        "minimum_acquisition_s"
+      ]
+    },
+    {
+      "id": "data.dynamic_enob",
+      "title": "Dynamic ENOB from measured SINAD",
+      "category": "ADC DAC and sampled systems",
+      "level": "intermediate",
+      "formula": "ENOB = (SINAD_dB - 10 log10(3/2))/(20 log10(2))",
+      "inputs": [
+        "sinad_db"
+      ],
+      "outputs": [
+        "enob_bits"
+      ]
+    },
+    {
+      "id": "data.nyquist_sampling_margin",
+      "title": "Baseband Nyquist sampling margin",
+      "category": "ADC DAC and sampled systems",
+      "level": "basic",
+      "formula": "f_N = f_s/2; margin = f_N - f_max; rate_ratio = f_s/(2f_max)",
+      "inputs": [
+        "sample_rate",
+        "highest_frequency"
+      ],
+      "outputs": [
+        "nyquist_frequency",
+        "frequency_margin",
+        "rate_ratio"
+      ]
+    },
+    {
+      "id": "data.tone_alias_frequency",
+      "title": "Sampled tone alias frequency",
+      "category": "ADC DAC and sampled systems",
+      "level": "intermediate",
+      "formula": "k = floor(f_in/f_s + 1/2); f_alias = abs(f_in - k f_s)",
+      "inputs": [
+        "input_frequency",
+        "sample_rate"
+      ],
+      "outputs": [
+        "nearest_sample_multiple",
+        "alias_frequency"
+      ]
+    },
+    {
+      "id": "data.unipolar_dac_output",
+      "title": "Ideal unipolar DAC output voltage",
+      "category": "ADC DAC and sampled systems",
+      "level": "basic",
+      "formula": "V_span = gain * V_ref; V_out = code * V_span/2^N; V_max_code = (2^N - 1)*V_span/2^N",
+      "inputs": [
+        "bits",
+        "code",
+        "reference_v",
+        "gain"
+      ],
+      "outputs": [
+        "configured_span",
+        "output_v",
+        "maximum_code_v"
+      ]
+    },
+    {
+      "id": "dc.ohm_current",
+      "title": "Signed Ohm-law current",
+      "category": "DC circuits and resistor networks",
+      "level": "basic",
+      "formula": "I = V / R",
+      "inputs": [
+        "voltage",
+        "resistance"
+      ],
+      "outputs": [
+        "current"
+      ]
+    },
+    {
+      "id": "dc.loaded_wheatstone_bridge",
+      "title": "Loaded Wheatstone bridge and common-mode voltage",
+      "category": "DC circuits and resistor networks",
+      "level": "expert",
+      "formula": "Va0 = Vs R2/(R1+R2); Vb0 = Vs R4/(R3+R4); Ra = R1||R2; Rb = R3||R4; Id = (Va0-Vb0)/(Ra+Rb+Rd); Va = Va0-Id Ra; Vb = Vb0+Id Rb; Vdiff = Id Rd; Vcm = (Va+Vb)/2",
+      "inputs": [
+        "v_excitation",
+        "r_1",
+        "r_2",
+        "r_3",
+        "r_4",
+        "r_detector"
+      ],
+      "outputs": [
+        "v_open",
+        "r_output",
+        "i_detector",
+        "v_loaded",
+        "v_left",
+        "v_right",
+        "v_common"
+      ]
+    },
+    {
+      "id": "dc.two_source_node",
+      "title": "Two-source resistive node with load",
+      "category": "DC circuits and resistor networks",
+      "level": "expert",
+      "formula": "G = 1/R1+1/R2+1/Rl; Vnode = (V1/R1+V2/R2)/G; I1 = (V1-Vnode)/R1; I2 = (V2-Vnode)/R2; Il = Vnode/Rl",
+      "inputs": [
+        "v_1",
+        "r_1",
+        "v_2",
+        "r_2",
+        "r_load"
+      ],
+      "outputs": [
+        "g_total",
+        "v_node",
+        "i_source_1",
+        "i_source_2",
+        "i_load"
+      ]
+    },
+    {
+      "id": "dc.resistor_dissipation",
+      "title": "Steady resistor dissipation",
+      "category": "DC circuits and resistor networks",
+      "level": "basic",
+      "formula": "P = I^2 R",
+      "inputs": [
+        "current",
+        "resistance"
+      ],
+      "outputs": [
+        "power"
+      ]
+    },
+    {
+      "id": "dc.series_parallel_branches",
+      "title": "Two series branches in parallel",
+      "category": "DC circuits and resistor networks",
+      "level": "basic",
+      "formula": "A = R1 + R2; B = R3 + R4; Req = A B / (A + B); I1 = V / A; I2 = V / B",
+      "inputs": [
+        "voltage",
+        "r_1",
+        "r_2",
+        "r_3",
+        "r_4"
+      ],
+      "outputs": [
+        "r_branch_1",
+        "r_branch_2",
+        "r_equivalent",
+        "i_total",
+        "i_branch_1",
+        "i_branch_2"
+      ]
+    },
+    {
+      "id": "dc.loaded_divider",
+      "title": "Finite-load voltage divider",
+      "category": "DC circuits and resistor networks",
+      "level": "intermediate",
+      "formula": "Vopen = Vin Rbottom/(Rtop+Rbottom); Rout = Rtop Rbottom/(Rtop+Rbottom); Vloaded = Vopen Rload/(Rout+Rload); error = Rout/(Rout+Rload)",
+      "inputs": [
+        "v_in",
+        "r_top",
+        "r_bottom",
+        "r_load"
+      ],
+      "outputs": [
+        "v_open",
+        "r_output",
+        "v_loaded",
+        "i_load",
+        "loading_error"
+      ]
+    },
+    {
+      "id": "dc.resistive_source_matching",
+      "title": "Resistive source loading and maximum-power match",
+      "category": "DC circuits and resistor networks",
+      "level": "intermediate",
+      "formula": "I = Vth/(Rs+Rl); Vl = I Rl; Pl = I^2 Rl; Ps = I^2 Rs; Rmatch = Rs; Pmax = Vth^2/(4 Rs)",
+      "inputs": [
+        "v_thevenin",
+        "r_source",
+        "r_load"
+      ],
+      "outputs": [
+        "current",
+        "v_load",
+        "p_load",
+        "p_source_resistance",
+        "r_match",
+        "p_maximum"
+      ]
+    },
+    {
+      "id": "dc.delta_to_star",
+      "title": "Delta-to-star resistor equivalence",
+      "category": "DC circuits and resistor networks",
+      "level": "intermediate",
+      "formula": "S = Rab+Rbc+Rca; Ra = Rab Rca/S; Rb = Rab Rbc/S; Rc = Rbc Rca/S",
+      "inputs": [
+        "r_ab",
+        "r_bc",
+        "r_ca"
+      ],
+      "outputs": [
+        "r_a",
+        "r_b",
+        "r_c"
+      ]
+    },
+    {
+      "id": "diodes.led_series_resistor",
+      "title": "LED series resistor and tolerance corners",
+      "category": "Diodes, LEDs and rectification",
+      "level": "basic",
+      "formula": "R = (Vs - N Vf)/I; Imax = (Vs,max - N Vf,min)/R; PR,max = (Vs,max - N Vf,min)^2/R",
+      "inputs": [
+        "supply",
+        "supply_max",
+        "forward_voltage",
+        "forward_min",
+        "led_count",
+        "target_current"
+      ],
+      "outputs": [
+        "resistance",
+        "resistor_power",
+        "led_power",
+        "current_max",
+        "resistor_power_max"
+      ]
+    },
+    {
+      "id": "diodes.shockley_forward_current",
+      "title": "Shockley diode current and incremental resistance",
+      "category": "Diodes, LEDs and rectification",
+      "level": "expert",
+      "formula": "VT = kT/q; ID = IS[exp(VD/(n VT))-1]; rd = n VT/(ID+IS)",
+      "inputs": [
+        "diode_voltage",
+        "saturation_current",
+        "ideality",
+        "temperature",
+        "model_current_max"
+      ],
+      "outputs": [
+        "thermal_voltage",
+        "diode_current",
+        "junction_power",
+        "incremental_resistance"
+      ]
+    },
+    {
+      "id": "diodes.zener_shunt_resistor_window",
+      "title": "Zener shunt-regulator resistor design window",
+      "category": "Diodes, LEDs and rectification",
+      "level": "expert",
+      "formula": "Rnom,min = (Vin,max - Vz,min)/[(Iz,max + IL,min)(1-t)]; Rnom,max = (Vin,min - Vz,max)/[(Iz,min + IL,max)(1+t)]",
+      "inputs": [
+        "input_min",
+        "input_max",
+        "zener_min",
+        "zener_max",
+        "load_min",
+        "load_max",
+        "zener_current_min",
+        "zener_current_limit",
+        "resistor_tolerance",
+        "resistance"
+      ],
+      "outputs": [
+        "resistance_min",
+        "resistance_max",
+        "zener_current_low",
+        "zener_current_high",
+        "zener_power_bound",
+        "resistor_power_bound"
+      ]
+    },
+    {
+      "id": "diodes.reverse_recovery_charge_budget",
+      "title": "Diode reverse-recovery charge and commutation budget",
+      "category": "Diodes, LEDs and rectification",
+      "level": "expert",
+      "formula": "Qrr \u2248 IR,peak ttriangle/2; EQ = VR Qrr; PQ = fcomm EQ; IQ,avg = fcomm Qrr",
+      "inputs": [
+        "reverse_peak_current",
+        "triangle_duration",
+        "reverse_voltage",
+        "commutation_frequency"
+      ],
+      "outputs": [
+        "recovery_charge",
+        "charge_energy_budget",
+        "charge_power_budget",
+        "reverse_charge_current_avg"
+      ]
+    },
+    {
+      "id": "diodes.bridge_conduction_loss",
+      "title": "Bridge rectifier waveform-dependent conduction loss",
+      "category": "Diodes, LEDs and rectification",
+      "level": "intermediate",
+      "formula": "VF(i) = V0 + rd i; Pbridge = 2(V0 Iavg + rd Irms^2); Pdiode = Pbridge/4",
+      "inputs": [
+        "threshold_voltage",
+        "slope_resistance",
+        "path_current_avg",
+        "path_current_rms",
+        "path_current_peak"
+      ],
+      "outputs": [
+        "bridge_power",
+        "power_per_diode",
+        "peak_path_drop"
+      ]
+    },
+    {
+      "id": "diodes.full_wave_capacitor_ripple",
+      "title": "Full-wave capacitor-input rectifier ripple",
+      "category": "Diodes, LEDs and rectification",
+      "level": "intermediate",
+      "formula": "fr = 2 fline; Vpk = sqrt(2) Vac,rms - 2 VF; Vr,pp = IL/(fr C); Vdc \u2248 Vpk - Vr,pp/2; Vr,rms \u2248 Vr,pp/sqrt(12)",
+      "inputs": [
+        "source_rms",
+        "line_frequency",
+        "forward_drop",
+        "load_current",
+        "capacitance"
+      ],
+      "outputs": [
+        "ripple_frequency",
+        "capacitor_peak",
+        "ripple_pp",
+        "capacitor_trough",
+        "output_dc",
+        "ripple_rms"
+      ]
+    },
+    {
+      "id": "diodes.biased_two_sided_clipper",
+      "title": "Biased two-sided diode clipper",
+      "category": "Diodes, LEDs and rectification",
+      "level": "basic",
+      "formula": "VH = Vref,H + VF,H; VL = Vref,L - VF,L; Vo = min(max(Vi,VL),VH)",
+      "inputs": [
+        "input_voltage",
+        "upper_reference",
+        "lower_reference",
+        "upper_drop",
+        "lower_drop",
+        "series_resistance"
+      ],
+      "outputs": [
+        "upper_level",
+        "lower_level",
+        "output_voltage",
+        "upper_current",
+        "lower_current",
+        "resistor_power"
+      ]
+    },
+    {
+      "id": "diodes.parallel_led_ballast",
+      "title": "Two-branch LED ballast and current sharing",
+      "category": "Diodes, LEDs and rectification",
+      "level": "intermediate",
+      "formula": "Rmin = abs(VF2-VF1)/DeltaIallow; I1 = [Itotal+(VF2-VF1)/R]/2; I2 = [Itotal+(VF1-VF2)/R]/2",
+      "inputs": [
+        "total_current",
+        "forward_one",
+        "forward_two",
+        "allowed_difference",
+        "ballast_resistance",
+        "supply",
+        "sink_headroom_min"
+      ],
+      "outputs": [
+        "ballast_min",
+        "current_one",
+        "current_two",
+        "current_difference",
+        "branch_voltage",
+        "ballast_power_total",
+        "sink_headroom"
+      ]
+    },
+    {
+      "id": "filters.rc_lowpass_response",
+      "title": "First-order RC low-pass response",
+      "category": "Analog filters",
+      "level": "basic",
+      "formula": "H(jw)=1/(1+jwRC); fc=1/(2*pi*R*C); x=f/fc; |H|=1/sqrt(1+x^2)",
+      "inputs": [
+        "r",
+        "c",
+        "f"
+      ],
+      "outputs": [
+        "cutoff_hz",
+        "frequency_ratio",
+        "voltage_gain",
+        "phase_rad",
+        "attenuation_db"
+      ]
+    },
+    {
+      "id": "filters.deliyannis_bandpass_design",
+      "title": "Modified Deliyannis band-pass component design",
+      "category": "Analog filters",
+      "level": "expert",
+      "formula": "R0=1/(2*pi*f0*C0); R1=R4=R0; R3=R0*(2*Q-1); R2=R0/(2*Q-1); peak gain=Q; BW=f0/Q",
+      "inputs": [
+        "center_frequency",
+        "q",
+        "c0",
+        "f"
+      ],
+      "outputs": [
+        "r0",
+        "r3",
+        "r2",
+        "peak_gain",
+        "bandwidth_hz",
+        "lower_edge_hz",
+        "upper_edge_hz",
+        "voltage_gain"
+      ]
+    },
+    {
+      "id": "filters.butterworth_spec_synthesis",
+      "title": "Butterworth order and cutoff from attenuation specifications",
+      "category": "Analog filters",
+      "level": "expert",
+      "formula": "N=ceil(ln((10^(As/10)-1)/(10^(Ap/10)-1))/(2*ln(fs/fp))); fc_min=fp/(10^(Ap/10)-1)^(1/(2*N)); fc_max=fs/(10^(As/10)-1)^(1/(2*N)); loss differences use equivalent log1p/expm1 forms",
+      "inputs": [
+        "passband_edge",
+        "stopband_edge",
+        "passband_loss",
+        "stopband_loss"
+      ],
+      "outputs": [
+        "order_bound",
+        "order",
+        "cutoff_min_hz",
+        "cutoff_max_hz",
+        "actual_passband_db",
+        "actual_stopband_db"
+      ]
+    },
+    {
+      "id": "filters.sallen_key_lowpass",
+      "title": "General Sallen-Key low-pass pole, Q and response",
+      "category": "Analog filters",
+      "level": "expert",
+      "formula": "P=R1*R2*C1*C2; D=R1*C1+R2*C1+R1*C2*(1-K); f0=1/(2*pi*sqrt(P)); Q=sqrt(P)/D; H(s)=K/(P*s^2+D*s+1)",
+      "inputs": [
+        "r1",
+        "r2",
+        "c1",
+        "c2",
+        "amplifier_gain",
+        "f"
+      ],
+      "outputs": [
+        "dc_gain",
+        "pole_hz",
+        "section_q",
+        "frequency_ratio",
+        "voltage_gain",
+        "gain_db",
+        "half_power_hz"
+      ]
+    },
+    {
+      "id": "filters.fliege_notch_response",
+      "title": "Fliege notch component and frequency response",
+      "category": "Analog filters",
+      "level": "intermediate",
+      "formula": "f0=1/(2*pi*R0*C0); Q=RQ/(2*R0); x=f/f0; H(s)=(s^2+w0^2)/(s^2+(w0/Q)*s+w0^2); |H|=abs(1-x^2)/sqrt((1-x^2)^2+(x/Q)^2)",
+      "inputs": [
+        "r0",
+        "c0",
+        "rq",
+        "f"
+      ],
+      "outputs": [
+        "notch_hz",
+        "section_q",
+        "frequency_ratio",
+        "voltage_gain",
+        "bandwidth_hz",
+        "lower_edge_hz",
+        "upper_edge_hz"
+      ]
+    },
+    {
+      "id": "filters.rc_highpass_response",
+      "title": "First-order RC high-pass response",
+      "category": "Analog filters",
+      "level": "basic",
+      "formula": "H(jw)=jwRC/(1+jwRC); fc=1/(2*pi*R*C); |H|=x/sqrt(1+x^2); phase=atan(1/x); attenuation=(10/ln(10))*log1p(1/x^2)",
+      "inputs": [
+        "r",
+        "c",
+        "f"
+      ],
+      "outputs": [
+        "cutoff_hz",
+        "frequency_ratio",
+        "voltage_gain",
+        "phase_rad",
+        "attenuation_db"
+      ]
+    },
+    {
+      "id": "filters.second_order_highpass",
+      "title": "Second-order active high-pass response",
+      "category": "Analog filters",
+      "level": "intermediate",
+      "formula": "H(s)=K*(s/w0)^2/((s/w0)^2+s/(Q*w0)+1); |H|=K*x^2/sqrt((1-x^2)^2+(x/Q)^2)",
+      "inputs": [
+        "pole_frequency",
+        "q",
+        "passband_gain",
+        "f"
+      ],
+      "outputs": [
+        "frequency_ratio",
+        "voltage_gain",
+        "gain_db",
+        "half_power_hz"
+      ]
+    },
+    {
+      "id": "filters.buffered_rc_cascade",
+      "title": "Buffered identical RC low-pass cascade",
+      "category": "Analog filters",
+      "level": "intermediate",
+      "formula": "H(s)=(1/(1+sRC))^N; fc_total=fc_stage*sqrt(2^(1/N)-1); |H|=(1+x^2)^(-N/2); phase=-N*atan(x); attenuation=(10*N/ln(10))*log1p(x^2)",
+      "inputs": [
+        "r",
+        "c",
+        "stage_count",
+        "f"
+      ],
+      "outputs": [
+        "stage_cutoff_hz",
+        "overall_order",
+        "cascade_cutoff_hz",
+        "frequency_ratio",
+        "voltage_gain",
+        "phase_rad",
+        "attenuation_db"
+      ]
+    },
+    {
+      "id": "magnetics.turns_ratio",
+      "title": "Ideal transformer turns ratio and reflected load",
+      "category": "Magnetics and transformers",
+      "level": "basic",
+      "formula": "a = Ns/Np; Vs = a Vp; Rprimary = Rload/a\u00b2",
+      "inputs": [
+        "primary_turns",
+        "secondary_turns",
+        "primary_voltage",
+        "load_resistance"
+      ],
+      "outputs": [
+        "voltage_ratio",
+        "secondary_voltage",
+        "reflected_resistance"
+      ]
+    },
+    {
+      "id": "magnetics.rectangular_toroid_inductance",
+      "title": "Rectangular-section toroid inductance",
+      "category": "Magnetics and transformers",
+      "level": "expert",
+      "formula": "L = mu0 mur N\u00b2 h ln(ro/ri)/(2 pi); Binner = mu0 mur N Ipk/(2 pi ri)",
+      "inputs": [
+        "inner_radius",
+        "outer_radius",
+        "height",
+        "relative_permeability",
+        "turns",
+        "peak_current",
+        "linear_flux_limit"
+      ],
+      "outputs": [
+        "inductance",
+        "inner_flux_density"
+      ]
+    },
+    {
+      "id": "magnetics.gapped_core_inductance",
+      "title": "Finite-permeability gapped-core inductance",
+      "category": "Magnetics and transformers",
+      "level": "expert",
+      "formula": "Rc = lc/(mu0 mur w h); Rg = g/(mu0 w h); L = N\u00b2/(Rc+Rg); Bpk = N Ipk/((Rc+Rg) w h)",
+      "inputs": [
+        "core_length",
+        "pole_width",
+        "pole_height",
+        "gap_length",
+        "relative_permeability",
+        "turns",
+        "peak_current",
+        "linear_flux_limit"
+      ],
+      "outputs": [
+        "core_reluctance",
+        "gap_reluctance",
+        "inductance",
+        "peak_flux_density"
+      ]
+    },
+    {
+      "id": "magnetics.conductor_skin_depth",
+      "title": "Good-conductor skin depth",
+      "category": "Magnetics and transformers",
+      "level": "expert",
+      "formula": "delta = sqrt(1/(pi f mu0 mur sigma)); require sigma/(2 pi f eps0 epsr) >= 100",
+      "inputs": [
+        "frequency",
+        "conductivity",
+        "relative_permeability",
+        "relative_permittivity"
+      ],
+      "outputs": [
+        "skin_depth"
+      ]
+    },
+    {
+      "id": "magnetics.coupled_coil_inductance",
+      "title": "Mutual and series-connected coupled-coil inductance",
+      "category": "Magnetics and transformers",
+      "level": "intermediate",
+      "formula": "M = k sqrt(L1 L2); Laiding = L1+L2+2M; Lopposing = L1+L2-2M",
+      "inputs": [
+        "inductance_one",
+        "inductance_two",
+        "coupling"
+      ],
+      "outputs": [
+        "mutual_inductance",
+        "series_aiding",
+        "series_opposing"
+      ]
+    },
+    {
+      "id": "magnetics.sinusoidal_flux_density",
+      "title": "Sinusoidal transformer peak flux density",
+      "category": "Magnetics and transformers",
+      "level": "intermediate",
+      "formula": "Bpk = sqrt(2) Vrms/(2 pi f N Ae); Phiflux,pk = Bpk Ae",
+      "inputs": [
+        "rms_voltage",
+        "frequency",
+        "turns",
+        "core_area",
+        "flux_limit"
+      ],
+      "outputs": [
+        "peak_flux_density",
+        "peak_flux"
+      ]
+    },
+    {
+      "id": "magnetics.field_energy_density",
+      "title": "Magnetic field energy in a material volume",
+      "category": "Magnetics and transformers",
+      "level": "intermediate",
+      "formula": "u = B\u00b2/(2 mu0 mur); W = u Volume",
+      "inputs": [
+        "flux_density",
+        "relative_permeability",
+        "volume",
+        "linear_flux_limit"
+      ],
+      "outputs": [
+        "energy_density",
+        "field_energy"
+      ]
+    },
+    {
+      "id": "magnetics.transformer_va_budget",
+      "title": "Two-secondary transformer VA budget",
+      "category": "Magnetics and transformers",
+      "level": "basic",
+      "formula": "S1 = V1,rms I1,rms; S2 = V2,rms I2,rms; Sload = S1+S2; Sminimum = headroom Sload",
+      "inputs": [
+        "secondary_one_voltage",
+        "secondary_one_current",
+        "secondary_two_voltage",
+        "secondary_two_current",
+        "headroom_factor"
+      ],
+      "outputs": [
+        "secondary_one_va",
+        "secondary_two_va",
+        "total_load_va",
+        "minimum_rating_va"
+      ]
+    },
+    {
+      "id": "mosfet.gate_charge_supply",
+      "title": "Gate-charge average supply current and drive power",
+      "category": "MOSFET and gate drive",
+      "level": "basic",
+      "formula": "I_supply = Q_g f_sw; E_drive = Q_g V_drive; P_drive = E_drive f_sw",
+      "inputs": [
+        "q_g",
+        "f_sw",
+        "v_drive"
+      ],
+      "outputs": [
+        "i_supply",
+        "e_drive",
+        "p_drive"
+      ]
+    },
+    {
+      "id": "mosfet.gate_loop_damping_resistor",
+      "title": "Gate-loop critical-damping resistor selection",
+      "category": "MOSFET and gate drive",
+      "level": "expert",
+      "formula": "R_critical = 2 sqrt(L_loop/C_iss); R_external = max(0, R_critical - R_driver - R_internal); zeta = (R_driver + R_internal + R_external)/R_critical",
+      "inputs": [
+        "l_loop",
+        "c_iss",
+        "r_driver",
+        "r_internal"
+      ],
+      "outputs": [
+        "r_critical",
+        "r_external",
+        "zeta"
+      ]
+    },
+    {
+      "id": "mosfet.bootstrap_charge_budget",
+      "title": "Bootstrap capacitance from gate and driver charge budget",
+      "category": "MOSFET and gate drive",
+      "level": "expert",
+      "formula": "Q_total = Q_g + I_hbs D_max/f_sw + I_hb/f_sw; V_headroom = V_dd - V_diode - V_min; C_min = Q_total/Delta_V",
+      "inputs": [
+        "q_g",
+        "i_hbs",
+        "i_hb",
+        "d_max",
+        "f_sw",
+        "v_dd",
+        "v_diode",
+        "v_min",
+        "delta_v"
+      ],
+      "outputs": [
+        "q_total",
+        "v_headroom",
+        "c_min"
+      ]
+    },
+    {
+      "id": "mosfet.output_capacitance_hard_turn_on_loss",
+      "title": "MOSFET output-capacitance hard turn-on loss",
+      "category": "MOSFET and gate drive",
+      "level": "expert",
+      "formula": "E_oss = C_o_er V_ds^2/2; P_oss = E_oss f_sw",
+      "inputs": [
+        "c_o_er",
+        "v_ds",
+        "f_sw"
+      ],
+      "outputs": [
+        "e_oss",
+        "p_oss"
+      ]
+    },
+    {
+      "id": "mosfet.channel_conduction_loss",
+      "title": "MOSFET conduction loss with on-state current ripple",
+      "category": "MOSFET and gate drive",
+      "level": "basic",
+      "formula": "I_rms = sqrt(D (I_mean^2 + Delta_I_pp^2/12)); P_cond = I_rms^2 R_ds_on",
+      "inputs": [
+        "i_mean",
+        "delta_i_pp",
+        "duty",
+        "r_ds_on"
+      ],
+      "outputs": [
+        "i_rms",
+        "p_cond"
+      ]
+    },
+    {
+      "id": "mosfet.hard_switch_overlap_loss",
+      "title": "Clamped-inductive switching overlap loss",
+      "category": "MOSFET and gate drive",
+      "level": "intermediate",
+      "formula": "E_on = V_off I_load t_on/2; E_off = V_off I_load t_off/2; P_overlap = (E_on + E_off) f_sw",
+      "inputs": [
+        "v_off",
+        "i_load",
+        "t_on",
+        "t_off",
+        "f_sw"
+      ],
+      "outputs": [
+        "e_on",
+        "e_off",
+        "e_cycle",
+        "p_overlap"
+      ]
+    },
+    {
+      "id": "mosfet.miller_plateau_timing",
+      "title": "Miller plateau source/sink timing",
+      "category": "MOSFET and gate drive",
+      "level": "intermediate",
+      "formula": "I_on = (V_drive - V_plateau)/(R_source + R_external + R_internal); I_off = V_plateau/(R_sink + R_external + R_internal); t_on = Q_gd/I_on; t_off = Q_gd/I_off",
+      "inputs": [
+        "q_gd",
+        "v_drive",
+        "v_plateau",
+        "r_source",
+        "r_sink",
+        "r_external",
+        "r_internal"
+      ],
+      "outputs": [
+        "i_gate_on",
+        "i_gate_off",
+        "t_miller_on",
+        "t_miller_off"
+      ]
+    },
+    {
+      "id": "mosfet.long_channel_triode_current",
+      "title": "Long-channel NMOS triode-region current",
+      "category": "MOSFET and gate drive",
+      "level": "intermediate",
+      "formula": "beta = mu_n C_ox W/L; V_overdrive = V_gs - V_th; I_d = beta (V_overdrive V_ds - V_ds^2/2)",
+      "inputs": [
+        "beta",
+        "v_gs",
+        "v_th",
+        "v_ds"
+      ],
+      "outputs": [
+        "v_overdrive",
+        "i_d"
+      ]
+    },
+    {
+      "id": "noise.johnson_resistor",
+      "title": "Resistor Johnson noise",
+      "category": "Noise measurement and analog budgets",
+      "level": "basic",
+      "formula": "e_n = sqrt(4 k T R); v_rms = e_n sqrt(B)",
+      "inputs": [
+        "resistance",
+        "temperature",
+        "bandwidth"
+      ],
+      "outputs": [
+        "voltage_noise_density",
+        "voltage_noise_rms"
+      ]
+    },
+    {
+      "id": "noise.noninverting_amplifier_budget",
+      "title": "Non-inverting amplifier white-noise budget",
+      "category": "Noise measurement and analog budgets",
+      "level": "expert",
+      "formula": "G_N=1+R_F/R_G; e_o^2=(e_n^2+(i_plus R_S)^2+4kTR_S)G_N^2+(i_minus R_F)^2+4kTR_F G_N; v_o=e_o sqrt(B); v_in=v_o/G_N",
+      "inputs": [
+        "source_resistance",
+        "feedback_resistance",
+        "ground_resistance",
+        "voltage_density",
+        "plus_current_density",
+        "minus_current_density",
+        "temperature",
+        "bandwidth"
+      ],
+      "outputs": [
+        "noise_gain",
+        "output_noise_density",
+        "output_noise_rms",
+        "input_referred_noise_rms"
+      ]
+    },
+    {
+      "id": "noise.friis_three_stage",
+      "title": "Three-stage Friis noise cascade",
+      "category": "Noise measurement and analog budgets",
+      "level": "expert",
+      "formula": "c=ln(10)/10; G_i=10^(g_i/10); s=NF_1 exprel(c NF_1)+NF_2 exprel(c NF_2)/G_1+NF_3 exprel(c NF_3)/(G_1G_2); F_total=1+c s; NF_total=s log1prel(c s); T_e=NF_1 (290 c) exprel(c NF_1)+NF_2 (290 c) exprel(c NF_2)/G_1+NF_3 (290 c) exprel(c NF_3)/(G_1G_2)",
+      "inputs": [
+        "first_noise_figure_db",
+        "second_noise_figure_db",
+        "third_noise_figure_db",
+        "first_gain_db",
+        "second_gain_db"
+      ],
+      "outputs": [
+        "first_noise_factor",
+        "second_noise_factor",
+        "third_noise_factor",
+        "first_power_gain",
+        "second_power_gain",
+        "cascade_noise_factor",
+        "cascade_noise_figure_db",
+        "cascade_noise_temperature"
+      ]
+    },
+    {
+      "id": "noise.junction_shot",
+      "title": "Junction shot noise",
+      "category": "Noise measurement and analog budgets",
+      "level": "intermediate",
+      "formula": "i_n = sqrt(2 q I); i_rms = sqrt(2 q I B)",
+      "inputs": [
+        "dc_current",
+        "bandwidth"
+      ],
+      "outputs": [
+        "current_noise_density",
+        "current_noise_rms"
+      ]
+    },
+    {
+      "id": "noise.uncorrelated_rms_sum",
+      "title": "Three-source RMS noise sum",
+      "category": "Noise measurement and analog budgets",
+      "level": "basic",
+      "formula": "v_total = sqrt(v_1^2 + v_2^2 + v_3^2)",
+      "inputs": [
+        "noise_one",
+        "noise_two",
+        "noise_three"
+      ],
+      "outputs": [
+        "total_noise_rms"
+      ]
+    },
+    {
+      "id": "noise.decibel_to_linear",
+      "title": "Decibel gain to linear ratios",
+      "category": "Noise measurement and analog budgets",
+      "level": "basic",
+      "formula": "P_2/P_1=10^(g_dB/10); abs(V_2/V_1)=sqrt(P_2/P_1)",
+      "inputs": [
+        "gain_db"
+      ],
+      "outputs": [
+        "power_ratio",
+        "voltage_ratio"
+      ]
+    },
+    {
+      "id": "noise.analog_dynamic_range",
+      "title": "Analog dynamic range and detection margin",
+      "category": "Noise measurement and analog budgets",
+      "level": "intermediate",
+      "formula": "V_max,rms=V_peak/sqrt(2); V_min,rms=V_noise,rms 10^(SNR_req/20); DR_noise=20log10(V_max,rms/V_noise,rms); DR_usable=20log10(V_max,rms/V_min,rms)",
+      "inputs": [
+        "maximum_sine_peak",
+        "noise_rms",
+        "required_snr_db"
+      ],
+      "outputs": [
+        "maximum_signal_rms",
+        "minimum_signal_rms",
+        "noise_limited_dynamic_range_db",
+        "usable_dynamic_range_db"
+      ]
+    },
+    {
+      "id": "noise.figure_equivalent_temperature",
+      "title": "Noise figure to equivalent input temperature",
+      "category": "Noise measurement and analog budgets",
+      "level": "intermediate",
+      "formula": "F=10^(NF/10); c=ln(10)/10; T_e=NF (290 c) exprel(c NF)",
+      "inputs": [
+        "noise_figure_db"
+      ],
+      "outputs": [
+        "noise_factor",
+        "equivalent_noise_temperature"
+      ]
+    },
+    {
+      "id": "opamps.inverting_stage",
+      "title": "Inverting amplifier with reference bias",
+      "category": "Operational amplifier stages",
+      "level": "basic",
+      "formula": "G = -Rf/Rin; Vo = Vref + G(Vin - Vref)",
+      "inputs": [
+        "r_in",
+        "r_feedback",
+        "v_in",
+        "v_reference",
+        "v_out_min",
+        "v_out_max",
+        "v_cm_min",
+        "v_cm_max"
+      ],
+      "outputs": [
+        "gain",
+        "v_out"
+      ]
+    },
+    {
+      "id": "opamps.difference_ratio_error",
+      "title": "Difference amplifier resistor-ratio error",
+      "category": "Operational amplifier stages",
+      "level": "expert",
+      "formula": "k = R2/R1; q = R4/R3; p = q/(1+q); Vpin = p V2 + (1-p)Vref; Vo = (1+k)q/(1+q)(V2-V1) + (q-k)/(1+q)V1 + (1+k)/(1+q)Vref; Ad = ((1+k)p+k)/2; Acm = (q-k)/(1+q)",
+      "inputs": [
+        "r_one",
+        "r_two",
+        "r_three",
+        "r_four",
+        "v_one",
+        "v_two",
+        "v_reference",
+        "v_out_min",
+        "v_out_max",
+        "v_cm_min",
+        "v_cm_max"
+      ],
+      "outputs": [
+        "differential_gain",
+        "common_mode_gain",
+        "pin_voltage",
+        "v_out"
+      ]
+    },
+    {
+      "id": "opamps.dominant_pole_gain_bandwidth",
+      "title": "Finite-gain dominant-pole amplifier bandwidth",
+      "category": "Operational amplifier stages",
+      "level": "expert",
+      "formula": "N = 1+Rf/Rg; fp = GBW/A0; Gdc = A0/(1+A0/N); fcl = fp(1+A0/N); fcl_approx = GBW/N; relative_error = 1/(1+A0/N)",
+      "inputs": [
+        "r_ground",
+        "r_feedback",
+        "open_loop_gain",
+        "gain_bandwidth",
+        "minimum_stable_noise_gain"
+      ],
+      "outputs": [
+        "noise_gain",
+        "open_loop_pole",
+        "dc_gain",
+        "closed_loop_bandwidth",
+        "approximate_bandwidth",
+        "relative_gain_error"
+      ]
+    },
+    {
+      "id": "opamps.noninverting_stage",
+      "title": "Noninverting amplifier with reference bias",
+      "category": "Operational amplifier stages",
+      "level": "basic",
+      "formula": "G = 1 + Rf/Rg; Vo = Vin + (Rf/Rg)(Vin - Vref)",
+      "inputs": [
+        "r_ground",
+        "r_feedback",
+        "v_in",
+        "v_reference",
+        "v_out_min",
+        "v_out_max",
+        "v_cm_min",
+        "v_cm_max"
+      ],
+      "outputs": [
+        "gain",
+        "v_out"
+      ]
+    },
+    {
+      "id": "opamps.weighted_summing_stage",
+      "title": "Three-input weighted summing amplifier",
+      "category": "Operational amplifier stages",
+      "level": "intermediate",
+      "formula": "Gi = -Rf/Ri; Vo = Vref - Rf[(V1-Vref)/R1+(V2-Vref)/R2+(V3-Vref)/R3]",
+      "inputs": [
+        "r_one",
+        "r_two",
+        "r_three",
+        "r_feedback",
+        "v_one",
+        "v_two",
+        "v_three",
+        "v_reference",
+        "v_out_min",
+        "v_out_max",
+        "v_cm_min",
+        "v_cm_max"
+      ],
+      "outputs": [
+        "gain_one",
+        "gain_two",
+        "gain_three",
+        "v_out"
+      ]
+    },
+    {
+      "id": "opamps.integrator_constant_input",
+      "title": "Integrator constant-input ramp",
+      "category": "Operational amplifier stages",
+      "level": "intermediate",
+      "formula": "dVo/dt = -(Vin-Vref)/(R C); Vo(t) = Vo_initial - (Vin-Vref)t/(R C)",
+      "inputs": [
+        "r_input",
+        "c_feedback",
+        "v_in",
+        "v_reference",
+        "v_initial",
+        "duration",
+        "v_out_min",
+        "v_out_max",
+        "v_cm_min",
+        "v_cm_max"
+      ],
+      "outputs": [
+        "output_slope",
+        "v_final"
+      ]
+    },
+    {
+      "id": "opamps.differentiator_ramp",
+      "title": "Differentiator response to an input ramp",
+      "category": "Operational amplifier stages",
+      "level": "intermediate",
+      "formula": "m = (Vend-Vstart)/T; Vo = Vref - Rf C m",
+      "inputs": [
+        "r_feedback",
+        "c_input",
+        "v_start",
+        "v_end",
+        "duration",
+        "v_reference",
+        "v_out_min",
+        "v_out_max",
+        "v_cm_min",
+        "v_cm_max"
+      ],
+      "outputs": [
+        "input_slope",
+        "v_out"
+      ]
+    },
+    {
+      "id": "opamps.sinusoidal_slew_requirement",
+      "title": "Sinusoidal output slew-rate requirement",
+      "category": "Operational amplifier stages",
+      "level": "intermediate",
+      "formula": "SRrequired = 2 pi f Vpeak; SRdesign = M SRrequired; available_margin = SRavailable/SRrequired",
+      "inputs": [
+        "frequency",
+        "v_peak",
+        "v_center",
+        "slew_available",
+        "design_margin",
+        "v_out_min",
+        "v_out_max"
+      ],
+      "outputs": [
+        "required_slew",
+        "design_slew",
+        "slew_margin"
+      ]
+    },
+    {
+      "id": "pcb.trace_resistance_drop",
+      "title": "PCB trace DC resistance and voltage drop",
+      "category": "PCB interconnect and manufacturing",
+      "level": "basic",
+      "formula": "A = w t; R = rho L / A; V_drop = I R",
+      "inputs": [
+        "length",
+        "width",
+        "thickness",
+        "resistivity",
+        "current"
+      ],
+      "outputs": [
+        "cross_section",
+        "resistance",
+        "voltage_drop"
+      ]
+    },
+    {
+      "id": "pcb.ipc2221_current_estimate",
+      "title": "Legacy IPC-2221 trace current screening estimate",
+      "category": "PCB interconnect and manufacturing",
+      "level": "expert",
+      "formula": "A_mil2 = w_mil t_mil; I_external = 0.048 DeltaT^0.44 A_mil2^0.725; I_internal = 0.024 DeltaT^0.44 A_mil2^0.725",
+      "inputs": [
+        "width_mil",
+        "thickness_mil",
+        "temperature_rise"
+      ],
+      "outputs": [
+        "area_mil2",
+        "external_current",
+        "internal_current"
+      ]
+    },
+    {
+      "id": "pcb.via_barrel_resistance",
+      "title": "Plated via-barrel DC resistance",
+      "category": "PCB interconnect and manufacturing",
+      "level": "expert",
+      "formula": "A = pi p (d + p); R_single = rho L / A; R_bank = R_single / N",
+      "inputs": [
+        "barrel_length",
+        "finished_diameter",
+        "plating_thickness",
+        "plated_resistivity",
+        "via_count"
+      ],
+      "outputs": [
+        "barrel_copper_area",
+        "single_resistance",
+        "bank_resistance"
+      ]
+    },
+    {
+      "id": "pcb.annular_ring_registration",
+      "title": "Annular ring with hole-registration allowance",
+      "category": "PCB interconnect and manufacturing",
+      "level": "expert",
+      "formula": "r_nominal = (D_pad - D_tool)/2; r_min = r_nominal - offset",
+      "inputs": [
+        "pad_diameter",
+        "tool_diameter",
+        "registration_offset"
+      ],
+      "outputs": [
+        "nominal_ring",
+        "minimum_ring"
+      ]
+    },
+    {
+      "id": "pcb.nominal_copper_thickness",
+      "title": "Nominal PCB copper weight to thickness",
+      "category": "PCB interconnect and manufacturing",
+      "level": "basic",
+      "formula": "t_nominal = copper_weight * 35e-6 m; t_mil = t_nominal / 25.4e-6 m",
+      "inputs": [
+        "copper_weight"
+      ],
+      "outputs": [
+        "nominal_thickness",
+        "nominal_thickness_mil"
+      ]
+    },
+    {
+      "id": "pcb.differential_length_skew",
+      "title": "Differential-pair routed length-mismatch skew",
+      "category": "PCB interconnect and manufacturing",
+      "level": "intermediate",
+      "formula": "DeltaL = L_positive - L_negative; Delta_t = DeltaL * delay_per_length; skew = abs(Delta_t)",
+      "inputs": [
+        "positive_length",
+        "negative_length",
+        "delay_per_length"
+      ],
+      "outputs": [
+        "signed_length_mismatch",
+        "signed_skew",
+        "skew_magnitude"
+      ]
+    },
+    {
+      "id": "pcb.trace_joule_heat_density",
+      "title": "Trace volumetric Joule heating and deposited energy",
+      "category": "PCB interconnect and manufacturing",
+      "level": "intermediate",
+      "formula": "J = I/(w t); q_volume = rho J^2; P = q_volume L w t; E = P duration",
+      "inputs": [
+        "length",
+        "width",
+        "thickness",
+        "resistivity",
+        "pulse_current",
+        "duration"
+      ],
+      "outputs": [
+        "current_density",
+        "volumetric_heat_rate",
+        "generated_power",
+        "deposited_energy"
+      ]
+    },
+    {
+      "id": "pcb.stencil_aperture_area_ratio",
+      "title": "Rectangular solder-stencil aperture area ratio",
+      "category": "PCB interconnect and manufacturing",
+      "level": "intermediate",
+      "formula": "A_open = L W; A_wall = 2 (L+W) T; AR = A_open/A_wall; margin = AR - target",
+      "inputs": [
+        "aperture_length",
+        "aperture_width",
+        "stencil_thickness",
+        "target_area_ratio"
+      ],
+      "outputs": [
+        "opening_area",
+        "wall_area",
+        "area_ratio",
+        "ratio_margin"
+      ]
+    },
+    {
+      "id": "power.ldo_dissipation",
+      "title": "LDO dissipation including ground current",
+      "category": "Power conversion and regulation",
+      "level": "basic",
+      "formula": "Ppass = (Vin-Vout) Iout; Pgnd = Vin Ignd; Pdiss = Ppass+Pgnd",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "i_gnd",
+        "v_dropout"
+      ],
+      "outputs": [
+        "p_pass",
+        "p_ground",
+        "p_diss"
+      ]
+    },
+    {
+      "id": "power.boost_output_capacitor",
+      "title": "Boost output capacitor with ESR budget",
+      "category": "Power conversion and regulation",
+      "level": "expert",
+      "formula": "D = (Vout-Vin)/Vout; ILpeak = Iout Vout/Vin+delta_I/2; Vesr_pp = ESR ILpeak; Cmin = Iout D/[fs (Vbudget_pp-Vesr_pp)]",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "delta_i",
+        "fs",
+        "ripple_budget",
+        "esr"
+      ],
+      "outputs": [
+        "duty",
+        "i_peak",
+        "ripple_esr",
+        "ripple_cap_budget",
+        "c_min"
+      ]
+    },
+    {
+      "id": "power.buck_input_capacitor_rms",
+      "title": "Buck input capacitor RMS current",
+      "category": "Power conversion and regulation",
+      "level": "expert",
+      "formula": "D = Vout/Vin; ICin_rms = hypot(Iout sqrt(D (Vin-Vout)/Vin), delta_I sqrt(D/12))",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "delta_i"
+      ],
+      "outputs": [
+        "duty",
+        "i_cin_rms"
+      ]
+    },
+    {
+      "id": "power.boost_rhp_zero",
+      "title": "Boost right-half-plane zero",
+      "category": "Power conversion and regulation",
+      "level": "expert",
+      "formula": "D = (Vout-Vin)/Vout; Rload = Vout/Iout; fRHPZ = (Vin/Iout) (Vin/Vout)/(2 pi L); fc_guideline = fRHPZ/10",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "inductance",
+        "fs"
+      ],
+      "outputs": [
+        "duty",
+        "r_load",
+        "f_rhp_zero",
+        "f_crossover_guideline"
+      ]
+    },
+    {
+      "id": "power.converter_input_budget",
+      "title": "Converter input current and loss budget",
+      "category": "Power conversion and regulation",
+      "level": "basic",
+      "formula": "Pout = Vout Iout; Pin = Pout/eta; Iin = Pin/Vin; Ploss = Pout (1-eta)/eta = Pin-Pout",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "efficiency"
+      ],
+      "outputs": [
+        "p_out",
+        "p_in",
+        "i_in",
+        "p_loss"
+      ]
+    },
+    {
+      "id": "power.buck_inductor_design",
+      "title": "Buck CCM inductor sizing",
+      "category": "Power conversion and regulation",
+      "level": "intermediate",
+      "formula": "D = Vout/Vin; delta_I = r Iout; Lmin = (Vin-Vout) D/(fs delta_I); Ipeak,valley = Iout (1 +/- r/2)",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "fs",
+        "ripple_ratio"
+      ],
+      "outputs": [
+        "duty",
+        "delta_i",
+        "l_min",
+        "i_peak",
+        "i_valley"
+      ]
+    },
+    {
+      "id": "power.boost_inductor_design",
+      "title": "Boost CCM inductor sizing",
+      "category": "Power conversion and regulation",
+      "level": "intermediate",
+      "formula": "D = (Vout-Vin)/Vout; ILavg = Iout Vout/Vin; delta_I = r ILavg; Lmin = Vin D/(fs delta_I); Ipeak,valley = ILavg (1 +/- r/2)",
+      "inputs": [
+        "vin",
+        "vout",
+        "iout",
+        "fs",
+        "ripple_ratio"
+      ],
+      "outputs": [
+        "duty",
+        "i_l_avg",
+        "delta_i",
+        "l_min",
+        "i_peak",
+        "i_valley"
+      ]
+    },
+    {
+      "id": "power.buck_output_capacitor",
+      "title": "Buck output capacitor with ESR budget",
+      "category": "Power conversion and regulation",
+      "level": "intermediate",
+      "formula": "Vesr_pp = ESR delta_I; Vcap_budget = Vbudget_pp-Vesr_pp; Cmin = delta_I/(8 fs Vcap_budget)",
+      "inputs": [
+        "delta_i",
+        "iout",
+        "vout",
+        "fs",
+        "ripple_budget",
+        "esr"
+      ],
+      "outputs": [
+        "ripple_esr",
+        "ripple_cap_budget",
+        "c_min"
+      ]
+    },
+    {
+      "id": "signals.line_propagation",
+      "title": "Transmission-line delay and wavelength",
+      "category": "Signal integrity and transmission lines",
+      "level": "basic",
+      "formula": "v=c/sqrt(ee); td=l/v; lambda=v/f; theta=2*pi*l/lambda; c=299792458 m/s",
+      "inputs": [
+        "length",
+        "effective_permittivity",
+        "frequency"
+      ],
+      "outputs": [
+        "velocity",
+        "delay",
+        "round_trip_delay",
+        "wavelength",
+        "electrical_length"
+      ]
+    },
+    {
+      "id": "signals.microstrip_impedance",
+      "title": "Thin-conductor microstrip impedance",
+      "category": "Signal integrity and transmission lines",
+      "level": "expert",
+      "formula": "u=w/h; a=1+ln((u^4+(u/52)^2)/(u^4+0.432))/49+ln(1+(u/18.1)^3)/18.7; b=0.564*((er-0.9)/(er+3))^0.053; ee=(er+1)/2+(er-1)/2*(1+10/u)^(-a*b); F=6+(2*pi-6)*exp(-(30.666/u)^0.7528); Z0=60*ln(F/u+sqrt(1+(2/u)^2))/sqrt(ee)",
+      "inputs": [
+        "width",
+        "height",
+        "thickness",
+        "relative_permittivity",
+        "frequency"
+      ],
+      "outputs": [
+        "width_ratio",
+        "fit_a",
+        "fit_b",
+        "air_factor",
+        "effective_permittivity",
+        "air_impedance",
+        "impedance"
+      ]
+    },
+    {
+      "id": "signals.stripline_impedance",
+      "title": "Symmetric finite-thickness stripline impedance",
+      "category": "Signal integrity and transmission lines",
+      "level": "expert",
+      "formula": "u=w/b; q=t/b; ue=u-max(0,0.35-u)^2/(1+12*q); Cf=2/pi*ln(1/(1-q)+1)-q/pi*ln(q*(2-q)/(1-q)^2); Z0=30*pi*(1-q)/(sqrt(er)*(ue+Cf))",
+      "inputs": [
+        "width",
+        "plane_spacing",
+        "thickness",
+        "relative_permittivity"
+      ],
+      "outputs": [
+        "width_ratio",
+        "thickness_ratio",
+        "effective_width_ratio",
+        "fringe_factor",
+        "impedance"
+      ]
+    },
+    {
+      "id": "signals.quarter_wave_transformer",
+      "title": "Quarter-wave impedance transformer",
+      "category": "Signal integrity and transmission lines",
+      "level": "expert",
+      "formula": "Ztransformer=sqrt(Rsource*Rload); length=c/(4*f*sqrt(ee))",
+      "inputs": [
+        "source_resistance",
+        "load_resistance",
+        "frequency",
+        "effective_permittivity"
+      ],
+      "outputs": [
+        "transformer_impedance",
+        "length"
+      ]
+    },
+    {
+      "id": "signals.coax_impedance",
+      "title": "Homogeneous coaxial line impedance",
+      "category": "Signal integrity and transmission lines",
+      "level": "intermediate",
+      "formula": "Z0=(60/sqrt(er))*ln(b/a)",
+      "inputs": [
+        "inner_radius",
+        "shield_radius",
+        "relative_permittivity"
+      ],
+      "outputs": [
+        "impedance"
+      ]
+    },
+    {
+      "id": "signals.load_reflection",
+      "title": "Resistive-load reflection and first arrival",
+      "category": "Signal integrity and transmission lines",
+      "level": "intermediate",
+      "formula": "Gamma=(RL-Z0)/(RL+Z0); Vr=Gamma*Vi; VL=2*RL/(RL+Z0)*Vi; reflected_fraction=Gamma^2; accepted_fraction=4*RL*Z0/(RL+Z0)^2",
+      "inputs": [
+        "line_impedance",
+        "load_resistance",
+        "incident_voltage"
+      ],
+      "outputs": [
+        "reflection_coefficient",
+        "reflected_voltage",
+        "load_voltage",
+        "reflected_fraction",
+        "transmitted_fraction"
+      ]
+    },
+    {
+      "id": "signals.source_series_termination",
+      "title": "Source-series termination for an open receiver",
+      "category": "Signal integrity and transmission lines",
+      "level": "intermediate",
+      "formula": "Rseries=Z0-Rdriver; Vlaunch=Vstep*Z0/(Rdriver+Rseries+Z0); Vreceiver=2*Vlaunch",
+      "inputs": [
+        "line_impedance",
+        "driver_resistance",
+        "step_voltage"
+      ],
+      "outputs": [
+        "series_resistance",
+        "launch_voltage",
+        "receiver_voltage"
+      ]
+    },
+    {
+      "id": "signals.rise_time_bandwidth",
+      "title": "Single-pole rise-time equivalent bandwidth",
+      "category": "Signal integrity and transmission lines",
+      "level": "basic",
+      "formula": "BW=ln(9)/(2*pi*tr) approximately 0.35/tr",
+      "inputs": [
+        "rise_time"
+      ],
+      "outputs": [
+        "bandwidth"
+      ]
+    },
+    {
+      "id": "thermal.resistor_power_derating",
+      "title": "Linear resistor power derating",
+      "category": "Thermal and reliability design",
+      "level": "basic",
+      "formula": "f=min(1,max(0,(T_zero-Ta)/(T_zero-T_rated))); P_allowed=P_rated f; margin=P_allowed-P_actual",
+      "inputs": [
+        "rated_power",
+        "rated_temperature",
+        "zero_power_temperature",
+        "ambient_temperature",
+        "actual_power"
+      ],
+      "outputs": [
+        "rating_fraction",
+        "allowed_power",
+        "power_margin"
+      ]
+    },
+    {
+      "id": "thermal.junction_feedback_equilibrium",
+      "title": "Junction temperature with electrothermal feedback",
+      "category": "Thermal and reliability design",
+      "level": "expert",
+      "formula": "P(Tj)=P_ref[1+beta(Tj-T_ref)]; g=R_th P_ref beta; Tj=Ta+R_th P_ref[1+beta(Ta-T_ref)]/(1-g); P_eq=P_ref[1+beta(Ta-T_ref)]/(1-g)",
+      "inputs": [
+        "ambient_temperature",
+        "reference_temperature",
+        "reference_power",
+        "power_coefficient",
+        "thermal_resistance",
+        "fit_temperature_min",
+        "fit_temperature_max"
+      ],
+      "outputs": [
+        "feedback_gain",
+        "junction_temperature",
+        "equilibrium_power"
+      ]
+    },
+    {
+      "id": "thermal.arrhenius_acceleration",
+      "title": "Arrhenius accelerated-life exposure",
+      "category": "Thermal and reliability design",
+      "level": "expert",
+      "formula": "AF=exp[(Ea/k_B)(1/T_use-1/T_test)]; t_equivalent=AF t_test; k_B=8.617333262145e-5 eV/K",
+      "inputs": [
+        "activation_energy",
+        "use_temperature",
+        "test_temperature",
+        "test_duration"
+      ],
+      "outputs": [
+        "acceleration_factor",
+        "equivalent_use_duration"
+      ]
+    },
+    {
+      "id": "thermal.heatsink_resistance_budget",
+      "title": "Maximum heatsink thermal resistance",
+      "category": "Thermal and reliability design",
+      "level": "intermediate",
+      "formula": "R_total,max=(Tj_limit-Ta)/P; R_sa,max=R_total,max-R_jc-R_cs",
+      "inputs": [
+        "ambient_temperature",
+        "junction_limit",
+        "dissipated_power",
+        "junction_case_resistance",
+        "case_sink_resistance"
+      ],
+      "outputs": [
+        "total_resistance_budget",
+        "maximum_sink_resistance"
+      ]
+    },
+    {
+      "id": "thermal.parallel_conduction_paths",
+      "title": "Two parallel solid-conduction heat paths",
+      "category": "Thermal and reliability design",
+      "level": "intermediate",
+      "formula": "R_i=L_i/(k_i A_i); R_eq=1/(1/R_1+1/R_2); T_hot=T_sink+P R_eq; Q_i=(T_hot-T_sink)/R_i",
+      "inputs": [
+        "path_one_length",
+        "path_one_area",
+        "path_one_conductivity",
+        "path_two_length",
+        "path_two_area",
+        "path_two_conductivity",
+        "sink_temperature",
+        "source_power"
+      ],
+      "outputs": [
+        "path_one_resistance",
+        "path_two_resistance",
+        "equivalent_resistance",
+        "hot_temperature",
+        "path_one_heat",
+        "path_two_heat"
+      ]
+    },
+    {
+      "id": "thermal.lumped_thermal_step",
+      "title": "Lumped body temperature after a power step",
+      "category": "Thermal and reliability design",
+      "level": "intermediate",
+      "formula": "C_th=rho V c_p; R_th=1/(h A_s); tau=R_th C_th; Bi=h V/(A_s k); T_inf=Ta+P R_th; T(t)=T_inf+(T_initial-T_inf) exp(-t/tau)",
+      "inputs": [
+        "volume",
+        "density",
+        "specific_heat",
+        "surface_area",
+        "convection_coefficient",
+        "thermal_conductivity",
+        "ambient_temperature",
+        "initial_temperature",
+        "power",
+        "elapsed_time"
+      ],
+      "outputs": [
+        "thermal_capacitance",
+        "convection_resistance",
+        "time_constant",
+        "biot_number",
+        "steady_temperature",
+        "body_temperature"
+      ]
+    },
+    {
+      "id": "thermal.resistor_tcr_drift",
+      "title": "Resistor resistance drift from temperature",
+      "category": "Thermal and reliability design",
+      "level": "basic",
+      "formula": "dR/R_ref=TCR_ppm*1e-6*(T-T_ref); R(T)=R_ref[1+dR/R_ref]",
+      "inputs": [
+        "reference_resistance",
+        "tcr_ppm",
+        "reference_temperature",
+        "operating_temperature",
+        "fit_temperature_min",
+        "fit_temperature_max"
+      ],
+      "outputs": [
+        "fractional_drift",
+        "resistance_change",
+        "operating_resistance"
+      ]
+    },
+    {
+      "id": "thermal.free_linear_expansion",
+      "title": "Free linear thermal expansion",
+      "category": "Thermal and reliability design",
+      "level": "basic",
+      "formula": "strain=alpha(T_final-T_initial); dL=L_initial strain; L_final=L_initial+dL",
+      "inputs": [
+        "initial_length",
+        "expansion_coefficient",
+        "initial_temperature",
+        "final_temperature",
+        "fit_temperature_min",
+        "fit_temperature_max"
+      ],
+      "outputs": [
+        "thermal_strain",
+        "length_change",
+        "final_length"
+      ]
+    },
+    {
+      "id": "timing.timer_clock_divider",
+      "title": "16-bit toggle timer clock divider",
+      "category": "Digital timing",
+      "level": "basic",
+      "formula": "count = floor(f_clock/(2 P f_target)+0.5); compare = count-1; f_actual = f_clock/(2 P count)",
+      "inputs": [
+        "clock_hz",
+        "prescaler",
+        "target_hz"
+      ],
+      "outputs": [
+        "count",
+        "compare_value",
+        "actual_hz",
+        "error_percent",
+        "output_period"
+      ]
+    },
+    {
+      "id": "timing.capacitive_crosstalk_peak",
+      "title": "Finite-edge lumped capacitive crosstalk",
+      "category": "EMC coupling",
+      "level": "expert",
+      "formula": "tau = R_v(C_m+C_v); x = t_edge/tau; V_divider = C_m DeltaV/(C_m+C_v); V_peak = V_divider [-expm1(-x)/x]",
+      "inputs": [
+        "r_victim",
+        "c_mutual",
+        "c_victim",
+        "voltage_swing",
+        "edge_time",
+        "segment_delay"
+      ],
+      "outputs": [
+        "victim_time_constant",
+        "peak_excursion",
+        "fast_edge_limit"
+      ]
+    },
+    {
+      "id": "timing.uart_sampling_margin",
+      "title": "UART baud mismatch and stop-sample margin",
+      "category": "Digital interfaces",
+      "level": "expert",
+      "formula": "n = 1 + data_bits + parity_bits + 0.5; early = n/B_rx - (n-0.5)/B_tx - guard; late = (n+0.5)/B_tx - n/B_rx - 1/(S B_rx) - guard",
+      "inputs": [
+        "baud_tx",
+        "baud_rx",
+        "data_bits",
+        "parity_bits",
+        "oversample",
+        "guard_time"
+      ],
+      "outputs": [
+        "mismatch_percent",
+        "stop_center_time",
+        "sync_quantization",
+        "early_margin",
+        "late_margin",
+        "minimum_margin"
+      ]
+    },
+    {
+      "id": "timing.plate_displacement_current",
+      "title": "Parallel-plate displacement current",
+      "category": "EMC coupling",
+      "level": "expert",
+      "formula": "C = epsilon_0 epsilon_r width length/gap; slew = DeltaV/t_edge; I_displacement = C slew; J_displacement = I/(width length)",
+      "inputs": [
+        "width",
+        "length",
+        "gap",
+        "epsilon_r",
+        "voltage_change",
+        "edge_time"
+      ],
+      "outputs": [
+        "overlap_capacitance",
+        "voltage_slew",
+        "displacement_current",
+        "current_density"
+      ]
+    },
+    {
+      "id": "timing.i2c_pullup_bounds",
+      "title": "I2C pullup resistance bounds",
+      "category": "Digital interfaces",
+      "level": "intermediate",
+      "formula": "R_min = (V_supply - V_OL)/I_sink; R_max = t_r/[ln(7/3) C_bus]; width = R_max - R_min",
+      "inputs": [
+        "v_supply",
+        "v_ol",
+        "i_sink",
+        "c_bus",
+        "rise_limit"
+      ],
+      "outputs": [
+        "r_min",
+        "r_max",
+        "interval_width"
+      ]
+    },
+    {
+      "id": "timing.schmitt_rc_delay_bounds",
+      "title": "RC Schmitt-input digital delay bounds",
+      "category": "Digital timing",
+      "level": "intermediate",
+      "formula": "t_early = -RC log1p(-V_Tmin/V_supply)+t_gate_min; t_late = -RC log1p(-V_Tmax/V_supply)+t_gate_max; log1p(z) = ln(1+z)",
+      "inputs": [
+        "r",
+        "c",
+        "v_supply",
+        "threshold_min",
+        "threshold_max",
+        "gate_delay_min",
+        "gate_delay_max"
+      ],
+      "outputs": [
+        "time_constant",
+        "earliest_transition",
+        "latest_transition",
+        "timing_window"
+      ]
+    },
+    {
+      "id": "timing.synchronous_setup_slack",
+      "title": "Synchronous register setup slack",
+      "category": "Digital timing",
+      "level": "intermediate",
+      "formula": "available = T + skew - t_setup - uncertainty; arrival = t_CQ + t_path; slack = available - arrival",
+      "inputs": [
+        "clock_period",
+        "clock_to_q",
+        "path_delay",
+        "setup_time",
+        "clock_skew",
+        "uncertainty"
+      ],
+      "outputs": [
+        "available_time",
+        "arrival_time",
+        "setup_slack"
+      ]
+    },
+    {
+      "id": "timing.inductive_turnoff_spike",
+      "title": "Inductive turn-off voltage spike",
+      "category": "EMC coupling",
+      "level": "basic",
+      "formula": "current_fall_rate = (I_initial-I_final)/t_fall; spike = L current_fall_rate; switch_voltage = V_supply + spike",
+      "inputs": [
+        "loop_inductance",
+        "current_initial",
+        "current_final",
+        "fall_time",
+        "supply_voltage"
+      ],
+      "outputs": [
+        "current_fall_rate",
+        "spike_voltage",
+        "switch_voltage"
+      ]
+    },
+    {
+      "id": "transients.rc_step",
+      "title": "RC charge or discharge after a voltage step",
+      "category": "Passive transients",
+      "level": "basic",
+      "formula": "tau=RC; vC=Vs+(V0-Vs)exp(-t/tau); iC=(Vs-vC)/R; t_settle=-tau ln(epsilon); EC=C vC^2/2; ER=C(Vs-V0)^2[1-exp(-2t/tau)]/2",
+      "inputs": [
+        "r",
+        "c",
+        "v_source",
+        "v_initial",
+        "time",
+        "error_fraction"
+      ],
+      "outputs": [
+        "tau",
+        "capacitor_voltage",
+        "capacitor_current",
+        "settling_time",
+        "capacitor_energy",
+        "resistor_energy"
+      ]
+    },
+    {
+      "id": "transients.rc_ladder_step",
+      "title": "Unbuffered two-stage RC ladder startup",
+      "category": "Passive transients",
+      "level": "expert",
+      "formula": "a=R1R2C1C2; b=R1C1+R1C2+R2C2; tau_s=(b+sqrt(b^2-4a))/2; tau_f=a/tau_s; v2=Vs[1-(tau_s exp(-t/tau_s)-tau_f exp(-t/tau_f))/(tau_s-tau_f)]; v1=v2+R2 C2 dv2/dt",
+      "inputs": [
+        "r_one",
+        "r_two",
+        "c_one",
+        "c_two",
+        "v_step",
+        "time"
+      ],
+      "outputs": [
+        "quadratic_coefficient",
+        "linear_coefficient",
+        "tau_slow",
+        "tau_fast",
+        "voltage_two",
+        "capacitor_two_current",
+        "voltage_one"
+      ]
+    },
+    {
+      "id": "transients.rlc_underdamped_step",
+      "title": "Underdamped series-RLC step ringing and peak stress",
+      "category": "Passive transients",
+      "level": "expert",
+      "formula": "alpha=R/(2L); wn=1/sqrt(LC); zeta=alpha/wn; wd=sqrt(wn^2-alpha^2); vC=Vs{1-exp(-alpha t)[cos(wd t)+(alpha/wd)sin(wd t)]}; i=Vs exp(-alpha t)sin(wd t)/(L wd); tp=pi/wd; Mp=exp(-alpha pi/wd)",
+      "inputs": [
+        "r",
+        "l",
+        "c",
+        "v_step",
+        "time",
+        "error_fraction"
+      ],
+      "outputs": [
+        "alpha",
+        "omega_n",
+        "damping_ratio",
+        "omega_d",
+        "capacitor_voltage",
+        "series_current",
+        "peak_time",
+        "overshoot_fraction",
+        "peak_voltage",
+        "envelope_settling_bound"
+      ]
+    },
+    {
+      "id": "transients.rc_periodic_switching",
+      "title": "Periodic RC charging extrema under two-level excitation",
+      "category": "Passive transients",
+      "level": "intermediate",
+      "formula": "a=exp(-Th/RC); b=exp(-Tl/RC); Vmin=[Vl(1-b)+b Vh(1-a)]/(1-ab); Vmax=Vmin+(Vh-Vmin)(1-a); Vavg=(VhTh+VlTl)/(Th+Tl)",
+      "inputs": [
+        "r",
+        "c",
+        "v_high",
+        "v_low",
+        "time_high",
+        "time_low"
+      ],
+      "outputs": [
+        "tau",
+        "high_decay",
+        "low_decay",
+        "voltage_min",
+        "voltage_max",
+        "ripple",
+        "average_voltage",
+        "high_initial_current",
+        "low_initial_current"
+      ]
+    },
+    {
+      "id": "transients.rl_step",
+      "title": "RL current buildup or decay after a voltage step",
+      "category": "Passive transients",
+      "level": "basic",
+      "formula": "tau=L/R; If=Vs/R; iL=If+(I0-If)exp(-t/tau); vL=(Vs-RI0)exp(-t/tau); t_settle=-tau ln(epsilon)",
+      "inputs": [
+        "r",
+        "l",
+        "v_source",
+        "i_initial",
+        "time",
+        "error_fraction"
+      ],
+      "outputs": [
+        "tau",
+        "final_current",
+        "inductor_current",
+        "inductor_voltage",
+        "settling_time"
+      ]
+    },
+    {
+      "id": "transients.capacitor_constant_current",
+      "title": "Constant-current capacitor ramp and energy",
+      "category": "Passive transients",
+      "level": "basic",
+      "formula": "dv/dt=I/C; vC=V0+It/C; deltaQ=It; EC=C vC^2/2; deltaE=C(vC^2-V0^2)/2",
+      "inputs": [
+        "c",
+        "current",
+        "v_initial",
+        "time"
+      ],
+      "outputs": [
+        "voltage_slope",
+        "capacitor_voltage",
+        "charge_change",
+        "stored_energy",
+        "energy_change"
+      ]
+    },
+    {
+      "id": "transients.capacitor_charge_sharing",
+      "title": "Two-capacitor charge redistribution through resistance",
+      "category": "Passive transients",
+      "level": "intermediate",
+      "formula": "Ceq=C1C2/(C1+C2); tau=R Ceq; Vf=(C1V1+C2V2)/(C1+C2); deltaV(t)=(V1-V2)exp(-t/tau); Eloss=Ceq(V1-V2)^2/2",
+      "inputs": [
+        "c_one",
+        "c_two",
+        "r",
+        "v_one",
+        "v_two",
+        "time"
+      ],
+      "outputs": [
+        "equivalent_capacitance",
+        "tau",
+        "final_voltage",
+        "voltage_one",
+        "voltage_two",
+        "current",
+        "transferred_charge",
+        "initial_energy",
+        "final_energy",
+        "total_loss",
+        "dissipated_energy"
+      ]
+    },
+    {
+      "id": "transients.rc_ramp_source",
+      "title": "RC tracking of a finite-slope voltage ramp",
+      "category": "Passive transients",
+      "level": "intermediate",
+      "formula": "Vs(t)=Vs0+mt; tau=RC; vC=Vs0+m(t-tau)+(V0-Vs0+m tau)exp(-t/tau); iC=Cm+(Vs0-V0-m tau)exp(-t/tau)/R",
+      "inputs": [
+        "r",
+        "c",
+        "v_source_initial",
+        "v_initial",
+        "slope",
+        "time"
+      ],
+      "outputs": [
+        "tau",
+        "source_voltage",
+        "capacitor_voltage",
+        "tracking_error",
+        "capacitor_current"
+      ]
+    }
+  ]
+}
