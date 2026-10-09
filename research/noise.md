@@ -242,6 +242,8 @@ The distinct physical purpose is device-added-noise equivalence; this is not a s
 - `equivalent_noise_temperature` = 290 × 0.9952623149688795 = **288.62607134097505 K**.
 - Do not approximate 3 dB as exactly F = 2 when matching the worked precision.
 
+**Numerical implementation correction:** Evaluate T_e as 290 expm1(NF ln(10)/10), not 290 times a rounded linear noise factor minus one. For NF = 1e-16 dB the first-order small-x result is 290 ln(10) 1e-17 ≈ 6.67749676968e-15 K; the naive power-minus-one expression loses it to zero. The returned factor necessarily rounds to unity when its excess is below binary64 spacing, while the independent temperature expression retains the small value. The zero-NF boundary remains exactly zero and the nominal 3 dB oracle is unchanged. This is a stable algebraic realization, not an additional physical model or raised minimum NF.
+
 ## 8. Three-stage Friis noise cascade
 
 **ID:** `noise.friis_three_stage` — **expert**. Source [S4, section 3.6, equations 32–40].

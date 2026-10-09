@@ -431,4 +431,61 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "noise.figure_equivalent_temperature",
+  "title": "Noise figure to equivalent input temperature",
+  "category": "Noise measurement and analog budgets",
+  "level": "intermediate",
+  "description": "Represent a device's added input-referred noise as an equivalent temperature at the standard 290 K noise-figure reference.",
+  "formula": "F=10^(NF/10); T_e=290(F-1)=290 expm1(NF ln(10)/10)",
+  "assumptions": [
+    "Noise figure follows the standard 290 K source reference and a specified frequency, bandwidth convention and source termination.",
+    "Equivalent input noise temperature describes device-added noise, not the device's physical temperature or source temperature.",
+    "Conventional nonnegative-added-noise model F >= 1; excludes negative-noise-factor/nonclassical devices.",
+    "Conversion does not itself account for mismatch, frequency variation or determine output noise for an arbitrary source temperature.",
+    "Linear factor rounds to unity for sub-epsilon excess noise; direct expm1 evaluation preserves representable tiny positive equivalent temperature."
+  ],
+  "references": [
+    {
+      "title": "Rohde & Schwarz 1SL378, sections 3.1 and 3.4, equations 4, 10 and 31",
+      "url": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_application/application_notes/1sl378/1SL378_0e_ColdSrcNF.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "noise_figure_db",
+      "label": "Device noise figure at 290 K reference",
+      "unit": "dB",
+      "default": 3.0,
+      "min": 0.0,
+      "max": 100.0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "noise_factor",
+      "label": "Linear noise factor",
+      "unit": "1",
+      "expression": "10^(noise_figure_db/10)"
+    },
+    {
+      "key": "equivalent_noise_temperature",
+      "label": "Equivalent input noise temperature",
+      "unit": "K",
+      "expression": "290*expm1(noise_figure_db*ln(10)/10)"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "noise_figure_db": 3.0
+    },
+    "expected": {
+      "noise_factor": 1.9952623149688795,
+      "equivalent_noise_temperature": 288.62607134097505
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

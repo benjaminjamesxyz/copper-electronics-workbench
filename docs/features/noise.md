@@ -250,3 +250,53 @@ requires the maximum available signal to meet the requested margin; equality giv
 
 **Error rationale and sequential outputs:** Reject nonfinite/out-of-range peak, RMS floor or required margin. Positive peak and floor minima prevent division/log singularities; bounded magnitudes keep all ratios finite. Before any outputs, the input-only maximum-RMS >= floor*10^(margin/20) constraint rejects an impossible detection threshold; equality gives exactly zero usable range when the computed scalars are equal. Output order is maximum RMS, minimum RMS, noise-limited range, usable range. A nonnegative required margin is a stated detection policy, not an ADC SNR or hardware-certification rule.
 
+
+## Noise figure to equivalent input temperature
+
+**ID:** `noise.figure_equivalent_temperature` — **intermediate**. Source [S4, equations 4, 10 and 27–31].
+
+The device-added input-referred noise power Na is represented by kTeB. At the standard source reference temperature T0 = 290 K,
+
+\[
+F=1+N_a/(kT_0B)=1+T_e/T_0.
+\]
+
+Starting with measured/specification noise figure NF in dB,
+
+\[
+F=10^{NF/10},\qquad T_e=290(F-1)\quad[\mathrm K].
+\]
+
+The distinct physical purpose is device-added-noise equivalence; this is not a second count for a generic dB rearrangement or a cascade calculation. T0 is deliberately fixed at the conventional 290 K reference, not a free arbitrary physical-temperature input.
+
+**Inputs/domain:** 0 <= NF <= 100 dB. These imply F >= 1 and Te >= 0 for conventional nonnegative-added-noise devices. NF = 0 produces F = 1 and Te = 0. Source termination, frequency, bandwidth convention and the 290 K reference must match the measurement/datasheet. Equivalent input noise temperature is not the physical device temperature. An arbitrary actual source temperature changes actual output noise/SNR degradation; this conversion alone does not predict it. Mismatch and nonclassical negative-added-noise models are excluded.
+
+**Independent example:** NF = 3 dB.
+
+- `noise_factor` = 10^0.3 = **1.9952623149688795**.
+- `equivalent_noise_temperature` = 290 × 0.9952623149688795 = **288.62607134097505 K**.
+- Do not approximate 3 dB as exactly F = 2 when matching the worked precision.
+
+
+**Stable numerical realization:** T_e = 290 expm1(NF ln(10)/10) avoids subtracting unity from a rounded factor. For NF = 1e-16 dB, independent small-x arithmetic gives T_e ≈ 6.67749676968e-15 K. F necessarily rounds to unity below binary64 spacing, but temperature is separately representable. Zero NF still yields exactly zero temperature. This correction changes neither physical model nor bounds nor nominal expected values.
+
+**Error rationale and sequential outputs:** Reject nonfinite NF, negative NF and values above 100 dB. Nonnegative NF enforces conventional nonnegative added noise; the maximum bounds power factors by 1e10 and temperature by approximately 2.9e12 K. Factor is reported first; stable temperature is evaluated directly from input rather than subtracting one from that rounded factor. The fixed 290 K reference is not an adjustable physical temperature. No cross-input constraint is needed.
+
+
+## Integration and independent QA handoff
+
+The backend/catalog/noise.json array contains exactly the eight IDs documented above. The shared Rust engine handles finite/exact input keys, inclusive/exclusive bounds, input-only constraints and ordered expression evaluation; Flutter consumes catalog metadata and performs no noise math. The frozen worker engine lacks the newly parent-approved log1p helper; Main must integrate this lane with its extended shared engine.
+
+Recommended checks for Main and independent QA, not executed here:
+
+- Every default/full independent example and every declared output at relative tolerance 1e-6; missing/extra/nonfinite inputs and each range endpoint.
+- Johnson density scales as sqrt(R T); RMS scales as sqrt(ENBW); reject nonpositive R/T/B and distinguish open-circuit voltage from matched-load available power.
+- Shot noise admits I = 0, rejects signed negative current; RMS integration uses sqrt(B).
+- RSS admits all-zero and isolated contributions; 3-4-12 gives 13, not 19.
+- Amplifier budget isolates each of all six sources, admits R_S = 0 and zero amplifier densities, retains the ground-resistor variance and input referral by noise gain.
+- 0 dB conversion gives unity; negative dB is valid attenuation, with equal-impedance voltage interpretation.
+- Dynamic range rejects an impossible margin before output evaluation; equal maximum and threshold gives zero usable range.
+- 0 dB conventional NF gives unity factor/zero temperature. At NF = 1e-16 dB, temperature remains approximately 6.67749676968e-15 K despite rounded F = 1.
+- All-ideal Friis gives unity factor/zero NF/zero temperature; negative gains are valid. Test tiny first-stage NF with other stages ideal and also NF2 = 1e-16 dB following first-stage gain -120 dB: the second-stage excess must be computed before weighting, so X ≈ ln(10)*1e-5, not zero. Tiny physical quantities need scale-aware tolerances, not blanket absolute 1e-6.
+
+No build, linter, formatter, test, smoke command or numerical engine run was performed by this developer. Sources and independent nominal substitutions are inherited from research with the source-access caveat above; the small-noise corrections are explicitly derived algebraic implementations.
