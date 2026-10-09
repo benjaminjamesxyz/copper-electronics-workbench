@@ -113,7 +113,7 @@ const logicDiagrams = <String, CalculatorDiagram>{
       Label(210, 52, 'Q'),
       Label(168, 16, 'FF1'),
       Wire([230, 65, 365, 65], arrow: true),
-      Label(241, 42, 'May be metastable', ink: DiagramInk.muted),
+      Label(241, 28, 'May be metastable', ink: DiagramInk.muted),
       Part(CircuitPart.block, 405, 65, width: 80, height: 60),
       Label(371, 52, 'D'),
       Label(426, 52, 'Q'),

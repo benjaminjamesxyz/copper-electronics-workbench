@@ -49,7 +49,7 @@
         "key": "high_time",
         "label": "Output high interval",
         "unit": "s",
-        "expression": "ln(2)*(charge_resistance+discharge_resistance)*timing_capacitance"
+        "expression": "ln(2)*charge_resistance*timing_capacitance+ln(2)*discharge_resistance*timing_capacitance"
       },
       {
         "key": "low_time",
@@ -73,12 +73,12 @@
         "key": "high_duty",
         "label": "Output high duty fraction",
         "unit": "1",
-        "expression": "(charge_resistance+discharge_resistance)/(charge_resistance+2*discharge_resistance)"
+        "expression": "1/(1+1/(charge_resistance/discharge_resistance+1))"
       }
     ],
     "constraints": [
       {
-        "left": "ln(2)*(charge_resistance+2*discharge_resistance)*timing_capacitance",
+        "left": "ln(2)*charge_resistance*timing_capacitance+2*ln(2)*discharge_resistance*timing_capacitance",
         "op": ">=",
         "right": "1e-5",
         "message": "The bipolar 555 model requires nominal frequency no greater than 100 kHz."
@@ -174,13 +174,13 @@
         "key": "upper_threshold",
         "label": "High-output switching threshold",
         "unit": "V",
-        "expression": "supply_voltage*(1+feedback_resistance/upper_resistance)/(1+feedback_resistance/upper_resistance+feedback_resistance/lower_resistance)"
+        "expression": "supply_voltage*(1+upper_resistance/feedback_resistance)/(1+upper_resistance/feedback_resistance+upper_resistance/lower_resistance)"
       },
       {
         "key": "lower_threshold",
         "label": "Low-output switching threshold",
         "unit": "V",
-        "expression": "supply_voltage*(feedback_resistance/upper_resistance)/(1+feedback_resistance/upper_resistance+feedback_resistance/lower_resistance)"
+        "expression": "supply_voltage/(1+upper_resistance/feedback_resistance+upper_resistance/lower_resistance)"
       },
       {
         "key": "high_time",
@@ -312,7 +312,7 @@
         "key": "period",
         "label": "Oscillation period",
         "unit": "s",
-        "expression": "4*integrator_resistance*integrator_capacitance*(triangle_resistance/feedback_resistance)"
+        "expression": "4*(integrator_resistance*integrator_capacitance)*(triangle_resistance/feedback_resistance)"
       },
       {
         "key": "frequency",
@@ -398,7 +398,7 @@
         "key": "frequency",
         "label": "Zero-phase bridge frequency",
         "unit": "Hz",
-        "expression": "1/(2*pi)/bridge_resistance/bridge_capacitance"
+        "expression": "1/(2*pi*bridge_resistance*bridge_capacitance)"
       },
       {
         "key": "feedback_fraction",
@@ -504,7 +504,7 @@
         "key": "frequency",
         "label": "180-degree feedback frequency",
         "unit": "Hz",
-        "expression": "1/(2*pi*sqrt(6))/section_resistance/section_capacitance"
+        "expression": "1/(2*pi*sqrt(6)*section_resistance*section_capacitance)"
       },
       {
         "key": "feedback_magnitude",
@@ -631,7 +631,7 @@
         "key": "startup_ratio",
         "label": "Negative-to-loss conductance ratio",
         "unit": "1",
-        "expression": "transistor_transconductance*parallel_loss_resistance/2"
+        "expression": "transistor_transconductance*(parallel_loss_resistance/2)"
       },
       {
         "key": "growth_rate",
@@ -762,7 +762,7 @@
         "key": "critical_transconductance",
         "label": "Critical crystal transconductance",
         "unit": "S",
-        "expression": "4*crystal_esr*(2*pi*crystal_frequency*(shunt_capacitance+load_capacitance))^2"
+        "expression": "4*crystal_esr*(2*pi*crystal_frequency)^2*(shunt_capacitance+load_capacitance)^2"
       },
       {
         "key": "gain_margin",

@@ -267,7 +267,7 @@
         "key": "upper_capacitance",
         "label": "Differential capacitance at upper voltage",
         "unit": "F",
-        "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*(upper_voltage/fit_voltage)"
+        "expression": "fit_capacitance+(zero_bias_capacitance-fit_capacitance)*((fit_voltage-upper_voltage)/fit_voltage)"
       },
       {
         "key": "usable_charge",
