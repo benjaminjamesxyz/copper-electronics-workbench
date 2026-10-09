@@ -61,3 +61,61 @@ Cross-input/model constraints (evaluated before outputs):
 | `error_percent` | Signed frequency error | % | `0.1001001001001001` | `100*(actual_hz/target_hz-1)` |
 | `output_period` | Actual output period | s | `0.000333` | `1/actual_hz` |
 
+## 6. Finite-edge lumped capacitive crosstalk — expert
+
+**ID:** `timing.capacitive_crosstalk_peak`
+
+**Purpose:** Estimate the voltage excursion on a resistively held victim node from an adjacent linear voltage ramp. Unlike the bare `R C dv/dt` estimate, this includes victim charge storage and its finite fast-edge limit.
+
+**Topology and derivation:** An ideal aggressor connects to the victim through mutual capacitance C_m. The victim connects to AC ground through resistance R_v and shunt capacitance C_v. Initially the victim excursion is zero. Kirchhoff current balance gives:
+
+`(C_v+C_m) dv_v/dt + v_v/R_v = C_m dv_a/dt`.
+
+For a full aggressor ramp of DeltaV over t_edge, dv_a/dt is constant. Solving the first-order forced equation with zero initial excursion gives:
+
+`v_v(t) = R_v C_m DeltaV/t_edge [1-exp(-t/[R_v(C_v+C_m)])]` during the ramp.
+
+The response grows monotonically, peaks at its end, then decays with `tau = R_v(C_v+C_m)`. Thus:
+
+`peak_excursion = R_v C_m DeltaV/t_edge [1-exp(-t_edge/tau)]`.
+
+For t_edge much shorter than tau, the limiting peak is the capacitive divider `C_m DeltaV/(C_m+C_v)`. Including this comparison output helps identify why a pure resistive estimate overpredicts short-edge noise.
+
+**Stable executable form:** Let `x = edge_time/tau` and `V_divider = C_m DeltaV/(C_m+C_v)`. Algebraically the peak is `V_divider [-expm1(-x)/x]`. Native `expm1` computes `exp(z)-1` without subtracting two nearly equal rounded numbers. For positive x approaching zero, `-expm1(-x)/x` approaches 1, preserving the capacitive-divider limit even for x around 1e-16. The attenuation quotient is computed before multiplication by the divider voltage to avoid premature underflow of their small product. No artificial minimum x is imposed, and zero mutual capacitance or voltage swing remains a valid zero excursion. Existing output keys/order are unchanged: the peak expression inlines the divider limit, followed by the independently visible `fast_edge_limit`.
+
+At finite floating-point extremes, tau or x may underflow or overflow despite physically positive inputs; the common engine must report invalid/nonfinite arithmetic, including x that actually rounds to zero. Native expm1 fixes cancellation for representable positive x, not arbitrary range exhaustion. The nominal x = 1 example and all independent expected values below remain unchanged.
+
+**Dimensions/domain:** R_v positive ohm; C_m nonnegative F; C_v strictly positive F; swing nonnegative V; full ramp duration strictly positive s. Segment propagation delay is nonnegative and limited to at most edge_time/10. This conservative criterion deliberately restricts the lumped model; TI discusses distributed effects becoming significant as propagation delay approaches the edge duration. It is not a claimed accuracy bound. Use **full ramp duration**, not a 10%–90% specification without conversion. No distributed near/far-end decomposition, mutual inductance, input clamps, nonlinear loading or multiple aggressors. Formula is derived here from MIT's capacitor law/KCL; it is not attributed verbatim to TI's distributed crosstalk discussion.
+
+**Independent example:** R_v = 2 kohm, C_m = 2 pF, C_v = 8 pF, swing 5 V, full ramp 20 ns and segment delay 1 ns:
+
+- `tau = 2000 × 10e-12 = 20 ns`.
+- Forcing asymptote `= 2000 × 2e-12 × 5 / 20e-9 = 1 V`.
+- Peak `= 1 × [1-exp(-1)] = 0.632120558829 V`.
+- Fast-edge limit `= 2/(2+8) × 5 = 1 V`.
+- Delay 1 ns is below the required 2 ns limit.
+
+**Primary sources:** [TI/National SNOA382, Understanding and Eliminating EMI in Microcontroller Applications](https://www.ti.com/lit/pdf/snoa382), sections 3.6, 4.5 and 4.6 for capacitive coupling, edge-rate scaling and distributed limits; [MIT 6.071 Capacitors and inductors](https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf), equation 1.5 and capacitor KCL foundations.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `r_victim` | Victim resistance to AC ground | ohm | `2000` | > 0 |
+| `c_mutual` | Mutual aggressor-victim capacitance | F | `2e-12` | >= 0 |
+| `c_victim` | Victim shunt capacitance | F | `8e-12` | > 0 |
+| `voltage_swing` | Aggressor full voltage swing magnitude | V | `5` | >= 0 |
+| `edge_time` | Full linear-ramp duration (not 10%-90%) | s | `2e-08` | > 0 |
+| `segment_delay` | Coupled segment one-way propagation delay | s | `1e-09` | >= 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- `segment_delay <= edge_time/10` — Propagation delay must be at most one tenth of edge time for this lumped estimate.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `victim_time_constant` | Victim recovery time constant | s | `2e-08` | `r_victim*(c_mutual+c_victim)` |
+| `peak_excursion` | Peak victim voltage excursion | V | `0.6321205588285577` | `c_mutual/(c_mutual+c_victim)*voltage_swing*(-expm1(-edge_time/victim_time_constant)/(edge_time/victim_time_constant))` |
+| `fast_edge_limit` | Capacitive-divider fast-edge limit | V | `1` | `c_mutual/(c_mutual+c_victim)*voltage_swing` |
+

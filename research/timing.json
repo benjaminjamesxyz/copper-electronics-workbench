@@ -145,8 +145,8 @@
     "category": "EMC coupling",
     "level": "expert",
     "description": "Estimate the peak victim-node excursion caused by a linear aggressor edge through mutual capacitance, including victim resistance and shunt capacitance.",
-    "formula": "tau = R_v(C_m+C_v); V_peak = R_v C_m DeltaV/t_edge [1-exp(-t_edge/tau)]",
-    "assumptions": ["Ideal stiff aggressor source with a linear full-swing ramp; victim initially at its resistor-defined DC potential.", "Victim has constant resistance to AC ground and shunt capacitance; mutual capacitance also contributes to victim time constant.", "Coupled segment propagation delay must not exceed one tenth of the ramp duration, a conservative lumped-model selection criterion.", "Magnetic coupling, distributed near/far-end crosstalk, multiple aggressors, clamps and nonlinear victim input behavior are excluded.", "Peak is an excursion magnitude at the end of the ramp; if it reaches clamp thresholds the linear estimate is no longer the realized waveform."],
+    "formula": "tau = R_v(C_m+C_v); x = t_edge/tau; V_divider = C_m DeltaV/(C_m+C_v); V_peak = V_divider [-expm1(-x)/x]",
+    "assumptions": ["Ideal stiff aggressor source with a linear full-swing ramp; victim initially at its resistor-defined DC potential.", "Victim has constant resistance to AC ground and shunt capacitance; mutual capacitance also contributes to victim time constant.", "Coupled segment propagation delay must not exceed one tenth of the ramp duration, a conservative lumped-model selection criterion.", "Magnetic coupling, distributed near/far-end crosstalk, multiple aggressors, clamps and nonlinear victim input behavior are excluded.", "Peak is an excursion magnitude at the end of the ramp; if it reaches clamp thresholds the linear estimate is no longer the realized waveform.", "Native expm1 preserves the capacitive-divider fast-edge limit for representable positive edge/time-constant ratios, including x about 1e-16; no artificial minimum ratio is imposed. The attenuation quotient is computed before multiplying by the divider voltage. Nonfinite intermediates or a ratio that underflows to zero must be rejected explicitly by the shared engine."],
     "references": [{"title": "TI/National SNOA382: Understanding and Eliminating EMI in Microcontroller Applications, sections 3.6 and 4.5-4.6", "url": "https://www.ti.com/lit/pdf/snoa382"}, {"title": "MIT 6.071: Capacitors and inductors, capacitor current law and KCL", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf"}],
     "inputs": [
       {"key": "r_victim", "label": "Victim resistance to AC ground", "unit": "ohm", "default": 2000, "min": 0, "exclusive_min": true},
@@ -158,7 +158,7 @@
     ],
     "outputs": [
       {"key": "victim_time_constant", "label": "Victim recovery time constant", "unit": "s", "expression": "r_victim*(c_mutual+c_victim)"},
-      {"key": "peak_excursion", "label": "Peak victim voltage excursion", "unit": "V", "expression": "r_victim*c_mutual*voltage_swing/edge_time*(1-exp(-edge_time/victim_time_constant))"},
+      {"key": "peak_excursion", "label": "Peak victim voltage excursion", "unit": "V", "expression": "c_mutual/(c_mutual+c_victim)*voltage_swing*(-expm1(-edge_time/victim_time_constant)/(edge_time/victim_time_constant))"},
       {"key": "fast_edge_limit", "label": "Capacitive-divider fast-edge limit", "unit": "V", "expression": "c_mutual/(c_mutual+c_victim)*voltage_swing"}
     ],
     "constraints": [{"left": "segment_delay", "op": "<=", "right": "edge_time/10", "message": "Propagation delay must be at most one tenth of edge time for this lumped estimate."}],

@@ -115,5 +115,122 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "timing.capacitive_crosstalk_peak",
+    "title": "Finite-edge lumped capacitive crosstalk",
+    "category": "EMC coupling",
+    "level": "expert",
+    "description": "Estimate the peak victim-node excursion caused by a linear aggressor edge through mutual capacitance, including victim resistance and shunt capacitance.",
+    "formula": "tau = R_v(C_m+C_v); x = t_edge/tau; V_divider = C_m DeltaV/(C_m+C_v); V_peak = V_divider [-expm1(-x)/x]",
+    "assumptions": [
+      "Ideal stiff aggressor source with a linear full-swing ramp; victim initially at its resistor-defined DC potential.",
+      "Victim has constant resistance to AC ground and shunt capacitance; mutual capacitance also contributes to victim time constant.",
+      "Coupled segment propagation delay must not exceed one tenth of the ramp duration, a conservative lumped-model selection criterion.",
+      "Magnetic coupling, distributed near/far-end crosstalk, multiple aggressors, clamps and nonlinear victim input behavior are excluded.",
+      "Peak is an excursion magnitude at the end of the ramp; if it reaches clamp thresholds the linear estimate is no longer the realized waveform.",
+      "Native expm1 preserves the capacitive-divider fast-edge limit for representable positive edge/time-constant ratios, including x about 1e-16; no artificial minimum ratio is imposed. The attenuation quotient is computed before multiplying by the divider voltage. Nonfinite intermediates or a ratio that underflows to zero must be rejected explicitly by the shared engine."
+    ],
+    "references": [
+      {
+        "title": "TI/National SNOA382: Understanding and Eliminating EMI in Microcontroller Applications, sections 3.6 and 4.5-4.6",
+        "url": "https://www.ti.com/lit/pdf/snoa382"
+      },
+      {
+        "title": "MIT 6.071: Capacitors and inductors, capacitor current law and KCL",
+        "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_victim",
+        "label": "Victim resistance to AC ground",
+        "unit": "ohm",
+        "default": 2000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "c_mutual",
+        "label": "Mutual aggressor-victim capacitance",
+        "unit": "F",
+        "default": 2e-12,
+        "min": 0
+      },
+      {
+        "key": "c_victim",
+        "label": "Victim shunt capacitance",
+        "unit": "F",
+        "default": 8e-12,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "voltage_swing",
+        "label": "Aggressor full voltage swing magnitude",
+        "unit": "V",
+        "default": 5,
+        "min": 0
+      },
+      {
+        "key": "edge_time",
+        "label": "Full linear-ramp duration (not 10%-90%)",
+        "unit": "s",
+        "default": 2e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "segment_delay",
+        "label": "Coupled segment one-way propagation delay",
+        "unit": "s",
+        "default": 1e-09,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "victim_time_constant",
+        "label": "Victim recovery time constant",
+        "unit": "s",
+        "expression": "r_victim*(c_mutual+c_victim)"
+      },
+      {
+        "key": "peak_excursion",
+        "label": "Peak victim voltage excursion",
+        "unit": "V",
+        "expression": "c_mutual/(c_mutual+c_victim)*voltage_swing*(-expm1(-edge_time/victim_time_constant)/(edge_time/victim_time_constant))"
+      },
+      {
+        "key": "fast_edge_limit",
+        "label": "Capacitive-divider fast-edge limit",
+        "unit": "V",
+        "expression": "c_mutual/(c_mutual+c_victim)*voltage_swing"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "segment_delay",
+        "op": "<=",
+        "right": "edge_time/10",
+        "message": "Propagation delay must be at most one tenth of edge time for this lumped estimate."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_victim": 2000,
+        "c_mutual": 2e-12,
+        "c_victim": 8e-12,
+        "voltage_swing": 5,
+        "edge_time": 2e-08,
+        "segment_delay": 1e-09
+      },
+      "expected": {
+        "victim_time_constant": 2e-08,
+        "peak_excursion": 0.6321205588285577,
+        "fast_edge_limit": 1
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
