@@ -1,0 +1,960 @@
+{
+  "lane": "measurement",
+  "base": "4c46fa1",
+  "file": "backend/tests/measurement.rs",
+  "authored_tests": 21,
+  "behaviors_covered": {
+    "measurement.dmm_accuracy_bound": "Complete non-default signed bounds and source example; zero reading, zero coefficients, signed full scale, additive errors, overrange/scalar/nonfinite rejection and recovery.",
+    "measurement.delta_resistance": "Complete forward resistor/thermal-EMF experiment, offset shifts, reversed/zero drift, pure EMF and zero resistance, documented quadratic-drift bias, source examples, negative implied resistance/scalar/nonfinite rejection and recovery; decimal-linear boundary regression.",
+    "measurement.compensated_probe_loading": "Complete unmatched complex-impedance oracle for absent/under/matched/over compensation; matched finite-source reduction, DC, zero Rs, zero amplitude, source example, every scalar/nonfinite rejection and recovery.",
+    "measurement.rectangular_aperture_response": "Complete exact-integral half-cycle/null/negative-lobe and source vectors; DC, zero time, both zero, tiny time, zero amplitude, negative/nonfinite rejection and recovery; extreme frequency zero-time regression.",
+    "measurement.sampling_jitter_snr": "Complete non-default RMS-slope and source oracles, independent frequency/jitter/amplitude scaling, inclusive phase limit and just-outside rejection, tiny positive jitter, every scalar/nonfinite rejection and recovery; finite-output overflow and dimensional-underflow regressions.",
+    "measurement.correlated_voltage_ratio": "Complete sensitivity-covariance and source examples, rho=-1,0,+1, exact cancellation and one-ULP near-perfect correlation, zero one/both uncertainties, coverage scaling, channel 1% boundaries, covariance/scalar/nonfinite rejection and recovery."
+  },
+  "verification": "Not executed. No build, test, lint, formatter, backend process or native launch. Independent arithmetic and source inspection only. Main must run cargo test --manifest-path backend/Cargo.toml --test measurement, then ordered process scenarios.",
+  "untested_gaps": [
+    "All 21 authored tests and all parent scenarios await Main execution; four analytical regressions are expected to expose snapshot defects.",
+    "Native interactions, screenshots, narrow-window layout and full original-128 preservation are Main/reviewer gates, not tester observations.",
+    "No hardware calibration, parasitic probe response, nonlinear thermal drift cancellation or distributional coverage validation is claimed. Complete binary64 space is not exhaustively covered."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "measurement.rectangular_aperture_response",
+      "location": "backend/catalog/measurement.json:280",
+      "inputs": {
+        "frequency": 1e+308,
+        "aperture_time": 0.0,
+        "input_peak": 0.2
+      },
+      "expected_outputs": {
+        "midpoint_gain": 1.0,
+        "amplitude_ratio": 1.0,
+        "measured_peak": 0.2,
+        "effective_delay": 0.0
+      },
+      "analysis": "pi*frequency overflows before multiplication by zero aperture; zero-time response should remain unity.",
+      "minimal_correction": "Form frequency*aperture_time before multiplying by pi.",
+      "regression": "aperture_zero_time_survives_large_finite_frequency",
+      "status": "Analytical prediction; not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "measurement.sampling_jitter_snr",
+      "location": "backend/catalog/measurement.json:368,374,385",
+      "inputs": {
+        "frequency": 1e+308,
+        "timing_jitter": 1e-312,
+        "input_peak": 1.0
+      },
+      "expected_outputs": {
+        "phase_jitter": 0.0006283185307179586,
+        "error_rms": 0.0004442882938158366,
+        "jitter_snr": 64.0364026328377
+      },
+      "analysis": "2*pi*frequency overflows although frequency*timing_jitter and all outputs are finite.",
+      "minimal_correction": "Use range-safe product ordering consistently in guard and outputs, retaining logarithmic SNR.",
+      "regression": "jitter_large_frequency_small_time_has_finite_small_phase",
+      "status": "Analytical prediction; not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "measurement.sampling_jitter_snr",
+      "location": "backend/catalog/measurement.json:374",
+      "inputs": {
+        "frequency": 1e-200,
+        "timing_jitter": 1e-200,
+        "input_peak": 1e+200
+      },
+      "expected_outputs": {
+        "phase_jitter": 0.0,
+        "error_rms": 4.442882938158366e-200,
+        "jitter_snr": 7984.036402632838
+      },
+      "analysis": "Phase product rounds to zero before input amplitude rescales the dimensional voltage error.",
+      "minimal_correction": "Evaluate dimensional error with scale-preserving multiplication, separate from rounded phase output.",
+      "regression": "jitter_preserves_representable_voltage_when_phase_underflows",
+      "status": "Analytical prediction; not executed."
+    },
+    {
+      "severity": "medium",
+      "id": "measurement.delta_resistance",
+      "location": "backend/catalog/measurement.json:107",
+      "inputs": {
+        "test_current": 0.01,
+        "sample_interval": 100.0,
+        "voltage_first": 9.765625e-05,
+        "voltage_second": 0.0001953125,
+        "voltage_third": 0.00029296875
+      },
+      "expected_outputs": {
+        "resistive_voltage": 0.0,
+        "resistance": 0.0,
+        "midpoint_emf": 0.0001953125,
+        "emf_drift_rate": 9.765625e-07
+      },
+      "analysis": "Decimal-linear zero-resistance vector leaves -6.776263578034403e-21 V roundoff; >=0 constraint rejects an explicitly admitted physical boundary.",
+      "minimal_correction": "Use a cancellation-aware evaluation and consistent boundary treatment in constraint and output; do not hide meaningful negative resistance.",
+      "regression": "delta_decimal_linear_emf_zero_resistance_is_admitted",
+      "status": "Analytical prediction supplied by V2MeasurementRun; not executed."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "measurement.dmm_accuracy_bound",
+      "inputs": {
+        "reading": -1.25,
+        "range_value": 5.0,
+        "reading_percent": 0.04,
+        "range_percent": 0.006
+      },
+      "expected_outputs": {
+        "reading_error_bound": 0.0005,
+        "range_error_bound": 0.0003,
+        "total_error_bound": 0.0008,
+        "lower_bound": -1.2508,
+        "upper_bound": -1.2492
+      },
+      "steps": "Select exact ID, enter complete non-default vector, calculate, compare every displayed result with the independent map and units; retain signed diagnostics. Inspect diagram quantity meaning, then reject the corresponding invalid process vector and recover without losing selection."
+    },
+    {
+      "id": "measurement.delta_resistance",
+      "inputs": {
+        "test_current": 0.02,
+        "sample_interval": 0.25,
+        "voltage_first": 0.004875,
+        "voltage_second": -0.0052,
+        "voltage_third": 0.004725
+      },
+      "expected_outputs": {
+        "resistive_voltage": 0.005,
+        "resistance": 0.25,
+        "midpoint_emf": -0.0002,
+        "emf_drift_rate": -0.0003
+      },
+      "steps": "Select exact ID, enter complete non-default vector, calculate, compare every displayed result with the independent map and units; retain signed diagnostics. Inspect diagram quantity meaning, then reject the corresponding invalid process vector and recover without losing selection."
+    },
+    {
+      "id": "measurement.compensated_probe_loading",
+      "inputs": {
+        "source_voltage": 2.5,
+        "source_resistance": 2000.0,
+        "probe_resistance": 4000000.0,
+        "probe_capacitance": 8e-12,
+        "scope_resistance": 1000000.0,
+        "scope_capacitance": 6.4e-11,
+        "frequency": 100000.0
+      },
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.19992003198720512,
+        "ac_gain": 0.1111549158333101,
+        "scope_voltage": 0.27788728958327524
+      },
+      "steps": "Select exact ID, enter complete non-default vector, calculate, compare every displayed result with the independent map and units; retain signed diagnostics. Inspect diagram quantity meaning, then reject the corresponding invalid process vector and recover without losing selection."
+    },
+    {
+      "id": "measurement.rectangular_aperture_response",
+      "inputs": {
+        "frequency": 75.0,
+        "aperture_time": 0.02,
+        "input_peak": 0.6
+      },
+      "expected_outputs": {
+        "midpoint_gain": -0.2122065907891938,
+        "amplitude_ratio": 0.2122065907891938,
+        "measured_peak": 0.12732395447351627,
+        "effective_delay": 0.01
+      },
+      "steps": "Select exact ID, enter complete non-default vector, calculate, compare every displayed result with the independent map and units; retain signed diagnostics. Inspect diagram quantity meaning, then reject the corresponding invalid process vector and recover without losing selection."
+    },
+    {
+      "id": "measurement.sampling_jitter_snr",
+      "inputs": {
+        "frequency": 3000000.0,
+        "timing_jitter": 7e-12,
+        "input_peak": 0.8
+      },
+      "expected_outputs": {
+        "phase_jitter": 0.0001319468914507713,
+        "error_rms": 7.464043336106054e-05,
+        "jitter_snr": 77.59201673815932
+      },
+      "steps": "Select exact ID, enter complete non-default vector, calculate, compare every displayed result with the independent map and units; retain signed diagnostics. Inspect diagram quantity meaning, then reject the corresponding invalid process vector and recover without losing selection."
+    },
+    {
+      "id": "measurement.correlated_voltage_ratio",
+      "inputs": {
+        "numerator_voltage": 12.0,
+        "denominator_voltage": 4.0,
+        "numerator_uncertainty": 0.036,
+        "denominator_uncertainty": 0.008,
+        "correlation": -0.3333333333333333,
+        "coverage_factor": 2.5
+      },
+      "expected_outputs": {
+        "voltage_ratio": 3.0,
+        "relative_standard_uncertainty": 0.00412310562561766,
+        "ratio_standard_uncertainty": 0.01236931687685298,
+        "expanded_uncertainty": 0.030923292192132454
+      },
+      "steps": "Select exact ID, enter complete non-default vector, calculate, compare every displayed result with the independent map and units; retain signed diagnostics. Inspect diagram quantity meaning, then reject the corresponding invalid process vector and recover without losing selection."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "measurement.dmm_accuracy_bound.invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.dmm_accuracy_bound",
+        "inputs": {
+          "reading": -5.00001,
+          "range_value": 5.0,
+          "reading_percent": 0.04,
+          "range_percent": 0.006
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Domain violation; next request is same-model valid recovery."
+    },
+    {
+      "name": "measurement.dmm_accuracy_bound.recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.dmm_accuracy_bound",
+        "inputs": {
+          "reading": -1.25,
+          "range_value": 5.0,
+          "reading_percent": 0.04,
+          "range_percent": 0.006
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "400 ppm of absolute reading plus 60 ppm of named 5-V range, not RSS or bipolar span.",
+      "expected_outputs": {
+        "reading_error_bound": 0.0005,
+        "range_error_bound": 0.0003,
+        "total_error_bound": 0.0008,
+        "lower_bound": -1.2508,
+        "upper_bound": -1.2492
+      }
+    },
+    {
+      "name": "measurement.delta_resistance.invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.delta_resistance",
+        "inputs": {
+          "test_current": 0.02,
+          "sample_interval": 0.25,
+          "voltage_first": 0.004875,
+          "voltage_second": 0.02,
+          "voltage_third": 0.004725
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Domain violation; next request is same-model valid recovery."
+    },
+    {
+      "name": "measurement.delta_resistance.recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.delta_resistance",
+        "inputs": {
+          "test_current": 0.02,
+          "sample_interval": 0.25,
+          "voltage_first": 0.004875,
+          "voltage_second": -0.0052,
+          "voltage_third": 0.004725
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Forward experiment: R=.25 ohm,I=.02 A,E0=-.2 mV,m=-.3 mV/s,dt=.25 s.",
+      "expected_outputs": {
+        "resistive_voltage": 0.005,
+        "resistance": 0.25,
+        "midpoint_emf": -0.0002,
+        "emf_drift_rate": -0.0003
+      }
+    },
+    {
+      "name": "measurement.compensated_probe_loading.invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 2000.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 8e-12,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 0.0,
+          "frequency": 100000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Domain violation; next request is same-model valid recovery."
+    },
+    {
+      "name": "measurement.compensated_probe_loading.recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 2000.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 8e-12,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 6.4e-11,
+          "frequency": 100000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Independent complex impedance series-current solution with Zp=1/(1/Rp+jwCp), Zi=1/(1/Ri+jwCi).",
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.19992003198720512,
+        "ac_gain": 0.1111549158333101,
+        "scope_voltage": 0.27788728958327524
+      }
+    },
+    {
+      "name": "measurement.rectangular_aperture_response.invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.rectangular_aperture_response",
+        "inputs": {
+          "frequency": 75.0,
+          "aperture_time": -0.02,
+          "input_peak": 0.6
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Domain violation; next request is same-model valid recovery."
+    },
+    {
+      "name": "measurement.rectangular_aperture_response.recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.rectangular_aperture_response",
+        "inputs": {
+          "frequency": 75.0,
+          "aperture_time": 0.02,
+          "input_peak": 0.6
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Integrating a cosine over 1.5 periods gives signed -2/(3*pi), not positive gain.",
+      "expected_outputs": {
+        "midpoint_gain": -0.2122065907891938,
+        "amplitude_ratio": 0.2122065907891938,
+        "measured_peak": 0.12732395447351627,
+        "effective_delay": 0.01
+      }
+    },
+    {
+      "name": "measurement.sampling_jitter_snr.invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 3000000.0,
+          "timing_jitter": 1e-06,
+          "input_peak": 0.8
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Domain violation; next request is same-model valid recovery."
+    },
+    {
+      "name": "measurement.sampling_jitter_snr.recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 3000000.0,
+          "timing_jitter": 7e-12,
+          "input_peak": 0.8
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "RMS sinusoid slope times RMS jitter; SNR from signal-RMS/error-RMS ratio.",
+      "expected_outputs": {
+        "phase_jitter": 0.0001319468914507713,
+        "error_rms": 7.464043336106054e-05,
+        "jitter_snr": 77.59201673815932
+      }
+    },
+    {
+      "name": "measurement.correlated_voltage_ratio.invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.correlated_voltage_ratio",
+        "inputs": {
+          "numerator_voltage": 12.0,
+          "denominator_voltage": 4.0,
+          "numerator_uncertainty": 0.1200001,
+          "denominator_uncertainty": 0.008,
+          "correlation": -0.3333333333333333,
+          "coverage_factor": 2.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Domain violation; next request is same-model valid recovery."
+    },
+    {
+      "name": "measurement.correlated_voltage_ratio.recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.correlated_voltage_ratio",
+        "inputs": {
+          "numerator_voltage": 12.0,
+          "denominator_voltage": 4.0,
+          "numerator_uncertainty": 0.036,
+          "denominator_uncertainty": 0.008,
+          "correlation": -0.3333333333333333,
+          "coverage_factor": 2.5
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Ratio sensitivities 1/4 and -3/4 give variance 153e-6; k=2.5 scales only expanded uncertainty.",
+      "expected_outputs": {
+        "voltage_ratio": 3.0,
+        "relative_standard_uncertainty": 0.00412310562561766,
+        "ratio_standard_uncertainty": 0.01236931687685298,
+        "expanded_uncertainty": 0.030923292192132454
+      }
+    },
+    {
+      "name": "dmm.zero_input",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.dmm_accuracy_bound",
+        "inputs": {
+          "reading": 0.0,
+          "range_value": 5.0,
+          "reading_percent": 0.04,
+          "range_percent": 0.006
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Range error remains at zero input.",
+      "expected_outputs": {
+        "reading_error_bound": 0.0,
+        "range_error_bound": 0.0003,
+        "total_error_bound": 0.0003,
+        "lower_bound": -0.0003,
+        "upper_bound": 0.0003
+      }
+    },
+    {
+      "name": "dmm.negative_full_scale_zero_coefficients",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.dmm_accuracy_bound",
+        "inputs": {
+          "reading": -5.0,
+          "range_value": 5.0,
+          "reading_percent": 0.0,
+          "range_percent": 0.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Inclusive negative full scale; zero-width interval allowed.",
+      "expected_outputs": {
+        "reading_error_bound": 0.0,
+        "range_error_bound": 0.0,
+        "total_error_bound": 0.0,
+        "lower_bound": -5.0,
+        "upper_bound": -5.0
+      }
+    },
+    {
+      "name": "delta.constant_emf",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.delta_resistance",
+        "inputs": {
+          "test_current": 0.02,
+          "sample_interval": 0.25,
+          "voltage_first": 0.0048,
+          "voltage_second": -0.0052,
+          "voltage_third": 0.0048
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Same 0.25-ohm resistor; zero thermal drift.",
+      "expected_outputs": {
+        "resistive_voltage": 0.005,
+        "resistance": 0.25,
+        "midpoint_emf": -0.0002,
+        "emf_drift_rate": 0.0
+      }
+    },
+    {
+      "name": "delta.curved_drift_bias",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.delta_resistance",
+        "inputs": {
+          "test_current": 0.125,
+          "sample_interval": 0.25,
+          "voltage_first": -0.015625,
+          "voltage_second": -0.09375,
+          "voltage_third": -0.03125
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "R=.25,I=.125,E0=-.0625,m=-.03125,q=.125; q*dt^2/2=.00390625 biases both reconstructed voltage and midpoint EMF.",
+      "expected_outputs": {
+        "resistive_voltage": 0.03515625,
+        "resistance": 0.28125,
+        "midpoint_emf": -0.05859375,
+        "emf_drift_rate": -0.03125
+      }
+    },
+    {
+      "name": "probe.matched.f0.0.rs2000.0",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 2000.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 1.6e-11,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 6.4e-11,
+          "frequency": 0.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Matched RC arms reduce to a first-order finite-source loading pole; zero Rs cancels frequency dependence.",
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.19992003198720512,
+        "ac_gain": 0.19992003198720512,
+        "scope_voltage": 0.4998000799680128
+      }
+    },
+    {
+      "name": "probe.matched.f100000.0.rs0.0",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 0.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 1.6e-11,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 6.4e-11,
+          "frequency": 100000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Matched RC arms reduce to a first-order finite-source loading pole; zero Rs cancels frequency dependence.",
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.2,
+        "ac_gain": 0.2,
+        "scope_voltage": 0.5
+      }
+    },
+    {
+      "name": "probe.matched.f100000.0.rs2000.0",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 2000.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 1.6e-11,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 6.4e-11,
+          "frequency": 100000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Matched RC arms reduce to a first-order finite-source loading pole; zero Rs cancels frequency dependence.",
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.19992003198720512,
+        "ac_gain": 0.19989419544303208,
+        "scope_voltage": 0.4997354886075802
+      }
+    },
+    {
+      "name": "probe.compensation.0.0",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 2000.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 0.0,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 6.4e-11,
+          "frequency": 100000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Complex series-impedance oracle; Cp=0 is valid, overcompensation must not clamp to DC.",
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.19992003198720512,
+        "ac_gain": 0.00621088363904815,
+        "scope_voltage": 0.015527209097620374
+      }
+    },
+    {
+      "name": "probe.compensation.3.2e-11",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.compensated_probe_loading",
+        "inputs": {
+          "source_voltage": 2.5,
+          "source_resistance": 2000.0,
+          "probe_resistance": 4000000.0,
+          "probe_capacitance": 3.2e-11,
+          "scope_resistance": 1000000.0,
+          "scope_capacitance": 6.4e-11,
+          "frequency": 100000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Complex series-impedance oracle; Cp=0 is valid, overcompensation must not clamp to DC.",
+      "expected_outputs": {
+        "matched_probe_capacitance": 1.6e-11,
+        "dc_gain": 0.19992003198720512,
+        "ac_gain": 0.3330199373788844,
+        "scope_voltage": 0.8325498434472111
+      }
+    },
+    {
+      "name": "aperture.null",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.rectangular_aperture_response",
+        "inputs": {
+          "frequency": 50.0,
+          "aperture_time": 0.02,
+          "input_peak": 0.6
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Whole-cycle cosine integral vanishes; absolute tolerance only covers floating pi/sin residual.",
+      "expected_outputs": {
+        "midpoint_gain": 0.0,
+        "amplitude_ratio": 0.0,
+        "measured_peak": 0.0,
+        "effective_delay": 0.01
+      },
+      "absolute_tolerances": {
+        "midpoint_gain": 1e-15,
+        "amplitude_ratio": 1e-15,
+        "measured_peak": 6e-16
+      }
+    },
+    {
+      "name": "aperture.dc",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.rectangular_aperture_response",
+        "inputs": {
+          "frequency": 0.0,
+          "aperture_time": 0.02,
+          "input_peak": 0.6
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Continuous DC limit.",
+      "expected_outputs": {
+        "midpoint_gain": 1.0,
+        "amplitude_ratio": 1.0,
+        "measured_peak": 0.6,
+        "effective_delay": 0.01
+      }
+    },
+    {
+      "name": "aperture.instantaneous",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.rectangular_aperture_response",
+        "inputs": {
+          "frequency": 75.0,
+          "aperture_time": 0.0,
+          "input_peak": 0.6
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Zero aperture is instantaneous observation.",
+      "expected_outputs": {
+        "midpoint_gain": 1.0,
+        "amplitude_ratio": 1.0,
+        "measured_peak": 0.6,
+        "effective_delay": 0.0
+      }
+    },
+    {
+      "name": "jitter.boundary_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 0.15915494309189535,
+          "timing_jitter": 0.100000000001,
+          "input_peak": 1.4142135623730951
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Phase exceeds documented 0.1-rad ceiling."
+    },
+    {
+      "name": "jitter.boundary_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 0.15915494309189535,
+          "timing_jitter": 0.1,
+          "input_peak": 1.4142135623730951
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "One-radian/second signal at inclusive .1-rad jitter boundary.",
+      "expected_outputs": {
+        "phase_jitter": 0.1,
+        "error_rms": 0.1,
+        "jitter_snr": 20.0
+      }
+    },
+    {
+      "name": "jitter.tiny_positive",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 0.15915494309189535,
+          "timing_jitter": 1e-300,
+          "input_peak": 1.4142135623730951
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "No arbitrary jitter floor; all positive outputs checked without absolute tolerance.",
+      "expected_outputs": {
+        "phase_jitter": 1e-300,
+        "error_rms": 1e-300,
+        "jitter_snr": 6000.0
+      }
+    },
+    {
+      "name": "ratio.denominator_scope_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.correlated_voltage_ratio",
+        "inputs": {
+          "numerator_voltage": 12.0,
+          "denominator_voltage": 4.0,
+          "numerator_uncertainty": 0.036,
+          "denominator_uncertainty": 0.0400001,
+          "correlation": -0.3333333333333333,
+          "coverage_factor": 2.5
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-11,
+      "rationale": "Each channel separately must remain within 1% standard uncertainty."
+    },
+    {
+      "name": "ratio.one_percent_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.correlated_voltage_ratio",
+        "inputs": {
+          "numerator_voltage": 1.0,
+          "denominator_voltage": 1.0,
+          "numerator_uncertainty": 0.01,
+          "denominator_uncertainty": 0.01,
+          "correlation": -1.0,
+          "coverage_factor": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Both channel limits inclusive; ratio uncertainty itself may exceed 1%.",
+      "expected_outputs": {
+        "voltage_ratio": 1.0,
+        "relative_standard_uncertainty": 0.02,
+        "ratio_standard_uncertainty": 0.02,
+        "expanded_uncertainty": 0.06
+      }
+    },
+    {
+      "name": "ratio.common_mode.1.0",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.correlated_voltage_ratio",
+        "inputs": {
+          "numerator_voltage": 8.0,
+          "denominator_voltage": 2.0,
+          "numerator_uncertainty": 0.0078125,
+          "denominator_uncertainty": 0.001953125,
+          "correlation": 1.0,
+          "coverage_factor": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Equal fractional uncertainties a=b=2^-10; one ULP below rho=1 gives exact u_rel=2^-36; rho=1 gives zero.",
+      "expected_outputs": {
+        "voltage_ratio": 4.0,
+        "relative_standard_uncertainty": 0.0,
+        "ratio_standard_uncertainty": 0.0,
+        "expanded_uncertainty": 0.0
+      }
+    },
+    {
+      "name": "ratio.common_mode.0.9999999999999999",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.correlated_voltage_ratio",
+        "inputs": {
+          "numerator_voltage": 8.0,
+          "denominator_voltage": 2.0,
+          "numerator_uncertainty": 0.0078125,
+          "denominator_uncertainty": 0.001953125,
+          "correlation": 0.9999999999999999,
+          "coverage_factor": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Equal fractional uncertainties a=b=2^-10; one ULP below rho=1 gives exact u_rel=2^-36; rho=1 gives zero.",
+      "expected_outputs": {
+        "voltage_ratio": 4.0,
+        "relative_standard_uncertainty": 1.4551915228366852e-11,
+        "ratio_standard_uncertainty": 5.820766091346741e-11,
+        "expanded_uncertainty": 1.7462298274040222e-10
+      }
+    },
+    {
+      "name": "regression.aperture_large_frequency_zero_time",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.rectangular_aperture_response",
+        "inputs": {
+          "frequency": 1e+308,
+          "aperture_time": 0.0,
+          "input_peak": 0.2
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Valid zero-time limit must precede avoidable pi*f overflow; analytically predicted failure, not executed.",
+      "expected_outputs": {
+        "midpoint_gain": 1.0,
+        "amplitude_ratio": 1.0,
+        "measured_peak": 0.2,
+        "effective_delay": 0.0
+      }
+    },
+    {
+      "name": "regression.jitter_large_frequency_small_time",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 1e+308,
+          "timing_jitter": 1e-312,
+          "input_peak": 1.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Frequency*jitter is finite; relative tolerance 1e-10 includes subnormal jitter input quantization (~1.5e-12). Predicted overflow failure, not executed.",
+      "expected_outputs": {
+        "phase_jitter": 0.0006283185307179586,
+        "error_rms": 0.0004442882938158366,
+        "jitter_snr": 64.0364026328377
+      }
+    },
+    {
+      "name": "regression.jitter_dimensional_underflow",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.sampling_jitter_snr",
+        "inputs": {
+          "frequency": 1e-200,
+          "timing_jitter": 1e-200,
+          "input_peak": 1e+200
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Phase is below binary64 but RMS slope times jitter remains representable; predicted zero error defect, not executed.",
+      "expected_outputs": {
+        "phase_jitter": 0.0,
+        "error_rms": 4.442882938158366e-200,
+        "jitter_snr": 7984.036402632838
+      }
+    },
+    {
+      "name": "regression.delta_decimal_zero_resistance",
+      "request": {
+        "command": "calculate",
+        "id": "measurement.delta_resistance",
+        "inputs": {
+          "test_current": 0.01,
+          "sample_interval": 100.0,
+          "voltage_first": 9.765625e-05,
+          "voltage_second": 0.0001953125,
+          "voltage_third": 0.00029296875
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-11,
+      "rationale": "Decimal-linear thermal EMF represents zero DUT resistance; split difference produces -6.78e-21 V rounding residue and strict constraint rejects. Absolute bounds are a few reading ulps propagated through I.",
+      "expected_outputs": {
+        "resistive_voltage": 0.0,
+        "resistance": 0.0,
+        "midpoint_emf": 0.0001953125,
+        "emf_drift_rate": 9.765625e-07
+      },
+      "absolute_tolerances": {
+        "resistive_voltage": 1e-19,
+        "resistance": 1e-17
+      }
+    }
+  ]
+}
