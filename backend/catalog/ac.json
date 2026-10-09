@@ -1,0 +1,24 @@
+[
+  {
+    "id": "ac.inductor_reactance",
+    "title": "Ideal inductor AC reactance and current",
+    "category": "AC impedance and resonance",
+    "level": "basic",
+    "description": "Estimate the sinusoidal current drawn by an ideal inductor at a specified frequency and RMS terminal voltage.",
+    "formula": "X_L = 2 pi f L; I_rms = V_rms / X_L; arg(Z_L) = +pi/2",
+    "assumptions": ["Linear lumped ideal inductor in sinusoidal steady state; no winding resistance, core loss, saturation or self-capacitance.", "Frequency must be below the component's self-resonance and within its linear operating range; numerical input limits are not component ratings."],
+    "references": [{"title": "MIT OCW, Alternating-Current Circuits, section 12.2.2", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "inductance", "label": "Inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "reactance", "label": "Inductive reactance", "unit": "ohm", "expression": "2*pi*frequency*inductance"},
+      {"key": "current_rms", "label": "Inductor RMS current", "unit": "A", "expression": "voltage_rms/reactance"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "pi/2"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "inductance": 0.01, "voltage_rms": 5.0}, "expected": {"reactance": 62.83185307179586, "current_rms": 0.07957747154594767, "impedance_phase": 1.5707963267948966}, "relative_tolerance": 0.000001}
+  }
+]

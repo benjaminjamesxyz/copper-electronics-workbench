@@ -1,0 +1,38 @@
+# AC impedance and resonance
+
+The eight calculators in `backend/catalog/ac.json` run in the shared Rust expression engine; the desktop frontend displays their metadata and results without implementing numerical formulas. This lane covers sinusoidal steady-state passive networks, resonance characterization and load power/correction. Filter synthesis, transient ringing, magnetic geometry and converter efficiency are separate domains.
+
+## Sources and evidence
+
+- **[M1] MIT OCW, _Alternating-Current Circuits_, sections 12.2–12.4 and 12.6.** [PDF](https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf). University-authored constitutive laws, impedance, phase and RMS power; instructional analytical evidence, not component-parasitic validation.
+- **[M2] MIT OCW, Chaniotakis and Cory, _Frequency response: Resonance, Bandwidth, Q factor_, Spring 2006.** [PDF](https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/5bcec4bfba5f2e99754b77509e9e7ab4_resonance_qfactr.pdf). Exact ideal half-power endpoints and Q/topology derivations; not independent empirical confirmation of M1.
+- **[G] Georgia State University HyperPhysics, R. Nave, _Parallel Resonant Circuits_.** [Source](http://hyperphysics.phy-astr.gsu.edu/hbase/electric/parres.html). Research read the HTTP source after HTTPS certificate failure. Distinguishes zero-susceptance phase resonance from impedance maximum. The winding-loss formulas below are explicitly derived from admittance, not copied from an uninspected graphic.
+- **[I] University of Illinois, George Gross, ECE 333, _Power System Basics – AC Analysis_.** [PDF](https://courses.grainger.illinois.edu/ece333/fa2018/handouts/ECE_333_Lecture%202_Power%20System%20Basics.pdf). Slides 45–48 derive complex power; 52–58 derive correction and C = Qc/(omega Vc²). Worked inputs below are independent of the lecture examples.
+
+Research used direct university material. An Eaton manufacturer-PDF lookup timed out; no inaccessible Eaton content is cited. The cited analytical laws agree under their ideal models, not for unspecified real parts; they establish no neglected ESR, core-loss, harmonic or capacitor-bank safety performance.
+
+## Units, execution and numerical domains
+
+Use frequency f in Hz, omega = 2 pi f in rad/s, L in H, C in F, R in ohm, **RMS** voltage/current in V/A, admittance in S, P in W, Q in var, apparent power in VA and phase in rad. Quality factor and displacement power factor have unit `1`. With exp(j omega t), impedance phase is voltage minus current phase: positive is inductive lag, negative is capacitive lead.
+
+Inclusive finite numerical envelopes are f = 1e-6…1e12 Hz, L = 1e-15…1e3 H, C = 1e-18…1e3 F, R = 1e-9…1e12 ohm, and ordinary source voltage = 0…1e9 V. They bound intermediates away from overflow/underflow and guard reciprocals; they are not physical operating ratings. Actual self-resonance, bias, saturation and applicable AC loss require component data. Feature-specific power/PF envelopes are stated below and in the catalog.
+
+The engine requires exactly the finite named input keys, applies bounds and input-only model constraints before evaluating outputs sequentially, and rejects domain/nonfinite arithmetic. Output expressions use only inputs, constants and earlier outputs. No complex evaluator or Flutter numerical implementation is required. All defaults equal each complete worked input vector. Every example includes all output keys with relative tolerance **1e-6**; research independently derived them using elementary arithmetic and complex phasors/atan2, not runtime results. Numerical tolerance is not physical accuracy. This implementation handoff makes no build/test claim.
+
+## `ac.inductor_reactance` — ideal inductor AC loading (basic)
+
+**Purpose/topology:** Determine reactance and RMS current of a linear ideal inductor driven at one frequency.
+
+From v = L di/dt, V = j omega L I, so ZL = j omega L, XL = 2 pi f L, I_rms = V_rms/XL and impedance phase = +pi/2. Dimensions (1/s)(V s/A) = ohm. Source: [M1], §12.2.2, equations 12.2.11–12.2.17.
+
+**Domain/error rationale:** Positive f and L within the shared envelopes prevent a zero current divisor; V is nonnegative and may be zero. Zero-drive phase is the component impedance phase, not a measured waveform phase. Assumptions exclude copper/core loss, saturation and self-capacitance. Operate below self-resonance and within the component's actual linear/current limits; L is supplied, not synthesized from geometry.
+
+**Complete independent example inputs:** `frequency=1000 Hz`, `inductance=0.01 H`, `voltage_rms=5 V`. omega = 6283.18530718 rad/s, XL = 6283.18530718 × 0.01; 5/XL gives current.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `reactance` | 62.83185307179586 | ohm |
+| `current_rms` | 0.07957747154594767 | A RMS |
+| `impedance_phase` | 1.5707963267948966 | rad |
+
+**Parent verification scenarios:** Scale f/L; V=0; reject f=0 or L=0; confirm +pi/2 impedance phase.
