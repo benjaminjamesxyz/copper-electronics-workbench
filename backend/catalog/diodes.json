@@ -270,5 +270,218 @@
     },
     "relative_tolerance": 1e-06
   }
-}
+},
+  {
+    "id": "diodes.zener_shunt_resistor_window",
+    "title": "Zener shunt-regulator resistor design window",
+    "category": "Diodes, LEDs and rectification",
+    "level": "expert",
+    "description": "Find feasible nominal series-resistance bounds and worst-case stresses across supply, load, zener-voltage and resistor-tolerance corners.",
+    "formula": "Rnom,min = (Vin,max - Vz,min)/[(Iz,max + IL,min)(1-t)]; Rnom,max = (Vin,min - Vz,max)/[(Iz,min + IL,max)(1+t)]",
+    "assumptions": [
+      "Piecewise-constant zener voltage within the specified voltage envelope; envelope must include current and temperature dependence.",
+      "Zener current limits refer to useful regulated operation and derated current allowance, not just the nominal datasheet test current.",
+      "Zener power bound multiplies independently conservative maximum voltage and maximum current; these corners need not occur together.",
+      "No junction-temperature calculation or standards-compliance claim; reject designs with no feasible resistance interval."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLVAG00 Zener Diodes Introduction, section 6.1.1 voltage regulation",
+        "url": "https://www.ti.com/lit/pdf/slvag00"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "input_min",
+        "label": "Minimum input voltage",
+        "unit": "V",
+        "default": 12,
+        "min": 1e-06,
+        "max": 10000
+      },
+      {
+        "key": "input_max",
+        "label": "Maximum input voltage",
+        "unit": "V",
+        "default": 15,
+        "min": 1e-06,
+        "max": 10000
+      },
+      {
+        "key": "zener_min",
+        "label": "Minimum regulated zener voltage",
+        "unit": "V",
+        "default": 4.9,
+        "min": 1e-06,
+        "max": 1000
+      },
+      {
+        "key": "zener_max",
+        "label": "Maximum regulated zener voltage",
+        "unit": "V",
+        "default": 5.1,
+        "min": 1e-06,
+        "max": 1000
+      },
+      {
+        "key": "load_min",
+        "label": "Minimum load current",
+        "unit": "A",
+        "default": 0,
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "load_max",
+        "label": "Maximum load current",
+        "unit": "A",
+        "default": 0.01,
+        "min": 0,
+        "max": 1000
+      },
+      {
+        "key": "zener_current_min",
+        "label": "Minimum regulating zener current",
+        "unit": "A",
+        "default": 0.005,
+        "min": 1e-12,
+        "max": 1000
+      },
+      {
+        "key": "zener_current_limit",
+        "label": "Allowed maximum zener current",
+        "unit": "A",
+        "default": 0.05,
+        "min": 1e-12,
+        "max": 1000
+      },
+      {
+        "key": "resistor_tolerance",
+        "label": "Resistor fractional tolerance",
+        "unit": "1",
+        "default": 0.05,
+        "min": 0,
+        "max": 0.5
+      },
+      {
+        "key": "resistance",
+        "label": "Selected nominal series resistance",
+        "unit": "ohm",
+        "default": 390,
+        "min": 1e-06,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resistance_min",
+        "label": "Minimum feasible nominal resistance",
+        "unit": "ohm",
+        "expression": "(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))"
+      },
+      {
+        "key": "resistance_max",
+        "label": "Maximum feasible nominal resistance",
+        "unit": "ohm",
+        "expression": "(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))"
+      },
+      {
+        "key": "zener_current_low",
+        "label": "Minimum zener-current corner",
+        "unit": "A",
+        "expression": "(input_min-zener_max)/(resistance*(1+resistor_tolerance))-load_max"
+      },
+      {
+        "key": "zener_current_high",
+        "label": "Maximum zener-current corner",
+        "unit": "A",
+        "expression": "(input_max-zener_min)/(resistance*(1-resistor_tolerance))-load_min"
+      },
+      {
+        "key": "zener_power_bound",
+        "label": "Conservative zener-power bound",
+        "unit": "W",
+        "expression": "zener_max*zener_current_high"
+      },
+      {
+        "key": "resistor_power_bound",
+        "label": "Maximum resistor-power corner",
+        "unit": "W",
+        "expression": "(input_max-zener_min)^2/(resistance*(1-resistor_tolerance))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "input_max",
+        "op": ">=",
+        "right": "input_min",
+        "message": "Input voltage bounds are reversed."
+      },
+      {
+        "left": "zener_max",
+        "op": ">=",
+        "right": "zener_min",
+        "message": "Zener voltage bounds are reversed."
+      },
+      {
+        "left": "input_min",
+        "op": ">",
+        "right": "zener_max",
+        "message": "Minimum input must exceed maximum zener voltage."
+      },
+      {
+        "left": "load_max",
+        "op": ">=",
+        "right": "load_min",
+        "message": "Load current bounds are reversed."
+      },
+      {
+        "left": "zener_current_limit",
+        "op": ">=",
+        "right": "zener_current_min",
+        "message": "Allowed maximum zener current is below the regulating minimum."
+      },
+      {
+        "left": "(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))",
+        "op": "<=",
+        "right": "(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))",
+        "message": "No feasible nominal resistance window exists."
+      },
+      {
+        "left": "resistance",
+        "op": ">=",
+        "right": "(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))",
+        "message": "Selected resistor permits excessive maximum zener current."
+      },
+      {
+        "left": "resistance",
+        "op": "<=",
+        "right": "(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))",
+        "message": "Selected resistor cannot sustain minimum regulation current."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "input_min": 12,
+        "input_max": 15,
+        "zener_min": 4.9,
+        "zener_max": 5.1,
+        "load_min": 0,
+        "load_max": 0.01,
+        "zener_current_min": 0.005,
+        "zener_current_limit": 0.05,
+        "resistor_tolerance": 0.05,
+        "resistance": 390
+      },
+      "expected": {
+        "resistance_min": 212.63157894736844,
+        "resistance_max": 438.0952380952381,
+        "zener_current_low": 0.006849816849816852,
+        "zener_current_high": 0.027260458839406206,
+        "zener_power_bound": 0.13902834008097165,
+        "resistor_power_bound": 0.2753306342780027
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
 ]

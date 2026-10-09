@@ -113,3 +113,64 @@ Implementation uses `expm1(x)` for both forward-current output and the input-onl
 - `diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19)) <= 40` — Forward exponent exceeds the selected model range.
 - `saturation_current*expm1(diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19))) <= model_current_max` — Predicted current exceeds the fitted model-current ceiling.
 
+## 5. `diodes.zener_shunt_resistor_window` — expert
+
+**Purpose:** Determine whether one series resistor can maintain zener regulation without excessive zener current over supply/load/tolerance corners, and estimate stresses.
+
+KCL gives IZ = (Vin − VZ)/Ractual − IL. For nominal resistance R and fractional tolerance t, Ractual ranges from R(1−t) to R(1+t). The maximum-current corner (Vin,max, VZ,min, IL,min, Ractual,min) requires
+
+Rnom,min = (Vin,max − VZ,min)/[(IZ,limit + IL,min)(1−t)].
+
+The minimum-current corner (Vin,min, VZ,max, IL,max, Ractual,max) requires
+
+Rnom,max = (Vin,min − VZ,max)/[(IZ,min + IL,max)(1+t)].
+
+Compute IZ,low and IZ,high at those same corners with the selected nominal resistor. A conservative zener-power bound is VZ,max·IZ,high; worst resistor power is (Vin,max − VZ,min)²/[R(1−t)]. Zener power multiplies independently worst bounds and may exceed the actual simultaneous-corner maximum; it is labeled a bound deliberately.
+
+**Units:** voltages V, currents A, resistance ohm, powers W, fractional tolerance dimensionless (0.05 means 5%). **Domain:** positive regulating currents and resistance, ordered input/zener/load/current bounds, Vin,min > VZ,max, 0 ≤ t ≤ 0.5, nonempty resistance window, and selected R within it. Denominators remain positive. Infeasible designs are rejected rather than returned with an apparently usable resistor.
+
+**Limits:** Zener envelope must include tolerance, dynamic impedance, bias-current variation and temperature; it is not just the nominal voltage at 25 °C. Set IZ,min high enough for actual regulation and IZ,limit from the derated device allowance. No device temperature or preferred-value rounding is calculated. Source S7; tolerance window is explicitly derived here.
+
+**Independent example (also defaults):** Vin = 12–15 V, VZ = 4.9–5.1 V, IL = 0–0.010 A, allowed IZ = 0.005–0.050 A, t = 0.05 and nominal R = 390 ohm. Ractual is 370.5–409.5 ohm. Lower nominal bound = (15−4.9)/(0.050·0.95) = **212.63157894736844 ohm**; upper = (12−5.1)/(0.015·1.05) = **438.0952380952381 ohm**. The selected value is feasible. IZ,low = 6.9/409.5 − 0.010 = **0.006849816849816852 A**; IZ,high = 10.1/370.5 = **0.027260458839406206 A**. **Zener-power bound = 0.13902834008097165 W**; **resistor-power bound = 0.2753306342780027 W**.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `input_min` | Minimum input voltage | V | 12 | [1e-06, 10000] |
+| `input_max` | Maximum input voltage | V | 15 | [1e-06, 10000] |
+| `zener_min` | Minimum regulated zener voltage | V | 4.9 | [1e-06, 1000] |
+| `zener_max` | Maximum regulated zener voltage | V | 5.1 | [1e-06, 1000] |
+| `load_min` | Minimum load current | A | 0 | [0, 1000] |
+| `load_max` | Maximum load current | A | 0.01 | [0, 1000] |
+| `zener_current_min` | Minimum regulating zener current | A | 0.005 | [1e-12, 1000] |
+| `zener_current_limit` | Allowed maximum zener current | A | 0.05 | [1e-12, 1000] |
+| `resistor_tolerance` | Resistor fractional tolerance | 1 | 0.05 | [0, 0.5] |
+| `resistance` | Selected nominal series resistance | ohm | 390 | [1e-06, 1000000000000.0] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `resistance_min` | Minimum feasible nominal resistance | ohm | `(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))` | 212.63157894736844 |
+| `resistance_max` | Maximum feasible nominal resistance | ohm | `(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))` | 438.0952380952381 |
+| `zener_current_low` | Minimum zener-current corner | A | `(input_min-zener_max)/(resistance*(1+resistor_tolerance))-load_max` | 0.006849816849816852 |
+| `zener_current_high` | Maximum zener-current corner | A | `(input_max-zener_min)/(resistance*(1-resistor_tolerance))-load_min` | 0.027260458839406206 |
+| `zener_power_bound` | Conservative zener-power bound | W | `zener_max*zener_current_high` | 0.13902834008097165 |
+| `resistor_power_bound` | Maximum resistor-power corner | W | `(input_max-zener_min)^2/(resistance*(1-resistor_tolerance))` | 0.2753306342780027 |
+
+### Constraint/error rationale and implementation limits
+
+Ordered voltage/load/current bounds precede the corner/window calculations. The t ≤ 0.5 range ensures both (1−t) and (1+t) are positive, and positive regulating currents prevent zero denominators. Equality at either selected-resistor window endpoint is admitted. An empty window is an explicit domain error, not a hidden preferred-value substitution or an infeasible positive-looking design.
+
+- `input_max >= input_min` — Input voltage bounds are reversed.
+- `zener_max >= zener_min` — Zener voltage bounds are reversed.
+- `input_min > zener_max` — Minimum input must exceed maximum zener voltage.
+- `load_max >= load_min` — Load current bounds are reversed.
+- `zener_current_limit >= zener_current_min` — Allowed maximum zener current is below the regulating minimum.
+- `(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance)) <= (input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))` — No feasible nominal resistance window exists.
+- `resistance >= (input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))` — Selected resistor permits excessive maximum zener current.
+- `resistance <= (input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))` — Selected resistor cannot sustain minimum regulation current.
+
