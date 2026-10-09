@@ -710,3 +710,97 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 
 - [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 21-22, 38-39 and 61-62](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
 
+## 7. `opamps.sinusoidal_slew_requirement` — intermediate
+
+### Physical problem
+
+Size the output slew-rate capability needed to reproduce a given sine-wave amplitude and frequency, distinguishing the mathematical slope bound from a user-selected engineering margin. This is a large-signal limitation, not small-signal bandwidth.
+
+### Derivation
+
+For
+
+\[
+V_o(t)=V_{center}+V_{peak}\sin(2\pi f t),
+\quad
+\frac{dV_o}{dt}=2\pi fV_{peak}\cos(2\pi f t),
+\]
+
+the largest slope magnitude is
+
+\[
+SR_{required}=2\pi fV_{peak}.
+\]
+
+With a chosen multiplier `M`, `SRdesign=M SRrequired`; available theoretical margin is `SRavailable/SRrequired`. Equation 13 and section 6.1(a) of R explicitly use the sine-wave slope relation; S section 5.13 defines slew rate. R warns that low distortion requires additional margin, whose amount depends on the application.
+
+### Units, domain and interpretation
+
+Input/output slew rates are **V/s**, not V/microsecond. Multiply a datasheet V/microsecond rating by `1e6` before entering it. `Vpeak` is an **output** peak amplitude, not RMS, peak-to-peak or an input amplitude. `f>0`, `Vpeak>0`, `SRavailable>0`, `M>=1`; the positive frequency/amplitude guard makes the reported margin division well-defined. A DC/zero-amplitude case is outside this particular nonzero-sinusoid calculator.
+
+Validate `Vcenter-Vpeak` and `Vcenter+Vpeak` against actual output-swing limits. Use the smaller guaranteed positive/negative slew-rate magnitude. A margin below 1 flags a theoretically slew-limited requested waveform; a margin between 1 and `M` falls short of the requested design margin. These are useful diagnostic outputs, not invalid mathematical inputs, so the catalog does not reject insufficient available slew rate. The catalog does reject insufficient output swing because its assumed sinusoidal amplitude could not be reproduced linearly.
+
+No universal low-distortion guarantee is assigned to a 2× multiplier. Bandwidth, output current, stability, common-mode compliance and settling remain separate checks. Differential slew-rate specifications cannot be substituted blindly into a single-ended output calculation.
+
+### Independent example — all expected outputs
+
+`f=100,000 Hz`, `Vpeak=2 V`, `Vcenter=0 V`, `SRavailable=5,000,000 V/s`, `M=2`; output limits ±10 V.
+
+- `required_slew = 2*pi*100000*2 = 1,256,637.0614359172 V/s`, or approximately 1.256637 V/microsecond.
+- `design_slew = 2,513,274.1228718343 V/s`.
+- `slew_margin = 5,000,000/(400,000*pi) = 3.978873577297384`.
+
+The desired sine lies between −2 and +2 V, so swing constraints pass. The available slew exceeds the chosen 2× design target; actual distortion remains device-dependent.
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `frequency` | Output sine frequency | Hz | `100000.0` | > 0.0 |
+| `v_peak` | Output peak amplitude | V | `2.0` | > 0.0 |
+| `v_center` | Output DC center voltage | V | `0.0` | Any finite value, subject to relational guards |
+| `slew_available` | Available output slew-rate magnitude | V/s | `5000000.0` | > 0.0 |
+| `design_margin` | Desired slew-rate multiplier | 1 | `2.0` | >= 1.0 |
+| `v_out_min` | Minimum linear output voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_out_max` | Maximum linear output voltage | V | `10.0` | Any finite value, subject to relational guards |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `required_slew` | V/s | `2*pi*frequency*v_peak` | `1256637.0614359172` |
+| `design_slew` | V/s | `design_margin*required_slew` | `2513274.1228718343` |
+| `slew_margin` | 1 | `slew_available/required_slew` | `3.978873577297384` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `v_out_min < v_out_max`: Output limits must be ordered.
+- Require `v_center-v_peak >= v_out_min`: Negative sine peak is below the linear output range.
+- Require `v_center+v_peak <= v_out_max`: Positive sine peak is above the linear output range.
+
+### Catalog model assumptions
+
+- Vpeak is the desired output peak excursion about Vcenter, not RMS, peak-to-peak or input voltage.
+- Use the smaller guaranteed positive/negative slew-rate magnitude at the applicable supplies, load and temperature.
+- The theoretical slope bound is necessary but not sufficient for low distortion; margin M is a design choice, not a universal guarantee.
+- Small-signal bandwidth, settling, output current, stability and input common-mode compliance are separate checks.
+- This is a single-ended output model; a differential slew-rate rating cannot be substituted without translating the per-output signal and rating.
+
+### Feature sources
+
+- [TI SBAA150A: Design for a Wideband, Differential Transimpedance DAC Output, equation 13 and section 6.1(a)](https://www.ti.com/lit/an/sbaa150/sbaa150.pdf)
+- [TI SLOA011B: Understanding Operational Amplifier Specifications, section 5.13](https://www.ti.com/lit/an/sloa011b/sloa011b.pdf)
+
+## Integration handoff and unexecuted verification
+
+All eight researched IDs are implemented as shared-engine catalog programs. This lane changed only `backend/catalog/opamps.json` and `docs/features/opamps.md`; the shared evaluator and Flutter arithmetic remain parent-owned. The difference-stage common-mode expression has the algebraically equivalent ratio-first conditioning correction documented above. All researched example input maps, expected output maps, units, source titles/URLs and the `1e-6` relative tolerance are preserved.
+
+Main should exercise all complete examples/defaults, exact input-key and finite-value rejection, positive-divisor/capacitance guards, ordered operating ranges and pin/output violations. Independent QA should also exercise reference-biased stages, a unity follower (`r_feedback=0`), exactly matched noninteger difference ratios, small mismatch and common-mode leakage, zero-duration/zero-slope integration with valid endpoints, descending/flat differentiation and zero-duration rejection, inadequate slew margin as a valid diagnostic, and low finite open-loop gain versus high-loop-gain bandwidth plus minimum-stable-noise-gain rejection.
+
+No builds, tests, linters, formatters, engine evaluations or smoke commands were run by this implementation lane. These are authored numerical models and independently sourced worked examples, not executed acceptance or hardware performance certification.

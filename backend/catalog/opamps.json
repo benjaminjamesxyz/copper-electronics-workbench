@@ -1125,5 +1125,138 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opamps.sinusoidal_slew_requirement",
+    "title": "Sinusoidal output slew-rate requirement",
+    "category": "Operational amplifier stages",
+    "level": "intermediate",
+    "description": "Size the available output slew rate for a desired sine-wave amplitude and frequency, with an explicit user-selected design margin.",
+    "formula": "SRrequired = 2 pi f Vpeak; SRdesign = M SRrequired; available_margin = SRavailable/SRrequired",
+    "assumptions": [
+      "Vpeak is the desired output peak excursion about Vcenter, not RMS, peak-to-peak or input voltage.",
+      "Use the smaller guaranteed positive/negative slew-rate magnitude at the applicable supplies, load and temperature.",
+      "The theoretical slope bound is necessary but not sufficient for low distortion; margin M is a design choice, not a universal guarantee.",
+      "Small-signal bandwidth, settling, output current, stability and input common-mode compliance are separate checks.",
+      "This is a single-ended output model; a differential slew-rate rating cannot be substituted without translating the per-output signal and rating."
+    ],
+    "references": [
+      {
+        "title": "TI SBAA150A: Design for a Wideband, Differential Transimpedance DAC Output, equation 13 and section 6.1(a)",
+        "url": "https://www.ti.com/lit/an/sbaa150/sbaa150.pdf"
+      },
+      {
+        "title": "TI SLOA011B: Understanding Operational Amplifier Specifications, section 5.13",
+        "url": "https://www.ti.com/lit/an/sloa011b/sloa011b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Output sine frequency",
+        "unit": "Hz",
+        "default": 100000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_peak",
+        "label": "Output peak amplitude",
+        "unit": "V",
+        "default": 2.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_center",
+        "label": "Output DC center voltage",
+        "unit": "V",
+        "default": 0.0
+      },
+      {
+        "key": "slew_available",
+        "label": "Available output slew-rate magnitude",
+        "unit": "V/s",
+        "default": 5000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "design_margin",
+        "label": "Desired slew-rate multiplier",
+        "unit": "1",
+        "default": 2.0,
+        "min": 1.0
+      },
+      {
+        "key": "v_out_min",
+        "label": "Minimum linear output voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_out_max",
+        "label": "Maximum linear output voltage",
+        "unit": "V",
+        "default": 10.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "required_slew",
+        "label": "Theoretical minimum slew rate",
+        "unit": "V/s",
+        "expression": "2*pi*frequency*v_peak"
+      },
+      {
+        "key": "design_slew",
+        "label": "Slew rate including desired margin",
+        "unit": "V/s",
+        "expression": "design_margin*required_slew"
+      },
+      {
+        "key": "slew_margin",
+        "label": "Available versus theoretical slew margin",
+        "unit": "1",
+        "expression": "slew_available/required_slew"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_out_min",
+        "op": "<",
+        "right": "v_out_max",
+        "message": "Output limits must be ordered."
+      },
+      {
+        "left": "v_center-v_peak",
+        "op": ">=",
+        "right": "v_out_min",
+        "message": "Negative sine peak is below the linear output range."
+      },
+      {
+        "left": "v_center+v_peak",
+        "op": "<=",
+        "right": "v_out_max",
+        "message": "Positive sine peak is above the linear output range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 100000.0,
+        "v_peak": 2.0,
+        "v_center": 0.0,
+        "slew_available": 5000000.0,
+        "design_margin": 2.0,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0
+      },
+      "expected": {
+        "required_slew": 1256637.0614359172,
+        "design_slew": 2513274.1228718343,
+        "slew_margin": 3.978873577297384
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
