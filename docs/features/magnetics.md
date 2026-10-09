@@ -87,6 +87,66 @@ All inputs are the default/worked input column above; every result is named belo
 | `reflected_resistance` | Primary-referred load resistance | ohm | 2400.0 |
 
 
+## `magnetics.rectangular_toroid_inductance` — Rectangular-section toroid inductance (expert)
+
+ID: `magnetics.rectangular_toroid_inductance`.
+
+**Question:** What is the inductance of an ungapped toroidal core when radial field variation is retained?
+
+**Derivation:** For inner radius ri, outer radius ro and axial height h, Ampère's law gives H(r) = N I/(2πr), and linear material gives B(r) = mu0 mur N I/(2πr). Integrate flux through one turn:
+
+Φ = ∫ri^ro B(r) h dr = mu0 mur N I h ln(ro/ri)/(2π).
+
+Then L = N Φ/I = mu0 mur N² h ln(ro/ri)/(2π). The MIT worked example derives the air-core formula; replacing mu0 with mu0 mur is justified by the constant linear constitutive relation, not by a manufacturer-specific empirical fit. Maximum B occurs at ri, so the current-specific inner field is also reported and guarded.
+
+**Formula and outputs:**
+
+- `inductance = 4*pi*1e-7*relative_permeability*turns^2*height*ln(outer_radius/inner_radius)/(2*pi)` [H].
+- `inner_flux_density = 4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius)` [T].
+
+**Input units/domain:** ri, ro, h [m] > 0; ro > ri; mur [1] > 0; N [turn] ≥ 1 integral; Ipk [A] ≥ 0; linear_flux_limit [T] > 0. The expanded inner-field expression must be ≤ the limit. Distances are radii, not diameters; their ratio is identical if both are consistently converted, but the field guard requires actual radius.
+
+**Limitations:** Homogeneous ungapped rectangular core; evenly distributed winding; toroidal symmetry; negligible leakage, fringing, core losses and winding capacitance; real constant permeability appropriate to the current and frequency. The logarithmic formula is exact within that ideal field model, not exact for every manufactured toroid. It differs physically from the discrete-gap reluctance calculator below and is not an inverse rearrangement.
+
+**Worked example/defaults:** ri = 0.01 m, ro = 0.02 m, h = 0.005 m, mur = 100, N = 50, Ipk = 0.1 A, limit = 0.2 T.
+
+- mu0/(2π) = 2 × 10^-7 H/m.
+- L = (2 × 10^-7) × 100 × 2500 × 0.005 × ln(2) = 0.00025 ln(2) = **0.00017328679513998633 H** (173.286795 µH).
+- Binner = (2 × 10^-7) × 100 × 50 × 0.1 / 0.01 = **0.01 T**, inside the selected linear domain.
+
+**Sources:** [MIT 8.02 example 2](https://web.mit.edu/course/8/8.02-esg/Spring03/www/8.02ch32we.pdf); [MIT Lecture 11, linear magnetic material and toroidal sections](https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf).
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `inner_radius` | Core inner radius | m | 0.01 | > 0.0 |
+| `outer_radius` | Core outer radius | m | 0.02 | > 0.0 |
+| `height` | Core axial height | m | 0.005 | > 0.0 |
+| `relative_permeability` | Linear relative permeability | 1 | 100.0 | > 0.0 |
+| `turns` | Winding turns | turn | 50.0 | >= 1.0 |
+| `peak_current` | Peak winding current | A | 0.1 | >= 0.0 |
+| `linear_flux_limit` | Material linear-region flux limit | T | 0.2 | > 0.0 |
+
+**Model-domain and error rationale:** Strictly positive dimensions and outer radius greater than inner radius guard the logarithm and ensure a nonempty annular core. Integer turns represent a real winding. Positive permeability and field limit define the linear model. Nonnegative peak current permits zero-current operation; the inner-radius field guard rejects operation outside the supplied linear material regime.
+
+**Pre-output, input-only constraints:**
+
+- `outer_radius > inner_radius` — Outer core radius must exceed inner core radius.
+- `floor(turns) == turns` — Turns must be a positive integer.
+- `4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius) <= linear_flux_limit` — Inner-radius field exceeds the supplied linear-material limit.
+
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `inductance` | Toroidal inductance | H | 0.00017328679513998633 |
+| `inner_flux_density` | Peak field at core inner radius | T | 0.01 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.

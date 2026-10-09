@@ -101,5 +101,135 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.rectangular_toroid_inductance",
+    "title": "Rectangular-section toroid inductance",
+    "category": "Magnetics and transformers",
+    "level": "expert",
+    "description": "Integrate the radial 1/r field in an ungapped toroid rather than using a mean-radius approximation.",
+    "formula": "L = mu0 mur N² h ln(ro/ri)/(2 pi); Binner = mu0 mur N Ipk/(2 pi ri)",
+    "assumptions": [
+      "Toroid has rectangular radial/axial cross section, homogeneous real constant permeability and no discrete gap.",
+      "An evenly distributed winding confines flux to the toroid; leakage, winding self-capacitance and core losses are ignored.",
+      "Permeability is valid throughout the operating field range; inner-radius field is the highest field and is checked against a user-supplied linearity limit.",
+      "Use mu0 = 4 pi times 1e-7 H/m as an engineering approximation; dimensions are core radii, not diameters."
+    ],
+    "references": [
+      {
+        "title": "MIT 8.02 Spring 2003, Inductance Worked Examples, example 2: Rectangular-section toroid",
+        "url": "https://web.mit.edu/course/8/8.02-esg/Spring03/www/8.02ch32we.pdf"
+      },
+      {
+        "title": "MIT 6.014 Lecture 11, sections A and C: Linear magnetic material and toroidal inductors",
+        "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "inner_radius",
+        "label": "Core inner radius",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "outer_radius",
+        "label": "Core outer radius",
+        "unit": "m",
+        "default": 0.02,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "height",
+        "label": "Core axial height",
+        "unit": "m",
+        "default": 0.005,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permeability",
+        "label": "Linear relative permeability",
+        "unit": "1",
+        "default": 100.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "turns",
+        "label": "Winding turns",
+        "unit": "turn",
+        "default": 50.0,
+        "min": 1.0
+      },
+      {
+        "key": "peak_current",
+        "label": "Peak winding current",
+        "unit": "A",
+        "default": 0.1,
+        "min": 0.0
+      },
+      {
+        "key": "linear_flux_limit",
+        "label": "Material linear-region flux limit",
+        "unit": "T",
+        "default": 0.2,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "inductance",
+        "label": "Toroidal inductance",
+        "unit": "H",
+        "expression": "4*pi*1e-7*relative_permeability*turns^2*height*ln(outer_radius/inner_radius)/(2*pi)"
+      },
+      {
+        "key": "inner_flux_density",
+        "label": "Peak field at core inner radius",
+        "unit": "T",
+        "expression": "4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "outer_radius",
+        "op": ">",
+        "right": "inner_radius",
+        "message": "Outer core radius must exceed inner core radius"
+      },
+      {
+        "left": "floor(turns)",
+        "op": "==",
+        "right": "turns",
+        "message": "Turns must be a positive integer"
+      },
+      {
+        "left": "4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius)",
+        "op": "<=",
+        "right": "linear_flux_limit",
+        "message": "Inner-radius field exceeds the supplied linear-material limit"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "inner_radius": 0.01,
+        "outer_radius": 0.02,
+        "height": 0.005,
+        "relative_permeability": 100.0,
+        "turns": 50.0,
+        "peak_current": 0.1,
+        "linear_flux_limit": 0.2
+      },
+      "expected": {
+        "inductance": 0.00017328679513998633,
+        "inner_flux_density": 0.01
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
