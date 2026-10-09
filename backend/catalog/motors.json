@@ -418,5 +418,141 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "motors.resistive_dynamic_braking",
+    "title": "PM motor resistive dynamic braking transient",
+    "category": "Electromechanical drives",
+    "level": "intermediate",
+    "description": "Predict passive electrical braking of rotating inertia, including speed, braking torque, travel and the energy split between winding and external resistor.",
+    "formula": "Rsum=Ra+Rb; i=K omega/Rsum; J domega/dt=-K i; tau=J Rsum/K^2; omega=omega0 exp(-t/tau); Eheat=J omega0^2 [1-exp(-2t/tau)]/2",
+    "assumptions": [
+      "Supply disconnected; armature and brake resistor form a closed series generator circuit. Positive braking_current leaves the generator positive terminal, so electromagnetic_torque is negative for positive speed.",
+      "Constant permanent flux and resistance, rigid total shaft inertia, negligible mechanical drag and no external driving/load torque.",
+      "Reduced-order quasistatic electrical model: L/(Ra+Rb) must be much shorter than J(Ra+Rb)/K^2. The initial electrical switching boundary layer is excluded; t=0 is the reduced-model initial state.",
+      "No switching-clamp, resistor pulse-rating, brush-drop, thermal or demagnetization model. A passive brake loses holding torque as speed vanishes and never reaches exactly zero speed in finite time."
+    ],
+    "references": [
+      {
+        "title": "Auburn University, Modeling Electrical-Mechanical Systems (DC Motors), slides 12-16 coupled equations",
+        "url": "https://eng.auburn.edu/~dmbevly/mech3140/Modeling_DC_Motors.pdf"
+      },
+      {
+        "title": "University of Illinois, Krein power electronics text, section 19.7.2 dynamic versus regenerative braking",
+        "url": "https://krein-textbook.ece.illinois.edu/ch19doc.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "inertia",
+        "label": "Total rotating inertia",
+        "unit": "kg m^2",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "armature_resistance",
+        "label": "Armature resistance",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "brake_resistance",
+        "label": "External brake resistance",
+        "unit": "ohm",
+        "default": 3,
+        "min": 0
+      },
+      {
+        "key": "motor_constant",
+        "label": "SI torque and back-EMF constant",
+        "unit": "N m/A",
+        "default": 0.1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_speed",
+        "label": "Initial mechanical angular speed",
+        "unit": "rad/s",
+        "default": 100,
+        "min": 0
+      },
+      {
+        "key": "time",
+        "label": "Elapsed braking time",
+        "unit": "s",
+        "default": 0.8,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "mechanical_tau",
+        "label": "Electromechanical braking time constant",
+        "unit": "s",
+        "expression": "inertia*(armature_resistance+brake_resistance)/motor_constant/motor_constant"
+      },
+      {
+        "key": "speed",
+        "label": "Mechanical speed at elapsed time",
+        "unit": "rad/s",
+        "expression": "initial_speed*exp(-time/mechanical_tau)"
+      },
+      {
+        "key": "braking_current",
+        "label": "Generator current into braking circuit",
+        "unit": "A",
+        "expression": "motor_constant*speed/(armature_resistance+brake_resistance)"
+      },
+      {
+        "key": "electromagnetic_torque",
+        "label": "Signed electromagnetic braking torque",
+        "unit": "N m",
+        "expression": "-motor_constant*braking_current"
+      },
+      {
+        "key": "angular_travel",
+        "label": "Angular travel during braking interval",
+        "unit": "rad",
+        "expression": "initial_speed*time*exprel(-time/mechanical_tau)"
+      },
+      {
+        "key": "brake_energy",
+        "label": "Energy deposited in external brake resistor",
+        "unit": "J",
+        "expression": "inertia*initial_speed^2/2*(brake_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"
+      },
+      {
+        "key": "winding_energy",
+        "label": "Energy deposited in winding resistance",
+        "unit": "J",
+        "expression": "inertia*initial_speed^2/2*(armature_resistance/(armature_resistance+brake_resistance))*(-expm1(-2*time/mechanical_tau))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "inertia": 0.002,
+        "armature_resistance": 1,
+        "brake_resistance": 3,
+        "motor_constant": 0.1,
+        "initial_speed": 100,
+        "time": 0.8
+      },
+      "expected": {
+        "mechanical_tau": 0.8,
+        "speed": 36.787944117144235,
+        "braking_current": 0.9196986029286058,
+        "electromagnetic_torque": -0.09196986029286058,
+        "angular_travel": 50.56964470628461,
+        "brake_energy": 6.484985375725405,
+        "winding_energy": 2.161661791908468
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
