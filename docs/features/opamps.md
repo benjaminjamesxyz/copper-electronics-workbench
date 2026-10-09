@@ -112,3 +112,125 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 - [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 18-19](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
 - [TI SLOA011B: Understanding Operational Amplifier Specifications, sections 3, 5.4 and 5.6](https://www.ti.com/lit/an/sloa011b/sloa011b.pdf)
 
+## 3. `opamps.difference_ratio_error` — expert
+
+### Physical problem and connections
+
+Predict differential gain and external common-mode leakage when a four-resistor difference stage does **not** have perfectly matched resistor ratios. `R1` joins `V1` to the inverting input; `R2` is feedback; `R3` joins `V2` to the noninverting input; `R4` joins that pin to `Vref`.
+
+This is one generalized difference-amplifier calculator; matched and mismatched variants are not counted as separate problems. H pp. 24–25 uses divider analysis and superposition; H pp. 74–75 discusses difference stages and common-mode rejection. The unequal-value extension here is derived explicitly rather than assuming ratio matching.
+
+### Derivation
+
+Let
+
+\[
+k=\frac{R_2}{R_1},\qquad p=\frac{R_4}{R_3+R_4}.
+\]
+
+Zero noninverting-input current gives `Vpin=p V2+(1-p)Vref`. Inverting-node KCL then yields
+
+\[
+V_o=(1+k)V_{pin}-kV_1.
+\]
+
+Define **source** common-mode and differential voltages as
+
+\[
+V_{cm}=(V_1+V_2)/2,\quad V_d=V_2-V_1,
+\quad V_1=V_{cm}-V_d/2,\quad V_2=V_{cm}+V_d/2.
+\]
+
+Substitution gives
+
+\[
+V_o=A_d V_d+A_{cm}V_{cm}+(1+k)(1-p)V_{ref},
+\]
+
+\[
+A_d=\frac{(1+k)p+k}{2},\qquad A_{cm}=(1+k)p-k.
+\]
+
+When `R2/R1=R4/R3=k`, `p=k/(1+k)`, so `Ad=k`, `Acm=0`, and `Vo=Vref+k(V2-V1)`. No CMRR output is formed: exact matching would make a CMRR division singular. A zero common-mode gain is a valid finite output.
+
+### Domain and limitations
+
+All four resistors are positive. The actual op-amp **pin** common-mode voltage is `Vpin`; it is generally not `(V1+V2)/2`. Validate `Vpin` and `Vo` against their entered ranges. `Acm` is only resistor-network leakage; intrinsic op-amp CMRR, finite gain and bias errors are excluded. Input source impedances must be negligible or included in `R1`/`R3`. Actual resistor values can represent a mismatch scenario, not a worst-case tolerance distribution.
+
+### Independent example — all expected outputs
+
+`R1=10,000 ohm`, `R2=100,000 ohm`, `R3=10,000 ohm`, `R4=101,000 ohm`, `V1=1 V`, `V2=1.1 V`, `Vref=0 V`; both operating ranges ±10 V.
+
+Here `k=10`, `p=101/111`, and `(1+k)p=1111/111=10+1/111`.
+
+- `differential_gain = 10+1/222 = 10.004504504504505 V/V`.
+- `common_mode_gain = 1/111 = 0.009009009009009009 V/V`.
+- `pin_voltage = (101/111)*(11/10) = 1111/1110 = 1.000900900900901 V`.
+- `v_out = 11*(1111/1110)-10 = 1121/1110 = 1.0099099099099098 V`.
+
+An independent decomposition uses `Vd=0.1 V`, `Vcm=1.05 V`: differential contribution is approximately 1.00045045 V and common-mode leakage 0.00945946 V, summing to the same 1.00990991 V. Both pin and output domains pass. The 1% change of R4 produces measurable leakage despite an otherwise ideal op amp.
+
+### Implementation conditioning correction
+
+Let `q=R4/R3`, so `p=q/(1+q)`. Algebra gives
+
+\[
+A_{cm}=(1+k)\frac{q}{1+q}-k=\frac{q-k}{1+q}.
+\]
+
+The executable expression uses `(r_four/r_three-r_two/r_one)/(1+r_four/r_three)`. It subtracts identical computed ratios directly, preserving exact zero at ratio matching rather than subtracting two separately rounded amplified divider terms. No CMRR division or special-case clamp is added. Differential gain, pin/output equations, nominal expected values and sequential output order remain unchanged. Tiny physical mismatches cannot be resolved below the floating-point precision of the supplied resistor values; this is not a tolerance-statistics model. Parent/independent QA should cover matched noninteger ratios and both mismatch signs. No such checks are executed here.
+
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `r_one` | Inverting input resistor R1 | ohm | `10000.0` | > 0.0 |
+| `r_two` | Feedback resistor R2 | ohm | `100000.0` | > 0.0 |
+| `r_three` | Noninverting input resistor R3 | ohm | `10000.0` | > 0.0 |
+| `r_four` | Reference resistor R4 | ohm | `101000.0` | > 0.0 |
+| `v_one` | Inverting-side source V1 | V | `1.0` | Any finite value, subject to relational guards |
+| `v_two` | Noninverting-side source V2 | V | `1.1` | Any finite value, subject to relational guards |
+| `v_reference` | Reference voltage | V | `0.0` | Any finite value, subject to relational guards |
+| `v_out_min` | Minimum linear output voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_out_max` | Maximum linear output voltage | V | `10.0` | Any finite value, subject to relational guards |
+| `v_cm_min` | Minimum input-pin common-mode voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_cm_max` | Maximum input-pin common-mode voltage | V | `10.0` | Any finite value, subject to relational guards |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `differential_gain` | V/V | `((1+r_two/r_one)*r_four/(r_three+r_four)+r_two/r_one)/2` | `10.004504504504505` |
+| `common_mode_gain` | V/V | `(r_four/r_three-r_two/r_one)/(1+r_four/r_three)` | `0.009009009009009009` |
+| `pin_voltage` | V | `(r_four*v_two+r_three*v_reference)/(r_three+r_four)` | `1.000900900900901` |
+| `v_out` | V | `(1+r_two/r_one)*pin_voltage-r_two/r_one*v_one` | `1.0099099099099098` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `v_out_min < v_out_max`: Output limits must be ordered.
+- Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
+- Require `(r_four*v_two+r_three*v_reference)/(r_three+r_four) >= v_cm_min`: Input-pin voltage is below the common-mode range.
+- Require `(r_four*v_two+r_three*v_reference)/(r_three+r_four) <= v_cm_max`: Input-pin voltage is above the common-mode range.
+- Require `(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one >= v_out_min`: Predicted output is below the linear output range.
+- Require `(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one <= v_out_max`: Predicted output is above the linear output range.
+
+### Catalog model assumptions
+
+- R1 connects V1 to the inverting input; R2 is feedback; R3 connects V2 to the noninverting input; R4 connects the noninverting input to Vref.
+- Ad is defined for Vd=V2-V1 with Vcm=(V1+V2)/2 held constant. Acm describes external resistor-ratio leakage, not intrinsic op-amp CMRR.
+- Ideal stable op amp; negligible bias, offset and finite-open-loop effects; source impedances are negligible or incorporated into R1 and R3.
+- Use actual resistor values to study mismatch; no tolerance distribution or noise model is implied. Matched ratios are valid and yield zero Acm; CMRR is deliberately not divided by zero.
+- DC or slow signals and adequate output drive. Enter actual pin common-mode and linear output limits.
+- Common-mode gain is computed by subtracting the resistor ratios before division; identical computed ratios return exactly zero without subtracting separately rounded divider/gain products. Extremely small mismatches remain limited by floating-point resolution of the supplied resistor values.
+
+### Feature sources
+
+- [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 24-25 and 74-75](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
+

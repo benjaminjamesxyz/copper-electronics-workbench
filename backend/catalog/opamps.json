@@ -145,5 +145,189 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opamps.difference_ratio_error",
+    "title": "Difference amplifier resistor-ratio error",
+    "category": "Operational amplifier stages",
+    "level": "expert",
+    "description": "Predict differential gain, common-mode leakage and output for a four-resistor difference stage with unequal resistor ratios.",
+    "formula": "k = R2/R1; p = R4/(R3+R4); Vpin = p V2 + (1-p)Vref; Vo = (1+k)Vpin-k V1; Ad = ((1+k)p+k)/2; Acm = (1+k)p-k; Acm = (R4/R3-k)/(1+R4/R3) (equivalent matched-ratio-safe form)",
+    "assumptions": [
+      "R1 connects V1 to the inverting input; R2 is feedback; R3 connects V2 to the noninverting input; R4 connects the noninverting input to Vref.",
+      "Ad is defined for Vd=V2-V1 with Vcm=(V1+V2)/2 held constant. Acm describes external resistor-ratio leakage, not intrinsic op-amp CMRR.",
+      "Ideal stable op amp; negligible bias, offset and finite-open-loop effects; source impedances are negligible or incorporated into R1 and R3.",
+      "Use actual resistor values to study mismatch; no tolerance distribution or noise model is implied. Matched ratios are valid and yield zero Acm; CMRR is deliberately not divided by zero.",
+      "DC or slow signals and adequate output drive. Enter actual pin common-mode and linear output limits.",
+      "Common-mode gain is computed by subtracting the resistor ratios before division; identical computed ratios return exactly zero without subtracting separately rounded divider/gain products. Extremely small mismatches remain limited by floating-point resolution of the supplied resistor values."
+    ],
+    "references": [
+      {
+        "title": "TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 24-25 and 74-75",
+        "url": "https://www.ti.com/lit/an/sboa092b/sboa092b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_one",
+        "label": "Inverting input resistor R1",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_two",
+        "label": "Feedback resistor R2",
+        "unit": "ohm",
+        "default": 100000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_three",
+        "label": "Noninverting input resistor R3",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_four",
+        "label": "Reference resistor R4",
+        "unit": "ohm",
+        "default": 101000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_one",
+        "label": "Inverting-side source V1",
+        "unit": "V",
+        "default": 1.0
+      },
+      {
+        "key": "v_two",
+        "label": "Noninverting-side source V2",
+        "unit": "V",
+        "default": 1.1
+      },
+      {
+        "key": "v_reference",
+        "label": "Reference voltage",
+        "unit": "V",
+        "default": 0.0
+      },
+      {
+        "key": "v_out_min",
+        "label": "Minimum linear output voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_out_max",
+        "label": "Maximum linear output voltage",
+        "unit": "V",
+        "default": 10.0
+      },
+      {
+        "key": "v_cm_min",
+        "label": "Minimum input-pin common-mode voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_cm_max",
+        "label": "Maximum input-pin common-mode voltage",
+        "unit": "V",
+        "default": 10.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "differential_gain",
+        "label": "Differential-mode gain",
+        "unit": "V/V",
+        "expression": "((1+r_two/r_one)*r_four/(r_three+r_four)+r_two/r_one)/2"
+      },
+      {
+        "key": "common_mode_gain",
+        "label": "Resistor-induced common-mode gain",
+        "unit": "V/V",
+        "expression": "(r_four/r_three-r_two/r_one)/(1+r_four/r_three)"
+      },
+      {
+        "key": "pin_voltage",
+        "label": "Op-amp input-pin common-mode voltage",
+        "unit": "V",
+        "expression": "(r_four*v_two+r_three*v_reference)/(r_three+r_four)"
+      },
+      {
+        "key": "v_out",
+        "label": "Output voltage",
+        "unit": "V",
+        "expression": "(1+r_two/r_one)*pin_voltage-r_two/r_one*v_one"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_out_min",
+        "op": "<",
+        "right": "v_out_max",
+        "message": "Output limits must be ordered."
+      },
+      {
+        "left": "v_cm_min",
+        "op": "<",
+        "right": "v_cm_max",
+        "message": "Input common-mode limits must be ordered."
+      },
+      {
+        "left": "(r_four*v_two+r_three*v_reference)/(r_three+r_four)",
+        "op": ">=",
+        "right": "v_cm_min",
+        "message": "Input-pin voltage is below the common-mode range."
+      },
+      {
+        "left": "(r_four*v_two+r_three*v_reference)/(r_three+r_four)",
+        "op": "<=",
+        "right": "v_cm_max",
+        "message": "Input-pin voltage is above the common-mode range."
+      },
+      {
+        "left": "(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one",
+        "op": ">=",
+        "right": "v_out_min",
+        "message": "Predicted output is below the linear output range."
+      },
+      {
+        "left": "(1+r_two/r_one)*(r_four*v_two+r_three*v_reference)/(r_three+r_four)-r_two/r_one*v_one",
+        "op": "<=",
+        "right": "v_out_max",
+        "message": "Predicted output is above the linear output range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_one": 10000.0,
+        "r_two": 100000.0,
+        "r_three": 10000.0,
+        "r_four": 101000.0,
+        "v_one": 1.0,
+        "v_two": 1.1,
+        "v_reference": 0.0,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_cm_max": 10.0
+      },
+      "expected": {
+        "differential_gain": 10.004504504504505,
+        "common_mode_gain": 0.009009009009009009,
+        "pin_voltage": 1.000900900900901,
+        "v_out": 1.0099099099099098
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
