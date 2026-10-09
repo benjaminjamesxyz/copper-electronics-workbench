@@ -500,5 +500,99 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "sensors.hydrogen_activity_electrode",
+    "title": "Nernst hydrogen-activity electrode",
+    "category": "Sensor transduction",
+    "level": "basic",
+    "description": "Predict glass-electrode potential from hydrogen activities and temperature, retaining its logarithmic chemical transduction.",
+    "formula": "pH=-log10(aH); S=(kB/q)T ln(10); V=Voffset+(kB/q)T ln(a_sample/a_standard)",
+    "assumptions": [
+      "Activities are dimensionless relative to the standard state, not uncorrected molar concentrations.",
+      "Ideal monovalent Nernst response over the declared aqueous pH 0 to 14 and 0 to 100 degrees Celsius envelope; actual electrode ratings may be narrower.",
+      "Offset is the measured electrode voltage at equal activities and the same temperature. Voltage rises for increasing hydrogen activity.",
+      "No loading, liquid-junction error, aging, sodium interference or reference-buffer temperature drift; practical use needs calibration. No amplifier is modeled."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments AN-1852 SNOA529A, section 1.1 equations 1–2",
+        "url": "https://www.ti.com/lit/an/snoa529a/snoa529a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "sample_activity",
+        "label": "Sample hydrogen activity",
+        "unit": "1",
+        "default": 0.0001,
+        "min": 1e-14,
+        "max": 1
+      },
+      {
+        "key": "standard_activity",
+        "label": "Standard hydrogen activity",
+        "unit": "1",
+        "default": 1e-07,
+        "min": 1e-14,
+        "max": 1
+      },
+      {
+        "key": "temperature",
+        "label": "Electrode and solution temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 273.15,
+        "max": 373.15
+      },
+      {
+        "key": "offset_voltage",
+        "label": "Equal-activity electrode offset",
+        "unit": "V",
+        "default": 0.005
+      }
+    ],
+    "outputs": [
+      {
+        "key": "sample_ph",
+        "label": "Sample pH",
+        "unit": "pH",
+        "expression": "-log10(sample_activity)"
+      },
+      {
+        "key": "nernst_slope",
+        "label": "Ideal voltage magnitude per pH",
+        "unit": "V/pH",
+        "expression": "(1.380649e-23/1.602176634e-19)*temperature*ln(10)"
+      },
+      {
+        "key": "electrode_voltage",
+        "label": "Sample-minus-reference electrode potential",
+        "unit": "V",
+        "expression": "offset_voltage+(1.380649e-23/1.602176634e-19)*temperature*(log1p(max(sample_activity-standard_activity,0)/standard_activity)-log1p(max(standard_activity-sample_activity,0)/sample_activity))"
+      },
+      {
+        "key": "activity_sensitivity",
+        "label": "Local voltage sensitivity to activity",
+        "unit": "V",
+        "expression": "(1.380649e-23/1.602176634e-19)*temperature/sample_activity"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "sample_activity": 0.0001,
+        "standard_activity": 1e-07,
+        "temperature": 298.15,
+        "offset_voltage": 0.005
+      },
+      "expected": {
+        "sample_ph": 4.0,
+        "nernst_slope": 0.05915934968478233,
+        "electrode_voltage": 0.182478049054347,
+        "activity_sensitivity": 256.92579121085845
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

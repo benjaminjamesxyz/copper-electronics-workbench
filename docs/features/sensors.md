@@ -157,3 +157,33 @@ The two values stored as 0.02500000000000001 in JSON differ only by binary64 eva
 
 
 **Source provenance.** Research read the Philips application note through a third-party mirror, including the equation image. No authenticated NXP-hosted replacement was obtained; the usermanual.wiki PDF route returned a 403 page. Ambiguous resistivity notation does not define the sign: calibrated perpendicular resistance and signed parallel-minus-perpendicular resistance explicitly determine both endpoints.
+
+
+## 6. sensors.hydrogen_activity_electrode
+
+**Level:** basic.
+
+- [Texas Instruments AN-1852 SNOA529A, section 1.1 equations 1–2](https://www.ti.com/lit/an/snoa529a/snoa529a.pdf)
+
+
+**Purpose and novelty.** Convert dimensionless hydrogen chemical activities into logarithmic glass-electrode voltage with temperature-dependent Nernst slope. Closest baseline `diodes.shockley_forward_current` is electronic junction transport, not electrochemical membrane equilibrium. It is not a generic logarithm calculator. Neighboring battery intercalation includes occupancy and interaction-energy physics; no battery voltage/SOC model is claimed here.
+
+**Model.** Let `K=kB/q=1.380649e-23/1.602176634e-19 V/K`. `pH=-log10(a_sample)`, `S=K T ln(10)`, `V=Voffset+K T ln(a_sample/a_standard)`, and `dV/da_sample=K T/a_sample`. Positive output increases with hydrogen activity and therefore decreases with pH. Voffset is measured at equal activities at the same temperature.
+
+The catalog evaluates the logarithm as `log1p(max(a-b,0)/b)-log1p(max(b-a,0)/a)`. Both log arguments are nonnegative. This algebra is identical to `ln(a/b)`, stable at equal activities, and avoids rounding a very negative fractional change onto -1. Sensitivity unit is V per unit dimensionless activity, represented as V in the JSON.
+
+**Validity.** Activities, not raw molar concentrations. Ideal monovalent Nernst membrane, no loading, electrode aging, sodium interference, liquid-junction error, calibration slope error or reference-buffer temperature drift. The declared engineering envelope is pH 0–14 (`1e-14<=activity<=1`) and 0–100 degC (`273.15<=T<=373.15 K`), matching the illustrated application range; actual electrode ratings can be narrower. It is not a claim that pH cannot exist outside this interval. Calibration is mandatory for accurate real use.
+
+**Complete example inputs.** `sample_activity=1e-4`, `standard_activity=1e-7`, `temperature=298.15 K`, `offset_voltage=0.005 V`. `pH_sample=4`, `ln(a_sample/a_standard)=3 ln(10)`, so V is the offset plus three Nernst slopes.
+
+| Output key | Independent expected value |
+|---|---:|
+| `sample_ph` | 4 pH |
+| `nernst_slope` | 0.05915934968478233 V/pH |
+| `electrode_voltage` | 0.182478049054347 V |
+| `activity_sensitivity` | 256.92579121085845 V per unit activity |
+
+**Tester cases.** Equal activities `a=b=1e-7` give pH=7 and V exactly equal to offset; slope is unchanged and sensitivity is `256925.79121085845 V` per unit activity. Swapping activities negates only the voltage change relative to offset; sensitivity remains sample-specific. At `a=1e-14,b=1,T=298.15,offset=0.005`, voltage is `-0.8232308955869526 V`, not an invalid log result. A next-representable increase from equal activities and zero offset must produce a positive nonzero electrode voltage. Both temperature endpoints and activity endpoints are valid. Reject activities outside the declared interval, zero/negative activity, and temperatures outside 273.15–373.15 K.
+
+**Mandatory diagram.** A solution vessel spans x=65–350,y=80–210. Show glass sensing bulb and reference junction as distinct structures immersed in the same sample, not two separate baths. Sample activity label binds `sample_activity` inside the vessel; temperature label binds `temperature`. Reference/calibration legend outside the vessel binds `standard_activity` explicitly as “calibration standard activity”, not necessarily the actual internal fill composition. Separate leads go to open voltmeter terminals x=540, with sensing lead “+”, reference lead “−”, and `electrode_voltage` between them. A lower legend binds `sample_ph` and `nernst_slope`. Caption: “Ideal glass-electrode response is logarithmic in hydrogen activity. Standard activity and offset describe calibration; both electrodes share the sample temperature. High-impedance measurement and calibration are required.”
+
