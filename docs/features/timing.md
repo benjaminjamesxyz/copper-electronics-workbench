@@ -374,3 +374,46 @@ Cross-input/model constraints (evaluated before outputs):
 | `arrival_time` | Worst data arrival relative to launch | s | `7.5e-09` | `clock_to_q+path_delay` |
 | `setup_slack` | Setup slack (negative means violation) | s | `2.3e-09` | `available_time-arrival_time` |
 
+## 7. Inductive turn-off voltage spike — basic
+
+**ID:** `timing.inductive_turnoff_spike`
+
+**Purpose:** Estimate unclamped low-side switch overvoltage from a known current fall through series parasitic inductance.
+
+**Derivation:** The passive-sign inductor voltage is `v_L = L di/dt`. During a positive-current fall, di/dt is negative. With low-side switching orientation, the positive voltage rise across the switch has magnitude:
+
+`current_fall_rate = (I_initial - I_final)/fall_time`;
+`spike_voltage = L current_fall_rate`;
+`switch_voltage = V_supply + spike_voltage`.
+
+**Dimensions/domain:** L nonnegative H, current in nonnegative A with initial >= final, interval strictly positive s, supply nonnegative V. Current-fall rate is A/s and voltages V. Supply-plus-spike polarity is valid only for the stated low-side orientation. Input is the **full current-change interval**, not gate transition time or a voltage rise-time value. Constant L and linear current fall are assumed. The model does not determine the actual current fall, avalanche/clamp voltage, parasitic-capacitance ringing or device safe operating area. No RL exponential or magnetic stored-energy output is duplicated.
+
+**Independent example:** L = 40 nH, current falls from 5 A to 1 A in 10 ns, supply 12 V:
+
+- Slew magnitude `= 4/10e-9 = 4e8 A/s`.
+- Spike `= 40e-9 × 4e8 = 16 V`.
+- Estimated switch voltage `= 12+16 = 28 V`.
+
+**Primary sources:** [MIT 6.071 Capacitors and inductors](https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf), equation 1.27; [TI/National SNOA382](https://www.ti.com/lit/pdf/snoa382), section 4.7 applies `L di/dt` to package/lead parasitic inductance and voltage transients. Supply addition follows KVL for the stated switch topology, not a general polarity rule.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `loop_inductance` | Series loop inductance | H | `4e-08` | >= 0 |
+| `current_initial` | Initial current | A | `5` | >= 0 |
+| `current_final` | Final current | A | `1` | >= 0 |
+| `fall_time` | Full current-fall interval | s | `1e-08` | > 0 |
+| `supply_voltage` | Supply voltage | V | `12` | >= 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- `current_initial >= current_final` — Turn-off model requires nonincreasing positive current.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `current_fall_rate` | Current-fall slew magnitude | A/s | `400000000` | `(current_initial-current_final)/fall_time` |
+| `spike_voltage` | Inductive overvoltage magnitude | V | `16` | `loop_inductance*current_fall_rate` |
+| `switch_voltage` | Estimated low-side switch voltage | V | `28` | `supply_voltage+spike_voltage` |
+

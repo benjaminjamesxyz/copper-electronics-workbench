@@ -857,5 +857,110 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "timing.inductive_turnoff_spike",
+    "title": "Inductive turn-off voltage spike",
+    "category": "EMC coupling",
+    "level": "basic",
+    "description": "Estimate a low-side switch's overvoltage from a specified linear current fall through series loop inductance.",
+    "formula": "current_fall_rate = (I_initial-I_final)/t_fall; spike = L current_fall_rate; switch_voltage = V_supply + spike",
+    "assumptions": [
+      "Positive current falls linearly and monotonically through a constant series inductance during the supplied interval.",
+      "Low-side switching polarity adds inductive overvoltage to the supply; output spike is a positive magnitude.",
+      "Current fall time must come from measurement or a valid switching model; this calculator does not predict it from gate drive.",
+      "Ignore clamp/avalanche conduction, parasitic capacitance, ringing, winding resistance and supply movement. The result is an unclamped linear-slope estimate, not a measured ringing peak or device rating."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.071: Capacitors and inductors, equation 1.27, v = L di/dt",
+        "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf"
+      },
+      {
+        "title": "TI/National SNOA382, section 4.7: parasitic-inductance voltage transients",
+        "url": "https://www.ti.com/lit/pdf/snoa382"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "loop_inductance",
+        "label": "Series loop inductance",
+        "unit": "H",
+        "default": 4e-08,
+        "min": 0
+      },
+      {
+        "key": "current_initial",
+        "label": "Initial current",
+        "unit": "A",
+        "default": 5,
+        "min": 0
+      },
+      {
+        "key": "current_final",
+        "label": "Final current",
+        "unit": "A",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "fall_time",
+        "label": "Full current-fall interval",
+        "unit": "s",
+        "default": 1e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "supply_voltage",
+        "label": "Supply voltage",
+        "unit": "V",
+        "default": 12,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "current_fall_rate",
+        "label": "Current-fall slew magnitude",
+        "unit": "A/s",
+        "expression": "(current_initial-current_final)/fall_time"
+      },
+      {
+        "key": "spike_voltage",
+        "label": "Inductive overvoltage magnitude",
+        "unit": "V",
+        "expression": "loop_inductance*current_fall_rate"
+      },
+      {
+        "key": "switch_voltage",
+        "label": "Estimated low-side switch voltage",
+        "unit": "V",
+        "expression": "supply_voltage+spike_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "current_initial",
+        "op": ">=",
+        "right": "current_final",
+        "message": "Turn-off model requires nonincreasing positive current."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "loop_inductance": 4e-08,
+        "current_initial": 5,
+        "current_final": 1,
+        "fall_time": 1e-08,
+        "supply_voltage": 12
+      },
+      "expected": {
+        "current_fall_rate": 400000000,
+        "spike_voltage": 16,
+        "switch_voltage": 28
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
