@@ -78,7 +78,7 @@ const filtersDiagrams = <String, CalculatorDiagram>{
       Wire([314, 52, 314, 215], dashed: true, ink: DiagramInk.muted),
       Wire([68, 179, 391, 179], dashed: true, ink: DiagramInk.input),
       Label(25, 168, 'As', quantity: 'stopband_loss', ink: DiagramInk.input),
-      Wire([77, 54, 111, 57, 146, 68, 170, 79, 190, 91, 220, 116, 250, 148, 283, 175, 314, 196, 346, 216], ink: DiagramInk.output),
+      Wire([77, 54, 111, 57, 146, 68, 170, 79, 190, 91, 220, 113, 250, 137, 283, 166, 314, 196, 337, 219], ink: DiagramInk.output),
       Dot(190, 91, ink: DiagramInk.output),
       Dot(314, 196, ink: DiagramInk.output),
       Label(170, 222, 'fp', quantity: 'passband_edge', ink: DiagramInk.input),

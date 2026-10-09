@@ -185,7 +185,7 @@ const acDiagrams = <String, CalculatorDiagram>{
       Label(213, 177, 'P', quantity: 'real_power', ink: DiagramInk.output),
       Label(359, 92, '+Q', quantity: 'reactive_power', ink: DiagramInk.output),
       Label(195, 81, 'S', quantity: 'apparent_power', ink: DiagramInk.output),
-      Label(145, 134, 'φ', quantity: 'phase', ink: DiagramInk.input),
+      Label(160, 148, 'φ', quantity: 'phase', ink: DiagramInk.input),
       Label(358, 221, '−Q', ink: DiagramInk.muted),
       Label(82, 180, '0', ink: DiagramInk.muted),
       Label(438, 40, 'V_rms', quantity: 'voltage_rms', ink: DiagramInk.input),

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'backend_client.dart';
 import 'models.dart';
+import 'diagrams/catalog.dart';
+import 'diagrams/panel.dart';
 
 void main() => runApp(const CopperApp());
 const ink = Color(0xff172d36);
@@ -162,6 +164,8 @@ class _WorkbenchState extends State<Workbench> {
         const SizedBox(height: 8), Text(c.title, style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w600)),
         const SizedBox(height: 10), Text(c.description, style: const TextStyle(fontSize: 15, height: 1.5)),
         const SizedBox(height: 28),
+        DiagramPanel(key: ValueKey('illustration-${c.id}'), calculator: c, diagram: calculatorDiagrams[c.id]!),
+        const SizedBox(height: 24),
         Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(color: Colors.white, border: Border.all(color: const Color(0xffd8ddd6)), borderRadius: BorderRadius.circular(8)), child:
           Form(key: _form, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [const Expanded(child: Text('Design inputs', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))), TextButton.icon(key: const ValueKey('load-example'), onPressed: _fillExample, icon: const Icon(Icons.science_outlined, size: 18), label: const Text('Load worked example'))]),

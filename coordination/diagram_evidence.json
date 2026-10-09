@@ -1,0 +1,62 @@
+{
+  "scope": "Labeled explanatory illustrations for all 128 existing calculators; Rust models and JSON-lines contract unchanged",
+  "host": "Linux x86_64",
+  "flutter": "3.47.7",
+  "dart": "3.13.5",
+  "implementation": {
+    "registry": "frontend/lib/diagrams/catalog.dart",
+    "domain_files": 16,
+    "diagrams_per_domain": 8,
+    "logical_canvas": "700x280",
+    "new_dependencies": 0,
+    "rendering": "Native Flutter vector painter with upright polarity glyphs, captions, image semantics and catalog-linked quantity legends",
+    "behavior": "Static explanatory geometry, not live numerical plots; horizontal scrolling preserves readability and desktop text scaling enlarges the vector canvas"
+  },
+  "author_commits": {
+    "dc": "fdee336", "ac": "82bbc28", "transients": "8344537", "diodes": "504262b",
+    "bjt": "ccacc0a", "mosfet": "1f602d8", "opamps": "cc13f26", "filters": "6773134",
+    "power": "f0b7187", "magnetics": "fdcfa8d", "signals": "88acc26", "pcb": "f0a4368",
+    "thermal": "38bceef", "data": "e80fd18", "noise": "b5b6184", "timing": "dcb614c"
+  },
+  "independent_review": {
+    "source_lanes": 16,
+    "visual_lanes": 16,
+    "source_findings_closed": 15,
+    "pixel_findings_closed": 10,
+    "unresolved": 0,
+    "record": "coordination/diagram_reviews.json",
+    "attribution": "Agents reviewed source/models and all 128 supplied native canvas images. Main alone ran verification. Nine unavailable original resume handles required replacement visual reviewers; recorded rather than counted as successful dispatches."
+  },
+  "verification": {
+    "widget_command": "flutter test test/diagrams_test.dart",
+    "widget_tests_passed": 2,
+    "widget_coverage": ["Every catalog ID has an illustration with valid quantity references", "480px viewport with 200% text scaling retains readable geometry, horizontal scrolling and image semantics"],
+    "native_command": "flutter test integration_test/diagram_acceptance.dart -d linux",
+    "native_selected_and_rendered": 128,
+    "native_font_clipped_labels": 0,
+    "native_text_text_collisions": 0,
+    "native_final_duration_seconds": 155,
+    "native_harness": "Temporary full-catalog capture harness removed after success",
+    "native_display": "Xvfb :198; GDK_BACKEND=x11; LIBGL_ALWAYS_SOFTWARE=1",
+    "pixel_evidence": "Native transparent canvas captures composited onto the actual app paper surface (#f5f4ef), without changing geometry; line/label collisions checked independently by reviewers",
+    "existing_workbench_command": "flutter test integration_test/workbench_test.dart -d linux",
+    "existing_workbench_passed": true,
+    "existing_workbench_coverage": ["Basic/intermediate/expert real-Rust examples", "NaN error presentation", "Immediate stale-result invalidation", "Exact 32-bit ADC code count"],
+    "analysis": "flutter analyze: No issues found",
+    "build": "dart run tool/build_desktop.dart: Linux release passed"
+  },
+  "manual_desktop": {
+    "wide_size": "1360x1000",
+    "narrow_size": "860x900",
+    "observed": ["Labeled circuit and microstrip cross-section precede existing inputs", "Native scrollbar drag reveals right-side diagram labels without shrinking text", "Vertical scrolling reaches inputs and successful microstrip calculation results", "Final extracted package launches without PCB_CALCULATOR_BACKEND override", "Final package displays upright transformer-source plus/minus signs", "Owned final package window closes with exit code 0"],
+    "screenshots": ["coordination/desktop-illustrations-circuit.png", "coordination/desktop-illustrations-wide.png", "coordination/desktop-illustrations-narrow.png"]
+  },
+  "release": {
+    "archive": "frontend/copper-Linux.tar.gz",
+    "archive_sha256": "599cc23d49ce121a4032ab08e2339a1e7ce4735407fdbd5ea44dbd135095e17b",
+    "backend_sha256": "88546a1db0e867064c91bde48b0b1d03c88e6d73c6153af17d082965a9bc2c7a",
+    "backend_identical_to_previous_numerical_release": true,
+    "generated_archive_git_ignored": true
+  },
+  "limits": ["Windows/macOS native runtime and remote CI not exercised", "Illustrations are explanatory, not simulations or scale drawings", "Full assistive-technology certification not claimed; image semantics and large-text layout were exercised", "Existing nom 1.2.4 Rust future-incompatibility warning remains unsuppressed"]
+}

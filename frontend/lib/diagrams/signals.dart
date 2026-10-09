@@ -104,7 +104,7 @@ const signalsDiagrams = <String, CalculatorDiagram>{
       Wire([60, 125, 60, 95, 120, 95]),
       Part(CircuitPart.resistor, 150, 95),
       Label(135, 60, 'Rs', quantity: 'source_resistance', ink: DiagramInk.input),
-      Label(25, 202, 'Source'),
+      Label(84, 202, 'Source'),
       Wire([180, 95, 250, 95]),
       Wire([250, 95, 500, 95]),
       Wire([60, 185, 60, 235, 585, 235, 585, 185]),

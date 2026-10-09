@@ -191,3 +191,12 @@ Each ID selects its exact object in the linked lane JSON and its physical deriva
 - Evidence: [desktop acceptance](coordination/desktop_evidence.json), [review closure](coordination/reviews/closure.json), [wide desktop](coordination/desktop-linux-adc32.png), [narrow desktop](coordination/desktop-linux-narrow.png). Build/run instructions and engineering limits: [frontend README](frontend/README.md).
 - Local Linux archive: `frontend/copper-Linux.tar.gz` (generated, Git-ignored). Windows/macOS native runtime and remote CI are not exercised on this Linux/local-only workstation; their configured runners do not imply acceptance.
 
+
+## Illustrated calculator interface
+
+All 128 inventory IDs now include a problem-specific labeled vector diagram above the inputs. Circuit topology, geometry, signal/timing and thermal illustrations preserve the researched model's polarity, reference directions and assumptions. Legends identify existing form/result quantities and units. Curves are explanatory, not computed live plots.
+
+Sixteen independent illustration-author worktrees and sixteen source/pixel review lanes completed the change. All 25 reported correctness/visual findings are closed. Final Linux acceptance rendered all 128 diagrams, checked narrow-window scrolling/text scaling, exercised the existing real-Rust workbench journey and built the refreshed release archive.
+
+See [illustration evidence](coordination/diagram_evidence.json), [review history and closure](coordination/diagram_reviews.json), [circuit surface](coordination/desktop-illustrations-circuit.png), [geometry surface](coordination/desktop-illustrations-wide.png) and [narrow scrolled surface](coordination/desktop-illustrations-narrow.png). The Rust models and the 128-feature inventory are unchanged.
+

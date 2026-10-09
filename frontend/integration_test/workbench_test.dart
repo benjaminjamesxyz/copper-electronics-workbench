@@ -30,10 +30,12 @@ void main() {
       await tester.pumpAndSettle();
       final example = find.byKey(const ValueKey('load-example'));
       await tester.ensureVisible(example);
+      await tester.pumpAndSettle();
       await tester.tap(example);
       await tester.pumpAndSettle();
       final calculate = find.byKey(const ValueKey('calculate'));
       await tester.ensureVisible(calculate);
+      await tester.pumpAndSettle();
       await tester.tap(calculate);
       final firstResult = find.byKey(ValueKey('result-${calculator.outputs.first.key}'));
       await waitFor(firstResult);
@@ -49,6 +51,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(firstResult, findsNothing, reason: 'Changed inputs must invalidate the previous result');
       await tester.ensureVisible(calculate);
+      await tester.pumpAndSettle();
       await tester.tap(calculate);
       await tester.pumpAndSettle();
       expect(find.text('Enter a finite number (e.g. 1e-6).'), findsWidgets);
@@ -63,6 +66,7 @@ void main() {
     await tester.enterText(bits, '32');
     final calculate = find.byKey(const ValueKey('calculate'));
     await tester.ensureVisible(calculate);
+    await tester.pumpAndSettle();
     await tester.tap(calculate);
     final count = find.byKey(const ValueKey('result-code_count'));
     await waitFor(count);

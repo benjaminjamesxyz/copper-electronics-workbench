@@ -2,6 +2,8 @@
 
 Flutter desktop-only frontend and a private Rust calculation process. All **128 calculators** are implemented: 39 basic, 50 intermediate and 39 expert across 16 electronics domains. Forms, units, formulas, model limits, cited sources and independently worked examples come from the embedded Rust catalog; Flutter does not duplicate the mathematics. Calculations run offline, without an HTTP service.
 
+Every calculator also has a labeled vector illustration: a circuit, physical cross-section, signal response, timing diagram or thermal/energy-flow sketch. These render offline with native Flutter drawing; no image service, browser or additional dependency is required.
+
 ## Research and delivery artifacts
 
 - [Common 128-feature board](../RESEARCH_BOARD.md): reserved boundaries, complete ID index and per-lane research.
@@ -13,6 +15,18 @@ Flutter desktop-only frontend and a private Rust calculation process. All **128 
 - `../coordination/numerical*.json`: actual before/after Rust-process counterexamples, with independent expected values after correction.
 
 The pipeline used 16 researchers, one scrum-master, 16 developers and then 16 testers plus 16 reviewers concurrently. Developers own eight distinct features each in isolated `feat/<lane>` worktrees; each feature has its own implementation commit. Testers own independent `test/<lane>` worktrees. Only the integration owner cherry-picks explicit handoff SHAs, changes shared Rust/Flutter infrastructure and executes global checks. Maximum concurrent worker wave: 32. No remote repository was supplied.
+
+## Reading the illustrations
+
+- The illustration precedes the inputs. Its caption explains topology, reference directions, geometry and model assumptions.
+- The legend connects each annotated quantity to the existing form/result name, unit and input/output role. A derived annotation such as `Ts = 1/fs` references the frequency parameter; it is not a displayed numerical result.
+- Current arrows define positive reference directions. Circuit junctions have dots; ordinary wire crossings without a dot are not joined. Physical outlines and dimension arrows are geometry, not electrical connections.
+- Curves and dimensions are explanatory, **not live simulations or scale drawings**. Changing inputs changes numerical results, not the illustration's geometry.
+- Narrow windows retain readable symbol sizes and show an interactive horizontal scrollbar. Desktop text scaling enlarges the vector canvas. Captions and quantity descriptions provide a text alternative to the drawing.
+
+Illustrations are authored in `lib/diagrams/<domain>.dart`, indexed by exact catalog ID in `catalog.dart`. Shared symbols, connector conventions, painter and panel are adjacent. The illustration pass used sixteen independent `diagram/<domain>` Git worktrees and sixteen independent correctness/visual review lanes; the backend catalog and process contract remain unchanged.
+
+The Linux illustration gate rendered all 128 diagrams, passed the existing real-Rust desktop journey and the two illustration regressions, and cleared sixteen source/pixel review lanes. See [evidence](../coordination/diagram_evidence.json), [review closure](../coordination/diagram_reviews.json) and [the packaged circuit view](../coordination/desktop-illustrations-circuit.png). The full-catalog screenshot journey was a throwaway acceptance harness; permanent coverage and accessible-layout checks remain in `test/diagrams_test.dart`.
 
 ## Prerequisites
 
@@ -69,6 +83,7 @@ From `frontend/` on a graphical Linux desktop:
 
 ```sh
 flutter analyze
+flutter test test/diagrams_test.dart
 PCB_CALCULATOR_BACKEND=/absolute/path/to/backend/target/debug/pcb-calculator flutter test integration_test/workbench_test.dart -d linux
 ```
 

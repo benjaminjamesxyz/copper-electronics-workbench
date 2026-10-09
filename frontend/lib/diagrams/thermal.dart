@@ -70,7 +70,7 @@ const thermalDiagrams = <String, CalculatorDiagram>{
       Label(151, 224, '1/Ttest', quantity: 'test_temperature', ink: DiagramInk.input),
       Label(289, 224, '1/Tuse', quantity: 'use_temperature', ink: DiagramInk.input),
       Label(198, 69, 'Hotter test'),
-      Label(253, 175, 'Cooler use'),
+      Label(230, 175, 'Cooler use'),
       Label(430, 35, 'Eₐ sets slope', quantity: 'activation_energy', ink: DiagramInk.input),
       Label(430, 75, 'AF = rate(test) / rate(use)', quantity: 'acceleration_factor', ink: DiagramInk.output),
       Part(CircuitPart.block, 545, 133, width: 230, height: 40),

@@ -1,4 +1,6 @@
 {
+  "baseline_commit": "402833c",
+  "superseding_package_evidence": "coordination/diagram_evidence.json",
   "host": "Linux x86_64",
   "rust_suite": {"tests_passed": 431, "suites": 21},
   "process_examples": {"calculators": 128, "basic": 39, "intermediate": 50, "expert": 39, "all_outputs_passed": true},

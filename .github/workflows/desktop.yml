@@ -38,6 +38,9 @@ jobs:
       - name: Flutter static analysis
         working-directory: frontend
         run: flutter analyze
+      - name: Illustration coverage and accessible layout
+        working-directory: frontend
+        run: flutter test test/diagrams_test.dart
       - name: Build native desktop bundle
         working-directory: frontend
         run: dart run tool/build_desktop.dart

@@ -1,0 +1,577 @@
+{
+  "baseline": "ae68995 diagram authors complete; shared painter uncommitted at review time",
+  "scope": "All128 schematic illustrations, static source/model review only; runtime not implied",
+  "reports": {
+    "dc": {
+      "overall_correctness": "correct",
+      "explanation": "DC lane clear: reviewed dc.ohm_current, dc.resistor_dissipation, dc.series_parallel_branches, dc.loaded_divider, dc.resistive_source_matching, dc.loaded_wheatstone_bridge, dc.delta_to_star, and dc.two_source_node. Static source review found no concrete defects in connectivity, junctions, polarity, arrows, quantity keys, coordinate clearance, or registry/rendering dispatch. No edits, builds, lint, tests, formatters, or rendered review; parent\u2019s native screenshots remain pending.",
+      "confidence": 0.94,
+      "findings": []
+    },
+    "ac": {
+      "overall_correctness": "incorrect",
+      "explanation": "Lane AC: reviewed ac.inductor_reactance, ac.lossy_coil_antiresonance, ac.capacitor_reactance, ac.series_rlc_impedance, ac.parallel_rlc_impedance, ac.series_resonator_bandwidth, ac.sinusoidal_power_triangle, and ac.shunt_power_factor_correction. One P2 phase-label overlap; no other concrete connectivity, junction, quantity-key, dimensional, polarity, arrow-direction, or conceptual-curve defects found. Static source review only; no edits, builds, lint, tests, formatters, or rendered/runtime checks; native screenshots remain for parent.",
+      "confidence": 0.96,
+      "findings": [
+        {
+          "title": "Move the phase label clear of the apparent-power vector",
+          "body": "In `ac.sinusoidal_power_triangle`, the S vector runs from (90,170) to (345,55), passing through (150,142.94). That crosses the 14px \u03c6 label anchored at (145,134), obscuring the phase symbol. \u03c6 denotes the angle between P and S; place it inside that angle, clear of both vectors. Move this label to (160,148), retaining `quantity: 'phase'`. This finding follows from source coordinates, not a rendered check.",
+          "priority": 2,
+          "confidence": 0.97,
+          "file_path": "frontend/lib/diagrams/ac.dart",
+          "line_start": 188,
+          "line_end": 188
+        }
+      ]
+    },
+    "transients": {
+      "overall_correctness": "incorrect",
+      "explanation": "Lane: transients; reviewed transients.rc_step, transients.rc_ladder_step, transients.rlc_underdamped_step, transients.rc_periodic_switching, transients.rl_step, transients.capacitor_constant_current, transients.capacitor_charge_sharing, transients.rc_ramp_source. Connectivity, polarity, arrows, junctions, quantity keys, dimensional formulas, conceptual curves and consumer routing match the catalog; one label/ground collision needs correction. Static review only: no edits, builds, lint, tests, formatters or runtime/rendered review; native screenshot checks remain with parent.",
+      "confidence": 0.93,
+      "findings": [
+        {
+          "title": "Move the periodic-state label clear of the ground symbol",
+          "body": "In transients.rc_periodic_switching, the label starts at (82,246) and extends beneath the ground centered at (180,242). The painter places lower ground strokes at x=171.6\u2013188.4, y=246.4 and x=177.2\u2013182.8, y=250.8, inside this 14px text line. This coordinate-level collision superimposes the electrical-reference symbol and the no-load annotation. Move the label to (20,246), keeping its text left of the ground without changing the model.",
+          "priority": 2,
+          "confidence": 0.94,
+          "file_path": "frontend/lib/diagrams/transients.dart",
+          "line_start": 140,
+          "line_end": 140
+        }
+      ]
+    },
+    "diodes": {
+      "overall_correctness": "incorrect",
+      "explanation": "Diodes lane reviewed: diodes.led_series_resistor, diodes.shockley_forward_current, diodes.zener_shunt_resistor_window, diodes.reverse_recovery_charge_budget, diodes.bridge_conduction_loss, diodes.full_wave_capacitor_ripple, diodes.biased_two_sided_clipper, diodes.parallel_led_ballast. One symbol-rendering defect; remaining topology, polarity, quantity bindings, and conceptual waveforms match the catalog. Static source review only; no edits, builds, lint, tests, formatters, or rendered review.",
+      "confidence": 0.95,
+      "findings": [
+        {
+          "title": "[P2] Attach the zener bends to the actual cathode bar",
+          "body": "For diodes.zener_shunt_resistor_window, the rotated diode\u2019s cathode bar runs from (332,138) to (368,138). Both added bends instead start at y=135 and remain detached, leaving an ordinary diode symbol with floating strokes. The catalog models reverse-breakdown regulation, so the distinguishing zener bar should be continuous. Replace these marks with Wire([332,138,332,145]) and Wire([368,138,368,131]) to attach both bends precisely.",
+          "priority": 2,
+          "confidence": 0.97,
+          "file_path": "frontend/lib/diagrams/diodes.dart",
+          "line_start": 70,
+          "line_end": 71
+        }
+      ]
+    },
+    "bjt": {
+      "overall_correctness": "correct",
+      "explanation": "BJT lane: clear; no concrete topology, polarity, junction, quantity-key, dimensional, curve, or coordinate-backed overlap defects found in frontend/lib/diagrams/bjt.dart against backend/catalog/bjt.json, using primitives.dart and painter.dart conventions and tracing registry/UI consumption.\nReviewed IDs: bjt.saturated_switch_drive, bjt.early_output_resistance, bjt.differential_pair_steering, bjt.divider_bias, bjt.hybrid_pi_parameters, bjt.emitter_degeneration_gain, bjt.terminal_dissipation, bjt.emitter_follower_loading.\nStatic review only; no edits, builds, lint, tests, formatters, or runtime/rendered review\u2014native screenshot verification remains with parent.",
+      "confidence": 0.94,
+      "findings": []
+    },
+    "mosfet": {
+      "overall_correctness": "incorrect",
+      "explanation": "MOSFET lane: one conceptual-curve defect; no concrete findings in the other seven diagrams. Reviewed all eight IDs: mosfet.gate_charge_supply, mosfet.gate_loop_damping_resistor, mosfet.bootstrap_charge_budget, mosfet.output_capacitance_hard_turn_on_loss, mosfet.channel_conduction_loss, mosfet.hard_switch_overlap_loss, mosfet.miller_plateau_timing, mosfet.long_channel_triode_current. Static source review only; no rendering, builds, tests, lint or formatting, so native screenshot review remains outstanding.",
+      "confidence": 0.94,
+      "findings": [
+        {
+          "title": "Remove the second plateau from the gate-charge curve",
+          "body": "`mosfet.miller_plateau_timing` draws another flat segment from (625,85) to (650,85) on its VGS-versus-Qg graph. After VDS slewing finishes, finite gate capacitance requires dVGS/dQg > 0, not additional charge at constant VGS. This misrepresents the post-Miller interval as a second plateau outside the marked Qgd span. End the curve at (625,85), or retain a positive slope through its last point.",
+          "priority": 2,
+          "confidence": 0.95,
+          "file_path": "frontend/lib/diagrams/mosfet.dart",
+          "line_start": 234,
+          "line_end": 234
+        }
+      ]
+    },
+    "opamps": {
+      "overall_correctness": "incorrect",
+      "explanation": "Lane opamps: one P2 curve error; connectivity, junctions, polarity, quantity keys, dimensions and label placement otherwise passed source review. Reviewed IDs: opamps.inverting_stage, opamps.difference_ratio_error, opamps.dominant_pole_gain_bandwidth, opamps.noninverting_stage, opamps.weighted_summing_stage, opamps.integrator_constant_input, opamps.differentiator_ramp, opamps.sinusoidal_slew_requirement.\nNot checked: runtime rendering or native screenshots; no edits, builds, lint, tests or formatters run.",
+      "confidence": 0.98,
+      "findings": [
+        {
+          "title": "Keep the closed-loop curve below the open-loop response",
+          "body": "In `opamps.dominant_pole_gain_bandwidth`, the curves cross near x=539; at x=630, closed-loop y=198 lies above open-loop y=205. This depicts closed-loop gain exceeding open-loop gain. The catalog's single-pole model requires |H| = A0/\u221a((1+A0/N)\u00b2+(f/fp)\u00b2) < |A| = A0/\u221a(1+(f/fp)\u00b2). Redraw the static curves using one illustrative A0, N and fp with shared log scales. Keep the closed-loop curve below the open-loop curve, approaching the same high-frequency asymptote; reposition the fcl guide accordingly.",
+          "priority": 2,
+          "confidence": 1,
+          "file_path": "frontend/lib/diagrams/opamps.dart",
+          "line_start": 86,
+          "line_end": 91
+        }
+      ]
+    },
+    "filters": {
+      "overall_correctness": "incorrect",
+      "explanation": "Filters lane: one P2 conceptual-curve defect; no other concrete source-level defects found. Reviewed all eight IDs: filters.rc_lowpass_response, filters.deliyannis_bandpass_design, filters.butterworth_spec_synthesis, filters.sallen_key_lowpass, filters.fliege_notch_response, filters.rc_highpass_response, filters.second_order_highpass, filters.buffered_rc_cascade. No edits, builds, lint, tests, formatters, or rendered review; native layout remains unverified pending parent screenshots.",
+      "confidence": 0.93,
+      "findings": [
+        {
+          "title": "Keep the Butterworth attenuation slope increasing on the log axis",
+          "body": "The curve's downward slope rises to 32/30 between (220,116) and (250,148), then falls to 20/32 between (314,196) and (346,216). This contradicts the labeled logarithmic frequency axis and the catalog's Butterworth model. For z=(f/fc)^(2N), dA/dlog10(f)=20Nz/(1+z), which increases monotonically toward 20N. The sketch therefore incorrectly shows the attenuation slope easing after the knee, even as an illustrative response. Keep the early vertices and replace those after (190,91) with (220,113), (250,137), (283,166), (314,196), (337,219). This preserves both specification markers while restoring increasing slopes.",
+          "priority": 2,
+          "confidence": 0.97,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/filters.dart",
+          "line_start": 81,
+          "line_end": 81
+        }
+      ]
+    },
+    "power": {
+      "overall_correctness": "incorrect",
+      "explanation": "Power lane reviewed against catalog: power.ldo_dissipation, power.boost_output_capacitor, power.buck_input_capacitor_rms, power.boost_rhp_zero, power.converter_input_budget, power.buck_inductor_design, power.boost_inductor_design, power.buck_output_capacitor. Two findings: capacitor-current sketches violate charge balance, and capacitor plates overlap Cmin labels; topology, polarity, quantity keys, and consuming dispatch otherwise match. Not checked: native screenshots or runtime; no edits, builds, lint, tests, or formatters.",
+      "confidence": 0.92,
+      "findings": [
+        {
+          "title": "Preserve charge balance in both capacitor-current sketches",
+          "body": "In power.boost_output_capacitor, the first full period spans x=485\u2013635 with zero at y=145. Positive area is 85\u00d7(60+30)/2=3825, versus negative area 65\u00d735=2275. The power.buck_input_capacitor_rms sketch at line 114 likewise has positive area 4250 versus negative area 2405. Both depict net charging each cycle, contradicting steady-state \u222biC dt=0 and \u0394VC=\u222biC dt/C. Keep existing x coordinates; set boost ON levels to y=179 and its OFF ramp to y=105\u2192133. Set buck ON ramps to y=161\u2192187, its OFF plateau to y=114, and its final partial-ramp endpoint to y=175. These normalized examples have equal charging and discharging areas without requiring computed values.",
+          "priority": 2,
+          "confidence": 0.9,
+          "file_path": "frontend/lib/diagrams/power.dart",
+          "line_start": 63,
+          "line_end": 65
+        },
+        {
+          "title": "Move Cmin labels clear of the rotated capacitor plates",
+          "body": "For power.boost_output_capacitor, the rotated capacitor plates span x=317\u2013353 at y=161.76 and y=168.24. Cmin starts at (348,151), placing its first character across the upper plate. power.buck_output_capacitor repeats this overlap at line 300: its plates extend to x=343, but Cmin starts at x=341. These collisions follow directly from painter.dart's rotation and plate endpoints. Move the boost label to x=360 and the buck label to x=350, keeping their y positions and c_min bindings.",
+          "priority": 2,
+          "confidence": 0.96,
+          "file_path": "frontend/lib/diagrams/power.dart",
+          "line_start": 58,
+          "line_end": 58
+        }
+      ]
+    },
+    "magnetics": {
+      "overall_correctness": "incorrect",
+      "explanation": "Magnetics lane has two current/flux direction errors and one label collision; quantity keys and registry dispatch match. Reviewed IDs: magnetics.turns_ratio, magnetics.rectangular_toroid_inductance, magnetics.gapped_core_inductance, magnetics.conductor_skin_depth, magnetics.coupled_coil_inductance, magnetics.sinusoidal_flux_density, magnetics.field_energy_density, magnetics.transformer_va_budget. Static source/catalog review only; no edits, builds, lint, tests, formatters, screenshots, or runtime checks.",
+      "confidence": 0.98,
+      "findings": [
+        {
+          "title": "Reverse the toroid flux arrow to match its current symbols",
+          "body": "`magnetics.rectangular_toroid_inductance` shows outward current at `(145,140)` and inward current at `(73,140)`. The right-hand rule gives counterclockwise flux: downward through the left core and leftward across its top. The arrow and caption instead claim clockwise flux, teaching the opposite winding polarity. Reverse the field polyline to `[211,74,182,68,158,72,135,84]` and change the caption to `counterclockwise`.",
+          "priority": 2,
+          "confidence": 1,
+          "file_path": "frontend/lib/diagrams/magnetics.dart",
+          "line_start": 44,
+          "line_end": 50
+        },
+        {
+          "title": "Reverse the gapped-core current arrow to match its flux path",
+          "body": "`magnetics.gapped_core_inductance` points `Ipk` out of the upper lead. With dashed winding segments behind the core, visible turns then carry current right-to-left. The right-hand rule gives downward flux in the left limb, opposite the drawn clockwise flux path. Change this mark to `Wire([40, 113, 68, 113], arrow: true, ink: DiagramInk.input)` so current enters the upper lead.",
+          "priority": 2,
+          "confidence": 0.98,
+          "file_path": "frontend/lib/diagrams/magnetics.dart",
+          "line_start": 85,
+          "line_end": 86
+        },
+        {
+          "title": "Move the flux label off the sinusoidal trace",
+          "body": "`magnetics.sinusoidal_flux_density` places `\u03a6, B` at `(605,162)`, on the segment from `(600,180)` to `(630,145)`. Static geometry puts the trace through `(610,168.3)`, within the first glyph's area at the painter's 14px font size. This merges the flux label with its trace and hurts legibility. Move the label to `(634,174)`, beyond the curve's final x-coordinate.",
+          "priority": 2,
+          "confidence": 0.97,
+          "file_path": "frontend/lib/diagrams/magnetics.dart",
+          "line_start": 191,
+          "line_end": 191
+        }
+      ]
+    },
+    "signals": {
+      "overall_correctness": "incorrect",
+      "explanation": "Lane: signals; one coordinate-backed label overlap, no model, quantity-key, polarity, or connectivity defects found. Reviewed all eight IDs: signals.line_propagation, signals.microstrip_impedance, signals.stripline_impedance, signals.quarter_wave_transformer, signals.coax_impedance, signals.load_reflection, signals.source_series_termination, signals.rise_time_bandwidth. Static source review only; no edits, builds, lint, tests, formatters, or runtime/rendered checks; native screenshots remain unchecked.",
+      "confidence": 0.95,
+      "findings": [
+        {
+          "title": "Move the Source label clear of the return conductor",
+          "body": "In `signals.quarter_wave_transformer`, the 14px `Source` label at `(25,202)` overlaps the return conductor at `x=60`, `y=185..235`. The painter draws that conductor after the text, striking through the label. Move the label to `(84,202)`; keep the electrically correct source-return connection unchanged.",
+          "priority": 2,
+          "confidence": 0.96,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/signals.dart",
+          "line_start": 107,
+          "line_end": 110
+        }
+      ]
+    },
+    "pcb": {
+      "findings": [
+        {
+          "title": "Move the stencil length label off the sheet outline",
+          "body": "In `pcb.stencil_aperture_area_ratio`, `L` starts at (195,61), while the sheet outline crosses y=65 from x=60 to x=345. The 14px label overlaps that outline; `DiagramPainter` draws text without clearing the underlying line. This obscures the aperture-length symbol used in `A_open = L W` and visually associates it with the sheet boundary. Move this label to (195,41), preserving `quantity: 'aperture_length'` and the aperture dimension endpoints at x=110 and x=295.",
+          "priority": 2,
+          "confidence": 0.94,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/pcb.dart",
+          "line_start": 240,
+          "line_end": 240
+        }
+      ],
+      "overall_correctness": "incorrect",
+      "explanation": "PCB lane reviewed: pcb.trace_resistance_drop, pcb.ipc2221_current_estimate, pcb.via_barrel_resistance, pcb.annular_ring_registration, pcb.nominal_copper_thickness, pcb.differential_length_skew, pcb.trace_joule_heat_density, pcb.stencil_aperture_area_ratio. One coordinate-backed label overlap; model formulas, dimensions, signs, quantity bindings, and consuming renderer dispatch otherwise match the catalogue. Static review only: no edits, builds, lint, tests, formatters, runtime checks, or rendered inspection; native screenshot review remains pending.",
+      "confidence": 0.94
+    },
+    "thermal": {
+      "overall_correctness": "correct",
+      "explanation": "Thermal lane clear: no concrete defects found in catalog correspondence, quantity keys, geometry, signs, conceptual curves, or rendering dispatch.\nReviewed IDs:\n- thermal.resistor_power_derating\n- thermal.junction_feedback_equilibrium\n- thermal.arrhenius_acceleration\n- thermal.heatsink_resistance_budget\n- thermal.parallel_conduction_paths\n- thermal.lumped_thermal_step\n- thermal.resistor_tcr_drift\n- thermal.free_linear_expansion\nStatic source review only; no edits, builds, lint, tests, formatters, or runtime/rendered review.\nFont-dependent label clearance remains for parent screenshots.",
+      "confidence": 0.9,
+      "findings": []
+    },
+    "data": {
+      "overall_correctness": "incorrect",
+      "explanation": "Data lane: reviewed data.adc_lsb, data.adc_quantization_error, data.bandlimited_quantization_snr, data.sar_acquisition_settling, data.dynamic_enob, data.nyquist_sampling_margin, data.tone_alias_frequency, and data.unipolar_dac_output against catalog and renderer.\nOne P2 quantity-binding error remains; no other concrete static findings.\nNot checked: native rendering/screenshots or builds/lint/tests/formatters; parent must confirm rendered layout.",
+      "confidence": 0.96,
+      "findings": [
+        {
+          "title": "Bind the sample-rate legend to fs, not fs / 2",
+          "body": "In `data.bandlimited_quantization_snr`, this binding makes `DiagramPanel` generate `fs / 2 \u2014 Sampling rate (Hz); input`. The catalog's `sample_rate` is fs, whereas this boundary is the Nyquist frequency fs/2. The legend therefore identifies half the sampling rate as the sampling rate. Remove `quantity` from the boundary label and add a separate `fs` label bound to `sample_rate`.",
+          "priority": 2,
+          "confidence": 0.99,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/data.dart",
+          "line_start": 78,
+          "line_end": 78
+        }
+      ]
+    },
+    "noise": {
+      "overall_correctness": "correct",
+      "explanation": "Noise lane clear; reviewed noise.johnson_resistor, noise.junction_shot, noise.uncorrelated_rms_sum, noise.noninverting_amplifier_budget, noise.decibel_to_linear, noise.analog_dynamic_range, noise.figure_equivalent_temperature, and noise.friis_three_stage. Static review found no concrete defects in catalog bindings, topology, junctions, arrows, polarity, dimensional consistency, conceptual relationships, or coordinate-based clearance.\nNot checked: builds, lint, tests, formatters, runtime, or screenshots; native font rendering remains unverified.",
+      "confidence": 0.94,
+      "findings": []
+    },
+    "timing": {
+      "overall_correctness": "incorrect",
+      "explanation": "Timing lane reviewed: timing.timer_clock_divider, timing.capacitive_crosstalk_peak, timing.uart_sampling_margin, timing.plate_displacement_current, timing.i2c_pullup_bounds, timing.schmitt_rc_delay_bounds, timing.synchronous_setup_slack, timing.inductive_turnoff_spike. Found one coordinate-level clearance issue affecting two diagrams; connectivity, signs, dimensions, quantity keys and conceptual waveforms otherwise match catalog. Source-only review; no edits, runtime/rendered review, builds, lint, tests or formatters.",
+      "confidence": 0.94,
+      "findings": [
+        {
+          "title": "Move capacitor labels beyond the rotated plate edges",
+          "body": "In `timing.capacitive_crosstalk_peak`, rotating the default capacitor makes its plates span x=317\u2013353 at y=169.6 and 180.4. `Cv` starts at (350,164), placing its 14px text over the plate endpoint. `timing.i2c_pullup_bounds` repeats this at line 154: plates end at x=318, while `Cbus` starts at (316,180). These placements make the capacitor symbols and labels overdraw. Move `Cv` to (362,164) and `Cbus` to (327,180), leaving both labels clear of the rotated plates.",
+          "priority": 2,
+          "confidence": 0.94,
+          "file_path": "frontend/lib/diagrams/timing.dart",
+          "line_start": 43,
+          "line_end": 45
+        }
+      ]
+    }
+  },
+  "visual_initial": {
+    "ac": {
+      "overall_correctness": "correct",
+      "explanation": "AC visual gate clear: inspected native and paper-composited PNGs for ac.inductor_reactance, ac.lossy_coil_antiresonance, ac.capacitor_reactance, ac.series_rlc_impedance, ac.parallel_rlc_impedance, ac.series_resonator_bandwidth, ac.sinusoidal_power_triangle, and ac.shunt_power_factor_correction. The previously reported \u03c6 overlap is visibly resolved at (160,148); no remaining lane-specific topology, conceptual-curve, clipping, text-overlap, or line-through-label defects were observed. Pixel inspection is complete, with model interpretation grounded in the prior catalog/source review; no edits, builds, lint, tests, formatters, or new runtime/interaction checks were performed.",
+      "confidence": 0.96,
+      "findings": []
+    },
+    "diodes": {
+      "overall_correctness": "correct",
+      "explanation": "Clear after inspecting all eight paper-background PNGs in /tmp/copper-diagrams-readable/: diodes.led_series_resistor, diodes.shockley_forward_current, diodes.zener_shunt_resistor_window, diodes.reverse_recovery_charge_budget, diodes.bridge_conduction_loss, diodes.full_wave_capacitor_ripple, diodes.biased_two_sided_clipper, and diodes.parallel_led_ballast. Labels and geometry are readable on the supplied app surface; no additional contrast, line-through-label, topology, or curve defects observed, and the zener repair remains clear. Evidence is visual inspection of supplied captures plus prior source/model review; no runtime interaction, edits, builds, lint, tests, or formatters were performed.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "magnetics": {
+      "overall_correctness": "incorrect",
+      "explanation": "Magnetics visual gate: all three original findings are fixed; two pixel-visible issues remain. Visually inspected magnetics.turns_ratio, magnetics.rectangular_toroid_inductance, magnetics.gapped_core_inductance, magnetics.conductor_skin_depth, magnetics.coupled_coil_inductance, magnetics.sinusoidal_flux_density, magnetics.field_energy_density, and magnetics.transformer_va_budget. Reviewed supplied PNG pixels under /tmp/copper-diagrams-readable/ and targeted root source; no app execution, builds, lint, tests, formatters, or edits.",
+      "confidence": 0.97,
+      "findings": [
+        {
+          "title": "Keep voltage-source polarity glyphs upright after rotation",
+          "body": "In `magnetics.turns_ratio.png`, the source shows a lower vertical bar instead of the negative polarity sign `\u2212`. This is visible in the supplied pixels, not inferred from coordinates. `turns: 1` rotates the glyph through 90\u00b0 because `DiagramPainter._part` paints text inside the rotated canvas. Keep symbol and terminal rotation, but counter-rotate glyphs around their own centers in the painter's `text` helper.",
+          "priority": 2,
+          "confidence": 1,
+          "file_path": "frontend/lib/diagrams/magnetics.dart",
+          "line_start": 8,
+          "line_end": 8
+        },
+        {
+          "title": "Move the outer-radius label clear of the inner core outline",
+          "body": "In `magnetics.rectangular_toroid_inductance.png`, the inner-circle outline meets the leading character of `ro`. The supplied pixels show the collision near `(222,156)`; source places the 14px label at `(222,148)`. The circle centered at `(180,140)` with radius 45 passes through `(222,156.2)`, explaining the overlap. Move this label to `(240,148)` to leave both circular boundaries clear.",
+          "priority": 2,
+          "confidence": 0.95,
+          "file_path": "frontend/lib/diagrams/magnetics.dart",
+          "line_start": 43,
+          "line_end": 43
+        }
+      ]
+    },
+    "pcb": {
+      "overall_correctness": "incorrect",
+      "explanation": "PCB visual review covered all eight supplied native PNGs: pcb.trace_resistance_drop, pcb.ipc2221_current_estimate, pcb.via_barrel_resistance, pcb.annular_ring_registration, pcb.nominal_copper_thickness, pcb.differential_length_skew, pcb.trace_joule_heat_density, pcb.stencil_aperture_area_ratio. The stencil L overlap is visibly resolved; one remaining line-through-label collision appears in the IPC screening diagram, with no other concrete issues found. Inspection used /tmp/copper-diagrams-readable/ images and relevant root source; no edits or checks were executed.",
+      "confidence": 0.94,
+      "findings": [
+        {
+          "title": "Separate the thickness label from the external-layer leader",
+          "body": "The native `pcb.ipc2221_current_estimate.png` shows the dashed external-layer callout crossing the blue `t` annotation. Source places that label at (290,85) and draws the callout through y=95 afterward, overlapping the thickness label used in `A = w t`. Move `Label(290, 85, 't', ...)` to (290,65), preserving `quantity: 'thickness_mil'`; this clears the callout without changing the physical dimensions or model.",
+          "priority": 2,
+          "confidence": 0.94,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/pcb.dart",
+          "line_start": 59,
+          "line_end": 62
+        }
+      ]
+    },
+    "power": {
+      "overall_correctness": "incorrect",
+      "explanation": "Visually inspected all eight native PNGs and their paper-background composites: power.ldo_dissipation, power.boost_output_capacitor, power.buck_input_capacitor_rms, power.boost_rhp_zero, power.converter_input_budget, power.buck_inductor_design, power.boost_inductor_design, power.buck_output_capacitor. Previous findings are resolved; one remaining Load-label/conductor collision is visible in the boost-capacitor composite, with no other findings. Curve charge balance was confirmed from corrected source coordinates; no edits, builds, lint, tests, formatters, or independent live-app interaction were performed.",
+      "confidence": 0.94,
+      "findings": [
+        {
+          "title": "Separate the Load label from the return conductor",
+          "body": "The paper-composited power.boost_output_capacitor.png shows the final letter of Load meeting the vertical load-return conductor. The label starts at (393,178), while that conductor runs along x=425 from y=170 to y=215, merging the annotation with circuit geometry. Move Label(393,178,'Load') to (382,178) to provide clear separation without changing topology.",
+          "priority": 2,
+          "confidence": 0.9,
+          "file_path": "frontend/lib/diagrams/power.dart",
+          "line_start": 49,
+          "line_end": 49
+        }
+      ]
+    },
+    "timing": {
+      "overall_correctness": "incorrect",
+      "explanation": "Visually inspected all eight native PNGs, including their paper-background composites: timing.timer_clock_divider, timing.capacitive_crosstalk_peak, timing.uart_sampling_margin, timing.plate_displacement_current, timing.i2c_pullup_bounds, timing.schmitt_rc_delay_bounds, timing.synchronous_setup_slack, timing.inductive_turnoff_spike. The previous Cv/Cbus clearance finding is visibly fixed; one line-through-label collision remains in UART, with no other concrete visual or physical-interpretation findings. This verdict uses reviewed screenshot pixels and targeted source geometry, not inferred rendering; no edits, builds, lint, tests or formatters were run.",
+      "confidence": 0.98,
+      "findings": [
+        {
+          "title": "Move the stop-bit label clear of the magnification guide",
+          "body": "Observed in `/tmp/copper-diagrams-readable/timing.uart_sampling_margin.png`: the diagonal dashed guide visibly crosses \u201cbegins\u201d in \u201cstop begins\u201d. Source geometry confirms that the guide from (430,104) to (180,143) passes through y\u2248135\u2013130 over x=230\u2013266, inside this label's text region. Move `Label(184,121,'stop begins')` to (184,108), which clears both the guide below and the frame waveform above.",
+          "priority": 2,
+          "confidence": 1,
+          "file_path": "frontend/lib/diagrams/timing.dart",
+          "line_start": 77,
+          "line_end": 80
+        }
+      ]
+    },
+    "transients": {
+      "overall_correctness": "incorrect",
+      "explanation": "Lane transients: visually inspected the supplied native PNGs, composited over the app surface, for transients.rc_step, transients.rc_ladder_step, transients.rlc_underdamped_step, transients.rc_periodic_switching, transients.rl_step, transients.capacitor_constant_current, transients.capacitor_charge_sharing, and transients.rc_ramp_source. The corrected periodic-state annotation is clear; one remaining ground/text collision is visible in the RLC diagram, with no other substantive topology, polarity, or conceptual-curve defects found. Reviewed supplied pixels and relevant root source only; no edits or additional builds/tests were performed.",
+      "confidence": 0.94,
+      "findings": [
+        {
+          "title": "Move the RLC initial-condition label away from the ground stroke",
+          "body": "In /tmp/copper-diagrams-readable/transients.rlc_underdamped_step.png, the bottom ground stroke overlaps the final zero in the initial-condition annotation. The ground centered at (195,242) draws that stroke across x=192.2\u2013197.8 at y=250.8, where the label beginning at (58,246) ends. This interferes with the explicit iL(0)=0 condition for the catalog's initially unenergized RLC model. Move this label to (20,246), preserving its text while placing it entirely left of the ground symbol.",
+          "priority": 2,
+          "confidence": 0.95,
+          "file_path": "frontend/lib/diagrams/transients.dart",
+          "line_start": 105,
+          "line_end": 105
+        }
+      ]
+    },
+    "dc": {
+      "overall_correctness": "correct",
+      "explanation": "Direct pixel inspection of /tmp/copper-diagrams-readable/<id>.png \u2014 all eight clear:\n- dc.ohm_current: readable labels; correct passive polarity and current reference\n- dc.resistor_dissipation: heat arrows separate from electrical path; labels unobstructed\n- dc.series_parallel_branches: correct series pairs, shared rails, separate midpoints, upright source signs\n- dc.loaded_divider: RL correctly shunts Rb; output polarity and load-current direction clear\n- dc.resistive_source_matching: correct series topology, load polarity, and maximum-power annotations\n- dc.loaded_wheatstone_bridge: RD joins only the midpoints; detector-current direction and node labels clear\n- dc.delta_to_star: terminal mapping correct; star center visibly floating\n- dc.two_source_node: both source-current arrows face the node; load arrow faces the shared return\n\nSource reasoning against dc.dart, dc.json, primitives.dart, and painter.dart confirms topology, connector orientation, and quantity bindings; no conceptual curves present.\nBaseline reports.dc.findings is empty, so no original DC findings require closure; screenshots show upright source plus/minus glyphs.\nNot run: runtime traversal, builds, tests, lint, or formatters; no edits; conclusions cover supplied pixels and source only.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "bjt": {
+      "overall_correctness": "correct",
+      "explanation": "All eight supplied PNGs visually inspected; no unreadable labels, clipping, unintended line/shape collisions, incorrect orientations, topology defects, or misleading curves found.\n\nPixel inspection \u2014 /tmp/copper-diagrams-readable/<id>.png:\n- bjt.saturated_switch_drive \u2014 clear; source +/\u2212 upright, base-drive path connected, emitter grounded.\n- bjt.early_output_resistance \u2014 clear; negative Early-voltage intercept, positive slope, Q point and guides consistent.\n- bjt.differential_pair_steering \u2014 clear; common emitter connection and downward tail-current sink correct.\n- bjt.divider_bias \u2014 clear; divider feeds base, collector and emitter resistors connect correctly.\n- bjt.hybrid_pi_parameters \u2014 clear; r\u03c0 spans base/emitter, dependent current points collector-to-emitter.\n- bjt.emitter_degeneration_gain \u2014 clear; RC and RL parallel, RE unbypassed, output at collector.\n- bjt.terminal_dissipation \u2014 clear; terminal currents, voltage polarities and power labels consistent.\n- bjt.emitter_follower_loading \u2014 clear; collector AC-grounded, output at emitter, RE and RL parallel.\n\nSource reasoning: bjt.dart agrees with backend/catalog/bjt.json and primitives.dart/painter.dart connector conventions; registry includes all eight IDs.\nBaseline: persisted reports.bjt contains no findings; no original BJT issue remains unresolved.\nNot checked: runtime execution, other viewport sizes or themes; no edits, builds, tests, lint or formatters run.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "mosfet": {
+      "overall_correctness": "incorrect",
+      "explanation": "Two label/wire collisions remain; all eight supplied PNGs were directly inspected under /tmp/copper-diagrams-readable:\n- mosfet.gate_charge_supply \u2014 clear\n- mosfet.gate_loop_damping_resistor \u2014 return wire crosses Driver step label\n- mosfet.bootstrap_charge_budget \u2014 clear\n- mosfet.output_capacitance_hard_turn_on_loss \u2014 clear\n- mosfet.channel_conduction_loss \u2014 clear\n- mosfet.hard_switch_overlap_loss \u2014 rising-current ramp intersects I rises label\n- mosfet.miller_plateau_timing \u2014 clear; original second-plateau finding resolved in pixels and source\n- mosfet.long_channel_triode_current \u2014 clear\nRotated voltage-source polarity glyphs are upright; catalog and primitive/painter source checks found no additional topology or conceptual-curve defects.\nNot run: runtime execution, builds, tests, lint, or formatters; no edits.\nScope limit: supplied native PNGs only; other viewport sizes unreviewed, and prior New128 traversal results not independently verified.",
+      "confidence": 0.95,
+      "findings": [
+        {
+          "title": "Move the driver-step label clear of the return wire",
+          "body": "In `mosfet.gate_loop_damping_resistor.png`, the vertical return wire at x=60 passes through `Driver step`, obscuring part of the label. Source confirms the label starts at (21,191), while the return wire spans y=178\u2013220 and paints after the text. Move the label beside the vertical leg without changing the circuit connections.",
+          "priority": 2,
+          "confidence": 0.99,
+          "file_path": "frontend/lib/diagrams/mosfet.dart",
+          "line_start": 40,
+          "line_end": 40
+        },
+        {
+          "title": "Move the rising-current label off the turn-on ramp",
+          "body": "In `mosfet.hard_switch_overlap_loss.png`, the solid turn-on current ramp cuts into the final `s` of `I rises`. Source places this label at (97,113), immediately across the segment from (100,180) to (170,80). Move the label farther left or above that segment to keep the waveform annotation clear.",
+          "priority": 2,
+          "confidence": 0.94,
+          "file_path": "frontend/lib/diagrams/mosfet.dart",
+          "line_start": 184,
+          "line_end": 184
+        }
+      ]
+    },
+    "opamps": {
+      "overall_correctness": "correct",
+      "explanation": "Pixel inspection found no unresolved label, collision, orientation, topology, or conceptual-curve defects in these eight PNGs:\n- opamps.inverting_stage: clear\n- opamps.difference_ratio_error: clear\n- opamps.dominant_pole_gain_bandwidth: clear\n- opamps.noninverting_stage: clear\n- opamps.weighted_summing_stage: clear\n- opamps.integrator_constant_input: clear\n- opamps.differentiator_ramp: clear\n- opamps.sinusoidal_slew_requirement: clear\nSource reasoning against backend/catalog/opamps.json, primitives.dart, and painter.dart confirms the original reports.opamps finding is resolved: corrected closed-loop coordinates stay below the open-loop response, approach its high-frequency asymptote, and place fcl consistently; the screenshot shows no erroneous crossing.\nNot checked: runtime execution or other display sizes; no edits, builds, tests, lint, or formatters, and supplied traversal results were not rerun.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "filters": {
+      "overall_correctness": "correct",
+      "explanation": "Direct PNG inspection found readable labels, clear geometry, correct orientation/topology, and no misleading conceptual curves:\n- filters.rc_lowpass_response \u2014 clear\n- filters.deliyannis_bandpass_design \u2014 clear\n- filters.butterworth_spec_synthesis \u2014 clear\n- filters.sallen_key_lowpass \u2014 clear\n- filters.fliege_notch_response \u2014 clear\n- filters.rc_highpass_response \u2014 clear\n- filters.second_order_highpass \u2014 clear\n- filters.buffered_rc_cascade \u2014 clear.\nSource review checked catalog models and painter connectors; the original Butterworth slope finding is resolved in both source and pixels.\nNo edits or runtime checks performed; New128 results remain prior reported evidence, not independently executed verification.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "signals": {
+      "overall_correctness": "correct",
+      "explanation": "Direct pixel inspection: all eight supplied PNGs have readable labels and no unresolved collisions, orientation, topology, or conceptual-curve defects:\n- signals.line_propagation \u2014 clear; travel arrows and delay labels readable\n- signals.microstrip_impedance \u2014 clear; width, dielectric height, and thickness dimensions match the cross-section\n- signals.stripline_impedance \u2014 clear; centered trace, equal dielectric gaps, and full plane spacing\n- signals.quarter_wave_transformer \u2014 clear; distributed section, load, and source polarity readable\n- signals.coax_impedance \u2014 clear; radius endpoints and conductor/dielectric callouts correct\n- signals.load_reflection \u2014 clear; wave directions, load polarity, and power-fraction labels correct\n- signals.source_series_termination \u2014 clear; driver resistors, open receiver, and return-wave direction correct\n- signals.rise_time_bandwidth \u2014 clear; monotonic exponential illustration and 10\u201390% markers consistent.\nOriginal signals finding resolved: Source at (84,202) visibly clears the return conductor; rotated voltage-source glyphs remain upright, and static catalog/primitives/painter reasoning supports the rendered models.\nNo edits or runtime execution; builds, tests, lint, and formatters skipped, with visual coverage limited to the supplied desktop PNGs.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "thermal": {
+      "overall_correctness": "incorrect",
+      "explanation": "Visually inspected all eight supplied PNGs; one label collision remains:\n- thermal.resistor_power_derating \u2014 clear\n- thermal.junction_feedback_equilibrium \u2014 clear\n- thermal.arrhenius_acceleration \u2014 unresolved: dashed guide crosses \u201cCooler use\u201d\n- thermal.heatsink_resistance_budget \u2014 clear\n- thermal.parallel_conduction_paths \u2014 clear\n- thermal.lumped_thermal_step \u2014 clear\n- thermal.resistor_tcr_drift \u2014 clear\n- thermal.free_linear_expansion \u2014 clear\nSource review: checked thermal definitions against catalog models, primitive geometry, registration, and painter dispatch; reports.thermal contains no original findings requiring resolution.\nNo edits, runtime execution, builds, tests, lint, or formatters; reported traversal results were not rerun, and visual clearance applies only to supplied captures.",
+      "confidence": 0.98,
+      "findings": [
+        {
+          "title": "Move \u201cCooler use\u201d clear of the reciprocal-temperature guide",
+          "body": "In /tmp/copper-diagrams-readable/thermal.arrhenius_acceleration.png, the dashed guide at x=320 visibly runs through \u201cuse\u201d in \u201cCooler use\u201d. Source places that label at (253,175), inside the guide\u2019s y=160\u2013215 span, making the annotation harder to read. Move the label left, for example to x=230, so its full width clears the guide without changing the curve.",
+          "priority": 2,
+          "confidence": 0.99,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/thermal.dart",
+          "line_start": 73,
+          "line_end": 73
+        }
+      ]
+    },
+    "data": {
+      "overall_correctness": "incorrect",
+      "explanation": "Direct pixel inspection of all eight PNGs:\n- data.adc_lsb: clear\n- data.adc_quantization_error: clear\n- data.bandlimited_quantization_snr: unresolved line-through-label collision\n- data.sar_acquisition_settling: clear\n- data.dynamic_enob: clear\n- data.nyquist_sampling_margin: clear\n- data.tone_alias_frequency: clear\n- data.unipolar_dac_output: clear\n\nOriginal data finding resolved: PNG shows separate fs and fs / 2 labels; source confirms only fs binds sample_rate.\nSource reasoning covered catalog models, primitive connectors, painter dispatch and legend generation; no additional topology or conceptual-curve defects found.\nNot checked: runtime execution, builds, tests, lint, formatters or full-panel screenshots; supplied PNGs show diagram canvases only.",
+      "confidence": 0.98,
+      "findings": [
+        {
+          "title": "Move the retained-noise label clear of the sine stem",
+          "body": "In `/tmp/copper-diagrams-readable/data.bandlimited_quantization_snr.png`, the sine stem at x=145 visibly crosses the `Retained noise` annotation. Source places that label at (85,169), inside the stem's y=75\u2013198 span. This interrupts the explanatory text despite the reported clean text-text traversal. Move the label below the horizontal axis, clear of the sine stem.",
+          "priority": 2,
+          "confidence": 0.99,
+          "file_path": "/home/simson/pi-projects/pcb-design-calculator/frontend/lib/diagrams/data.dart",
+          "line_start": 79,
+          "line_end": 79
+        }
+      ]
+    },
+    "noise": {
+      "overall_correctness": "correct",
+      "explanation": "Pixel-inspected all eight PNGs under /tmp/copper-diagrams-readable; no unresolved visual defects:\n- noise.johnson_resistor \u2014 clear: readable labels, upright source polarity, correct unloaded resistor topology\n- noise.junction_shot \u2014 clear: parallel noise source, downward diode/current orientation, readable density and RMS labels\n- noise.uncorrelated_rms_sum \u2014 clear: three squared contributions enter summation before square root; connectors avoid labels\n- noise.noninverting_amplifier_budget \u2014 clear: correct feedback and ground connections, upright polarity, distinct current-noise annotations\n- noise.decibel_to_linear \u2014 clear: unobstructed port labels and correct equal-impedance power/voltage relationships\n- noise.analog_dynamic_range \u2014 clear: correctly ordered conceptual levels and correctly bounded DR/SNR brackets\n- noise.figure_equivalent_temperature \u2014 clear: readable equivalent-input model, matching gain, correct noise-factor relationship\n- noise.friis_three_stage \u2014 clear: connected stages, readable equations, correct later-stage gain denominators\nSource reasoning checked catalog models, primitive connectors, painter dispatch, and noise-map registration; reports.noise contains no original findings requiring resolution, and its previously unverified screenshot/font coverage is now inspected.\nNot run: runtime execution, builds, tests, lint, or formatters; other viewport/theme rendering remains unverified.",
+      "confidence": 0.97,
+      "findings": []
+    }
+  },
+  "dispatch_recovery": {
+    "unavailable_resume_handles": [
+      "ReviewDiagramDc",
+      "ReviewDiagramBjt",
+      "ReviewDiagramMosfet",
+      "ReviewDiagramOpamps",
+      "ReviewDiagramFilters",
+      "ReviewDiagramSignals",
+      "ReviewDiagramThermal",
+      "ReviewDiagramData",
+      "ReviewDiagramNoise"
+    ],
+    "replacement_visual_reviewers": [
+      "VisualDiagramDc",
+      "VisualDiagramBjt",
+      "VisualDiagramMosfet",
+      "VisualDiagramOpamps",
+      "VisualDiagramFilters",
+      "VisualDiagramSignals",
+      "VisualDiagramThermal",
+      "VisualDiagramData",
+      "VisualDiagramNoise"
+    ],
+    "tool_issue_reported": true,
+    "note": "Original16 source reviews completed. Nine handles failed to resume; replacements completed those nine visual lanes. No unreceived review is counted as passed."
+  },
+  "final_visual": {
+    "dc": {
+      "overall_correctness": "correct",
+      "explanation": "Direct pixel inspection of /tmp/copper-diagrams-readable/<id>.png \u2014 all eight clear:\n- dc.ohm_current: readable labels; correct passive polarity and current reference\n- dc.resistor_dissipation: heat arrows separate from electrical path; labels unobstructed\n- dc.series_parallel_branches: correct series pairs, shared rails, separate midpoints, upright source signs\n- dc.loaded_divider: RL correctly shunts Rb; output polarity and load-current direction clear\n- dc.resistive_source_matching: correct series topology, load polarity, and maximum-power annotations\n- dc.loaded_wheatstone_bridge: RD joins only the midpoints; detector-current direction and node labels clear\n- dc.delta_to_star: terminal mapping correct; star center visibly floating\n- dc.two_source_node: both source-current arrows face the node; load arrow faces the shared return\n\nSource reasoning against dc.dart, dc.json, primitives.dart, and painter.dart confirms topology, connector orientation, and quantity bindings; no conceptual curves present.\nBaseline reports.dc.findings is empty, so no original DC findings require closure; screenshots show upright source plus/minus glyphs.\nNot run: runtime traversal, builds, tests, lint, or formatters; no edits; conclusions cover supplied pixels and source only.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "ac": {
+      "overall_correctness": "correct",
+      "explanation": "AC lane clear: visually inspected the final refreshed /tmp/copper-diagrams-readable/<id>.png captures for ac.inductor_reactance, ac.lossy_coil_antiresonance, ac.capacitor_reactance, ac.series_rlc_impedance, ac.parallel_rlc_impedance, ac.series_resonator_bandwidth, ac.sinusoidal_power_triangle, and ac.shunt_power_factor_correction. The \u03c6 label remains clear of both triangle vectors, source polarity glyphs are now upright, and no unresolved topology, conceptual-curve, clipping, or label-collision defects were observed. These conclusions combine actual final-pixel inspection with the earlier catalog/source review; no edits, builds, lint, tests, formatters, or independent runtime/interaction checks were performed.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "transients": {
+      "overall_correctness": "correct",
+      "explanation": "Clear \u2014 transients lane: visually inspected native captures for transients.rc_step, transients.rc_ladder_step, transients.rlc_underdamped_step, transients.rc_periodic_switching, transients.rl_step, transients.capacitor_constant_current, transients.capacitor_charge_sharing, and transients.rc_ramp_source. Re-inspected the refreshed final RLC capture: its initial-condition label now visibly clears the ground symbol, closing the last finding; no unresolved findings remain. Evidence is supplied screenshot pixels plus the earlier source/catalog review; no edits, builds, lint, tests, or formatters were run.",
+      "confidence": 0.97,
+      "findings": []
+    },
+    "diodes": {
+      "overall_correctness": "correct",
+      "explanation": "Diodes lane clear: inspected the refreshed final paper-background captures for diodes.led_series_resistor, diodes.shockley_forward_current, diodes.zener_shunt_resistor_window, diodes.reverse_recovery_charge_budget, diodes.bridge_conduction_loss, diodes.full_wave_capacitor_ripple, diodes.biased_two_sided_clipper, and diodes.parallel_led_ballast. No unresolved findings: zener bends connect, source polarity glyphs are upright, and labels, junctions, current directions, topology, and illustrative curves remain clear. This conclusion combines direct inspection of the final PNG pixels with the prior source/model review; no edits or check runs were performed.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "bjt": {
+      "overall_correctness": "correct",
+      "explanation": "All eight supplied PNGs visually inspected; no unreadable labels, clipping, unintended line/shape collisions, incorrect orientations, topology defects, or misleading curves found.\n\nPixel inspection \u2014 /tmp/copper-diagrams-readable/<id>.png:\n- bjt.saturated_switch_drive \u2014 clear; source +/\u2212 upright, base-drive path connected, emitter grounded.\n- bjt.early_output_resistance \u2014 clear; negative Early-voltage intercept, positive slope, Q point and guides consistent.\n- bjt.differential_pair_steering \u2014 clear; common emitter connection and downward tail-current sink correct.\n- bjt.divider_bias \u2014 clear; divider feeds base, collector and emitter resistors connect correctly.\n- bjt.hybrid_pi_parameters \u2014 clear; r\u03c0 spans base/emitter, dependent current points collector-to-emitter.\n- bjt.emitter_degeneration_gain \u2014 clear; RC and RL parallel, RE unbypassed, output at collector.\n- bjt.terminal_dissipation \u2014 clear; terminal currents, voltage polarities and power labels consistent.\n- bjt.emitter_follower_loading \u2014 clear; collector AC-grounded, output at emitter, RE and RL parallel.\n\nSource reasoning: bjt.dart agrees with backend/catalog/bjt.json and primitives.dart/painter.dart connector conventions; registry includes all eight IDs.\nBaseline: persisted reports.bjt contains no findings; no original BJT issue remains unresolved.\nNot checked: runtime execution, other viewport sizes or themes; no edits, builds, tests, lint or formatters run.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "opamps": {
+      "overall_correctness": "correct",
+      "explanation": "Pixel inspection found no unresolved label, collision, orientation, topology, or conceptual-curve defects in these eight PNGs:\n- opamps.inverting_stage: clear\n- opamps.difference_ratio_error: clear\n- opamps.dominant_pole_gain_bandwidth: clear\n- opamps.noninverting_stage: clear\n- opamps.weighted_summing_stage: clear\n- opamps.integrator_constant_input: clear\n- opamps.differentiator_ramp: clear\n- opamps.sinusoidal_slew_requirement: clear\nSource reasoning against backend/catalog/opamps.json, primitives.dart, and painter.dart confirms the original reports.opamps finding is resolved: corrected closed-loop coordinates stay below the open-loop response, approach its high-frequency asymptote, and place fcl consistently; the screenshot shows no erroneous crossing.\nNot checked: runtime execution or other display sizes; no edits, builds, tests, lint, or formatters, and supplied traversal results were not rerun.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "filters": {
+      "overall_correctness": "correct",
+      "explanation": "Direct PNG inspection found readable labels, clear geometry, correct orientation/topology, and no misleading conceptual curves:\n- filters.rc_lowpass_response \u2014 clear\n- filters.deliyannis_bandpass_design \u2014 clear\n- filters.butterworth_spec_synthesis \u2014 clear\n- filters.sallen_key_lowpass \u2014 clear\n- filters.fliege_notch_response \u2014 clear\n- filters.rc_highpass_response \u2014 clear\n- filters.second_order_highpass \u2014 clear\n- filters.buffered_rc_cascade \u2014 clear.\nSource review checked catalog models and painter connectors; the original Butterworth slope finding is resolved in both source and pixels.\nNo edits or runtime checks performed; New128 results remain prior reported evidence, not independently executed verification.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "power": {
+      "overall_correctness": "correct",
+      "explanation": "Power lane clear: the refreshed power.boost_output_capacitor capture visibly separates Load from the return conductor, closing the final finding. Visually inspected all eight IDs during this gate: power.ldo_dissipation, power.boost_output_capacitor, power.buck_input_capacitor_rms, power.boost_rhp_zero, power.converter_input_budget, power.buck_inductor_design, power.boost_inductor_design, power.buck_output_capacitor. No unresolved findings; this closure used supplied native pixels, with no edits, builds, lint, tests, formatters, or independent live-app interaction.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "magnetics": {
+      "overall_correctness": "correct",
+      "explanation": "Magnetics lane clear: refreshed pixels confirm the upright source minus sign and unobstructed outer-radius label; all previously reported findings are resolved. Visually inspected IDs across this review: magnetics.turns_ratio, magnetics.rectangular_toroid_inductance, magnetics.gapped_core_inductance, magnetics.conductor_skin_depth, magnetics.coupled_coil_inductance, magnetics.sinusoidal_flux_density, magnetics.field_energy_density, magnetics.transformer_va_budget. Final pixel recheck covered the two changed diagrams, turns_ratio and rectangular_toroid_inductance; no edits, app execution, builds, lint, tests, or formatters were performed.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "signals": {
+      "overall_correctness": "correct",
+      "explanation": "Direct pixel inspection: all eight supplied PNGs have readable labels and no unresolved collisions, orientation, topology, or conceptual-curve defects:\n- signals.line_propagation \u2014 clear; travel arrows and delay labels readable\n- signals.microstrip_impedance \u2014 clear; width, dielectric height, and thickness dimensions match the cross-section\n- signals.stripline_impedance \u2014 clear; centered trace, equal dielectric gaps, and full plane spacing\n- signals.quarter_wave_transformer \u2014 clear; distributed section, load, and source polarity readable\n- signals.coax_impedance \u2014 clear; radius endpoints and conductor/dielectric callouts correct\n- signals.load_reflection \u2014 clear; wave directions, load polarity, and power-fraction labels correct\n- signals.source_series_termination \u2014 clear; driver resistors, open receiver, and return-wave direction correct\n- signals.rise_time_bandwidth \u2014 clear; monotonic exponential illustration and 10\u201390% markers consistent.\nOriginal signals finding resolved: Source at (84,202) visibly clears the return conductor; rotated voltage-source glyphs remain upright, and static catalog/primitives/painter reasoning supports the rendered models.\nNo edits or runtime execution; builds, tests, lint, and formatters skipped, with visual coverage limited to the supplied desktop PNGs.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "pcb": {
+      "overall_correctness": "correct",
+      "explanation": "PCB lane clear: visually inspected pcb.trace_resistance_drop, pcb.ipc2221_current_estimate, pcb.via_barrel_resistance, pcb.annular_ring_registration, pcb.nominal_copper_thickness, pcb.differential_length_skew, pcb.trace_joule_heat_density, and pcb.stencil_aperture_area_ratio. Reopened the refreshed IPC screening PNG and confirmed t now clears the dashed leader; the stencil L collision was already visibly resolved, leaving no unresolved findings. Conclusions use supplied native PNG pixels and the preceding source/model review; no edits, builds, lint, tests, or formatters were run.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "noise": {
+      "overall_correctness": "correct",
+      "explanation": "Pixel-inspected all eight PNGs under /tmp/copper-diagrams-readable; no unresolved visual defects:\n- noise.johnson_resistor \u2014 clear: readable labels, upright source polarity, correct unloaded resistor topology\n- noise.junction_shot \u2014 clear: parallel noise source, downward diode/current orientation, readable density and RMS labels\n- noise.uncorrelated_rms_sum \u2014 clear: three squared contributions enter summation before square root; connectors avoid labels\n- noise.noninverting_amplifier_budget \u2014 clear: correct feedback and ground connections, upright polarity, distinct current-noise annotations\n- noise.decibel_to_linear \u2014 clear: unobstructed port labels and correct equal-impedance power/voltage relationships\n- noise.analog_dynamic_range \u2014 clear: correctly ordered conceptual levels and correctly bounded DR/SNR brackets\n- noise.figure_equivalent_temperature \u2014 clear: readable equivalent-input model, matching gain, correct noise-factor relationship\n- noise.friis_three_stage \u2014 clear: connected stages, readable equations, correct later-stage gain denominators\nSource reasoning checked catalog models, primitive connectors, painter dispatch, and noise-map registration; reports.noise contains no original findings requiring resolution, and its previously unverified screenshot/font coverage is now inspected.\nNot run: runtime execution, builds, tests, lint, or formatters; other viewport/theme rendering remains unverified.",
+      "confidence": 0.97,
+      "findings": []
+    },
+    "timing": {
+      "overall_correctness": "correct",
+      "explanation": "Timing lane clear; visually inspected native paper-composited captures for timing.timer_clock_divider, timing.capacitive_crosstalk_peak, timing.uart_sampling_margin, timing.plate_displacement_current, timing.i2c_pullup_bounds, timing.schmitt_rc_delay_bounds, timing.synchronous_setup_slack and timing.inductive_turnoff_spike. Rechecked the refreshed final UART capture: \u201cstop begins\u201d now clears both the waveform and dashed guide; the earlier Cv/Cbus fixes were also visually confirmed, leaving no unresolved findings. These conclusions reflect inspected pixels and the prior source/model review; no edits or check runs were performed.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "mosfet": {
+      "overall_correctness": "correct",
+      "explanation": "All eight MOSFET diagrams are clear; fresh pixel inspection confirms both label/wire collisions are resolved without new collisions.\nVisually inspected IDs:\n- mosfet.gate_charge_supply \u2014 clear\n- mosfet.gate_loop_damping_resistor \u2014 refreshed PNG clear; Driver step now clears return wire\n- mosfet.bootstrap_charge_budget \u2014 clear\n- mosfet.output_capacitance_hard_turn_on_loss \u2014 clear\n- mosfet.channel_conduction_loss \u2014 clear\n- mosfet.hard_switch_overlap_loss \u2014 refreshed PNG clear; I rises now clears current ramp\n- mosfet.miller_plateau_timing \u2014 clear; original second-plateau finding resolved\n- mosfet.long_channel_triode_current \u2014 clear\nSource confirms corrected label positions (85,191) and (83,113); the other six retain their completed pixel/source review results.\nNot run: runtime execution, builds, tests, lint, or formatters; no edits.\nScope limit: supplied native PNGs only; other viewport sizes unreviewed, and New128 traversal success remains a reported result.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "thermal": {
+      "overall_correctness": "correct",
+      "explanation": "Thermal lane clear; fresh pixel inspection confirms \u201cCooler use\u201d clears both the dashed guide and curve without new collisions.\nVisually inspected IDs:\n- thermal.resistor_power_derating \u2014 clear\n- thermal.junction_feedback_equilibrium \u2014 clear\n- thermal.arrhenius_acceleration \u2014 clear; refreshed PNG reopened, reported collision resolved\n- thermal.heatsink_resistance_budget \u2014 clear\n- thermal.parallel_conduction_paths \u2014 clear\n- thermal.lumped_thermal_step \u2014 clear\n- thermal.resistor_tcr_drift \u2014 clear\n- thermal.free_linear_expansion \u2014 clear\nSource evidence: annotation now at (230,175), guide at x=320; original reports.thermal contained no findings requiring resolution.\nNo runtime execution, edits, builds, tests, lint, or formatters; visual clearance covers supplied captures, not uninspected display configurations.",
+      "confidence": 0.98,
+      "findings": []
+    },
+    "data": {
+      "overall_correctness": "correct",
+      "explanation": "Pixel-inspected IDs\u2014all clear:\n- data.adc_lsb\n- data.adc_quantization_error\n- data.bandlimited_quantization_snr\n- data.sar_acquisition_settling\n- data.dynamic_enob\n- data.nyquist_sampling_margin\n- data.tone_alias_frequency\n- data.unipolar_dac_output\n\nReopened the refreshed SNR PNG: Retained noise now sits below the axis, clear of the sine stem and neighboring labels.\nOriginal sample-rate binding finding remains resolved by source inspection; the other seven retain their earlier visual clear status.\nNot checked: runtime, builds, tests, lint, formatters or full-panel screenshots; reported native traversal results were not independently executed.",
+      "confidence": 0.99,
+      "findings": []
+    }
+  },
+  "closure": {
+    "lanes": 16,
+    "illustrations": 128,
+    "source_findings_resolved": 15,
+    "pixel_findings_resolved": 10,
+    "unresolved_findings": 0,
+    "attribution": "Independent agents inspected source/models and supplied native pixels. Main alone executed all widget tests, native traversal, manual release interaction, analysis and builds."
+  }
+}
