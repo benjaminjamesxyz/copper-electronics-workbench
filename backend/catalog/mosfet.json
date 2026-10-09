@@ -485,5 +485,121 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.hard_switch_overlap_loss",
+    "title": "Clamped-inductive switching overlap loss",
+    "category": "MOSFET and gate drive",
+    "level": "intermediate",
+    "description": "Estimate voltage/current overlap energy for separate turn-on and turn-off transitions and its cycle-average power.",
+    "formula": "E_on = V_off I_load t_on/2; E_off = V_off I_load t_off/2; P_overlap = (E_on + E_off) f_sw",
+    "assumptions": [
+      "Clamped-inductive hard switching: current ramps while drain voltage is approximately fixed, then voltage ramps while current is approximately fixed; each ramp is linear.",
+      "t_on and t_off are each the sum of current-ramp and voltage-ramp durations for that event, excluding propagation and gate delay intervals.",
+      "The same load current magnitude applies at turn-on and turn-off; this is not the simultaneous current/voltage ramp model for a resistive load.",
+      "Reverse recovery, output-capacitance discharge, overshoot, avalanche and ringing are excluded. Do not add separately estimated terms to measured E_on/E_off that already contain them.",
+      "Strongly nonlinear capacitance and common-source inductance can substantially invalidate this first-order approximation."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLUA618A, sections 2.4-2.7, equations 13-14",
+        "url": "https://www.ti.com/lit/slua618"
+      },
+      {
+        "title": "Infineon 600 V CoolMOS C7 Design Guide, section 3.1, nonlinear-capacitance limitations",
+        "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-application-note-600v-coolmos-c7-applicationnotes-en.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_off",
+        "label": "Off-state drain-source voltage",
+        "unit": "V",
+        "default": 48,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "i_load",
+        "label": "Load current at each transition",
+        "unit": "A",
+        "default": 10,
+        "min": 0
+      },
+      {
+        "key": "t_on",
+        "label": "Turn-on overlap duration",
+        "unit": "s",
+        "default": 3e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "t_off",
+        "label": "Turn-off overlap duration",
+        "unit": "s",
+        "default": 5e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "f_sw",
+        "label": "Switching frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "e_on",
+        "label": "Turn-on overlap energy",
+        "unit": "J",
+        "expression": "v_off*i_load*t_on/2"
+      },
+      {
+        "key": "e_off",
+        "label": "Turn-off overlap energy",
+        "unit": "J",
+        "expression": "v_off*i_load*t_off/2"
+      },
+      {
+        "key": "e_cycle",
+        "label": "Overlap energy per switching cycle",
+        "unit": "J",
+        "expression": "e_on+e_off"
+      },
+      {
+        "key": "p_overlap",
+        "label": "Average overlap loss",
+        "unit": "W",
+        "expression": "e_cycle*f_sw"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "f_sw*(t_on+t_off)",
+        "op": "<",
+        "right": "1",
+        "message": "The combined transitions must occupy less than one switching period."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "v_off": 100,
+        "i_load": 5,
+        "t_on": 4e-08,
+        "t_off": 6e-08,
+        "f_sw": 200000
+      },
+      "expected": {
+        "e_on": 1e-05,
+        "e_off": 1.5e-05,
+        "e_cycle": 2.5e-05,
+        "p_overlap": 5
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

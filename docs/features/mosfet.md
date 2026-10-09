@@ -296,6 +296,64 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 3. Clamped-inductive switching overlap energy and power
+
+**ID:** `mosfet.hard_switch_overlap_loss` — **intermediate**. Sources: S1 equations 13–14; S3 section 3.1 for nonlinear-capacitance caveats.
+
+In clamped-inductive switching, the current ramps while drain voltage remains near V_off, followed by a drain-voltage ramp while current remains near I_load. The integral of each linear ramp's instantaneous power is a triangle:
+
+- E_current_ramp = V_off I_load t_current / 2.
+- E_voltage_ramp = V_off I_load t_voltage / 2.
+
+Define t_on as the sum of those ramp durations for turn-on, and t_off similarly for turn-off. Applying the same reasoning to each event:
+
+- E_on = V_off I_load t_on / 2.
+- E_off = V_off I_load t_off / 2.
+- E_cycle = E_on + E_off.
+- P_overlap = E_cycle f_sw.
+
+**Inputs and model domain:** V_off > 0 V, I_load ≥ 0 A, t_on > 0 s, t_off > 0 s, f_sw > 0 Hz. Constraint f_sw(t_on + t_off) < 1 prevents transition durations exceeding the period. This necessary check does not establish valid commutation for a particular PWM duty. Times exclude driver propagation and gate delay. The model assumes approximately equal current at both transitions. It is not valid to reuse the one-half factor for a resistive-load case in which voltage and current change simultaneously. Reverse recovery, C_oss discharge, overshoot/ringing and avalanche are omitted.
+
+**Independent example:** V_off = 100 V, I_load = 5 A, t_on = 40 ns, t_off = 60 ns, f_sw = 200 kHz. Power triangles have height 500 W, giving **10 µJ** turn-on and **15 µJ** turn-off. Per-cycle energy is **25 µJ** and average overlap power is **5 W**. Transition occupancy is 100 ns / 5 µs = 0.02, safely below one.
+
+**Defaults:** 48 V, 10 A, 30 ns, 50 ns, 100 kHz give **7.2 µJ**, **12 µJ**, **19.2 µJ/cycle**, **1.92 W**; occupancy = 0.008.
+
+**Loss allocation warning:** Do not add this estimate, diode recovery and output-capacitance terms to measured datasheet E_on/E_off if those measurements already include them. In fast superjunction switching, output capacitance can act as a nonlinear snubber and channel overlap loss can differ substantially from the simple estimate.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `v_off` | Off-state drain-source voltage | V | 48 | > 0 |
+| `i_load` | Load current at each transition | A | 10 | ≥ 0 |
+| `t_on` | Turn-on overlap duration | s | 3e-08 | > 0 |
+| `t_off` | Turn-off overlap duration | s | 5e-08 | > 0 |
+| `f_sw` | Switching frequency | Hz | 100000 | > 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `e_on` | Turn-on overlap energy | J | `v_off*i_load*t_on/2` | 1e-05 |
+| `e_off` | Turn-off overlap energy | J | `v_off*i_load*t_off/2` | 1.5e-05 |
+| `e_cycle` | Overlap energy per switching cycle | J | `e_on+e_off` | 2.5e-05 |
+| `p_overlap` | Average overlap loss | W | `e_cycle*f_sw` | 5 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "v_off": 100,
+  "i_load": 5,
+  "t_on": 4e-08,
+  "t_off": 6e-08,
+  "f_sw": 200000
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.
