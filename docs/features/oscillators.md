@@ -63,3 +63,51 @@ Exact quantity bindings: RA `charge_resistance`; RB `discharge_resistance`; C `t
 
 Caption: “Standard 555 astable: C charges through RA+RB and discharges through RB. Ideal one-third/two-thirds thresholds; waveform illustrative, not simulated.”
 
+
+## 2. `oscillators.comparator_rc_oscillator` — intermediate
+
+### Purpose, novelty and source
+
+Design an asymmetric comparator square-wave oscillator from its positive-feedback resistor network. RC describes the equal-resistor case; the following conductance derivation extends the same concrete circuit to unequal resistors. This is not a Schmitt input delay measured after an external edge. It determines two state-dependent thresholds and both intervals of an autonomous cycle. Unlike the 555, both timing directions use the same RT, and unequal duty comes from the threshold network rather than separate charge/discharge resistance paths.
+
+### Model, domains and limitations
+
+At the comparator noninverting input, RU connects to Vs, RL to ground and RF to output. The inverting input senses the timing capacitor, charged through RT from output. Output levels are exactly zero and Vs in this ideal model.
+
+Let `G=1+RF/RU+RF/RL`. Nodal analysis gives `VL=Vs(RF/RU)/G` and `VH=Vs(1+RF/RU)/G`. Thus `VH−VL=Vs/G`. While output is high, the capacitor rises from VL to VH:
+
+`tH=RT C ln[(Vs−VL)/(Vs−VH)]=RT C log1p(RL/RF)`.
+
+While output is low, it falls from VH to VL:
+
+`tL=RT C ln(VH/VL)=RT C log1p(RU/RF)`.
+
+Frequency is `1/(tH+tL)` and output-high duty is `tH/(tH+tL)`. Positive finite supply, resistors and C guarantee `0<VL<VH<Vs`. No extra arbitrary ordering constraint is needed. Do not derive times by subtracting nearly equal displayed thresholds; the ratio algebra above is more stable.
+
+A real comparator must have suitable input common-mode range, negligible internal hysteresis relative to the designed window, low output resistance relative to RT, and negligible delay relative to each interval. Excessively small C makes parasitics dominate. Low threshold-network impedances reduce bias-current/stray errors but increase output loading. Real finite rail swing or asymmetric propagation delay requires a different model; this report does not treat ideal output rails as guaranteed device specifications.
+
+### Complete independent example
+
+Inputs: `supply_voltage=5 V`, `upper_resistance=20000 ohm`, `lower_resistance=40000 ohm`, `feedback_resistance=20000 ohm`, `timing_resistance=10000 ohm`, `timing_capacitance=1e-7 F`.
+
+`G=1+1+0.5=2.5`; `RT C=0.001 s`.
+
+| Output key | Derivation | Expected |
+|---|---|---|
+| `upper_threshold` | 5(1+1)/2.5 | 4 V |
+| `lower_threshold` | 5/2.5 | 2 V |
+| `high_time` | 0.001 ln(3) | 0.0010986122886681097 s |
+| `low_time` | 0.001 ln(2) | 0.0006931471805599453 s |
+| `frequency` | 1000/ln(6) | 558.1106265512473 Hz |
+| `high_duty` | ln(3)/ln(6) | 0.6131471927654584 |
+
+Tester cases: setting all three threshold resistors to 20 kohm gives VL=5/3 V, VH=10/3 V, both intervals `0.001 ln(2) s`, frequency `721.3475204444817 Hz` and duty 0.5. Scaling all three threshold resistors equally leaves every output unchanged. Doubling supply doubles thresholds but leaves timing unchanged. Swap RU and RL: times exchange and duty complements; thresholds reflect around Vs/2. Large RF narrows the hysteresis window; `log1p` should retain nonzero small intervals. Reject any nonpositive supply/component. The ideal high-frequency limit is not a claim that finite-delay hardware still oscillates at that rate.
+
+### Mandatory diagram specification
+
+Place a push-pull comparator center-left. Its noninverting node has three visible branches: RU upward to Vs, RL down to ground, RF from output around the upper route. Its inverting node connects to RT from output around a separate lower route and C to ground. Keep both feedback paths visibly separate; crossings need no junction unless intentionally connected. Output goes to a right-side static square-wave inset; the capacitor inset shows a curved rise VL→VH while output is high, then curved decay VH→VL while output is low.
+
+Exact bindings: supply `supply_voltage`; RU `upper_resistance`; RL `lower_resistance`; RF `feedback_resistance`; RT `timing_resistance`; C `timing_capacitance`; threshold labels `upper_threshold`/`lower_threshold`; output interval legend `high_time`/`low_time`; frequency/duty legend `frequency`/`high_duty`.
+
+Caption: “Output-dependent positive feedback sets VH and VL; the same RT charges and discharges C. Ideal rail swing and zero delay; curves are illustrative.”
+
