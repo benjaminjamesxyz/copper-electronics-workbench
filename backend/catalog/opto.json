@@ -1,0 +1,92 @@
+[
+  {
+    "id": "opto.photodiode_quantum_conversion",
+    "title": "Unity-gain photodiode photon conversion",
+    "category": "Optical hardware",
+    "level": "basic",
+    "description": "Convert monochromatic optical power and external quantum efficiency to collected photocurrent, without amplifier or noise modeling.",
+    "formula": "Eph=hc/lambda; photon_rate=P/Eph; R=eta*q*lambda/(hc); Iph=R*P",
+    "assumptions": [
+      "Monochromatic illumination, unity internal gain, and external quantum efficiency at the stated wavelength, bias and temperature.",
+      "Quantum efficiency includes window, reflection and carrier-collection losses; it is not an independent fitted constant across all wavelengths.",
+      "Photocurrent is a nonnegative magnitude of the generated reverse current, excluding dark current, loading, saturation and noise.",
+      "Use measured linear operating range and material spectral response; this calculation does not enforce a device rating."
+    ],
+    "references": [
+      {
+        "title": "Hamamatsu Si photodiodes, sections 2-2 and 2-3, equation 2-3",
+        "url": "https://www.hamamatsu.com/content/dam/hamamatsu-photonics/sites/documents/99_SALES_LIBRARY/ssd/si_pd_kspd9001e.pdf"
+      },
+      {
+        "title": "Hamamatsu MPPC physics, section I equation 3 with gain M=1",
+        "url": "https://hub.hamamatsu.com/us/en/technical-notes/mppc-sipms/physics-and-operation-of-the-MPPC-silicon-photomultiplier.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "wavelength",
+        "label": "Vacuum wavelength",
+        "unit": "m",
+        "default": 8.5e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "quantum_efficiency",
+        "label": "External quantum efficiency",
+        "unit": "1",
+        "default": 0.75,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "optical_power",
+        "label": "Incident monochromatic optical power",
+        "unit": "W",
+        "default": 2e-05,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "photon_energy",
+        "label": "Energy per photon",
+        "unit": "J",
+        "expression": "6.62607015e-34*299792458/wavelength"
+      },
+      {
+        "key": "photon_rate",
+        "label": "Incident photon rate",
+        "unit": "1/s",
+        "expression": "optical_power/photon_energy"
+      },
+      {
+        "key": "responsivity",
+        "label": "Spectral responsivity",
+        "unit": "A/W",
+        "expression": "quantum_efficiency*(1.602176634e-19/(6.62607015e-34*299792458))*wavelength"
+      },
+      {
+        "key": "photocurrent",
+        "label": "Generated photocurrent magnitude",
+        "unit": "A",
+        "expression": "responsivity*optical_power"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "wavelength": 8.5e-07,
+        "quantum_efficiency": 0.75,
+        "optical_power": 2e-05
+      },
+      "expected": {
+        "photon_energy": 2.3369951260575634e-19,
+        "photon_rate": 85579981648226.06,
+        "responsivity": 0.5141784260060123,
+        "photocurrent": 1.0283568520120244e-05
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
