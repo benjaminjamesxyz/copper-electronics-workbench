@@ -229,4 +229,89 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "measurement.rectangular_aperture_response",
+  "title": "Rectangular measurement-aperture response",
+  "category": "Hardware measurement and metrology",
+  "level": "intermediate",
+  "description": "Calculate sinusoidal attenuation and time attribution from uniform integration over a finite measurement aperture, including DC and zero-aperture limits.",
+  "formula": "x=pi f T; H(f)=exp(-j pi f T) sinc(x); sinc(x)=sin(x)/x, sinc(0)=1; Vout_peak=Vin_peak abs(sinc(x)); delay=T/2",
+  "assumptions": [
+    "Measurement is a continuous, uniformly weighted boxcar average over the preceding aperture T; the reported sample timestamp is the aperture end.",
+    "The signed gain is referenced to the aperture midpoint. A negative signed gain adds a polarity inversion beyond the aperture-end delay.",
+    "No discrete-sampling alias, quantization, acquisition settling, jitter, additional analog response, or nonuniform weighting is included.",
+    "T=0 represents ideal instantaneous measurement. Nulls have zero mathematical amplitude; no logarithmic attenuation is returned, so nulls remain in the domain."
+  ],
+  "references": [
+    {
+      "title": "NI Adjusting the Reading Rate of a DMM, DMM Measurement Cycle and Aperture Time",
+      "url": "https://www.ni.com/en/support/documentation/supplemental/07/adjusting-the-reading-rate-of-a-dmm.html"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "frequency",
+      "label": "Input sinusoid frequency",
+      "unit": "Hz",
+      "default": 25.0,
+      "min": 0.0
+    },
+    {
+      "key": "aperture_time",
+      "label": "Uniform integration aperture",
+      "unit": "s",
+      "default": 0.01,
+      "min": 0.0
+    },
+    {
+      "key": "input_peak",
+      "label": "Input sinusoid peak amplitude",
+      "unit": "V",
+      "default": 0.2,
+      "min": 0.0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "midpoint_gain",
+      "label": "Signed gain relative to aperture midpoint",
+      "unit": "V/V",
+      "expression": "sinc(pi*frequency*aperture_time)"
+    },
+    {
+      "key": "amplitude_ratio",
+      "label": "Aperture amplitude ratio",
+      "unit": "V/V",
+      "expression": "abs(midpoint_gain)"
+    },
+    {
+      "key": "measured_peak",
+      "label": "Measured sinusoid peak amplitude",
+      "unit": "V",
+      "expression": "input_peak*amplitude_ratio"
+    },
+    {
+      "key": "effective_delay",
+      "label": "Delay relative to end timestamp",
+      "unit": "s",
+      "expression": "aperture_time/2"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "frequency": 25.0,
+      "aperture_time": 0.01,
+      "input_peak": 0.2
+    },
+    "expected": {
+      "midpoint_gain": 0.9003163161571061,
+      "amplitude_ratio": 0.9003163161571061,
+      "measured_peak": 0.18006326323142122,
+      "effective_delay": 0.005
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

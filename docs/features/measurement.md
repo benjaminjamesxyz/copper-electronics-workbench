@@ -154,3 +154,49 @@ Quantity bindings: source=`source_voltage`; series Rs=`source_resistance`; probe
 
 Caption: “Two parallel-RC arms form the compensated divider. Ci includes lumped cable capacitance. Matching the arm time constants does not remove finite-Rs source loading; the scope output is before readout scaling.”
 
+
+## `measurement.rectangular_aperture_response`
+
+### Purpose, source and exact integral
+
+[NI, Adjusting the Reading Rate of a DMM](https://www.ni.com/en/support/documentation/supplemental/07/adjusting-the-reading-rate-of-a-dmm.html), “DMM Measurement Cycle” and “Aperture Time,” states that readings during the aperture are averaged and that choosing whole mains periods rejects 50/60 Hz interference. The source distinguishes aperture from settling and notes real hardware's reading-rate tradeoffs.
+
+For a causal, uniformly weighted continuous average:
+
+`y(t)=(1/T) integral[t−T,t] x(u) du`.
+
+Substitute a complex sinusoid `exp(j 2π f u)` and integrate:
+
+`H(f)=exp(−jπ f T) sin(π f T)/(π f T)`.
+
+The integral's DC limit is exactly 1; the T→0 limit is instantaneous observation. The signed multiplier at the midpoint is `midpoint_gain=sinc(π f T)`; magnitude is `amplitude_ratio=abs(midpoint_gain)`; `measured_peak=input_peak*amplitude_ratio`; the result corresponds to `effective_delay=T/2` before its end timestamp.
+
+This is exact for the specified rectangular averaging model, not every DMM's proprietary weighting/filter chain. Analog input bandwidth and discrete ADC details remain outside scope. Negative sinc lobes invert polarity; an end-stamped phase is not simply −πfT without accounting for that inversion. There is deliberately no dB output, preserving true nulls.
+
+### Complete independent example
+
+Inputs: `frequency=25 Hz`, `aperture_time=.01 s`, `input_peak=.2 V`. Here `x=π/4`, so:
+
+| Output key | Exact expression | Expected |
+|---|---|---|
+| `midpoint_gain` | (sqrt(2)/2)/(π/4) | 0.9003163161571061 V/V |
+| `amplitude_ratio` | abs(midpoint_gain) | 0.9003163161571061 V/V |
+| `measured_peak` | .2 × midpoint_gain | 0.18006326323142122 V |
+| `effective_delay` | .01/2 | 0.005 s |
+
+### Tester handoff
+
+- Nominal: assert all four outputs.
+- DC: frequency=0, nominal T and amplitude: `{midpoint_gain:1,amplitude_ratio:1,measured_peak:.2,effective_delay:.005}`.
+- Instantaneous limit: T=0, nominal frequency and amplitude: `{midpoint_gain:1,amplitude_ratio:1,measured_peak:.2,effective_delay:0}`. Both f=T=0 are valid.
+- Half cycle: f=50 Hz, T=.01 s: signed and magnitude gain `2/π=0.6366197723675814`, peak=.12732395447351627 V, delay=.005 s.
+- Whole cycle: f=100 Hz, T=.01 s: mathematical gains and peak are zero, delay=.005 s. Floating `sin(pi)` leaves a tiny residual; use a justified absolute tolerance near 1e-15 on dimensionless gain, not a demand for exact trigonometric zero or an epsilon-clamped implementation.
+- Negative lobe: f=150 Hz, T=.01 s: signed gain `−2/(3π)=−.2122065907891938`, magnitude=.2122065907891938, peak=.04244131815783876 V, delay=.005 s.
+- Zero amplitude keeps the response and delay but gives zero output amplitude. Reject any negative input; nonfinite rejection remains shared.
+
+### Mandatory diagram specification
+
+Time-domain waveform with a highlighted rectangular aperture from `t−T` to t. Show a sinusoid crossing the aperture and a horizontal integral-average indicator. Mark t−T/2 with a dot; show an arrow from midpoint to t labeled `effective_delay`. Aperture bracket binds `aperture_time`; input peak bracket binds `input_peak`; output amplitude callout binds `measured_peak`; the sinusoid label binds `frequency`. A right-hand inset shows an illustrative signed sinc lobe crossing zero, with midpoint multiplier bound to `midpoint_gain` and magnitude bound to `amplitude_ratio`. Do not bind a live numerical value to a static point on the curve.
+
+Caption: “Uniform integration reports the aperture average at its end; the average corresponds to its midpoint. Whole-cycle sinusoids cancel, and negative sinc lobes invert the midpoint-referenced signal. Curves are explanatory, not computed.”
+
