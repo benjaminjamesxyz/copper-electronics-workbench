@@ -851,5 +851,140 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "diodes.biased_two_sided_clipper",
+    "title": "Biased two-sided diode clipper",
+    "category": "Diodes, LEDs and rectification",
+    "level": "basic",
+    "description": "Calculate a sampled input's clipped output and clamp currents for two oppositely oriented diode clamps and a series resistor.",
+    "formula": "VH = Vref,H + VF,H; VL = Vref,L - VF,L; Vo = min(max(Vi,VL),VH)",
+    "assumptions": [
+      "Upper clamp diode has anode at output and cathode at upper reference; lower diode has anode at lower reference and cathode at output.",
+      "Output load is high impedance; reference sources are stiff and can sink or source the calculated clamp current.",
+      "Constant forward-drop model, quasistatic sample; ignores leakage, dynamic resistance, capacitance and reverse breakdown.",
+      "This is clipping, not a capacitor-based DC-restoring clamper; no claim of ESD protection compliance."
+    ],
+    "references": [
+      {
+        "title": "Northwestern ECE270 experiment 4, biased clipper and constant-drop diode model",
+        "url": "https://www.eecs.northwestern.edu/~plonus/270/270lab4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "input_voltage",
+        "label": "Sampled input voltage",
+        "unit": "V",
+        "default": 8,
+        "min": -10000,
+        "max": 10000
+      },
+      {
+        "key": "upper_reference",
+        "label": "Upper clamp reference",
+        "unit": "V",
+        "default": 3.3,
+        "min": -10000,
+        "max": 10000
+      },
+      {
+        "key": "lower_reference",
+        "label": "Lower clamp reference",
+        "unit": "V",
+        "default": -1,
+        "min": -10000,
+        "max": 10000
+      },
+      {
+        "key": "upper_drop",
+        "label": "Upper diode forward drop",
+        "unit": "V",
+        "default": 0.65,
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "lower_drop",
+        "label": "Lower diode forward drop",
+        "unit": "V",
+        "default": 0.65,
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "series_resistance",
+        "label": "Input series resistance",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 1e-06,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "upper_level",
+        "label": "Upper clipping level",
+        "unit": "V",
+        "expression": "upper_reference+upper_drop"
+      },
+      {
+        "key": "lower_level",
+        "label": "Lower clipping level",
+        "unit": "V",
+        "expression": "lower_reference-lower_drop"
+      },
+      {
+        "key": "output_voltage",
+        "label": "Clipped output voltage",
+        "unit": "V",
+        "expression": "min(max(input_voltage,lower_level),upper_level)"
+      },
+      {
+        "key": "upper_current",
+        "label": "Current into upper reference",
+        "unit": "A",
+        "expression": "max(0,(input_voltage-upper_level)/series_resistance)"
+      },
+      {
+        "key": "lower_current",
+        "label": "Current out of lower reference",
+        "unit": "A",
+        "expression": "max(0,(lower_level-input_voltage)/series_resistance)"
+      },
+      {
+        "key": "resistor_power",
+        "label": "Instantaneous series-resistor dissipation",
+        "unit": "W",
+        "expression": "(input_voltage-output_voltage)^2/series_resistance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "upper_reference",
+        "op": ">=",
+        "right": "lower_reference",
+        "message": "Upper reference must not be below lower reference."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "input_voltage": 8,
+        "upper_reference": 3.3,
+        "lower_reference": -1,
+        "upper_drop": 0.65,
+        "lower_drop": 0.65,
+        "series_resistance": 1000
+      },
+      "expected": {
+        "upper_level": 3.95,
+        "lower_level": -1.65,
+        "output_voltage": 3.95,
+        "upper_current": 0.00405,
+        "lower_current": 0,
+        "resistor_power": 0.0164025
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

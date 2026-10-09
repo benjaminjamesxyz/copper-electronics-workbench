@@ -294,3 +294,43 @@ The source-peak guard precedes the small-ripple constraint. Positive line freque
 - `sqrt(2)*source_rms > 2*forward_drop` — Source peak must exceed the two-diode bridge drop.
 - `load_current/(2*line_frequency*capacitance) <= 0.1*(sqrt(2)*source_rms-2*forward_drop)` — Ripple exceeds the 10-percent small-ripple model limit.
 
+## 6. `diodes.biased_two_sided_clipper` — basic
+
+**Purpose/topology:** Input voltage feeds the output through R. Upper diode anode is at output, cathode at the upper reference. Lower diode anode is at the lower reference, cathode at output. Output load is negligible; reference sources must absorb/deliver clamp current.
+
+Constant-drop limits are VH = Vref,H + Vf,H and VL = Vref,L − Vf,L. The three conduction regions can be expressed without conditionals: Vo = min(max(Vi, VL), VH). Current into upper reference is max[0,(Vi−VH)/R], and current out of lower reference is max[0,(VL−Vi)/R]. Instantaneous resistor power is (Vi−Vo)²/R. In the middle region both currents vanish and Vo = Vi.
+
+**Units:** voltages V, R ohm, currents A, power W. **Domain:** positive R, nonnegative forward drops and upper reference ≥ lower reference. Inputs permit signed sample/reference voltages; clip limits are ordered. **Limits:** quasistatic sample, stiff references, high-impedance load and fixed diode drops. Device reverse-breakdown and current ratings must be checked separately. This is not a DC-restoring capacitor clamper or an ESD certification tool. Source S8; two-sided model is derived by KVL.
+
+**Independent example (also defaults):** Vi = 8 V; references +3.3 and −1 V; both Vf = 0.65 V; R = 1000 ohm. **VH = 3.95 V**, **VL = −1.65 V**, so **Vo = 3.95 V**. Upper clamp carries 4.05/1000 = **0.00405 A**; **lower current = 0 A**. **Resistor power = 4.05²/1000 = 0.0164025 W**. Opposite polarity selects the other max() branch without changing the formula.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `input_voltage` | Sampled input voltage | V | 8 | [-10000, 10000] |
+| `upper_reference` | Upper clamp reference | V | 3.3 | [-10000, 10000] |
+| `lower_reference` | Lower clamp reference | V | -1 | [-10000, 10000] |
+| `upper_drop` | Upper diode forward drop | V | 0.65 | [0, 10] |
+| `lower_drop` | Lower diode forward drop | V | 0.65 | [0, 10] |
+| `series_resistance` | Input series resistance | ohm | 1000 | [1e-06, 1000000000000.0] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `upper_level` | Upper clipping level | V | `upper_reference+upper_drop` | 3.95 |
+| `lower_level` | Lower clipping level | V | `lower_reference-lower_drop` | -1.65 |
+| `output_voltage` | Clipped output voltage | V | `min(max(input_voltage,lower_level),upper_level)` | 3.95 |
+| `upper_current` | Current into upper reference | A | `max(0,(input_voltage-upper_level)/series_resistance)` | 0.00405 |
+| `lower_current` | Current out of lower reference | A | `max(0,(lower_level-input_voltage)/series_resistance)` | 0 |
+| `resistor_power` | Instantaneous series-resistor dissipation | W | `(input_voltage-output_voltage)^2/series_resistance` | 0.0164025 |
+
+### Constraint/error rationale and implementation limits
+
+The ordered references plus nonnegative diode drops guarantee VL ≤ VH. The positive resistor guards all current/power divisions. At either clipping boundary the associated clamp current is zero; between boundaries both currents and resistor power are zero. Signed sample and reference voltages remain admissible, and lower_current is reported as a positive magnitude sourced from the lower reference.
+
+- `upper_reference >= lower_reference` — Upper reference must not be below lower reference.
+
