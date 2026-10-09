@@ -124,5 +124,161 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "converters.sepic_ccm_stress",
+    "title": "Uncoupled-inductor SEPIC CCM component stress",
+    "category": "Additional power converters",
+    "level": "intermediate",
+    "description": "Calculate summed switch current and series energy-transfer capacitor RMS current in a noninverting SEPIC with two separate inductors.",
+    "formula": "D = Vo/(Vi+Vo); I1 = Vo Io/Vi; deltaI1,2 = Vi D/(fs L1,2); IQpk = I1+Io+(deltaI1+deltaI2)/2; ICp,rms\u00b2 = D (Io\u00b2+deltaI2\u00b2/12)+(1-D)(I1\u00b2+deltaI1\u00b2/12)",
+    "assumptions": [
+      "Ideal nonisolated SEPIC with two uncoupled inductors, ideal switch/diode and negligible capacitor voltage ripple. Do not use coupled-inductor half-inductance rules.",
+      "Both branch currents remain strictly positive throughout the cycle. This is a sufficient, explicitly narrower operating condition than merely requiring their sum to remain positive.",
+      "Input-inductor current flows from the source toward the switch; second-inductor current flows from ground toward the rectifier. Their triangular ripples rise together during switch on-time.",
+      "Coupling capacitor mean voltage is Vi, left plate positive. During on-time it carries minus the second-inductor current; during off-time it carries input-inductor current.",
+      "Blocking voltage excludes diode drop, leakage spikes and ringing. RMS values include ideal triangular ripple but not capacitor-voltage-ripple distortion, losses or control dynamics."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLVA516A, sections 1, 2.2, 2.4 and 2.6; Figures 1-3",
+        "url": "https://www.ti.com/lit/an/slva516a/slva516a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "vin",
+        "label": "Input voltage",
+        "unit": "V",
+        "default": 12.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "vout",
+        "label": "Output voltage",
+        "unit": "V",
+        "default": 18.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_current",
+        "label": "Output load current",
+        "unit": "A",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "switching_frequency",
+        "label": "Switching frequency",
+        "unit": "Hz",
+        "default": 200000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "input_inductance",
+        "label": "Uncoupled input inductance L1",
+        "unit": "H",
+        "default": 0.0001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "second_inductance",
+        "label": "Uncoupled second inductance L2",
+        "unit": "H",
+        "default": 0.00015,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "duty",
+        "label": "Switch on-duty fraction",
+        "unit": "1",
+        "expression": "vout/(vin+vout)"
+      },
+      {
+        "key": "input_current",
+        "label": "Average input-inductor current",
+        "unit": "A",
+        "expression": "load_current*(vout/vin)"
+      },
+      {
+        "key": "input_ripple",
+        "label": "Input-inductor peak-to-peak ripple",
+        "unit": "A",
+        "expression": "vin*duty/switching_frequency/input_inductance"
+      },
+      {
+        "key": "second_ripple",
+        "label": "Second-inductor peak-to-peak ripple",
+        "unit": "A",
+        "expression": "vin*duty/switching_frequency/second_inductance"
+      },
+      {
+        "key": "switch_peak_current",
+        "label": "Peak switch and diode current",
+        "unit": "A",
+        "expression": "input_current+load_current+(input_ripple+second_ripple)/2"
+      },
+      {
+        "key": "switch_rms_current",
+        "label": "Switch RMS current over full period",
+        "unit": "A",
+        "expression": "sqrt(duty)*hypot(input_current+load_current,(input_ripple+second_ripple)/sqrt(12))"
+      },
+      {
+        "key": "coupling_cap_rms_current",
+        "label": "Series energy-transfer capacitor RMS current",
+        "unit": "A",
+        "expression": "hypot(sqrt(duty)*hypot(load_current,second_ripple/sqrt(12)),sqrt(vin/(vin+vout))*hypot(input_current,input_ripple/sqrt(12)))"
+      },
+      {
+        "key": "blocking_voltage",
+        "label": "Ideal switch and diode blocking voltage",
+        "unit": "V",
+        "expression": "vin+vout"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "load_current*(vout/vin)",
+        "op": ">",
+        "right": "vin*(vout/(vin+vout))/switching_frequency/input_inductance/2",
+        "message": "Input-inductor valley current must remain positive for this branch-positive CCM model."
+      },
+      {
+        "left": "load_current",
+        "op": ">",
+        "right": "vin*(vout/(vin+vout))/switching_frequency/second_inductance/2",
+        "message": "Second-inductor valley current must remain positive for this branch-positive CCM model."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "vin": 12.0,
+        "vout": 18.0,
+        "load_current": 1.0,
+        "switching_frequency": 200000.0,
+        "input_inductance": 0.0001,
+        "second_inductance": 0.00015
+      },
+      "expected": {
+        "duty": 0.6,
+        "input_current": 1.5,
+        "input_ripple": 0.36,
+        "second_ripple": 0.24,
+        "switch_peak_current": 2.8,
+        "switch_rms_current": 1.9411336893681486,
+        "coupling_cap_rms_current": 1.2276807402578245,
+        "blocking_voltage": 30.0
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

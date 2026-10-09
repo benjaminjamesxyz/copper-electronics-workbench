@@ -60,3 +60,58 @@ Draw two side-by-side switch-state panels, not an ordinary fixed capacitor divid
 - Bind `Vin` → `vin`; `Cf` → `flying_capacitance`; `fs` → `switching_frequency`; `Iload` → `load_current`; `Vout` → `output_voltage`. Add a compact resistance annotation `Rout` → `output_resistance`, outside the switch network. State `Rout is equivalent, not an extra physical resistor`.
 - Caption: “A charges the flying capacitor; B transfers charge to the negative reservoir. fs counts complete A+B cycles. Static switch states; output ripple and switching transients are not plotted.”
 
+
+## 2. `converters.sepic_ccm_stress`
+
+### Purpose, equations and physical domain
+
+S2 Figures 1–3 show a SEPIC with input inductor L1, ground-to-diode-node inductor L2, series transfer capacitor Cp, low-side switch and output diode. During switch-on, both inductors see `+Vin` in their defined current directions. During off-time both see `-Vout`. Volt-second balance gives `D=Vout/(Vin+Vout)`. Capacitor charge balance and lossless power balance give `I1=Iin=Vout Iout/Vin`, `I2=Iout`.
+
+For **uncoupled** inductors, `deltaI1=Vin D/(fs L1)` and `deltaI2=Vin D/(fs L2)`. Do not include the factor two from S2's later coupled-winding sizing equation. Switch current is the sum of both synchronous triangular currents during D and zero otherwise:
+
+- `IQpk = I1+Iout+(deltaI1+deltaI2)/2`.
+- `IQrms = sqrt(D) hypot(I1+Iout, (deltaI1+deltaI2)/sqrt(12))`.
+- `VCp,DC=Vin`; ideal switch and reverse diode stress is `Vin+Vout`.
+
+Define capacitor current left-to-right. It is `-iL2` during D and `+iL1` during `1-D`. Integrating each affine-current segment over its actual duration gives:
+
+`ICp,rms² = D [Iout²+deltaI2²/12] + (1-D)[I1²+deltaI1²/12]`.
+
+This ripple-inclusive extension is independently derived from S2's switching states. S2 equation 22 is its negligible-ripple limit `I1 sqrt((1-D)/D)`. It is not falsely attributed as S2's printed exact equation.
+
+The calculator explicitly requires `I1 > deltaI1/2` and `Iout > deltaI2/2`. This branch-positive subset is sufficient for CCM; a SEPIC may retain diode-current CCM even when an individual branch reverses. Such operating points are outside this deliberately stated model, not incorrectly called universally DCM. Cp and Cout voltages must have negligible ripple for these slopes. Coupled inductors, losses and diode recovery are excluded.
+
+### Complete independent example
+
+Inputs: `vin=12 V`, `vout=18 V`, `load_current=1 A`, `switching_frequency=200000 Hz`, `input_inductance=100e-6 H`, `second_inductance=150e-6 H`.
+
+1. `duty = 18/(12+18) = 0.6`.
+2. `input_current = 18×1/12 = 1.5 A`.
+3. `input_ripple = 12×0.6/(200000×100e-6) = 0.36 A` peak-to-peak.
+4. `second_ripple = 12×0.6/(200000×150e-6) = 0.24 A` peak-to-peak.
+5. `switch_peak_current = 1.5+1+(0.36+0.24)/2 = 2.8 A`.
+6. `switch_rms_current = sqrt[0.6×(2.5²+0.6²/12)] = sqrt(3.768) = 1.9411336893681486 A`.
+7. `coupling_cap_rms_current = sqrt[0.6×(1²+0.24²/12)+0.4×(1.5²+0.36²/12)] = sqrt(1.5072) = 1.2276807402578245 A`.
+8. `blocking_voltage = 12+18 = 30 V`.
+
+The valleys are `1.32 A` and `0.88 A`; both satisfy the admitted branch-current domain. Average Cp current is `-0.6×1 + 0.4×1.5 = 0`.
+
+### Nominal, limiting and invalid cases
+
+- Nominal: above complete map; both boost-like and buck-like conversion ratios are allowed without swapping formulas.
+- Unity conversion: `vin=vout=12`, `Iout=1`, `fs=200000`, `L1=L2=100e-6` gives D=.5, Iin=1 A, both ripples=.3 A, peak=2.3 A, switch RMS `1.4195069566578393 A`, Cp RMS `1.0037429949942367 A`, blocking=24 V.
+- Increasing both inductances reduces ripple; asymptotic switch RMS is `(Iin+Iout)sqrt(D)` and Cp RMS is `sqrt(Iin Iout)`.
+- With nominal voltages/frequency/load, `L1=12e-6 H` makes the L1 valley exactly zero and must reject; `L2=18e-6 H` likewise rejects. Test just above and below each physical boundary with sensible decimal separation.
+- Reject zero or negative voltage, load, frequency or either inductance. Do not impose `Vout>Vin`: SEPIC supports both sides.
+
+### Mandatory diagram specification
+
+Draw the actual nonisolated SEPIC, approximately x=30–660 and y=55–210:
+
+- Vin positive node → L1 → node A. Q connects A to ground. Cp connects A to node B, with Cp left plate positive in the DC sense.
+- L2 connects ground to B; its current arrow points upward. Do not connect L2 to the positive output node.
+- Diode anode at B, cathode at output O. Cout and load connect O to common ground. Input source returns to that ground.
+- L1 current points left-to-right. Q current points downward. Label near Q: `iQ=iL1+iL2 (on)`, unbound. Label Cp current direction left-to-right, with `on: -iL2; off: +iL1`, unbound.
+- Bind `Vi` → `vin`, `Vo` → `vout`, `L1` → `input_inductance`, `L2` → `second_inductance`, `IQ,pk` → `switch_peak_current`, `ICp,rms` → `coupling_cap_rms_current`, `D` → `duty`. Keep the RMS label beside Cp, not across its wire.
+- Caption: “Separate, uncoupled inductors. The switch carries their sum; Cp alternates between their currents. Ideal CCM with nearly constant capacitor voltages; static explanatory circuit.”
+
