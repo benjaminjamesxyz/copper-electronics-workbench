@@ -705,5 +705,53 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.rise_time_bandwidth",
+    "title": "Single-pole rise-time equivalent bandwidth",
+    "category": "Signal integrity and transmission lines",
+    "level": "basic",
+    "description": "Convert a 10\u201390% exponential edge rise time to the equivalent first-order -3 dB bandwidth.",
+    "formula": "BW=ln(9)/(2*pi*tr) approximately 0.35/tr",
+    "assumptions": [
+      "Monotonic single-real-pole response to an ideal step, with rise time measured between 10% and 90% of the final amplitude.",
+      "Uses exact first-order factor ln(9)/(2*pi), not rounded 0.35, consistently in formula and example.",
+      "Not a universal edge-spectrum cutoff, data-rate limit or recommendation for a specified oscilloscope accuracy; other pole shapes and ringing give different factors.",
+      "No RC component synthesis, op-amp gain-bandwidth calculation or sampled-system Nyquist requirement."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments, John Rice, Are You Accurately Measuring the Picosecond Rise Time of Your GaN Device?, equations 1\u20132",
+        "url": "https://www.ti.com/document-viewer/lit/html/SSZTCJ0/GUID-3646E4F7-2FCF-4F97-8465-C0F6DF48F197"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "rise_time",
+        "label": "10\u201390% rise time",
+        "unit": "s",
+        "default": 2e-09,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "bandwidth",
+        "label": "Equivalent single-pole -3 dB bandwidth",
+        "unit": "Hz",
+        "expression": "ln(9)/(2*pi*rise_time)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "rise_time": 2e-09
+      },
+      "expected": {
+        "bandwidth": 174849576.2830299
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

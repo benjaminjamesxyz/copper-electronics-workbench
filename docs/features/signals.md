@@ -409,6 +409,46 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 **Feature sources:**
 - [Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 3, 5 and 10](https://www.ti.com/lit/an/snla027b/snla027b.pdf)
 
+## 7. Single-pole rise-time equivalent bandwidth — basic
+
+**ID:** `signals.rise_time_bandwidth`. **Source:** S5, equations 1–2 and accompanying discussion.
+
+For the normalized step y(t) = 1 - exp(-t/tau): t10 = -tau ln(0.9), t90 = -tau ln(0.1), and t_r = t90 - t10 = tau ln(9). Since the first-order pole's -3 dB bandwidth is 1/(2 pi tau):
+
+**BW = ln(9)/(2 pi t_r) = 0.3496991525660598/t_r**, conventionally rounded to 0.35/t_r.
+
+**Domain guard:** t_r > 0 seconds, ensuring valid division. The exact logarithmic factor is intentionally used in both the definition and expected output. Only a monotonic single-real-pole exponential response with 10–90% rise time is represented. Arbitrary digital edges, different threshold conventions, ringing and multipole/Gaussian responses are not represented by the same exact factor. This is an equivalent bandwidth, not a universal spectral cutoff, data-rate/Nyquist estimate, filter synthesis or a sufficient oscilloscope bandwidth for 1% accuracy. S5 itself explains that accurate measurement needs substantially more bandwidth than the edge's equivalent value.
+
+**Independent example/default:** t_r = 2 ns = 2e-9 s. ln(9) = 2.1972245773362196, so **BW = 174849576.2830299 Hz** (174.8495763 MHz). Rounding the factor to 0.35 would instead give 175 MHz, a small but intentional numerical difference.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `rise_time` | 10–90% rise time | s | 2e-09 | > 0 |
+
+**Input-only model guards:**
+The scalar bounds above suffice for the physical model; no additional relational constraint is needed.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "rise_time": 2e-09
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `bandwidth` | Equivalent single-pole -3 dB bandwidth | Hz | `ln(9)/(2*pi*rise_time)` | `174849576.2830299` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Texas Instruments, John Rice, Are You Accurately Measuring the Picosecond Rise Time of Your GaN Device?, equations 1–2](https://www.ti.com/document-viewer/lit/html/SSZTCJ0/GUID-3646E4F7-2FCF-4F97-8465-C0F6DF48F197)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.
