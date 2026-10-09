@@ -2,7 +2,7 @@
 
 This lane contains exactly eight physical calculations in [`backend/catalog/transients.json`](../../backend/catalog/transients.json): two one-state voltage-step problems, an imposed-current capacitor ramp, isolated two-capacitor redistribution, periodic two-level excitation, finite-slope voltage-source tracking, a loaded two-capacitor RC ladder, and an underdamped series-RLC step. Charge/discharge, time-target inversions and stored-energy outputs are deliberately **not** counted as separate calculators. No frequency-domain filter synthesis, converter sizing, digital-edge threshold, ADC acquisition requirement, standalone magnetic-energy calculation or transistor drive design is included.
 
-All models are closed-form lumped-element calculations, not circuit simulations. The expressions use contract arithmetic/functions and the parent-approved shared Rust scalar primitives `expm1mx`, `step_overdamped` and `step_underdamped` for stable evaluation of the same analytic response near zero. No lane-local evaluator or frontend mathematics is introduced. Outputs are sequential scalars; constraints use input keys/constants only. Every supporting output is included in its independent example. Units are SI: resistance in ohm, capacitance in F, inductance in H, time in s, voltage in V, current in A, charge in C, energy in J and angular frequency in rad/s. Dimensionless quantities use `1`.
+All models are closed-form lumped-element calculations, not circuit simulations. The expressions use contract arithmetic/functions and the parent-approved shared Rust scalar primitives `expm1mx_ratio`, `step_overdamped_scaled` and `step_underdamped_scaled` for stable, amplitude-aware evaluation of the same analytic response near zero. No lane-local evaluator or frontend mathematics is introduced. Outputs are sequential scalars; constraints use input keys/constants only. Every supporting output is included in its independent example. Units are SI: resistance in ohm, capacitance in F, inductance in H, time in s, voltage in V, current in A, charge in C, energy in J and angular frequency in rad/s. Dimensionless quantities use `1`.
 
 ## Primary-source ledger
 
@@ -157,7 +157,7 @@ All component values are positive; `t>=0`. The input-only discriminant constrain
 | `v_step` | V | 5.0 | [-1000000.0, 1000000.0] |
 | `time` | s | 0.001 | [0.0, 1000000000.0] |
 
-`step_overdamped(t,slow_rate,fast_rate)` is the integration-owned stable scalar evaluation of the displayed unit-gain analytic step, with `slow_rate=1/tau_s` and `fast_rate=1/tau_f`, strictly ordered and positive. It changes numerical evaluation only, not topology, waveform, accepted time domain or public outputs. Current uses `exp(−t/tau_s)[−expm1(−t(1/tau_f−1/tau_s))]` instead of subtracting two nearly identical decays. The input-only discriminant guard retains the researched near-degenerate exclusion and protects the root and modal difference; positive components protect all other divisors. At t=0 both node voltages and downstream current are exactly zero. At default components and t=1e-20 s, the independent startup asymptote is `v2≈Vs*t²/(2a)=2.5e-34 V`, not zero. Signed steps remain valid. This requires the parent-owned stable primitive at integration; no lane-local evaluator or Taylor-seed output is introduced.
+`step_overdamped_scaled(t,slow_rate,fast_rate,amplitude)` is the integration-owned stable scalar evaluation of the displayed analytic step, with `slow_rate=1/tau_s`, `fast_rate=1/tau_f`, strictly ordered and positive, and `amplitude=Vs`. Amplitude is passed into the primitive rather than multiplied by an already rounded normalized response, preserving representable output voltages when the unit-amplitude response underflows. It changes numerical evaluation only, not topology, waveform, accepted time domain or public outputs. Current uses `exp(−t/tau_s)[−expm1(−t(1/tau_f−1/tau_s))]` instead of subtracting two nearly identical decays. The input-only discriminant guard retains the researched near-degenerate exclusion and protects the root and modal difference; positive components protect all other divisors. At t=0 both node voltages and downstream current are exactly zero. At default components and t=1e-20 s, the independent startup asymptote is `v2≈Vs*t²/(2a)=2.5e-34 V`, not zero. Signed steps remain valid. This requires the parent-owned stable primitive at integration; no lane-local evaluator or Taylor-seed output is introduced.
 
 Additional input-only constraints (checked before any output):
 
@@ -173,7 +173,7 @@ All input values for this independent example are `{"r_one":1000.0,"r_two":1000.
 | `linear_coefficient` | s | 0.003 | `r_one*c_one+r_one*c_two+r_two*c_two` |
 | `tau_slow` | s | 0.002618033988749895 | `(linear_coefficient+sqrt(linear_coefficient^2-4*quadratic_coefficient))/2` |
 | `tau_fast` | s | 0.0003819660112501051 | `quadratic_coefficient/tau_slow` |
-| `voltage_two` | V | 1.0667720034831585 | `v_step*step_overdamped(time,1/tau_slow,1/tau_fast)` |
+| `voltage_two` | V | 1.0667720034831585 | `step_overdamped_scaled(time,1/tau_slow,1/tau_fast,v_step)` |
 | `capacitor_two_current` | A | 0.0013630446883126453 | `c_two*v_step*exp(-time/tau_slow)*(-expm1(-time*(1/tau_fast-1/tau_slow)))/(tau_slow-tau_fast)` |
 | `voltage_one` | V | 2.4298166917958035 | `voltage_two+r_two*capacitor_two_current` |
 
@@ -246,7 +246,7 @@ This reported time is an envelope bound, not the exact last crossing or the heur
 | `time` | s | 0.0001 | [0.0, 1000000000.0] |
 | `error_fraction` | 1 | 0.01 | [1e-12, 1.0) |
 
-The shared integration-owned `step_underdamped(u,zeta)` evaluates the derived unit-DC-gain analytic response with `u=omega_n*time` and the declared damping ratio. Its arguments are dimensionless; ordinary seconds or `omega_d*time` would be incorrect. It changes only numerical conditioning, keeping every output and the full researched time domain. At t=0 voltage/current are exactly zero; at default components and t=1e-20 s the independent startup asymptote is `vC≈Vs*omega_n²*t²/2=2.5e-32 V`. The input-only squared-frequency guard rejects critical/overdamping and protects omega_d and the settling-envelope root. R, L, C and positive step amplitude retain their finite positive ranges; `0<epsilon<1` protects the logarithm. At peak_time the waveform equals peak_voltage; envelope_settling_bound is sufficient for all later times, not the exact last crossing. No clipping or pulse-rating guarantee is implied. Very large oscillatory phases have ordinary finite-precision argument-resolution limitations.
+The shared integration-owned `step_underdamped_scaled(u,zeta,amplitude)` evaluates the derived analytic response with `u=omega_n*time`, the declared damping ratio and `amplitude=Vs`. The first two arguments are dimensionless; ordinary seconds or `omega_d*time` would be incorrect. Amplitude-aware evaluation preserves representable voltages when the unit-amplitude response would underflow before an outside amplitude multiplication. It changes only numerical conditioning, keeping every output and the full researched time domain. At t=0 voltage/current are exactly zero; at default components and t=1e-20 s the independent startup asymptote is `vC≈Vs*omega_n²*t²/2=2.5e-32 V`. The input-only squared-frequency guard rejects critical/overdamping and protects omega_d and the settling-envelope root. R, L, C and positive step amplitude retain their finite positive ranges; `0<epsilon<1` protects the logarithm. At peak_time the waveform equals peak_voltage; envelope_settling_bound is sufficient for all later times, not the exact last crossing. No clipping or pulse-rating guarantee is implied. Very large oscillatory phases have ordinary finite-precision argument-resolution limitations.
 
 Additional input-only constraints (checked before any output):
 
@@ -262,7 +262,7 @@ All input values for this independent example are `{"r":10.0,"l":0.001,"c":1e-05
 | `omega_n` | rad/s | 10000.0 | `1/sqrt(l*c)` |
 | `damping_ratio` | 1 | 0.5 | `alpha/omega_n` |
 | `omega_d` | rad/s | 8660.254037844386 | `sqrt(omega_n^2-alpha^2)` |
-| `capacitor_voltage` | V | 1.701499233041492 | `v_step*step_underdamped(omega_n*time,damping_ratio)` |
+| `capacitor_voltage` | V | 1.701499233041492 | `step_underdamped_scaled(omega_n*time,damping_ratio,v_step)` |
 | `series_current` | A | 0.2667535975573465 | `v_step/(l*omega_d)*exp(-alpha*time)*sin(omega_d*time)` |
 | `peak_time` | s | 0.00036275987284684356 | `pi/omega_d` |
 | `overshoot_fraction` | 1 | 0.16303353482158048 | `exp(-alpha*peak_time)` |
@@ -564,7 +564,7 @@ Then `iC=Verror/R`. Long after startup, current approaches `Cm` and lag approach
 
 ### Domain and limitations
 
-`R,C>0`, `t>=0`; `m`, `Vs0` and `V0` may be signed. The source must continue to follow the ramp over the entire selected interval. Ramp stopping/clipping and nonlinear load/current limits are not represented. The promoted implementation isolates the second-order ramp term using the shared stable expm1mx primitive, preserving the researched short-time domain; absolute nonzero voltages still have ordinary machine-spacing limitations. This is neither amplifier slew-rate design nor a frequency-domain filter calculation.
+`R,C>0`, `t>=0`; `m`, `Vs0` and `V0` may be signed. The source must continue to follow the ramp over the entire selected interval. Ramp stopping/clipping and nonlinear load/current limits are not represented. The promoted implementation isolates the second-order ramp term using the shared stable `expm1mx_ratio` primitive and scaled multiplication order, preserving the researched short-time domain; absolute nonzero voltages still have ordinary machine-spacing limitations. This is neither amplifier slew-rate design nor a frequency-domain filter calculation.
 
 ### Independent worked example
 
@@ -587,7 +587,7 @@ Then `iC=Verror/R`. Long after startup, current approaches `Cm` and lag approach
 | `slope` | V/s | 1000.0 | [-1000000000.0, 1000000000.0] |
 | `time` | s | 0.002 | [0.0, 1000000000.0] |
 
-The identity `t−tau[1−exp(−t/tau)]=tau*expm1mx(−t/tau)` isolates the quadratic startup term. The parent-owned primitive `expm1mx(x)=exp(x)−1−x` computes this same scalar analytic quantity stably near zero. The executable voltage is `V0 exp(−x)+Vs0[−expm1(−x)]+m*tau*expm1mx(−x)`, where `x=t/tau`; tracking error is independently `(Vs0−V0)exp(−x)+m*tau[−expm1(−x)]`, avoiding subtraction of large absolute ramp voltages. At t=0 the capacitor retains V0 exactly, and arbitrary signed or zero slopes remain admissible. With default components and t=1e-20 s, the independent leading term is `m*t²/(2*tau)=5e-35 V`, not zero. Positive R/C protect divisions; no extra short-time guard or seed output is introduced. Very small increments to a nonzero absolute voltage may necessarily round away.
+Let `q(z)=(exp(z)−1−z)/z²`, with its analytic continuation `q(0)=1/2`. The identity `t−tau[1−exp(−t/tau)]=(t²/tau)*q(−t/tau)` isolates the quadratic startup term. The parent-owned primitive `expm1mx_ratio(z)` computes q stably near zero without forming an underflowed quadratic remainder. The executable voltage is `V0 exp(−x)+Vs0[−expm1(−x)]+m*t*(t/tau)*expm1mx_ratio(−x)`, where `x=t/tau`; multiplying `m*t` before the second small factor preserves representable ramp contributions. Tracking error is independently `(Vs0−V0)exp(−x)+m*tau[−expm1(−x)]`, avoiding subtraction of large absolute ramp voltages. At t=0 the capacitor retains V0 exactly, and arbitrary signed or zero slopes remain admissible. With default components and t=1e-20 s, the independent leading term is `m*t²/(2*tau)=5e-35 V`, not zero. Positive R/C protect divisions; the primitive's analytic zero limit needs no extra short-time guard or seed output. Very small increments to a nonzero absolute voltage may necessarily round away.
 
 No additional relational constraint is needed: positive component minima protect divisors, time is nonnegative, and any logarithm has an explicit positive tolerance bound. Signed excitations and valid zero boundaries are not rejected.
 
@@ -599,7 +599,7 @@ All input values for this independent example are `{"r":1000.0,"c":1e-06,"v_sour
 |---|---|---:|---|
 | `tau` | s | 0.001 | `r*c` |
 | `source_voltage` | V | 2.0 | `v_source_initial+slope*time` |
-| `capacitor_voltage` | V | 1.1353352832366128 | `v_initial*exp(-time/tau)+v_source_initial*(-expm1(-time/tau))+slope*tau*expm1mx(-time/tau)` |
+| `capacitor_voltage` | V | 1.1353352832366128 | `v_initial*exp(-time/tau)+v_source_initial*(-expm1(-time/tau))+slope*time*(time/tau)*expm1mx_ratio(-time/tau)` |
 | `tracking_error` | V | 0.8646647167633873 | `(v_source_initial-v_initial)*exp(-time/tau)+slope*tau*(-expm1(-time/tau))` |
 | `capacitor_current` | A | 0.0008646647167633873 | `tracking_error/r` |
 

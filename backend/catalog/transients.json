@@ -144,7 +144,7 @@
       "Topology: ideal source, R1, node one, R2, node two in sequence; C1 and C2 connect their respective nodes to common ground. Both capacitors initially uncharged; no external output load or buffer.",
       "All four components are positive and linear. R1 incorporates source resistance; parasitic inductance, capacitor ESR and leakage are neglected.",
       "The R1C2 cross term explicitly accounts for downstream loading. This is a startup transient calculation, not cutoff or filter synthesis.",
-      "The relative discriminant must be at least 1e-8 for distinct-pole numerical conditioning. The fast time constant is evaluated as a/tau_s to avoid subtracting nearly equal b and sqrt(discriminant). The shared Rust step_overdamped(t,1/tau_s,1/tau_f) primitive evaluates the same normalized analytic two-real-pole step with stable short-time conditioning; no additional time exclusion or seed output is used."
+      "The relative discriminant must be at least 1e-8 for distinct-pole numerical conditioning. The fast time constant is evaluated as a/tau_s to avoid subtracting nearly equal b and sqrt(discriminant). The shared Rust step_overdamped_scaled(t,1/tau_s,1/tau_f,Vs) primitive evaluates the same analytic two-real-pole step with stable short-time conditioning and amplitude-aware scaling to preserve representable voltages when the normalized response underflows; no additional time exclusion or seed output is used."
     ],
     "references": [
       {
@@ -235,7 +235,7 @@
         "key": "voltage_two",
         "label": "Second capacitor voltage",
         "unit": "V",
-        "expression": "v_step*step_overdamped(time,1/tau_slow,1/tau_fast)"
+        "expression": "step_overdamped_scaled(time,1/tau_slow,1/tau_fast,v_step)"
       },
       {
         "key": "capacitor_two_current",
@@ -292,7 +292,7 @@
       "Only the underdamped domain is implemented: (R/(2L))^2 must be at most (1-1e-8)/(LC). Critical and overdamped responses are not approximated by this expression.",
       "Settling output is a sufficient envelope bound, not the exact last threshold crossing: absolute normalized voltage error <= exp(-alpha t)/sqrt(1-zeta^2). No AC resonance, Q or filter synthesis outputs are counted.",
       "Distributed parasitics, nonlinear clamps and component pulse/voltage ratings require separate checks.",
-      "The shared Rust step_underdamped(omega_n*time,damping_ratio) primitive evaluates the same normalized analytic step with stable short-time conditioning. Its first argument is dimensionless natural-frequency time, not damped-frequency time or elapsed seconds; no additional short-time exclusion or user-facing seed output is introduced."
+      "The shared Rust step_underdamped_scaled(omega_n*time,damping_ratio,v_step) primitive evaluates the same analytic step with stable short-time conditioning and amplitude-aware scaling to preserve representable voltages when the normalized response underflows. Its first argument is dimensionless natural-frequency time, not damped-frequency time or elapsed seconds; no additional short-time exclusion or user-facing seed output is introduced."
     ],
     "references": [
       {
@@ -385,7 +385,7 @@
         "key": "capacitor_voltage",
         "label": "Capacitor voltage at t",
         "unit": "V",
-        "expression": "v_step*step_underdamped(omega_n*time,damping_ratio)"
+        "expression": "step_underdamped_scaled(omega_n*time,damping_ratio,v_step)"
       },
       {
         "key": "series_current",
@@ -1036,7 +1036,7 @@
       "A linear capacitor is driven through constant positive R by an ideal voltage source whose specified ramp persists throughout the selected elapsed time.",
       "Source-ramp slope is not imposed capacitor current: current starts according to initial conditions and approaches C times the ramp slope.",
       "Supports signed slopes and arbitrary initial capacitor voltage; no limiter or piecewise ramp-end response is modeled.",
-      "This is time-domain startup tracking, not op-amp slew-rate or frequency-domain filter design. The shared Rust expm1mx(x) primitive evaluates exp(x)-1-x accurately near zero, preserving arbitrarily short-time quadratic ramp startup without new time exclusions. Initial-state and source terms use separately conditioned exp/expm1 factors; adding a tiny contribution to a nonzero absolute voltage remains subject to machine resolution."
+      "This is time-domain startup tracking, not op-amp slew-rate or frequency-domain filter design. The shared Rust expm1mx_ratio(x) primitive evaluates (exp(x)-1-x)/x^2 accurately near zero, with analytic value 0.5 at zero. The ramp term is slope*time*(time/tau)*expm1mx_ratio(-time/tau), avoiding premature underflow of the unscaled quadratic remainder without new time exclusions. Initial-state and source terms use separately conditioned exp/expm1 factors; adding a tiny contribution to a nonzero absolute voltage remains subject to machine resolution."
     ],
     "references": [
       {
@@ -1115,7 +1115,7 @@
         "key": "capacitor_voltage",
         "label": "Capacitor voltage at t",
         "unit": "V",
-        "expression": "v_initial*exp(-time/tau)+v_source_initial*(-expm1(-time/tau))+slope*tau*expm1mx(-time/tau)"
+        "expression": "v_initial*exp(-time/tau)+v_source_initial*(-expm1(-time/tau))+slope*time*(time/tau)*expm1mx_ratio(-time/tau)"
       },
       {
         "key": "tracking_error",
