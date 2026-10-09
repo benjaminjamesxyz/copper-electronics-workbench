@@ -1,4 +1,6 @@
 {
+  "baseline_commit": "29f9c2b",
+  "historical_evidence": "This records the 128-calculator illustration release. Archive hashes identify that historical build, not a later overwrite of the generated archive.",
   "scope": "Labeled explanatory illustrations for all 128 existing calculators; Rust models and JSON-lines contract unchanged",
   "host": "Linux x86_64",
   "flutter": "3.47.7",

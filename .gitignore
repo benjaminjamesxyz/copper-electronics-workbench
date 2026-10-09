@@ -6,3 +6,4 @@
 /frontend/copper-*.zip
 .worktrees/
 *.log
+.codegraph/

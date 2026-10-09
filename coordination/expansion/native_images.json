@@ -1,0 +1,1012 @@
+{
+  "source_snapshot": "4c46fa1",
+  "count": 100,
+  "method": "Real Linux Flutter RepaintBoundary captures, pixelRatio=2; transparent canvas composited onto actual #f5f4ef paper without geometry changes",
+  "native_command": "flutter test integration_test/expansion_acceptance.dart -d linux",
+  "initial_run": "All 228 per-model selection/metadata/example assertions completed and all 100 images were captured. The later category-filter reset failed in the throwaway harness because an offscreen lazy menu item was not mounted. Overall native acceptance is NOT yet passed.",
+  "automated_layout_gate": "Not reached in this initial run; reviewers must inspect actual pixels. Final native rerun remains required.",
+  "images": [
+    {
+      "id": "batteries.series_weakest_cell",
+      "path": "coordination/expansion/screenshots/batteries.series_weakest_cell.png",
+      "native_source": "/tmp/copper-expansion/batteries.series_weakest_cell.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "052742a8316a26edf0d32eda93dbbd41a8af1715eb675210bf354b6768586b03"
+    },
+    {
+      "id": "batteries.coulomb_state_cycle",
+      "path": "coordination/expansion/screenshots/batteries.coulomb_state_cycle.png",
+      "native_source": "/tmp/copper-expansion/batteries.coulomb_state_cycle.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "d859fc9a8263df9684d022665f6e7d44c5d76a8dfd240253b75d79b9411e755b"
+    },
+    {
+      "id": "batteries.peukert_runtime",
+      "path": "coordination/expansion/screenshots/batteries.peukert_runtime.png",
+      "native_source": "/tmp/copper-expansion/batteries.peukert_runtime.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "888aaea335a67d04f9fb54023b88ec93b9950f3ee88be67709daeb66d50a297d"
+    },
+    {
+      "id": "batteries.kinetic_charge_recovery",
+      "path": "coordination/expansion/screenshots/batteries.kinetic_charge_recovery.png",
+      "native_source": "/tmp/copper-expansion/batteries.kinetic_charge_recovery.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "baee93ca05d007b264b961029732749cbb6078b0b9cf3fad1be4f1284a76fdab"
+    },
+    {
+      "id": "batteries.intercalation_regular_solution",
+      "path": "coordination/expansion/screenshots/batteries.intercalation_regular_solution.png",
+      "native_source": "/tmp/copper-expansion/batteries.intercalation_regular_solution.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "0dff56183c625a1a9dd3262aecaf9e3dbb540dd7ca75073a7bf77a56f4c4cc4d"
+    },
+    {
+      "id": "batteries.sand_depletion_limit",
+      "path": "coordination/expansion/screenshots/batteries.sand_depletion_limit.png",
+      "native_source": "/tmp/copper-expansion/batteries.sand_depletion_limit.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "285c3b5acd4998e7b2fdf104e90c2f62a43de25bfc92be60e400c5a7de5d4220"
+    },
+    {
+      "id": "cables.twin_lead_geometry",
+      "path": "coordination/expansion/screenshots/cables.twin_lead_geometry.png",
+      "native_source": "/tmp/copper-expansion/cables.twin_lead_geometry.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "ea0a61680d2f66df13ce701fe4698db93ceceb48a3555e5a0066e906be835fd9"
+    },
+    {
+      "id": "cables.lossy_rlgc_line",
+      "path": "coordination/expansion/screenshots/cables.lossy_rlgc_line.png",
+      "native_source": "/tmp/copper-expansion/cables.lossy_rlgc_line.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "ed29f39932df9e810d94b98ffbecabe32af689e31a3aca8aed5a20e9240eb369"
+    },
+    {
+      "id": "cables.radial_insulation_stress",
+      "path": "coordination/expansion/screenshots/cables.radial_insulation_stress.png",
+      "native_source": "/tmp/copper-expansion/cables.radial_insulation_stress.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "b6c2622db8a5509d5d03c118a7e9c4fcd4393ac73400289f49101ac8e6e14b10"
+    },
+    {
+      "id": "cables.hertz_holm_contact",
+      "path": "coordination/expansion/screenshots/cables.hertz_holm_contact.png",
+      "native_source": "/tmp/copper-expansion/cables.hertz_holm_contact.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "8f734efce326035b95c7cc29541789e3c44c13a2b71a1b7f0fde047c71bce6fa"
+    },
+    {
+      "id": "cables.contact_hotspot_temperature",
+      "path": "coordination/expansion/screenshots/cables.contact_hotspot_temperature.png",
+      "native_source": "/tmp/copper-expansion/cables.contact_hotspot_temperature.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "dc8b1798df1c42671f60cd0e95bd433b5ba5880c198fe7966c41fb6ce92ac497"
+    },
+    {
+      "id": "cables.cantilever_contact_spring",
+      "path": "coordination/expansion/screenshots/cables.cantilever_contact_spring.png",
+      "native_source": "/tmp/copper-expansion/cables.cantilever_contact_spring.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "508c50423b0623925ed9b2b2263d6e79e05f7fb279debbef47b2181e757230d6"
+    },
+    {
+      "id": "control.delay_phase_budget",
+      "path": "coordination/expansion/screenshots/control.delay_phase_budget.png",
+      "native_source": "/tmp/copper-expansion/control.delay_phase_budget.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "4e31e7631d4bc2b6c4e3f67df77d7d1345d3603661da4cc9f9d9932753cea456"
+    },
+    {
+      "id": "control.loop_sensitivity",
+      "path": "coordination/expansion/screenshots/control.loop_sensitivity.png",
+      "native_source": "/tmp/copper-expansion/control.loop_sensitivity.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "87cb79840aca3573ff9c34f498bada67d834760d49af3c1725d5904979827242"
+    },
+    {
+      "id": "control.lead_crossover_synthesis",
+      "path": "coordination/expansion/screenshots/control.lead_crossover_synthesis.png",
+      "native_source": "/tmp/copper-expansion/control.lead_crossover_synthesis.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "85ba90a74edcf46507a7fb77af9c908d8548193bb79d5cd8a014b153c4270d22"
+    },
+    {
+      "id": "control.pi_pole_placement",
+      "path": "coordination/expansion/screenshots/control.pi_pole_placement.png",
+      "native_source": "/tmp/copper-expansion/control.pi_pole_placement.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "7cb3bc18a3a00ae2e08514ca992ef36bc3acb656649c082cd3649ae2fc3634fe"
+    },
+    {
+      "id": "control.peak_current_slope_compensation",
+      "path": "coordination/expansion/screenshots/control.peak_current_slope_compensation.png",
+      "native_source": "/tmp/copper-expansion/control.peak_current_slope_compensation.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "6d824a06f7c9b7ef6f8f0cfc80e2785febbc0b3685594ee5e5d1195bb2164394"
+    },
+    {
+      "id": "control.integral_two_lag_stability",
+      "path": "coordination/expansion/screenshots/control.integral_two_lag_stability.png",
+      "native_source": "/tmp/copper-expansion/control.integral_two_lag_stability.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "282c0b1f6dc1e3557de1b06a0808e511de0a20b3012161b1ef4490606b10ab7c"
+    },
+    {
+      "id": "converters.inverting_charge_pump",
+      "path": "coordination/expansion/screenshots/converters.inverting_charge_pump.png",
+      "native_source": "/tmp/copper-expansion/converters.inverting_charge_pump.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "de29b1dc7fb743efa8ad1d54f7cd47aa4282dcc7961ae72d1c8d3c19434793b3"
+    },
+    {
+      "id": "converters.sepic_ccm_stress",
+      "path": "coordination/expansion/screenshots/converters.sepic_ccm_stress.png",
+      "native_source": "/tmp/copper-expansion/converters.sepic_ccm_stress.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "fc9b4d019530c60cd7d813a63d44cfc832fa1f395b93f93e5e156c0add7f8790"
+    },
+    {
+      "id": "converters.forward_reset_winding",
+      "path": "coordination/expansion/screenshots/converters.forward_reset_winding.png",
+      "native_source": "/tmp/copper-expansion/converters.forward_reset_winding.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "fb43833be11758a9afcc8ab87b03ee07df62fb8e312e8056b2a0c260adc7e3dd"
+    },
+    {
+      "id": "converters.flyback_dcm_demagnetization",
+      "path": "coordination/expansion/screenshots/converters.flyback_dcm_demagnetization.png",
+      "native_source": "/tmp/copper-expansion/converters.flyback_dcm_demagnetization.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "e32c794de0dc23506ef75ab9ef97f94f61f71d3da46fd1bba32890c1928d3b27"
+    },
+    {
+      "id": "converters.llc_half_bridge_fha",
+      "path": "coordination/expansion/screenshots/converters.llc_half_bridge_fha.png",
+      "native_source": "/tmp/copper-expansion/converters.llc_half_bridge_fha.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "6eb0a07076c264554127ca2302733449ee04b486d05469df2b8110f3c98dc345"
+    },
+    {
+      "id": "converters.dual_active_bridge_power",
+      "path": "coordination/expansion/screenshots/converters.dual_active_bridge_power.png",
+      "native_source": "/tmp/copper-expansion/converters.dual_active_bridge_power.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "515e5375cb6b084ad3cf308c17deb150f6a3253b2cc80fb25898d0a7f35d8a98"
+    },
+    {
+      "id": "cores.single_layer_air_solenoid",
+      "path": "coordination/expansion/screenshots/cores.single_layer_air_solenoid.png",
+      "native_source": "/tmp/copper-expansion/cores.single_layer_air_solenoid.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "e9496b80f2e0ef279a0d8ceb57dd310faed8bc3e5cb6112c679b6ac50f05b752"
+    },
+    {
+      "id": "cores.square_planar_spiral",
+      "path": "coordination/expansion/screenshots/cores.square_planar_spiral.png",
+      "native_source": "/tmp/copper-expansion/cores.square_planar_spiral.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "325856b7fea94c9d8022ef3d98519ca5d3b6c4dac3302b450ea8f2a7e6823adc"
+    },
+    {
+      "id": "cores.bobbin_layer_fit",
+      "path": "coordination/expansion/screenshots/cores.bobbin_layer_fit.png",
+      "native_source": "/tmp/copper-expansion/cores.bobbin_layer_fit.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "822dfd5e2a30a9f9d051086805b7c9ad3e6f7be914335590f62e2dc94431acf8"
+    },
+    {
+      "id": "cores.sinusoidal_steinmetz_loss",
+      "path": "coordination/expansion/screenshots/cores.sinusoidal_steinmetz_loss.png",
+      "native_source": "/tmp/copper-expansion/cores.sinusoidal_steinmetz_loss.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "38f841c1274db7bb09e40d68804be697015509bd091989576642165c4dfcccab"
+    },
+    {
+      "id": "cores.lamination_eddy_loss",
+      "path": "coordination/expansion/screenshots/cores.lamination_eddy_loss.png",
+      "native_source": "/tmp/copper-expansion/cores.lamination_eddy_loss.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "7b664c36a80d232ef56484b3670b86f709b1134a0eb60d4ec51153716ab0a5d5"
+    },
+    {
+      "id": "cores.thin_foil_winding_loss",
+      "path": "coordination/expansion/screenshots/cores.thin_foil_winding_loss.png",
+      "native_source": "/tmp/copper-expansion/cores.thin_foil_winding_loss.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "01a27ed177a3ffd5cffed93320736b51614c42c6997254fcce860288fbda1e37"
+    },
+    {
+      "id": "emc.thin_slot_shielding",
+      "path": "coordination/expansion/screenshots/emc.thin_slot_shielding.png",
+      "native_source": "/tmp/copper-expansion/emc.thin_slot_shielding.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "5f5d12592e6587f32c85525ad8cdd367ec4e2f705946a81be778f7b8b2a2ddbb"
+    },
+    {
+      "id": "emc.rc_common_mode_conversion",
+      "path": "coordination/expansion/screenshots/emc.rc_common_mode_conversion.png",
+      "native_source": "/tmp/copper-expansion/emc.rc_common_mode_conversion.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "265c4ade262982963761f6bd60a07e8eb205b065c367052e773ad70e5fcdc92e"
+    },
+    {
+      "id": "emc.trapezoid_conducted_harmonic",
+      "path": "coordination/expansion/screenshots/emc.trapezoid_conducted_harmonic.png",
+      "native_source": "/tmp/copper-expansion/emc.trapezoid_conducted_harmonic.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "c1edbe8279fd61a63c2cc47793cc42e9dc69816533a25dd1b0705fe2fbc545ae"
+    },
+    {
+      "id": "emc.sinusoidal_dither_occupancy",
+      "path": "coordination/expansion/screenshots/emc.sinusoidal_dither_occupancy.png",
+      "native_source": "/tmp/copper-expansion/emc.sinusoidal_dither_occupancy.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "ace5c85f26aca7de391c9cc9946595c73c003a4998004592e241a08d69fc22d7"
+    },
+    {
+      "id": "emc.ringing_rc_snubber",
+      "path": "coordination/expansion/screenshots/emc.ringing_rc_snubber.png",
+      "native_source": "/tmp/copper-expansion/emc.ringing_rc_snubber.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "5011caa8f21dae925caa66dfce91d40f4440e58847c4999510aa277f5f58613d"
+    },
+    {
+      "id": "emc.short_cable_radiation",
+      "path": "coordination/expansion/screenshots/emc.short_cable_radiation.png",
+      "native_source": "/tmp/copper-expansion/emc.short_cable_radiation.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "cfb8eddfa32e800fbd0d2c4d2654d00b7ebbaa7bee87c6f197a36317f377d8d8"
+    },
+    {
+      "id": "logic.guaranteed_noise_margins",
+      "path": "coordination/expansion/screenshots/logic.guaranteed_noise_margins.png",
+      "native_source": "/tmp/copper-expansion/logic.guaranteed_noise_margins.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "5463e21001f772b28601b1900aeb3a093ebd04a12e11b872224306335cc25312"
+    },
+    {
+      "id": "logic.dc_current_fanout",
+      "path": "coordination/expansion/screenshots/logic.dc_current_fanout.png",
+      "native_source": "/tmp/copper-expansion/logic.dc_current_fanout.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "717435850432f6ca492f915b262e9fb3e4a9a4eecca177de381b9a9f66dfb645"
+    },
+    {
+      "id": "logic.cmos_package_power",
+      "path": "coordination/expansion/screenshots/logic.cmos_package_power.png",
+      "native_source": "/tmp/copper-expansion/logic.cmos_package_power.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "a869be78ec85d2f941411eb3e73a9489b390affd12d541e45761fda2c6149918"
+    },
+    {
+      "id": "logic.synchronizer_metastability",
+      "path": "coordination/expansion/screenshots/logic.synchronizer_metastability.png",
+      "native_source": "/tmp/copper-expansion/logic.synchronizer_metastability.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "4647b7a0ef74f7820b7e3cffb79178154674ca88ac9a6456892b68d1e0e3f6a2"
+    },
+    {
+      "id": "logic.three_stage_logical_effort",
+      "path": "coordination/expansion/screenshots/logic.three_stage_logical_effort.png",
+      "native_source": "/tmp/copper-expansion/logic.three_stage_logical_effort.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "24d108b47de0a37dd062ddef4e5d41a78fc7cc2b77ba1ccf428cf3bd17427efd"
+    },
+    {
+      "id": "logic.fifo_envelope_depth",
+      "path": "coordination/expansion/screenshots/logic.fifo_envelope_depth.png",
+      "native_source": "/tmp/copper-expansion/logic.fifo_envelope_depth.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "f7e229ca677cc5d047a6ed26b975fe8ed2271491764190b4a7c24065b1d01e64"
+    },
+    {
+      "id": "measurement.dmm_accuracy_bound",
+      "path": "coordination/expansion/screenshots/measurement.dmm_accuracy_bound.png",
+      "native_source": "/tmp/copper-expansion/measurement.dmm_accuracy_bound.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "9bea827886037b3825a9ba07f08d08b5ebd78a7e95b911fb7c323835cb80db11"
+    },
+    {
+      "id": "measurement.delta_resistance",
+      "path": "coordination/expansion/screenshots/measurement.delta_resistance.png",
+      "native_source": "/tmp/copper-expansion/measurement.delta_resistance.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "17a50221721392bdc75b85ffe142df071335300f090a27316643005318b2150c"
+    },
+    {
+      "id": "measurement.compensated_probe_loading",
+      "path": "coordination/expansion/screenshots/measurement.compensated_probe_loading.png",
+      "native_source": "/tmp/copper-expansion/measurement.compensated_probe_loading.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "f31c198bf6cf729f50f1da3331f80ffc753f644de4af861dc74ae3e66f0a288c"
+    },
+    {
+      "id": "measurement.rectangular_aperture_response",
+      "path": "coordination/expansion/screenshots/measurement.rectangular_aperture_response.png",
+      "native_source": "/tmp/copper-expansion/measurement.rectangular_aperture_response.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "5c2f3e1d0464ed356a9a046cd0e8c7822e370c7d3c5a4c9eb7081e41cf2113e8"
+    },
+    {
+      "id": "measurement.sampling_jitter_snr",
+      "path": "coordination/expansion/screenshots/measurement.sampling_jitter_snr.png",
+      "native_source": "/tmp/copper-expansion/measurement.sampling_jitter_snr.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "cbd1d5e5db8714060188e9ad46fd67853c5e3a3ba07ffc106591ee77cf9134c1"
+    },
+    {
+      "id": "measurement.correlated_voltage_ratio",
+      "path": "coordination/expansion/screenshots/measurement.correlated_voltage_ratio.png",
+      "native_source": "/tmp/copper-expansion/measurement.correlated_voltage_ratio.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "b164bfbbd0ffcce9cb95c9adae0100caacc3b42ed974092b388d96854d9a884e"
+    },
+    {
+      "id": "motors.pm_dc_load_equilibrium",
+      "path": "coordination/expansion/screenshots/motors.pm_dc_load_equilibrium.png",
+      "native_source": "/tmp/copper-expansion/motors.pm_dc_load_equilibrium.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "282097bd1047102058ea5b27bacb42c818c70e9b4a253f6747b9a52877c45959"
+    },
+    {
+      "id": "motors.stepper_static_microstep",
+      "path": "coordination/expansion/screenshots/motors.stepper_static_microstep.png",
+      "native_source": "/tmp/copper-expansion/motors.stepper_static_microstep.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "54f88debcf60607055d23632298418372798ef5d69227a85dec84468374e134c"
+    },
+    {
+      "id": "motors.geared_axis_acceleration",
+      "path": "coordination/expansion/screenshots/motors.geared_axis_acceleration.png",
+      "native_source": "/tmp/copper-expansion/motors.geared_axis_acceleration.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "b632ba67107f8882d2dde26dfe7a878973d58358a2a4c72751ff80d7c3c7b3ff"
+    },
+    {
+      "id": "motors.resistive_dynamic_braking",
+      "path": "coordination/expansion/screenshots/motors.resistive_dynamic_braking.png",
+      "native_source": "/tmp/copper-expansion/motors.resistive_dynamic_braking.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "3998ba96d82b6aa0e7375a03f7e2e5b7b74da7a15a96238d2f178cbdd03970f2"
+    },
+    {
+      "id": "motors.salient_pmsm_dq_operating_point",
+      "path": "coordination/expansion/screenshots/motors.salient_pmsm_dq_operating_point.png",
+      "native_source": "/tmp/copper-expansion/motors.salient_pmsm_dq_operating_point.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "8d0ac86c886c8c9884ccb7f059f6d06fd477e9336972a5218589758a99aa4227"
+    },
+    {
+      "id": "motors.induction_slip_power",
+      "path": "coordination/expansion/screenshots/motors.induction_slip_power.png",
+      "native_source": "/tmp/copper-expansion/motors.induction_slip_power.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "edebca4d32fb08c206a934ab6e616bfa039986256acf17e0efeab5a2fc941aad"
+    },
+    {
+      "id": "opto.photodiode_quantum_conversion",
+      "path": "coordination/expansion/screenshots/opto.photodiode_quantum_conversion.png",
+      "native_source": "/tmp/copper-expansion/opto.photodiode_quantum_conversion.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "1f2e6fedbc5c5251f2d4f6e8d7aa378a716189ed0542253931bd85f64a8fc9bc"
+    },
+    {
+      "id": "opto.lambertian_target_irradiance",
+      "path": "coordination/expansion/screenshots/opto.lambertian_target_irradiance.png",
+      "native_source": "/tmp/copper-expansion/opto.lambertian_target_irradiance.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "b72466d94aa976a62a81b81eda5311b059ea8fd25e23ebc5394c9da3c757feef"
+    },
+    {
+      "id": "opto.layer_absorption_capture",
+      "path": "coordination/expansion/screenshots/opto.layer_absorption_capture.png",
+      "native_source": "/tmp/copper-expansion/opto.layer_absorption_capture.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "21282942464c73074d3a2d495691cda8b4ab397c56375eeecdcc96cee21de7ea"
+    },
+    {
+      "id": "opto.gaussian_aperture_capture",
+      "path": "coordination/expansion/screenshots/opto.gaussian_aperture_capture.png",
+      "native_source": "/tmp/copper-expansion/opto.gaussian_aperture_capture.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "35b53417ae600e74f2ed7d34d277a50c3aecae5c02bbaf86c9c934233d87a1f6"
+    },
+    {
+      "id": "opto.step_index_mode_cutoff",
+      "path": "coordination/expansion/screenshots/opto.step_index_mode_cutoff.png",
+      "native_source": "/tmp/copper-expansion/opto.step_index_mode_cutoff.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "a3170312ddb6f1b146cd49cb625d2da51878146faa5670095ad2e44c4e95f86b"
+    },
+    {
+      "id": "opto.fiber_gaussian_dispersion",
+      "path": "coordination/expansion/screenshots/opto.fiber_gaussian_dispersion.png",
+      "native_source": "/tmp/copper-expansion/opto.fiber_gaussian_dispersion.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "a284049691b8f22d5802f35d8e3ce00cef62234cab201879e7a90fbba3edc4f9"
+    },
+    {
+      "id": "opto.sipm_finite_cell_response",
+      "path": "coordination/expansion/screenshots/opto.sipm_finite_cell_response.png",
+      "native_source": "/tmp/copper-expansion/opto.sipm_finite_cell_response.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "94b1a1a986560953a6ae01f7f47391eb98c743872fbc443931e981fa2a532587"
+    },
+    {
+      "id": "oscillators.timer_555_astable",
+      "path": "coordination/expansion/screenshots/oscillators.timer_555_astable.png",
+      "native_source": "/tmp/copper-expansion/oscillators.timer_555_astable.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "a83b29a62ae6ef2be4d3a32d4a38775bf420f94f251150e6d72360be3f345546"
+    },
+    {
+      "id": "oscillators.comparator_rc_oscillator",
+      "path": "coordination/expansion/screenshots/oscillators.comparator_rc_oscillator.png",
+      "native_source": "/tmp/copper-expansion/oscillators.comparator_rc_oscillator.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "ab4cfb8ec3764fde0ba5aa7b48434ae3478ed96d30f7b5403579b931a2ee6911"
+    },
+    {
+      "id": "oscillators.triangle_integrator_oscillator",
+      "path": "coordination/expansion/screenshots/oscillators.triangle_integrator_oscillator.png",
+      "native_source": "/tmp/copper-expansion/oscillators.triangle_integrator_oscillator.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "09aa5a301476b9014061e446c23b8686eeca3441ff298a5ac0609961cbe9128c"
+    },
+    {
+      "id": "oscillators.wien_bridge_balance",
+      "path": "coordination/expansion/screenshots/oscillators.wien_bridge_balance.png",
+      "native_source": "/tmp/copper-expansion/oscillators.wien_bridge_balance.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "7da95947037898d39f2652009e85e7ddeb5f248b176ef4212893ead4a6627ad8"
+    },
+    {
+      "id": "oscillators.loaded_rc_phase_shift",
+      "path": "coordination/expansion/screenshots/oscillators.loaded_rc_phase_shift.png",
+      "native_source": "/tmp/copper-expansion/oscillators.loaded_rc_phase_shift.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "d1ba66dd55ad26f19e9b32ce81babd279761b776baebc939cc9a39cb3e8ca8a5"
+    },
+    {
+      "id": "oscillators.cross_coupled_lc_startup",
+      "path": "coordination/expansion/screenshots/oscillators.cross_coupled_lc_startup.png",
+      "native_source": "/tmp/copper-expansion/oscillators.cross_coupled_lc_startup.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "cd8fe61ab43d26bad4be7424b7bdf4ededf619446ddd8c32db0493d1568c77a6"
+    },
+    {
+      "id": "oscillators.pierce_crystal_startup",
+      "path": "coordination/expansion/screenshots/oscillators.pierce_crystal_startup.png",
+      "native_source": "/tmp/copper-expansion/oscillators.pierce_crystal_startup.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "cd768f6926aba4810621190e7254c9b625579e685929d0c05d2aa370d0587db5"
+    },
+    {
+      "id": "passives.mlcc_logarithmic_aging",
+      "path": "coordination/expansion/screenshots/passives.mlcc_logarithmic_aging.png",
+      "native_source": "/tmp/copper-expansion/passives.mlcc_logarithmic_aging.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "c3bbd940770d518ea2b53bff40121ed768d27b7d5fc721fe141af23bf001b51c"
+    },
+    {
+      "id": "passives.dielectric_absorption_recovery",
+      "path": "coordination/expansion/screenshots/passives.dielectric_absorption_recovery.png",
+      "native_source": "/tmp/copper-expansion/passives.dielectric_absorption_recovery.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "8839da8efb100136ceff0887872c092062f8fac8a3db4f4c14cf21933d75cd6f"
+    },
+    {
+      "id": "passives.mlcc_bias_charge_energy",
+      "path": "coordination/expansion/screenshots/passives.mlcc_bias_charge_energy.png",
+      "native_source": "/tmp/copper-expansion/passives.mlcc_bias_charge_energy.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "47d767dd6d5b792e2304fda16906ab6c758f123c84cffe16a13a66d7371cad9d"
+    },
+    {
+      "id": "passives.resistor_excess_noise",
+      "path": "coordination/expansion/screenshots/passives.resistor_excess_noise.png",
+      "native_source": "/tmp/copper-expansion/passives.resistor_excess_noise.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "31a2640d78655e63423a3e52c51242613194be24c1724fdea9e3d2a0893c4f25"
+    },
+    {
+      "id": "passives.negative_vcr_divider",
+      "path": "coordination/expansion/screenshots/passives.negative_vcr_divider.png",
+      "native_source": "/tmp/copper-expansion/passives.negative_vcr_divider.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "52f88a5b4bcb4a5f1a6e13937422768476d8e7ccb7e1039bfe0a64a324b3b648"
+    },
+    {
+      "id": "passives.nonideal_r2r_ladder",
+      "path": "coordination/expansion/screenshots/passives.nonideal_r2r_ladder.png",
+      "native_source": "/tmp/copper-expansion/passives.nonideal_r2r_ladder.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "ace2f7142c4ce7919162fd7e7c5c99b8d9791aaec7098a2c0a8b0eb3e4419c0b"
+    },
+    {
+      "id": "precision.bjt_mirror_base_current",
+      "path": "coordination/expansion/screenshots/precision.bjt_mirror_base_current.png",
+      "native_source": "/tmp/copper-expansion/precision.bjt_mirror_base_current.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "6d21cd6e62539833f35ff67d8cd3380183c96ee0393c8885c5ff4fb998cc2ebc"
+    },
+    {
+      "id": "precision.instrumentation_internal_headroom",
+      "path": "coordination/expansion/screenshots/precision.instrumentation_internal_headroom.png",
+      "native_source": "/tmp/copper-expansion/precision.instrumentation_internal_headroom.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "5e2c053d8bc1ed5b55295a226ab002b1766abfa9927025f3cf4b89b6b434f29b"
+    },
+    {
+      "id": "precision.transimpedance_butterworth",
+      "path": "coordination/expansion/screenshots/precision.transimpedance_butterworth.png",
+      "native_source": "/tmp/copper-expansion/precision.transimpedance_butterworth.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "16b841f15eaa738803c75a3ec865116e7e7d5033a7f85972dd2705dd4f8739dd"
+    },
+    {
+      "id": "precision.howland_mismatch_load",
+      "path": "coordination/expansion/screenshots/precision.howland_mismatch_load.png",
+      "native_source": "/tmp/copper-expansion/precision.howland_mismatch_load.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "9947a6e5dc92cd07e36c45b85943176a615c4d5682f2216ac4c55ab50a34616d"
+    },
+    {
+      "id": "precision.brokaw_first_order_trim",
+      "path": "coordination/expansion/screenshots/precision.brokaw_first_order_trim.png",
+      "native_source": "/tmp/copper-expansion/precision.brokaw_first_order_trim.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "d85fe631c4ae480a36d606760ea1f3dcb000bc21a22f43f63f54925e4ef1bf58"
+    },
+    {
+      "id": "precision.log114_current_ratio",
+      "path": "coordination/expansion/screenshots/precision.log114_current_ratio.png",
+      "native_source": "/tmp/copper-expansion/precision.log114_current_ratio.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "f3aaae93f17d4f2e2af29d4d714d3c9fe6de0cc6df756644997333fd912b1fab"
+    },
+    {
+      "id": "protection.fuse_pulse_coordination",
+      "path": "coordination/expansion/screenshots/protection.fuse_pulse_coordination.png",
+      "native_source": "/tmp/copper-expansion/protection.fuse_pulse_coordination.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "024a700064014f896db086f6e9260d3a4f523b515b9628cfe0fc587a5f0002c2"
+    },
+    {
+      "id": "protection.tvs_surge_load_line",
+      "path": "coordination/expansion/screenshots/protection.tvs_surge_load_line.png",
+      "native_source": "/tmp/copper-expansion/protection.tvs_surge_load_line.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "74a0ab259f7944a13bd50e5cbfcb775f4df8ce92a424cfc76532032022cfbc69"
+    },
+    {
+      "id": "protection.mov_power_law_pulse",
+      "path": "coordination/expansion/screenshots/protection.mov_power_law_pulse.png",
+      "native_source": "/tmp/copper-expansion/protection.mov_power_law_pulse.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "d97bd04c25f16eb6f8a5fc1567b3e7b4c43e7bf75c475fcae5986f4b76a6d1c3"
+    },
+    {
+      "id": "protection.scr_crowbar_trigger_latch",
+      "path": "coordination/expansion/screenshots/protection.scr_crowbar_trigger_latch.png",
+      "native_source": "/tmp/copper-expansion/protection.scr_crowbar_trigger_latch.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "698742d24347681c9d602ab03d893c6c27afeb7b934703e0aec8c4f709ab8a39"
+    },
+    {
+      "id": "protection.copper_adiabatic_fault_limit",
+      "path": "coordination/expansion/screenshots/protection.copper_adiabatic_fault_limit.png",
+      "native_source": "/tmp/copper-expansion/protection.copper_adiabatic_fault_limit.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "8c8bfe58d0b56302435d086c4abb984e82673056340d1e437b49b4d729350ddd"
+    },
+    {
+      "id": "protection.foldback_fault_envelope",
+      "path": "coordination/expansion/screenshots/protection.foldback_fault_envelope.png",
+      "native_source": "/tmp/copper-expansion/protection.foldback_fault_envelope.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "aacf14696f4c18c718af707b0126c23f79b40896ebba198e19a179c740c79591"
+    },
+    {
+      "id": "rf.matched_t_attenuator",
+      "path": "coordination/expansion/screenshots/rf.matched_t_attenuator.png",
+      "native_source": "/tmp/copper-expansion/rf.matched_t_attenuator.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "8b3910d85d2105978c13e8bd8df0fb9f8a95b185828946e8e6b00b383600a588"
+    },
+    {
+      "id": "rf.lowpass_l_match",
+      "path": "coordination/expansion/screenshots/rf.lowpass_l_match.png",
+      "native_source": "/tmp/copper-expansion/rf.lowpass_l_match.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "234b9699c86fc6b8cd9c42bc0800e59a7fb059b57812109862b4ee5dff1b4305"
+    },
+    {
+      "id": "rf.free_space_link_budget",
+      "path": "coordination/expansion/screenshots/rf.free_space_link_budget.png",
+      "native_source": "/tmp/copper-expansion/rf.free_space_link_budget.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "b389abe88d3ee59c3c0774ec8ed07b43bca9c87217e73c5d3cb9b5131474e233"
+    },
+    {
+      "id": "rf.first_fresnel_clearance",
+      "path": "coordination/expansion/screenshots/rf.first_fresnel_clearance.png",
+      "native_source": "/tmp/copper-expansion/rf.first_fresnel_clearance.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "6e751936f42a5f6d8fb3fc332f5c7373db522302c72f440e5a2957835c4c5917"
+    },
+    {
+      "id": "rf.circular_aperture_gain",
+      "path": "coordination/expansion/screenshots/rf.circular_aperture_gain.png",
+      "native_source": "/tmp/copper-expansion/rf.circular_aperture_gain.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "80bf036882191dbd27b3ce53eb85b6686402c4e571543962b70036d128281411"
+    },
+    {
+      "id": "rf.two_tone_im3",
+      "path": "coordination/expansion/screenshots/rf.two_tone_im3.png",
+      "native_source": "/tmp/copper-expansion/rf.two_tone_im3.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "348c0f389a2ac5fe3b1ae85c9b022ee2474525e5d65ddfdf5b7d6aad4d74e6c6"
+    },
+    {
+      "id": "rf.monostatic_radar_return",
+      "path": "coordination/expansion/screenshots/rf.monostatic_radar_return.png",
+      "native_source": "/tmp/copper-expansion/rf.monostatic_radar_return.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "b49185166f9124abc3eee1ee9d75446c66166db52eb7d3a12366f2ac6c9ff1f8"
+    },
+    {
+      "id": "sensors.ntc_steinhart_hart",
+      "path": "coordination/expansion/screenshots/sensors.ntc_steinhart_hart.png",
+      "native_source": "/tmp/copper-expansion/sensors.ntc_steinhart_hart.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "167a670faf2f9beb8a10fbc67907b1362dfb0be00fed75f91d2da677c5dd9ee3"
+    },
+    {
+      "id": "sensors.platinum_callendar_van_dusen",
+      "path": "coordination/expansion/screenshots/sensors.platinum_callendar_van_dusen.png",
+      "native_source": "/tmp/copper-expansion/sensors.platinum_callendar_van_dusen.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "551c0cba8ebdbdb77048b259e2b4d7774b05b2e54ee231a4a97b6291004bb0c3"
+    },
+    {
+      "id": "sensors.type_t_cold_junction_emf",
+      "path": "coordination/expansion/screenshots/sensors.type_t_cold_junction_emf.png",
+      "native_source": "/tmp/copper-expansion/sensors.type_t_cold_junction_emf.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "0c886f641dbd338a7c283744b44c6edc8021ce85b635852cf098f9de436d1024"
+    },
+    {
+      "id": "sensors.hall_plate_angle",
+      "path": "coordination/expansion/screenshots/sensors.hall_plate_angle.png",
+      "native_source": "/tmp/copper-expansion/sensors.hall_plate_angle.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "8c678e0cafd4a19513f527bd9b1ee1cc0a8106a7789308d77837e215d059a102"
+    },
+    {
+      "id": "sensors.amr_angular_resistance",
+      "path": "coordination/expansion/screenshots/sensors.amr_angular_resistance.png",
+      "native_source": "/tmp/copper-expansion/sensors.amr_angular_resistance.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "e3af79d0981161f07e96c33827a78a251e6fa13e1f889ec10b9f6768bf35a772"
+    },
+    {
+      "id": "sensors.hydrogen_activity_electrode",
+      "path": "coordination/expansion/screenshots/sensors.hydrogen_activity_electrode.png",
+      "native_source": "/tmp/copper-expansion/sensors.hydrogen_activity_electrode.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "3eeffe630f62ad5fee2235c6450065e06960d757ac9daaaaddeff3c21d6d8240"
+    },
+    {
+      "id": "sensors.differential_gap_capacitor",
+      "path": "coordination/expansion/screenshots/sensors.differential_gap_capacitor.png",
+      "native_source": "/tmp/copper-expansion/sensors.differential_gap_capacitor.png",
+      "size": [
+        1400,
+        560
+      ],
+      "sha256": "e438662d6cf59c536203c2c77a2999bf13b88d69875bad039fb93c9bb670647b"
+    }
+  ],
+  "refreshed_after": "commit 81500de diagram/label and catalog-expression fixes; full native journey re-passed (both acceptance tests, 228 models, layout gate clean)",
+  "refresh_command": "flutter test integration_test/expansion_acceptance.dart -d linux"
+}

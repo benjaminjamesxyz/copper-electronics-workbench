@@ -1,20 +1,21 @@
 # Copper — electronics design workbench
 
-Flutter desktop-only frontend and a private Rust calculation process. All **128 calculators** are implemented: 39 basic, 50 intermediate and 39 expert across 16 electronics domains. Forms, units, formulas, model limits, cited sources and independently worked examples come from the embedded Rust catalog; Flutter does not duplicate the mathematics. Calculations run offline, without an HTTP service.
+Flutter desktop-only frontend and a private Rust calculation process. All **228 calculators** are implemented: 65 basic, 89 intermediate and 74 expert across 34 selectable domains. Forms, units, formulas, model limits, cited sources and independently worked examples come from the embedded Rust catalog; Flutter does not duplicate the mathematics. Calculations run offline, without an HTTP service.
 
 Every calculator also has a labeled vector illustration: a circuit, physical cross-section, signal response, timing diagram or thermal/energy-flow sketch. These render offline with native Flutter drawing; no image service, browser or additional dependency is required.
 
 ## Research and delivery artifacts
 
-- [Common 128-feature board](../RESEARCH_BOARD.md): reserved boundaries, complete ID index and per-lane research.
+- [Common feature board](../RESEARCH_BOARD.md): original 128 features, 100 additional features, reserved boundaries, complete ID indices and per-lane research.
 - [Markdown communication bus](../COMMUNICATION.md): addressed research decisions, Git handoffs and QA findings.
-- [Scrum-master sprint](../coordination/SPRINT.md) and [complete acceptance backlog](../coordination/BACKLOG.md).
+- [Expansion scrum-master sprint](../coordination/expansion/SPRINT.md) and [100-item acceptance backlog](../coordination/expansion/BACKLOG.md); [original sprint](../coordination/SPRINT.md) and [128-item backlog](../coordination/BACKLOG.md).
 - [Architecture](../coordination/ARCHITECTURE.md) and [catalog/protocol contract](../coordination/CONTRACT.md).
 - `../coordination/developer_handoffs.json`, `../coordination/testing/*.json`: actual independent agent handoffs.
 - `../coordination/reviews/*.md`: frozen baseline reviews; `../coordination/reviews/closure.json`: post-fix independent dispositions and attribution of executed checks.
 - `../coordination/numerical*.json`: actual before/after Rust-process counterexamples, with independent expected values after correction.
+- `../coordination/expansion/developer_handoffs.json`: sixteen expansion developers' original and integrated feature commits; `../coordination/expansion/process_examples.json`: complete observed outputs for all 228 examples.
 
-The pipeline used 16 researchers, one scrum-master, 16 developers and then 16 testers plus 16 reviewers concurrently. Developers own eight distinct features each in isolated `feat/<lane>` worktrees; each feature has its own implementation commit. Testers own independent `test/<lane>` worktrees. Only the integration owner cherry-picks explicit handoff SHAs, changes shared Rust/Flutter infrastructure and executes global checks. Maximum concurrent worker wave: 32. No remote repository was supplied.
+Each sprint uses 16 researchers, one scrum master, 16 developers and then 16 testers plus 16 reviewers concurrently. Original developers owned eight features each; expansion developers own six or seven each. Expansion branches use isolated `feat/expand-<lane>` and `test/expand-<lane>` worktrees, with one implementation commit per calculator including its mandatory diagram and documentation. Only the integration owner cherry-picks explicit handoff SHAs, changes shared Rust/Flutter infrastructure and executes global checks. Maximum concurrent worker wave: 32. No remote repository was supplied.
 
 ## Reading the illustrations
 
@@ -24,9 +25,9 @@ The pipeline used 16 researchers, one scrum-master, 16 developers and then 16 te
 - Curves and dimensions are explanatory, **not live simulations or scale drawings**. Changing inputs changes numerical results, not the illustration's geometry.
 - Narrow windows retain readable symbol sizes and show an interactive horizontal scrollbar. Desktop text scaling enlarges the vector canvas. Captions and quantity descriptions provide a text alternative to the drawing.
 
-Illustrations are authored in `lib/diagrams/<domain>.dart`, indexed by exact catalog ID in `catalog.dart`. Shared symbols, connector conventions, painter and panel are adjacent. The illustration pass used sixteen independent `diagram/<domain>` Git worktrees and sixteen independent correctness/visual review lanes; the backend catalog and process contract remain unchanged.
+Illustrations are authored in 32 `lib/diagrams/<domain>.dart` files, indexed by exact catalog ID in `catalog.dart`. Shared symbols, connector conventions, painter and panel are adjacent. The original illustration pass used sixteen independent `diagram/<domain>` worktrees; the expansion delivers each new illustration together with its numerical model. Neither pass adds presentation geometry to the Rust process contract.
 
-The Linux illustration gate rendered all 128 diagrams, passed the existing real-Rust desktop journey and the two illustration regressions, and cleared sixteen source/pixel review lanes. See [evidence](../coordination/diagram_evidence.json), [review closure](../coordination/diagram_reviews.json) and [the packaged circuit view](../coordination/desktop-illustrations-circuit.png). The full-catalog screenshot journey was a throwaway acceptance harness; permanent coverage and accessible-layout checks remain in `test/diagrams_test.dart`.
+The historical Linux illustration gate rendered the original 128 diagrams and cleared sixteen source/pixel review lanes. Its [evidence](../coordination/diagram_evidence.json), [review closure](../coordination/diagram_reviews.json) and [packaged circuit view](../coordination/desktop-illustrations-circuit.png) describe baseline `29f9c2b`, not expansion acceptance. Permanent catalog-coverage and accessible-layout checks remain in `test/diagrams_test.dart`.
 
 ## Prerequisites
 
@@ -67,7 +68,7 @@ Linux launch, without a development override:
 
 No Android, iOS or web runner is included. Native Windows/macOS builds and runtime acceptance cannot be inferred from Linux results; the CI matrix is configured for all three but was not remotely executed in this local-only workflow. Distribution signing/notarization is not certified.
 
-Local Linux acceptance passed 431 Rust tests, all 128 complete researched process examples, 27 numerical review cases and native UI selection/metadata for all 128 IDs with 16 computed lane examples. The final extracted archive launched without an engine override, computed a 32-bit ADC through actual mouse/keyboard input, rendered correctly at 1280×720 and 860×900, and closed normally. Evidence and screenshots are in [`../coordination/desktop_evidence.json`](../coordination/desktop_evidence.json). The generated `copper-Linux.tar.gz` contains the complete bundle and is ignored by Git.
+Historical acceptance before this expansion passed 431 Rust tests, all 128 complete process examples, 27 numerical review cases and native UI selection/metadata for all 128 IDs. Its extracted archive launched without an engine override, computed a 32-bit ADC through mouse/keyboard input, and closed normally. [`../coordination/desktop_evidence.json`](../coordination/desktop_evidence.json) retains that earlier evidence; it is not proof for the expanded release. The generated `copper-Linux.tar.gz` contains a complete bundle and is ignored by Git.
 
 ## Verification
 
@@ -87,7 +88,7 @@ flutter test test/diagrams_test.dart
 PCB_CALCULATOR_BACKEND=/absolute/path/to/backend/target/debug/pcb-calculator flutter test integration_test/workbench_test.dart -d linux
 ```
 
-The Rust suite covers every researched example, independent identities, meaningful input/model boundaries, signed/zero values, strict small-value precision and error recovery. The process smoke checks all 128 complete example output maps against researched values. The native integration journey checks basic/intermediate/expert examples, error presentation, immediate stale-result invalidation and exact 32-bit ADC code-count display. Integration keyboard injection is explicitly registered so native IME updates do not overwrite test input. CI is at `../.github/workflows/desktop.yml`.
+The Rust suite covers researched examples, independent identities, meaningful input/model boundaries, signed/zero values, strict small-value precision and error recovery. The process smoke checks all 228 complete example output maps against researched values. The native integration journey checks basic/intermediate/expert examples, error presentation, immediate stale-result invalidation and exact 32-bit ADC code-count display. Integration keyboard injection is explicitly registered so native IME updates do not overwrite test input. CI is at `../.github/workflows/desktop.yml`.
 
 Known dependency risk: transitive `nom 1.2.4` emits Cargo's future-incompatibility warning on Rust 1.98.1. Current checks pass; this is not a guarantee for a future compiler. The warning is not suppressed.
 

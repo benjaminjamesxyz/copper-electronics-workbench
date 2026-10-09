@@ -1,0 +1,18 @@
+{
+  "snapshot": "4c46fa1",
+  "command": "flutter test integration_test/expansion_acceptance.dart -d linux --plain-name 'native filters recover and keyboard and process errors remain usable'",
+  "passed": true,
+  "duration_seconds": 11,
+  "observations": {
+    "model_id": "cables.twin_lead_geometry",
+    "category_expert_filter_ids": [
+      "batteries.kinetic_charge_recovery",
+      "batteries.intercalation_regular_solution",
+      "batteries.sand_depletion_limit"
+    ],
+    "keyboard_submit": true,
+    "constraint_error": "Bad state: Wire centers must be farther apart than one bare conductor diameter.",
+    "recovered_output": "2.477889 1",
+    "backend_disconnect_error": "Bad state: Calculation engine stopped. "
+  }
+}
