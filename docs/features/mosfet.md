@@ -194,6 +194,57 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 8. Output-capacitance hard-turn-on loss
+
+**ID:** `mosfet.output_capacitance_hard_turn_on_loss` — **expert**. Sources: S3 section 3.4, Figures 9–12; S2 equation 19.
+
+A real MOSFET's output capacitance is nonlinear. Its stored energy for drain swing 0 to V_ds is
+
+E_oss(V_ds) = ∫[0 to V_ds] v C_oss(v) dv = ∫ v dq.
+
+Energy-equivalent capacitance is defined at that same endpoint by C_o_er = 2 E_oss(V_ds)/V_ds², so the implementable calculation is
+
+- E_oss = C_o_er V_ds²/2.
+- P_oss = E_oss f_sw.
+
+S3 explicitly describes energy stored at turn-off and then dissipated in the MOSFET channel at the next hard turn-on. This can remain nonzero even when load-current overlap tends to zero, which is why this calculator is a distinct physical loss mechanism.
+
+**Inputs and model domain:** C_o_er > 0 F, V_ds > 0 V, f_sw > 0 Hz, all finite. C_o_er must be characterized for the actual entered 0-to-V_ds swing. This cannot be enforced numerically from the three inputs; the label and model assumptions require a datasheet curve or characterized value at that voltage. A single small-signal C_oss point and time-equivalent C_o_tr are not substitutes. The energy-equivalent definition makes the energy identity exact at its supplied voltage, but the claimed loss requires one complete non-recovered hard discharge per cycle.
+
+The calculator covers the chosen device's own stored-energy discharge, not total bridge-leg commutation energy, external capacitors, reverse recovery, supply charging work, or the topology-specific synchronous-rectifier V Q_oss − E_oss loss model in S2. In ZVS/resonant operation much of this energy can be recycled. Do not add this term to switching-energy measurements already containing it.
+
+**Independent example:** C_o_er = 250 pF at a 200 V swing and f_sw = 500 kHz. E_oss = (250 × 10⁻¹²)(200²)/2 = **5 µJ**. One hard discharge each 2 µs gives **2.5 W**. These values are illustrative model parameters, not a claim about a particular MOSFET.
+
+**Defaults:** 150 pF at 400 V and 100 kHz give **12 µJ** and **1.2 W**.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `c_o_er` | Energy-equivalent output capacitance at entered voltage | F | 1.5e-10 | > 0 |
+| `v_ds` | Off-state voltage matching C_o_er characterization | V | 400 | > 0 |
+| `f_sw` | Hard-discharge switching frequency | Hz | 100000 | > 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `e_oss` | Output-capacitance energy dissipated per cycle | J | `c_o_er*v_ds^2/2` | 5e-06 |
+| `p_oss` | Hard turn-on output-capacitance loss | W | `e_oss*f_sw` | 2.5 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "c_o_er": 2.5e-10,
+  "v_ds": 200,
+  "f_sw": 500000
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.

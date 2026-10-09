@@ -318,5 +318,84 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.output_capacitance_hard_turn_on_loss",
+    "title": "MOSFET output-capacitance hard turn-on loss",
+    "category": "MOSFET and gate drive",
+    "level": "expert",
+    "description": "Estimate the energy dumped from a MOSFET's nonlinear output capacitance into its channel at hard turn-on using energy-equivalent capacitance.",
+    "formula": "E_oss = C_o_er V_ds^2/2; P_oss = E_oss f_sw",
+    "assumptions": [
+      "C_o_er is energy-related effective output capacitance for the complete 0 V to entered V_ds swing, defined by 2 E_oss(V_ds)/V_ds^2.",
+      "Never use a single small-signal C_oss point or time-related C_o_tr as C_o_er. A value characterized at a different drain voltage must be replaced with the appropriate curve value.",
+      "One complete hard discharge of the selected MOSFET's output capacitance into its channel occurs per switching cycle, with no energy recovery.",
+      "This is only the selected device's stored-energy discharge term, not total converter output-capacitance charging loss or a synchronous rectifier V Q_oss - E_oss model.",
+      "Zero-voltage/resonant switching can recycle this energy. Reverse recovery, external capacitors and overlap loss are excluded.",
+      "Do not add this to measured switching energies that already include output-capacitance loss."
+    ],
+    "references": [
+      {
+        "title": "Infineon 600 V CoolMOS C7 Design Guide, section 3.4, Figures 9-12",
+        "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-application-note-600v-coolmos-c7-applicationnotes-en.pdf"
+      },
+      {
+        "title": "Infineon OptiMOS device selection for synchronous rectification, equation 19, nonlinear stored-energy integral",
+        "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-mosfet-optimos-device-selection-for-synchronous-rectification-applicationnotes-en.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "c_o_er",
+        "label": "Energy-equivalent output capacitance at entered voltage",
+        "unit": "F",
+        "default": 1.5e-10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_ds",
+        "label": "Off-state voltage matching C_o_er characterization",
+        "unit": "V",
+        "default": 400,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "f_sw",
+        "label": "Hard-discharge switching frequency",
+        "unit": "Hz",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "e_oss",
+        "label": "Output-capacitance energy dissipated per cycle",
+        "unit": "J",
+        "expression": "c_o_er*v_ds^2/2"
+      },
+      {
+        "key": "p_oss",
+        "label": "Hard turn-on output-capacitance loss",
+        "unit": "W",
+        "expression": "e_oss*f_sw"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "c_o_er": 2.5e-10,
+        "v_ds": 200,
+        "f_sw": 500000
+      },
+      "expected": {
+        "e_oss": 5e-06,
+        "p_oss": 2.5
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
