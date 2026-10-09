@@ -48,7 +48,7 @@ const rfDiagrams = <String, CalculatorDiagram>{
       Wire([220, 52, 385, 52], arrow: true, ink: DiagramInk.input),
       Label(500, 25, 'Loaded Q', quantity: 'loaded_q', ink: DiagramInk.output),
       Label(162, 68, 'Rs', quantity: 'source_resistance', ink: DiagramInk.input),
-      Label(307, 68, 'L', quantity: 'series_inductance', ink: DiagramInk.output),
+      Label(352, 56, 'L', quantity: 'series_inductance', ink: DiagramInk.output),
       Wire([65, 95, 150, 95]),
       Part(CircuitPart.resistor, 180, 95),
       Wire([210, 95, 285, 95]),

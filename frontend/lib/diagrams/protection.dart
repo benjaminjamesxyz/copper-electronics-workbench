@@ -26,7 +26,7 @@ const protectionDiagrams = <String, CalculatorDiagram>{
       Label(494, 90, 'Fuse'),
       Wire([540, 100, 578, 100], arrow: true),
       Part(CircuitPart.block, 624, 100, width: 92, height: 44),
-      Label(590, 90, 'Semi device'),
+      Label(594, 90, 'Device'),
       Label(392, 45, 'Separate fault-current path'),
       Label(393, 146, 'Fuse Jpre', quantity: 'pre_arcing_i2t'),
       Label(393, 180, 'Fuse Jclear = Jpre + Jarc', quantity: 'clearing_i2t'),

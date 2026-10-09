@@ -204,7 +204,7 @@
         1400,
         560
       ],
-      "sha256": "fc9b4d019530c60cd7d813a63d44cfc832fa1f395b93f93e5e156c0add7f8790"
+      "sha256": "9edd10a3ca08a3a57f75b5f82c7fe28ffce2c6a30c8ea2a564ad75483d557b8f"
     },
     {
       "id": "converters.forward_reset_winding",
@@ -404,7 +404,7 @@
         1400,
         560
       ],
-      "sha256": "4647b7a0ef74f7820b7e3cffb79178154674ca88ac9a6456892b68d1e0e3f6a2"
+      "sha256": "c9126152e38b9d72ef78bbf23efb38bce7ba00b333874a5dbd46399b2335755e"
     },
     {
       "id": "logic.three_stage_logical_effort",
@@ -484,7 +484,7 @@
         1400,
         560
       ],
-      "sha256": "b164bfbbd0ffcce9cb95c9adae0100caacc3b42ed974092b388d96854d9a884e"
+      "sha256": "b192ff839ff22928e4b62e211a8027aa5bf8e48841eee9822048b765d3aa238d"
     },
     {
       "id": "motors.pm_dc_load_equilibrium",
@@ -814,7 +814,7 @@
         1400,
         560
       ],
-      "sha256": "024a700064014f896db086f6e9260d3a4f523b515b9628cfe0fc587a5f0002c2"
+      "sha256": "4bc79a6bacab60d6a2286c9579b75d016cd3cd5ba6c65190ea5a96af853a7d2b"
     },
     {
       "id": "protection.tvs_surge_load_line",
@@ -884,7 +884,7 @@
         1400,
         560
       ],
-      "sha256": "234b9699c86fc6b8cd9c42bc0800e59a7fb059b57812109862b4ee5dff1b4305"
+      "sha256": "80a0fb1711c2fbe865f8aa9bf3ebf1cad591a7cb8d47202fd31a1114bc485876"
     },
     {
       "id": "rf.free_space_link_budget",
@@ -1007,6 +1007,6 @@
       "sha256": "e438662d6cf59c536203c2c77a2999bf13b88d69875bad039fb93c9bb670647b"
     }
   ],
-  "refreshed_after": "commit 81500de diagram/label and catalog-expression fixes; full native journey re-passed (both acceptance tests, 228 models, layout gate clean)",
+  "refreshed_after": "commit 2b81140 wave: all lane conditioning fixes and diagram label repairs; final native journey both tests green, layout gate clean, 228 models",
   "refresh_command": "flutter test integration_test/expansion_acceptance.dart -d linux"
 }

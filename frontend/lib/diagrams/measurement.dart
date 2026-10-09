@@ -207,7 +207,7 @@ const measurementDiagrams = <String, CalculatorDiagram>{
       Label(119, 150, '−'),
       Label(143, 124, 'Ch A'),
       Wire([50, 165, 50, 205, 85, 205, 85, 155, 110, 155]),
-      Label(257, 72, 'Vb', quantity: 'denominator_voltage'),
+      Label(257, 93, 'Vb', quantity: 'denominator_voltage'),
       Part(CircuitPart.voltageSource, 280, 135, turns: 1),
       Wire([280, 105, 315, 105, 315, 115, 340, 115]),
       Part(CircuitPart.block, 395, 135, width: 110, height: 80),

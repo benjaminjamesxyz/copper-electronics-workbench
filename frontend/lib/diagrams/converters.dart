@@ -85,7 +85,7 @@ const convertersDiagrams = <String, CalculatorDiagram>{
       Label(429, 127, 'L2', quantity: 'second_inductance'),
       Wire([382, 174, 382, 112], arrow: true), Label(343, 181, 'iL2'),
       Wire([257, 113, 257, 167], arrow: true),
-      Label(276, 96, 'iCp →'),
+      Label(250, 78, 'iQ ↓'), Label(300, 96, 'iCp →'),
       Label(24, 234, 'iQ = iL1 + iL2 (on)'),
       Label(255, 234, 'Cp on: −iL2; off: +iL1'),
       Label(495, 234, 'IQ,pk', quantity: 'switch_peak_current'),
