@@ -612,5 +612,150 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "timing.schmitt_rc_delay_bounds",
+    "title": "RC Schmitt-input digital delay bounds",
+    "category": "Digital timing",
+    "level": "intermediate",
+    "description": "Bound the output transition time of a rising RC input using guaranteed Schmitt threshold and intrinsic gate-delay limits.",
+    "formula": "t_early = -RC ln(1-V_Tmin/V_supply)+t_gate_min; t_late = -RC ln(1-V_Tmax/V_supply)+t_gate_max",
+    "assumptions": [
+      "Capacitor starts at zero and charges through a constant resistance toward a stiff supply after an ideal step.",
+      "Input has Schmitt hysteresis and permits slow input edges; ordinary CMOS inputs may oscillate or draw excess current.",
+      "Threshold bounds and gate-delay bounds must come from the selected device at the applicable supply, load and temperature.",
+      "R and C are fixed supplied values; repeat with tolerance corners for component variation. Input leakage, driver resistance variation and supply ramps are excluded.",
+      "This is a digital threshold-to-output timing window, not a general analog charging calculator."
+    ],
+    "references": [
+      {
+        "title": "TI SN74AHC14 datasheet: section 8.2, RC logic delay application and guaranteed threshold bounds",
+        "url": "https://www.ti.com/lit/ds/symlink/sn74ahc14.pdf"
+      },
+      {
+        "title": "TI SCEA046: Schmitt-Trigger Inputs",
+        "url": "https://www.ti.com/document-viewer/lit/html/scea046"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r",
+        "label": "Effective charging resistance",
+        "unit": "ohm",
+        "default": 2000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "c",
+        "label": "Total input capacitance",
+        "unit": "F",
+        "default": 1e-09,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_supply",
+        "label": "Final input voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "threshold_min",
+        "label": "Minimum rising switching threshold",
+        "unit": "V",
+        "default": 2.5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "threshold_max",
+        "label": "Maximum rising switching threshold",
+        "unit": "V",
+        "default": 3.75,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gate_delay_min",
+        "label": "Minimum intrinsic gate propagation delay",
+        "unit": "s",
+        "default": 1e-08,
+        "min": 0
+      },
+      {
+        "key": "gate_delay_max",
+        "label": "Maximum intrinsic gate propagation delay",
+        "unit": "s",
+        "default": 2e-08,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "time_constant",
+        "label": "Input RC time constant",
+        "unit": "s",
+        "expression": "r*c"
+      },
+      {
+        "key": "earliest_transition",
+        "label": "Earliest output transition",
+        "unit": "s",
+        "expression": "-time_constant*ln(1-threshold_min/v_supply)+gate_delay_min"
+      },
+      {
+        "key": "latest_transition",
+        "label": "Latest output transition",
+        "unit": "s",
+        "expression": "-time_constant*ln(1-threshold_max/v_supply)+gate_delay_max"
+      },
+      {
+        "key": "timing_window",
+        "label": "Output transition uncertainty window",
+        "unit": "s",
+        "expression": "latest_transition-earliest_transition"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "threshold_min",
+        "op": "<=",
+        "right": "threshold_max",
+        "message": "Minimum threshold cannot exceed maximum threshold."
+      },
+      {
+        "left": "threshold_max",
+        "op": "<",
+        "right": "v_supply",
+        "message": "Thresholds must be below the final input voltage."
+      },
+      {
+        "left": "gate_delay_min",
+        "op": "<=",
+        "right": "gate_delay_max",
+        "message": "Minimum gate delay cannot exceed maximum gate delay."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r": 2000,
+        "c": 1e-09,
+        "v_supply": 5,
+        "threshold_min": 2.5,
+        "threshold_max": 3.75,
+        "gate_delay_min": 1e-08,
+        "gate_delay_max": 2e-08
+      },
+      "expected": {
+        "time_constant": 2e-06,
+        "earliest_transition": 1.3962943611198904e-06,
+        "latest_transition": 2.7925887222397808e-06,
+        "timing_window": 1.3962943611198904e-06
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

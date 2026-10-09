@@ -279,3 +279,52 @@ Cross-input/model constraints (evaluated before outputs):
 | `r_max` | Rise-limited maximum resistance | ohm | `1770.3337517157427` | `rise_limit/(ln(7/3)*c_bus)` |
 | `interval_width` | Feasible resistance interval width (negative means infeasible) | ohm | `803.667085049076` | `r_max-r_min` |
 
+## 2. RC Schmitt-input digital delay bounds — intermediate
+
+**ID:** `timing.schmitt_rc_delay_bounds`
+
+**Purpose:** Compute a rising digital input's earliest/latest output transition, including receiver threshold variation rather than assuming a universal 50% threshold.
+
+**Derivation:** Starting from zero, `V_input(t) = V_supply[1-exp(-t/(RC))]`. A rising Schmitt threshold `V_T` is crossed at `t_T = -RC ln(1 - V_T/V_supply)`. Since this is monotone in threshold, minimum threshold yields earliest crossing and maximum threshold yields latest crossing. Add the applicable intrinsic propagation-delay corners:
+
+- `time_constant = RC`.
+- `earliest_transition = -RC ln(1-threshold_min/V_supply) + gate_delay_min`.
+- `latest_transition = -RC ln(1-threshold_max/V_supply) + gate_delay_max`.
+- `timing_window = latest_transition - earliest_transition`.
+
+**Dimensions/domain:** R in ohm, total input C in F, thresholds/supply in V, delays/results in s. Require R,C,supply positive; `0 < threshold_min <= threshold_max < supply`; `0 <= gate_delay_min <= gate_delay_max`. These constraints enforce the log domain and ordered timing corners. Initial input is zero; charging resistance is constant; supply step is ideal. Use a Schmitt input that permits the slow ramp, not an ordinary CMOS input. Driver resistance, leakage and R/C tolerances are not inferred. Repeat at component tolerance corners and use device threshold/propagation bounds for voltage, load and temperature. The independent defaults are illustrative threshold values, not a claim that they are SN74AHC14 specifications.
+
+**Independent example:** R = 2 kohm, C = 1 nF gives `RC = 2 us`; supply 5 V, threshold bounds 2.5 V and 3.75 V, intrinsic delays 10 ns and 20 ns:
+
+- Earliest `= 2 us × ln(2) + 0.010 us = 1.396294361120 us`.
+- Latest `= 2 us × ln(4) + 0.020 us = 2.792588722240 us`.
+- Window `= 1.396294361120 us`.
+
+**Primary sources:** [TI SN74AHC14 datasheet](https://www.ti.com/lit/ds/symlink/sn74ahc14.pdf), section 5.5 guaranteed thresholds and section 8.2 RC delay application; [TI SCEA046, Schmitt-Trigger Inputs](https://www.ti.com/document-viewer/lit/html/scea046), slow-input suitability. The datasheet's application explains the digital RC delay and threshold-dependent bounds.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `r` | Effective charging resistance | ohm | `2000` | > 0 |
+| `c` | Total input capacitance | F | `1e-09` | > 0 |
+| `v_supply` | Final input voltage | V | `5` | > 0 |
+| `threshold_min` | Minimum rising switching threshold | V | `2.5` | > 0 |
+| `threshold_max` | Maximum rising switching threshold | V | `3.75` | > 0 |
+| `gate_delay_min` | Minimum intrinsic gate propagation delay | s | `1e-08` | >= 0 |
+| `gate_delay_max` | Maximum intrinsic gate propagation delay | s | `2e-08` | >= 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- `threshold_min <= threshold_max` — Minimum threshold cannot exceed maximum threshold.
+- `threshold_max < v_supply` — Thresholds must be below the final input voltage.
+- `gate_delay_min <= gate_delay_max` — Minimum gate delay cannot exceed maximum gate delay.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `time_constant` | Input RC time constant | s | `2e-06` | `r*c` |
+| `earliest_transition` | Earliest output transition | s | `1.3962943611198904e-06` | `-time_constant*ln(1-threshold_min/v_supply)+gate_delay_min` |
+| `latest_transition` | Latest output transition | s | `2.7925887222397808e-06` | `-time_constant*ln(1-threshold_max/v_supply)+gate_delay_max` |
+| `timing_window` | Output transition uncertainty window | s | `1.3962943611198904e-06` | `latest_transition-earliest_transition` |
+
