@@ -1,6 +1,6 @@
 # Research board — completed 128-feature inventory
 
-All 16 research lanes completed eight calculators each: **128 actual unique IDs**, with **39 basic, 50 intermediate and 39 expert** models. Research is complete; implementation and product acceptance are not implied. The scrum-master reconciled physical problem boundaries and retained every ID: supporting outputs, inverse modes, charge/discharge and empirical layer alternatives are not extra calculators. See [sprint execution and overlap decisions](coordination/SPRINT.md) and [128 explicit acceptance/owner/example backlog rows](coordination/BACKLOG.md).
+All 16 research lanes completed eight calculators each: **128 actual unique IDs**, with **39 basic, 50 intermediate and 39 expert** models. Research, implementation and Linux desktop acceptance are complete. The scrum-master reconciled physical problem boundaries and retained every ID: supporting outputs, inverse modes, charge/discharge and empirical layer alternatives are not extra calculators. See [sprint execution and overlap decisions](coordination/SPRINT.md) and [128 explicit acceptance/owner/example backlog rows](coordination/BACKLOG.md).
 
 | Lane | Domain | Reserved boundary | Findings |
 |---|---|---|---|
@@ -181,4 +181,13 @@ Each ID selects its exact object in the linked lane JSON and its physical deriva
 | `timing.capacitive_crosstalk_peak` | Finite-edge lumped capacitive crosstalk | expert |
 | `timing.inductive_turnoff_spike` | Inductive turn-off voltage spike | basic |
 | `timing.plate_displacement_current` | Parallel-plate displacement current | expert |
+
+
+## Delivery and acceptance
+
+- Rust backend and Flutter desktop frontend implement every inventory ID. Sixteen developer lanes committed features independently in Git worktrees; sixteen tester lanes and sixteen reviewer lanes completed the parallel QA wave. The scrum-master planned the sprint after the sixteen research lanes completed. Shared contracts and the [communication bus](COMMUNICATION.md) record ownership, handoffs, findings and remediation.
+- Parent verification: **431 Rust tests**, all outputs of **128 researched process examples**, **27 numerical review regressions**, real subprocess lifecycle/recovery, clean Flutter analysis and Linux release build.
+- Actual native UI: all **128 IDs** selected with metadata/units checked, **16 lane examples** computed, search/filters/error recovery/keyboard submission and forced owned-backend termination passed. Extracted release launched without an engine-path override; native keyboard computed an exact 32-bit ADC count. Wide and narrow surfaces were inspected and the window closed with exit code 0.
+- Evidence: [desktop acceptance](coordination/desktop_evidence.json), [review closure](coordination/reviews/closure.json), [wide desktop](coordination/desktop-linux-adc32.png), [narrow desktop](coordination/desktop-linux-narrow.png). Build/run instructions and engineering limits: [frontend README](frontend/README.md).
+- Local Linux archive: `frontend/copper-Linux.tar.gz` (generated, Git-ignored). Windows/macOS native runtime and remote CI are not exercised on this Linux/local-only workstation; their configured runners do not imply acceptance.
 

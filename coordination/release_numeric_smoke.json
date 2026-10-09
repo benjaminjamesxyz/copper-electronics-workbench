@@ -1,0 +1,306 @@
+{
+  "executable": "/tmp/copper-release-check/pcb-calculator",
+  "origin": "frontend/copper-Linux.tar.gz",
+  "scenarios": [
+    {
+      "id": "dc.two_source_node",
+      "passed": true,
+      "outputs": {
+        "g_total": 536870912.0,
+        "i_load": 0.00390625,
+        "i_source_1": 0.0078125,
+        "i_source_2": -0.00390625,
+        "v_node": 524288.0
+      },
+      "error": null
+    },
+    {
+      "id": "ac.shunt_power_factor_correction",
+      "passed": true,
+      "outputs": {
+        "capacitor_current_rms": 4.45904391045464e-06,
+        "capacitor_reactive_power": 0.0010255800994045672,
+        "corrected_source_current": 8695652173.913038,
+        "initial_source_current": 8695652173.913044,
+        "required_capacitance": 6.171120694023222e-11
+      },
+      "error": null
+    },
+    {
+      "id": "diodes.parallel_led_ballast",
+      "passed": true,
+      "outputs": {
+        "ballast_min": 1.0,
+        "ballast_power_total": 0.25,
+        "branch_voltage": 1.0,
+        "current_difference": 0.5,
+        "current_one": 0.5,
+        "current_two": 5.551115123125783e-17,
+        "sink_headroom": 4.0
+      },
+      "error": null
+    },
+    {
+      "id": "opamps.noninverting_stage",
+      "passed": true,
+      "outputs": {
+        "gain": 1.0,
+        "v_out": 1e-17
+      },
+      "error": null
+    },
+    {
+      "id": "opamps.difference_ratio_error",
+      "passed": true,
+      "outputs": {
+        "common_mode_gain": 0.0,
+        "differential_gain": 1.0,
+        "pin_voltage": 0.5,
+        "v_out": 1e-17
+      },
+      "error": null
+    },
+    {
+      "id": "power.buck_input_capacitor_rms",
+      "passed": true,
+      "outputs": {
+        "duty": 0.4166666666666667,
+        "i_cin_rms": 4.930066485916347e-201
+      },
+      "error": null
+    },
+    {
+      "id": "power.boost_rhp_zero",
+      "passed": true,
+      "outputs": {
+        "duty": 1.0,
+        "f_crossover_guideline": 1.5915494309189534e-102,
+        "f_rhp_zero": 1.5915494309189535e-101,
+        "r_load": 1e+200
+      },
+      "error": null
+    },
+    {
+      "id": "signals.load_reflection",
+      "passed": true,
+      "outputs": {
+        "load_voltage": 1.0,
+        "reflected_fraction": 5.048709793414474e-33,
+        "reflected_voltage": 7.105427357601001e-17,
+        "reflection_coefficient": 7.105427357601001e-17,
+        "transmitted_fraction": 0.9999999999999999
+      },
+      "error": null
+    },
+    {
+      "id": "magnetics.rectangular_toroid_inductance",
+      "passed": true,
+      "outputs": {
+        "inductance": 3.700743415417189e-20,
+        "inner_flux_density": 0.0
+      },
+      "error": null
+    },
+    {
+      "id": "magnetics.conductor_skin_depth",
+      "passed": true,
+      "outputs": {
+        "skin_depth": 5.032921210448711e+157
+      },
+      "error": null
+    },
+    {
+      "id": "magnetics.field_energy_density",
+      "passed": true,
+      "outputs": {
+        "energy_density": 3.97886e-319,
+        "field_energy": 3.978873577297384e-19
+      },
+      "error": null
+    },
+    {
+      "id": "noise.figure_equivalent_temperature",
+      "passed": true,
+      "outputs": {
+        "equivalent_noise_temperature": 6.6e-322,
+        "noise_factor": 1.0
+      },
+      "error": null
+    },
+    {
+      "id": "noise.friis_three_stage",
+      "passed": true,
+      "outputs": {
+        "cascade_noise_factor": 1.0,
+        "cascade_noise_figure_db": 1e-323,
+        "cascade_noise_temperature": 6.6e-322,
+        "first_noise_factor": 1.0,
+        "first_power_gain": 1.0,
+        "second_noise_factor": 1.0,
+        "second_power_gain": 1.0,
+        "third_noise_factor": 1.0
+      },
+      "error": null
+    },
+    {
+      "id": "noise.johnson_resistor",
+      "passed": true,
+      "outputs": {
+        "voltage_noise_density": 1.2871591976130985e-165,
+        "voltage_noise_rms": 1.2871591976130985e-165
+      },
+      "error": null
+    },
+    {
+      "id": "noise.junction_shot",
+      "passed": true,
+      "outputs": {
+        "current_noise_density": 5.660700723408711e-165,
+        "current_noise_rms": 5.660700723408711e-165
+      },
+      "error": null
+    },
+    {
+      "id": "noise.noninverting_amplifier_budget",
+      "passed": true,
+      "outputs": {
+        "input_referred_noise_rms": 1.2871591976130985e-165,
+        "noise_gain": 1.0,
+        "output_noise_density": 1.2871591976130985e-165,
+        "output_noise_rms": 1.2871591976130985e-165
+      },
+      "error": null
+    },
+    {
+      "id": "noise.uncorrelated_rms_sum",
+      "passed": true,
+      "outputs": {
+        "total_noise_rms": 1e-200
+      },
+      "error": null
+    },
+    {
+      "id": "magnetics.coupled_coil_inductance",
+      "passed": true,
+      "outputs": {
+        "mutual_inductance": 1e-300,
+        "series_aiding": 1e+200,
+        "series_opposing": 1e+200
+      },
+      "error": null
+    },
+    {
+      "id": "thermal.parallel_conduction_paths",
+      "passed": true,
+      "outputs": {
+        "equivalent_resistance": 1e-309,
+        "hot_temperature": 300.0,
+        "path_one_heat": 1.0,
+        "path_one_resistance": 1e-309,
+        "path_two_heat": 1e-309,
+        "path_two_resistance": 1.0
+      },
+      "error": null
+    },
+    {
+      "id": "transients.rc_ramp_source",
+      "passed": true,
+      "outputs": {
+        "capacitor_current": 1e-155,
+        "capacitor_voltage": 5e-311,
+        "source_voltage": 1e-146,
+        "tau": 1000000000.0,
+        "tracking_error": 9.999999999999999e-147
+      },
+      "error": null
+    },
+    {
+      "id": "transients.rlc_underdamped_step",
+      "passed": true,
+      "outputs": {
+        "alpha": 5e-10,
+        "capacitor_voltage": 5e-323,
+        "damping_ratio": 5e-07,
+        "envelope_settling_bound": 9210340371.97643,
+        "omega_d": 0.000999999999999875,
+        "omega_n": 0.001,
+        "overshoot_fraction": 0.9999984292049069,
+        "peak_time": 3141.5926535901863,
+        "peak_voltage": 1999998.4292049068,
+        "series_current": 9.999999999999998e-162
+      },
+      "error": null
+    },
+    {
+      "id": "transients.rc_ladder_step",
+      "passed": true,
+      "outputs": {
+        "capacitor_two_current": 9.999999999999998e-168,
+        "linear_coefficient": 3000000000.0,
+        "quadratic_coefficient": 1e+18,
+        "tau_fast": 381966011.25010514,
+        "tau_slow": 2618033988.749895,
+        "voltage_one": 9.999999999999999e-159,
+        "voltage_two": 5e-323
+      },
+      "error": null
+    },
+    {
+      "id": "timing.capacitive_crosstalk_peak",
+      "passed": true,
+      "outputs": null,
+      "error": "Model produced a non-finite intermediate value; check its assumptions"
+    },
+    {
+      "id": "thermal.parallel_conduction_paths",
+      "passed": true,
+      "outputs": {
+        "equivalent_resistance": 1e-200,
+        "hot_temperature": 301.0,
+        "path_one_heat": 1e+200,
+        "path_one_resistance": 1e-200,
+        "path_two_heat": 1e-200,
+        "path_two_resistance": 1e+200
+      },
+      "error": null
+    },
+    {
+      "id": "transients.rc_ladder_step",
+      "passed": true,
+      "outputs": {
+        "capacitor_two_current": 0.0,
+        "linear_coefficient": 0.0020000001,
+        "quadratic_coefficient": 1e-06,
+        "tau_fast": 0.0009996838222297267,
+        "tau_slow": 0.0010003162777702734,
+        "voltage_one": 2e-323,
+        "voltage_two": 2e-323
+      },
+      "error": null
+    },
+    {
+      "id": "noise.friis_three_stage",
+      "passed": true,
+      "outputs": {
+        "cascade_noise_factor": 1.0,
+        "cascade_noise_figure_db": 0.0,
+        "cascade_noise_temperature": 5e-324,
+        "first_noise_factor": 1.0,
+        "first_power_gain": 1000000000000.0,
+        "second_noise_factor": 1.0,
+        "second_power_gain": 1000000000000.0,
+        "third_noise_factor": 1.0
+      },
+      "error": null
+    },
+    {
+      "id": "magnetics.field_energy_density",
+      "passed": true,
+      "outputs": {
+        "energy_density": 8.053329776699101e-12,
+        "field_energy": 8.05e-322
+      },
+      "error": null
+    }
+  ]
+}

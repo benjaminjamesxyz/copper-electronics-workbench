@@ -54,6 +54,21 @@ void main() {
       expect(find.text('Enter a finite number (e.g. 1e-6).'), findsWidgets);
       expect(firstResult, findsNothing);
     }
+    await tester.enterText(find.byKey(const ValueKey('catalog-search')), 'data.adc_lsb');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('select-data.adc_lsb')));
+    await tester.pumpAndSettle();
+    final bits = find.byKey(const ValueKey('input-bits'));
+    await tester.ensureVisible(bits);
+    await tester.enterText(bits, '32');
+    final calculate = find.byKey(const ValueKey('calculate'));
+    await tester.ensureVisible(calculate);
+    await tester.tap(calculate);
+    final count = find.byKey(const ValueKey('result-code_count'));
+    await waitFor(count);
+    final rendered = tester.widget<SelectableText>(count).data!;
+    expect(double.parse(rendered.split(' ').first), 4294967296.0,
+      reason: 'A discrete 32-bit code count must not lose hundreds of codes to display rounding');
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
   });

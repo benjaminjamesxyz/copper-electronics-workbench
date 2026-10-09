@@ -53,6 +53,8 @@ Linux launch, without a development override:
 
 No Android, iOS or web runner is included. Native Windows/macOS builds and runtime acceptance cannot be inferred from Linux results; the CI matrix is configured for all three but was not remotely executed in this local-only workflow. Distribution signing/notarization is not certified.
 
+Local Linux acceptance passed 431 Rust tests, all 128 complete researched process examples, 27 numerical review cases and native UI selection/metadata for all 128 IDs with 16 computed lane examples. The final extracted archive launched without an engine override, computed a 32-bit ADC through actual mouse/keyboard input, rendered correctly at 1280×720 and 860×900, and closed normally. Evidence and screenshots are in [`../coordination/desktop_evidence.json`](../coordination/desktop_evidence.json). The generated `copper-Linux.tar.gz` contains the complete bundle and is ignored by Git.
+
 ## Verification
 
 From the repository root:
@@ -70,10 +72,12 @@ flutter analyze
 PCB_CALCULATOR_BACKEND=/absolute/path/to/backend/target/debug/pcb-calculator flutter test integration_test/workbench_test.dart -d linux
 ```
 
-The Rust suite covers every researched example, independent identities, meaningful input/model boundaries, signed/zero values, strict small-value precision and error recovery. The process smoke checks all 128 complete example output maps against researched values. The native integration journey checks basic/intermediate/expert examples, error presentation and immediate stale-result invalidation. Integration keyboard injection is explicitly registered so native IME updates do not overwrite test input. CI is at `../.github/workflows/desktop.yml`.
+The Rust suite covers every researched example, independent identities, meaningful input/model boundaries, signed/zero values, strict small-value precision and error recovery. The process smoke checks all 128 complete example output maps against researched values. The native integration journey checks basic/intermediate/expert examples, error presentation, immediate stale-result invalidation and exact 32-bit ADC code-count display. Integration keyboard injection is explicitly registered so native IME updates do not overwrite test input. CI is at `../.github/workflows/desktop.yml`.
 
 Known dependency risk: transitive `nom 1.2.4` emits Cargo's future-incompatibility warning on Rust 1.98.1. Current checks pass; this is not a guarantee for a future compiler. The warning is not suppressed.
 
 ## Engineering limits
 
 These are closed-form models and engineering estimates, not a SPICE simulator, standards-compliance determination, hardware-safety approval or substitute for manufacturer specifications. Respect each calculator's topology, sign conventions, empirical assumptions and admissible numerical range. Finite-input validation and checked intermediate arithmetic reject invalid computations rather than manufacture plausible zeros. Subnormal outputs retain explicit floating-point/ULP limitations.
+
+Result formatting retains exactly representable large integers through the IEEE-754 safe-integer boundary; continuous quantities use seven significant digits. The underlying Rust result remains a finite `f64`, not an arbitrary-precision value.

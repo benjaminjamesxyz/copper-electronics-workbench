@@ -209,6 +209,11 @@ class _WorkbenchState extends State<Workbench> {
   }
   String _format(double value) {
     if (value == 0) return '0';
+    // Digital code/count outputs must retain exact representable integers.
+    if (value.abs() >= 1000000 && value.abs() <= 9007199254740991 &&
+        value == value.truncateToDouble()) {
+      return value.toStringAsFixed(0);
+    }
     if (value.abs() < 0.001 || value.abs() >= 1000000) return value.toStringAsExponential(6);
     return value.toStringAsPrecision(7);
   }
