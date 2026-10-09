@@ -82,5 +82,93 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.gate_loop_damping_resistor",
+    "title": "Gate-loop critical-damping resistor selection",
+    "category": "MOSFET and gate drive",
+    "level": "expert",
+    "description": "Size the minimum nonnegative external series gate resistance that brings a lumped gate loop to at least critical damping.",
+    "formula": "R_critical = 2 sqrt(L_loop/C_iss); R_external = max(0, R_critical - R_driver - R_internal); zeta = (R_driver + R_internal + R_external)/R_critical",
+    "assumptions": [
+      "The initial gate charging loop is a linear series RLC network with lumped loop/source inductance and locally appropriate C_iss.",
+      "Use driver output resistance for the edge under study. Source and sink resistances can differ; this is not a current-limited driver model.",
+      "If existing resistance exceeds critical resistance, zero added resistance is returned and zeta exceeds one; no passive resistor can restore exact critical damping.",
+      "This is a ringing/damping design estimate, not Miller-time selection or a guarantee of EMI, gate-voltage safety or switching performance.",
+      "Voltage-dependent capacitance, common-source feedback and distributed parasitics require measured waveform confirmation."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLUA618A, section 2.8, Figure 7 and equation 15",
+        "url": "https://www.ti.com/lit/slua618"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "l_loop",
+        "label": "Total gate-loop inductance",
+        "unit": "H",
+        "default": 1.8e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "c_iss",
+        "label": "Effective initial input capacitance",
+        "unit": "F",
+        "default": 2e-09,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_driver",
+        "label": "Driver resistance for the selected edge",
+        "unit": "ohm",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "r_internal",
+        "label": "MOSFET internal gate resistance",
+        "unit": "ohm",
+        "default": 0.5,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_critical",
+        "label": "Critical total series resistance",
+        "unit": "ohm",
+        "expression": "2*sqrt(l_loop/c_iss)"
+      },
+      {
+        "key": "r_external",
+        "label": "Minimum added gate resistance",
+        "unit": "ohm",
+        "expression": "max(0,r_critical-r_driver-r_internal)"
+      },
+      {
+        "key": "zeta",
+        "label": "Resulting damping ratio",
+        "unit": "1",
+        "expression": "(r_driver+r_internal+r_external)/r_critical"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "l_loop": 3.2e-08,
+        "c_iss": 2e-09,
+        "r_driver": 1.5,
+        "r_internal": 0.5
+      },
+      "expected": {
+        "r_critical": 8,
+        "r_external": 6,
+        "zeta": 1
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

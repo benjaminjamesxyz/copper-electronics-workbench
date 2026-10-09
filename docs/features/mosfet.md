@@ -78,6 +78,61 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 4. Gate-loop critical-damping resistor selection
+
+**ID:** `mosfet.gate_loop_damping_resistor` — **expert**. Source: S1 Figure 7 and equation 15.
+
+For a lumped series gate-loop RLC network, the characteristic equation is
+
+s² + (R_total/L_loop)s + 1/(L_loop C_iss) = 0.
+
+The repeated-pole critical-damping condition is R_total = 2 sqrt(L_loop/C_iss), with units sqrt(H/F) = ohm. Driver and internal gate resistances already contribute:
+
+- R_critical = 2 sqrt(L_loop/C_iss).
+- R_external = max(0, R_critical − R_driver − R_internal).
+- zeta = (R_driver + R_internal + R_external) / R_critical.
+
+The nonnegative maximum expresses an actual passive-component design condition: if the existing path is already overdamped, add no resistor. It is not an attempt to hide an invalid square root or denominator.
+
+**Inputs and model domain:** L_loop > 0 H, C_iss > 0 F, R_driver ≥ 0 ohm, R_internal ≥ 0 ohm. Both the square root and R_critical denominator are strictly positive. Driver output resistance must correspond to the selected source or sink edge; a current-limited driver requires a different model. Use a locally appropriate initial input capacitance, not Miller-charge equivalent capacitance. Common-source feedback, capacitance nonlinearity and distributed parasitics limit prediction.
+
+**Independent example:** 32 nH / 2 nF = 16 ohm², so R_critical = **8 ohm**. With driver 1.5 ohm and internal gate 0.5 ohm, add **6 ohm** and zeta = **1**. As a second independently evaluated physical case, keeping L and C but using R_driver = 9.5 ohm and R_internal = 0.5 ohm gives R_external = **0 ohm**, zeta = **1.25**; a negative resistor is not suggested.
+
+**Defaults:** 18 nH, 2 nF, 1 ohm driver and 0.5 ohm internal resistance give **6 ohm critical**, **4.5 ohm external**, **zeta = 1**.
+
+**Source interpretation:** The prose immediately after S1 equation 15 calls higher resistance “underdamp”; the series-RLC characteristic equation shows that higher total resistance instead produces **overdamping**. The calculator follows equation 15 and that derivation. Final resistor choice also involves switching-loss, EMI and measured waveform tradeoffs; no EMI or gate-voltage safety guarantee is made.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `l_loop` | Total gate-loop inductance | H | 1.8e-08 | > 0 |
+| `c_iss` | Effective initial input capacitance | F | 2e-09 | > 0 |
+| `r_driver` | Driver resistance for the selected edge | ohm | 1 | ≥ 0 |
+| `r_internal` | MOSFET internal gate resistance | ohm | 0.5 | ≥ 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `r_critical` | Critical total series resistance | ohm | `2*sqrt(l_loop/c_iss)` | 8 |
+| `r_external` | Minimum added gate resistance | ohm | `max(0,r_critical-r_driver-r_internal)` | 6 |
+| `zeta` | Resulting damping ratio | 1 | `(r_driver+r_internal+r_external)/r_critical` | 1 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "l_loop": 3.2e-08,
+  "c_iss": 2e-09,
+  "r_driver": 1.5,
+  "r_internal": 0.5
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.
