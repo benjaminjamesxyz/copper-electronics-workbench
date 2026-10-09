@@ -372,5 +372,87 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.quarter_wave_transformer",
+    "title": "Quarter-wave impedance transformer",
+    "category": "Signal integrity and transmission lines",
+    "level": "expert",
+    "description": "Synthesize the characteristic impedance and physical length of a quarter-wave matching section between two real resistances.",
+    "formula": "Ztransformer=sqrt(Rsource*Rload); length=c/(4*f*sqrt(ee))",
+    "assumptions": [
+      "Positive real source/reference and load resistances, uniform lossless nonmagnetic matching section with supplied effective relative permittivity.",
+      "Exact impedance match at the design frequency only; reactive loads are not supported.",
+      "Effective permittivity belongs to the transformer section, which may differ from the adjoining lines and depends on geometry for microstrip.",
+      "Neglects junction discontinuities, dispersion, conductor/dielectric loss and manufacturing tolerances; no bandwidth or standards-compliance claim.",
+      "A distributed quarter-wave impedance inverter is physically distinct from source-series termination and from bare line propagation."
+    ],
+    "references": [
+      {
+        "title": "Steven W. Ellingson, Quarter-Wavelength Transmission Line, impedance inversion and matching derivation",
+        "url": "https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "source_resistance",
+        "label": "Source/reference resistance",
+        "unit": "ohm",
+        "default": 50,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_resistance",
+        "label": "Real load resistance",
+        "unit": "ohm",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "frequency",
+        "label": "Matching design frequency",
+        "unit": "Hz",
+        "default": 2400000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "effective_permittivity",
+        "label": "Matching-section effective relative permittivity",
+        "unit": "1",
+        "default": 2.25,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "transformer_impedance",
+        "label": "Required matching-section impedance",
+        "unit": "ohm",
+        "expression": "sqrt(source_resistance)*sqrt(load_resistance)"
+      },
+      {
+        "key": "length",
+        "label": "Quarter-wave section physical length",
+        "unit": "m",
+        "expression": "299792458/4/frequency/sqrt(effective_permittivity)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "source_resistance": 50,
+        "load_resistance": 100,
+        "frequency": 2400000000,
+        "effective_permittivity": 2.25
+      },
+      "expected": {
+        "transformer_impedance": 70.71067811865476,
+        "length": 0.020818920694444444
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

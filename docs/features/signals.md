@@ -201,6 +201,60 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 **Feature sources:**
 - [Michael Steer, Stripline, section 3.7.1, equations 1–3 and stated accuracy domain](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_%28Steer%29/03%3A_Planar_Transmission_Lines/3.07%3A_Stripline)
 
+## 8. Quarter-wave impedance transformer — expert
+
+**ID:** `signals.quarter_wave_transformer`. **Source:** S6.
+
+For a lossless section of length lambda/4, its input impedance is Z_in = Z_t^2/R_L. Setting Z_in equal to positive real reference resistance R_S gives:
+
+- Required section characteristic impedance Z_t = sqrt(R_S R_L) ohm.
+- Required physical length l = lambda/4 = c/[4 f sqrt(epsilon_eff)] metres.
+
+This is a **distributed impedance-inversion/matching design** with a new intermediate impedance, not a rearranged propagation formula or resistive source termination. Its length uses the wavelength inside the matching section, never free-space wavelength by default.
+
+**Domain guards:** R_S > 0, R_L > 0, f > 0 and epsilon_eff >= 1. These ensure valid square root and nonzero length denominator. Complex/reactive loads are deliberately excluded: they generally require an additional transformation before a real quarter-wave section can match them. The input epsilon_eff belongs to the **transformer section**, not automatically either adjoining line. For microstrip it depends on section width and must be obtained from that section's actual geometry/material. The ideal match is exact at the design frequency only; discontinuities, dispersion, loss, fabrication tolerances and match bandwidth are not estimated.
+
+**Independent example/default:** R_S = 50 ohm, R_L = 100 ohm, f = 2.4 GHz, epsilon_eff = 2.25. Z_t = sqrt(5000) = **70.71067811865476 ohm**. Velocity is c/1.5; section length = 299792458/(4*2.4e9*1.5) = **0.020818920694444444 m** (20.81892069 mm). Independent impedance-inversion substitution gives Z_in = 70.71067811865476^2/100 = 50 ohm, as designed. Converting the target impedance to a physical strip width is not separately counted or silently approximated here.
+
+### Executable conditioning
+
+The executable geometric mean uses `sqrt(source_resistance)*sqrt(load_resistance)` instead of first multiplying the resistances. This avoids an overflowing or underflowing intermediate product when the matching impedance itself is representable. Length is evaluated as `299792458/4/frequency/sqrt(effective_permittivity)` to avoid the unnecessary large denominator product. These are algebraic conditioning changes, not new physical assumptions.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `source_resistance` | Source/reference resistance | ohm | 50 | > 0 |
+| `load_resistance` | Real load resistance | ohm | 100 | > 0 |
+| `frequency` | Matching design frequency | Hz | 2400000000 | > 0 |
+| `effective_permittivity` | Matching-section effective relative permittivity | 1 | 2.25 | >= 1 |
+
+**Input-only model guards:**
+The scalar bounds above suffice for the physical model; no additional relational constraint is needed.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "source_resistance": 50,
+  "load_resistance": 100,
+  "frequency": 2400000000,
+  "effective_permittivity": 2.25
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `transformer_impedance` | Required matching-section impedance | ohm | `sqrt(source_resistance)*sqrt(load_resistance)` | `70.71067811865476` |
+| `length` | Quarter-wave section physical length | m | `299792458/4/frequency/sqrt(effective_permittivity)` | `0.020818920694444444` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Steven W. Ellingson, Quarter-Wavelength Transmission Line, impedance inversion and matching derivation](https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.
