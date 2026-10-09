@@ -91,5 +91,166 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "cables.lossy_rlgc_line",
+    "title": "Exact lossy distributed RLGC line",
+    "category": "Cables and connectors",
+    "level": "expert",
+    "description": "Compute exact distributed attenuation, phase constant and complex characteristic impedance from frequency-specific RLGC parameters.",
+    "formula": "gamma = sqrt((R'+j omega L')(G'+j omega C')); Z0 = sqrt((R'+j omega L')/(G'+j omega C')); A = exp(-Re(gamma) length)",
+    "assumptions": [
+      "Uniform passive single-mode line with frequency-specific per-length RLGC values; R' is total series loop resistance.",
+      "Sinusoidal steady state uses exp(+j omega t), forward wave exp(-gamma z), alpha >= 0 and beta > 0.",
+      "No low-loss approximation. Zero R' and/or G' are valid limits; DC is outside this positive-frequency model.",
+      "Amplitude ratio describes a forward traveling wave only, not loaded insertion loss or a mismatch/reflection calculation.",
+      "Frequency dependence must already be represented by the supplied RLGC values. No broadband skin-effect fit, group delay or causal time-domain simulation is inferred."
+    ],
+    "references": [
+      {
+        "title": "North Carolina State University, Steer Microwave and RF Design II §2.2.1–2.2.2, equations 7, 8 and 12",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_(Steer)/02%3A_Transmission_Lines/2.02%3A_Transmission_Line_Theory"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "series_resistance_per_length",
+        "label": "Series loop resistance per length",
+        "unit": "ohm/m",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "inductance_per_length",
+        "label": "Series inductance per length",
+        "unit": "H/m",
+        "default": 2.5e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "shunt_conductance_per_length",
+        "label": "Shunt conductance per length",
+        "unit": "S/m",
+        "default": 2e-05,
+        "min": 0
+      },
+      {
+        "key": "capacitance_per_length",
+        "label": "Shunt capacitance per length",
+        "unit": "F/m",
+        "default": 1e-10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "frequency",
+        "label": "Characterization frequency",
+        "unit": "Hz",
+        "default": 1000000.0,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "length",
+        "label": "Uniform line length",
+        "unit": "m",
+        "default": 10,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "angular_frequency",
+        "label": "Angular frequency",
+        "unit": "rad/s",
+        "expression": "2*pi*frequency"
+      },
+      {
+        "key": "series_impedance_magnitude",
+        "label": "Series impedance magnitude per length",
+        "unit": "ohm/m",
+        "expression": "hypot(series_resistance_per_length,angular_frequency*inductance_per_length)"
+      },
+      {
+        "key": "shunt_admittance_magnitude",
+        "label": "Shunt admittance magnitude per length",
+        "unit": "S/m",
+        "expression": "hypot(shunt_conductance_per_length,angular_frequency*capacitance_per_length)"
+      },
+      {
+        "key": "normalized_propagation_square_real",
+        "label": "Normalized gamma-squared real part",
+        "unit": "1",
+        "expression": "series_resistance_per_length/series_impedance_magnitude*(shunt_conductance_per_length/shunt_admittance_magnitude)-(angular_frequency*inductance_per_length/series_impedance_magnitude)*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude)"
+      },
+      {
+        "key": "normalized_propagation_square_imaginary",
+        "label": "Normalized gamma-squared imaginary part",
+        "unit": "1",
+        "expression": "series_resistance_per_length/series_impedance_magnitude*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude)+(angular_frequency*inductance_per_length/series_impedance_magnitude)*(shunt_conductance_per_length/shunt_admittance_magnitude)"
+      },
+      {
+        "key": "attenuation_constant",
+        "label": "Attenuation constant",
+        "unit": "Np/m",
+        "expression": "sqrt(series_impedance_magnitude)*sqrt(shunt_admittance_magnitude)*hypot(sqrt(max(normalized_propagation_square_real,0)),normalized_propagation_square_imaginary/sqrt(2*(hypot(normalized_propagation_square_real,normalized_propagation_square_imaginary)+abs(normalized_propagation_square_real))))"
+      },
+      {
+        "key": "phase_constant",
+        "label": "Phase constant",
+        "unit": "rad/m",
+        "expression": "sqrt(series_impedance_magnitude)*sqrt(shunt_admittance_magnitude)*hypot(sqrt(max(-normalized_propagation_square_real,0)),normalized_propagation_square_imaginary/sqrt(2*(hypot(normalized_propagation_square_real,normalized_propagation_square_imaginary)+abs(normalized_propagation_square_real))))"
+      },
+      {
+        "key": "impedance_real",
+        "label": "Characteristic impedance real part",
+        "unit": "ohm",
+        "expression": "sqrt(series_impedance_magnitude)/sqrt(shunt_admittance_magnitude)*sqrt((1+series_resistance_per_length/series_impedance_magnitude*(shunt_conductance_per_length/shunt_admittance_magnitude)+(angular_frequency*inductance_per_length/series_impedance_magnitude)*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude))/2)"
+      },
+      {
+        "key": "impedance_imaginary",
+        "label": "Characteristic impedance imaginary part",
+        "unit": "ohm",
+        "expression": "sqrt(series_impedance_magnitude)/sqrt(shunt_admittance_magnitude)*((angular_frequency*inductance_per_length/series_impedance_magnitude)*(shunt_conductance_per_length/shunt_admittance_magnitude)-series_resistance_per_length/series_impedance_magnitude*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude))/(2*sqrt((1+series_resistance_per_length/series_impedance_magnitude*(shunt_conductance_per_length/shunt_admittance_magnitude)+(angular_frequency*inductance_per_length/series_impedance_magnitude)*(angular_frequency*capacitance_per_length/shunt_admittance_magnitude))/2))"
+      },
+      {
+        "key": "forward_amplitude_ratio",
+        "label": "Forward voltage amplitude ratio",
+        "unit": "1",
+        "expression": "exp(-attenuation_constant*length)"
+      },
+      {
+        "key": "attenuation_db",
+        "label": "Forward-wave attenuation",
+        "unit": "dB",
+        "expression": "20/ln(10)*attenuation_constant*length"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "series_resistance_per_length": 2,
+        "inductance_per_length": 2.5e-07,
+        "shunt_conductance_per_length": 2e-05,
+        "capacitance_per_length": 1e-10,
+        "frequency": 1000000.0,
+        "length": 10
+      },
+      "expected": {
+        "angular_frequency": 6283185.307179586,
+        "series_impedance_magnitude": 2.5431085506270352,
+        "shunt_admittance_magnitude": 0.0006286367600161275,
+        "normalized_propagation_square_real": -0.5923346865096576,
+        "normalized_propagation_square_imaginary": 0.8056920125938358,
+        "attenuation_constant": 0.018051746169367573,
+        "phase_constant": 0.03567668678383984,
+        "impedance_real": 57.63732387347136,
+        "impedance_imaginary": -26.89559334274006,
+        "forward_amplitude_ratio": 0.8348381028824459,
+        "attenuation_db": 1.5679547500148998
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
