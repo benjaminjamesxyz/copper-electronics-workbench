@@ -90,4 +90,33 @@ const emcDiagrams = <String, CalculatorDiagram>{
       Label(448, 244, 'Conceptual selected line'),
     ],
   ),
+  'emc.sinusoidal_dither_occupancy': CalculatorDiagram(
+    title: 'Sinusoidal switching dither and adjacent harmonic bands',
+    caption: 'Illustrative Carson intervals for sinusoidal dither; negative gap denotes overlap. '
+        'No detector reduction or hard spectral boundary is predicted. Static bands and frequency '
+        'sketch are not fitted to outputs. Deviation is peak, not peak-to-peak.',
+    marks: [
+      Wire([65, 76, 300, 76], dashed: true, ink: DiagramInk.muted),
+      Wire([65, 76, 80, 59, 95, 46, 110, 40, 125, 46, 140, 59, 155, 76,
+        170, 93, 185, 106, 200, 112, 215, 106, 230, 93, 245, 76], ink: DiagramInk.input),
+      Label(23, 66, 'fs', quantity: 'switching_frequency'),
+      Wire([265, 76, 265, 40], arrow: true),
+      Label(276, 39, 'Δf', quantity: 'peak_deviation'),
+      Label(370, 84, 'Modulation rate fm', quantity: 'modulation_frequency'),
+      Label(370, 28, 'Order n', quantity: 'harmonic_order'),
+      Label(370, 54, 'βn = nΔf/fm', quantity: 'harmonic_modulation_index'),
+      Wire([65, 205, 635, 205], arrow: true),
+      Label(641, 191, 'f'),
+      Wire([130, 205, 130, 166, 290, 166, 290, 205]),
+      Wire([395, 205, 395, 158, 605, 158, 605, 205]),
+      Wire([210, 166, 210, 211], dashed: true),
+      Wire([500, 158, 500, 211], dashed: true),
+      Label(187, 214, 'n fs'), Label(463, 214, '(n+1) fs'),
+      Wire([130, 148, 290, 148], arrow: true),
+      Label(155, 126, 'Bn', quantity: 'occupied_bandwidth', ink: DiagramInk.output),
+      Wire([290, 183, 395, 183], arrow: true),
+      Label(306, 153, 'Gap', quantity: 'next_harmonic_gap', ink: DiagramInk.output),
+      Label(163, 243, 'Carson width'), Label(425, 243, 'Next harmonic band'),
+    ],
+  ),
 };

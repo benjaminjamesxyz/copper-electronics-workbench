@@ -353,5 +353,113 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "emc.sinusoidal_dither_occupancy",
+  "title": "Switching-frequency dither harmonic occupancy",
+  "category": "EMC design",
+  "level": "intermediate",
+  "description": "Use Carson's sinusoidal-FM estimate to plan harmonic spreading and adjacent-harmonic overlap. Does not predict an EMC detector's reduction.",
+  "formula": "beta_n=n Deltaf/fm; Bn=2(n Deltaf+fm); gap_to_next=fs-[(2n+1)Deltaf+2fm]",
+  "assumptions": [
+    "Instantaneous switching frequency is fs+Deltaf sin(2 pi fm t); Deltaf is peak deviation, not peak-to-peak.",
+    "An otherwise fixed periodic waveform is phase/frequency modulated sinusoidally; its nth harmonic has deviation n Deltaf.",
+    "Carson bandwidth is an approximate occupied band containing roughly 98% of single-tone FM power, not a hard spectral boundary.",
+    "Negative adjacent-band gap means the estimated occupied bands overlap. Real sidebands extend outside both bands.",
+    "No flat-spectrum assumption, dB reduction, resolution-bandwidth weighting, converter stability or compliance claim is made."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments, Rice/Gehrke/Segal, Understanding Noise-Spreading Techniques, section IX and Figure 7",
+      "url": "https://www.ti.com/download/trng/docs/seminar/Topic_2_Rice_Gehrke_Segal.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "switching_frequency",
+      "label": "Nominal switching frequency",
+      "unit": "Hz",
+      "default": 100000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "peak_deviation",
+      "label": "Peak switching-frequency deviation",
+      "unit": "Hz",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "modulation_frequency",
+      "label": "Sinusoidal modulation frequency",
+      "unit": "Hz",
+      "default": 2000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "harmonic_order",
+      "label": "Positive integer harmonic order",
+      "unit": "1",
+      "default": 3,
+      "min": 1
+    }
+  ],
+  "outputs": [
+    {
+      "key": "harmonic_modulation_index",
+      "label": "Selected harmonic FM index",
+      "unit": "1",
+      "expression": "harmonic_order*peak_deviation/modulation_frequency"
+    },
+    {
+      "key": "occupied_bandwidth",
+      "label": "Carson harmonic occupied bandwidth",
+      "unit": "Hz",
+      "expression": "2*(harmonic_order*peak_deviation+modulation_frequency)"
+    },
+    {
+      "key": "next_harmonic_gap",
+      "label": "Signed gap to next Carson band",
+      "unit": "Hz",
+      "expression": "switching_frequency-((2*harmonic_order+1)*peak_deviation+2*modulation_frequency)"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "peak_deviation",
+      "op": "<",
+      "right": "switching_frequency",
+      "message": "Peak deviation must remain below nominal frequency so switching never reverses or stops."
+    },
+    {
+      "left": "modulation_frequency",
+      "op": "<",
+      "right": "switching_frequency",
+      "message": "This switching-dither interpretation requires modulation slower than the carrier."
+    },
+    {
+      "left": "harmonic_order",
+      "op": "==",
+      "right": "floor(harmonic_order)",
+      "message": "Harmonic order must be a positive integer."
+    }
+  ],
+  "example": {
+    "inputs": {
+      "switching_frequency": 100000,
+      "peak_deviation": 10000,
+      "modulation_frequency": 2000,
+      "harmonic_order": 3
+    },
+    "expected": {
+      "harmonic_modulation_index": 15,
+      "occupied_bandwidth": 64000,
+      "next_harmonic_gap": 26000
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]

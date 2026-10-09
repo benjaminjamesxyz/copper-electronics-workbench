@@ -164,3 +164,44 @@ Inputs: switching_frequency=100000 Hz; pulse_current=0.001 A; duty_half_height=0
 
 Use a static current-versus-time sketch in x=55..420, y=45..195 with zero baseline and one trapezoid. Show 50%-height markers and a width bracket between those markers, labeled “D/fs” with separate keys `duty_half_height` and `switching_frequency`; never bind a duration directly to the dimensionless duty key. Label the full rising-edge bracket `edge_time` and plateau `pulse_current`. At right, show a current arrow into a resistor to return, labeling `termination_resistance` and RMS result `termination_voltage_rms`. Put one conceptual spectral line inset labeled `harmonic_frequency` and `harmonic_current_rms`; do not plot computed line height. Caption: “Illustrative symmetric full-edge trapezoid; the selected Fourier line is RMS. Current is assumed delivered to the RF termination, not inferred from a switch node.”
 
+
+## 4. `emc.sinusoidal_dither_occupancy` — intermediate
+
+### Purpose and novelty
+
+Select switching-frequency modulation depth and rate while inspecting occupied harmonic bands and their overlap. Closest baseline: `timing.timer_clock_divider` has a static divided clock frequency, and `signals.rise_time_bandwidth` estimates unmodulated edge bandwidth. The new physical mechanism is FM sideband redistribution. It does not duplicate the unmodulated trapezoid line amplitude above or measurement's sampling-jitter SNR.
+
+### Model and limits
+
+Instantaneous frequency is fs+Δf sin(2πfm t), where Δf is a **peak**, not peak-to-peak, frequency deviation. Phase modulation index of the nth harmonic is βn=nΔf/fm. TI section IX applies Carson's rule to switching harmonics:
+
+- harmonic_modulation_index = nΔf/fm
+- occupied_bandwidth Bn = 2(nΔf+fm) [Hz]
+- next_harmonic_gap = fs−[Bn+B(n+1)]/2 = fs−[(2n+1)Δf+2fm] [Hz]
+
+Bn is centered at n fs; the next band is centered at (n+1)fs. The gap is signed. Negative means the approximate occupied intervals overlap, **not** that the hardware is invalid. Sidebands exist outside Carson intervals, so positive gap does not prove spectral isolation.
+
+The assumed fixed waveform is phase/frequency modulated, and fm<fs provides the slower switching-dither interpretation. Δf<fs keeps instantaneous switching positive. This model assumes neither uniform spectral density nor any dB reduction. Carson bandwidth approximates roughly 98% power for sinusoidal FM, not a strict cutoff or universal measured-bandwidth definition. For β≪1 it intentionally tends toward 2fm even though weak sidebands contain little power; the exact zero-deviation carrier is excluded because this approximation would misleadingly retain modulation bandwidth. Changes to converter control dynamics, audible noise and operating mode remain outside this spectral estimate.
+
+### Complete independent example
+
+Inputs: switching_frequency=100000 Hz; peak_deviation=10000 Hz; modulation_frequency=2000 Hz; harmonic_order=3.
+
+- harmonic_modulation_index = 3×10000/2000 = **15**.
+- occupied_bandwidth = 2×(30000+2000) = **64000 Hz**.
+- Third band endpoints: 300000±32000 = 268000..332000 Hz.
+- Next band width = 2×(40000+2000) = 84000 Hz; lower edge = 400000−42000 = 358000 Hz.
+- next_harmonic_gap = 358000−332000 = **26000 Hz**.
+
+### Independent tester cases
+
+- Nominal: all three outputs above.
+- n=5 with other defaults: index=25, width=104000 Hz, gap=−14000 Hz. Accept the negative gap.
+- Small positive deviation=1 Hz: index=0.0015, width=4006 Hz, gap=95993 Hz. This demonstrates Carson's conservative narrowband behavior, not actual 98%-power measurement.
+- At fixed Δf/fm, scale fs, Δf and fm equally: index stays fixed; width and gap scale.
+- Reject Δf<=0, Δf>=fs, fm<=0, fm>=fs, fs<=0, noninteger n or n<1. The valid no-overlap/overlap crossing is not a rejection boundary.
+
+### Mandatory diagram
+
+Frequency axis x=65..635 at y=205. Draw two static shaded/outlined bands centered at n fs and (n+1)fs; identify their centers with descriptive text, not incorrectly bound live numbers. Dimension the first band's full width with `occupied_bandwidth`. Dimension the separation between adjacent band edges with `next_harmonic_gap`, noting signed overlap in caption. Add a top-left inset showing sinusoidal instantaneous frequency around fs; label its center `switching_frequency`, peak vertical deviation `peak_deviation`, and modulation rate `modulation_frequency`. Label selected order `harmonic_order` and index `harmonic_modulation_index` in a clear legend. Caption: “Illustrative Carson intervals for sinusoidal dither; negative gap denotes overlap. No detector reduction or hard spectral boundary is predicted.” The static bands are not dynamically fitted to outputs.
+
