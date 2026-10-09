@@ -671,5 +671,144 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "oscillators.pierce_crystal_startup",
+    "title": "Pierce crystal load and startup margin",
+    "category": "Oscillator design",
+    "level": "expert",
+    "description": "Select equal Pierce load capacitors and compare available inverter transconductance with crystal startup demand.",
+    "formula": "C1=C2=2(CL-Cs); gm,critical=4 ESR [2 pi f(C0+CL)]^2; gain_margin=gm/gm,critical; gm,design=M gm,critical",
+    "assumptions": [
+      "Fundamental-mode Pierce oscillator with equal external load capacitors and the manufacturer's specified crystal load CL. Cs is equivalent terminal stray capacitance, not the sum of two untransformed pin capacitances.",
+      "ESR is the crystal's specified worst-case equivalent series resistance for this startup model; C0 is crystal shunt capacitance. No additional series drive-limiting resistor is included.",
+      "Available transconductance must be actual inverter gm, not a datasheet parameter named maximum critical crystal transconductance, Gm_crit_max, or ambiguously Gm.",
+      "This is a small-signal compatibility estimate, not guaranteed startup time or a drive-level check. Verify crystal drive power, MCU frequency range, temperature, supply corners and PCB parasitics separately.",
+      "A gain-margin target of 5 is the AN2867 gm-method guideline; device-specific guidance can require another target. Negative transconductance_headroom reports a failed target without hiding the result."
+    ],
+    "references": [
+      {
+        "title": "STMicroelectronics AN2867 Rev16, sections 3.1–3.4; original manufacturer URL",
+        "url": "https://www.st.com/resource/en/application_note/cd00221665.pdf"
+      },
+      {
+        "title": "Actually read AN2867 Rev16 manufacturer document, accessible PDF mirror, pages 11–14",
+        "url": "https://oss.yzcstatic.com/online/xqq/20230106/3nnyWGGbbeGhRPJ7ZxFYsTEGWQhdTiXa.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "crystal_frequency",
+        "label": "Crystal nominal frequency",
+        "unit": "Hz",
+        "default": 16000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "crystal_esr",
+        "label": "Crystal worst-case ESR",
+        "unit": "ohm",
+        "default": 40,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "shunt_capacitance",
+        "label": "Crystal shunt capacitance C0",
+        "unit": "F",
+        "default": 3e-12,
+        "min": 0
+      },
+      {
+        "key": "load_capacitance",
+        "label": "Specified terminal load CL",
+        "unit": "F",
+        "default": 1.2e-11,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "stray_capacitance",
+        "label": "Equivalent terminal stray capacitance Cs",
+        "unit": "F",
+        "default": 2e-12,
+        "min": 0
+      },
+      {
+        "key": "available_transconductance",
+        "label": "Actual available inverter gm",
+        "unit": "S",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "margin_target",
+        "label": "Required gm ratio target",
+        "unit": "1",
+        "default": 5,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "load_capacitor_each",
+        "label": "Each equal external load capacitor",
+        "unit": "F",
+        "expression": "2*(load_capacitance-stray_capacitance)"
+      },
+      {
+        "key": "critical_transconductance",
+        "label": "Critical crystal transconductance",
+        "unit": "S",
+        "expression": "4*crystal_esr*(2*pi*crystal_frequency*(shunt_capacitance+load_capacitance))^2"
+      },
+      {
+        "key": "gain_margin",
+        "label": "Available-to-critical gm ratio",
+        "unit": "1",
+        "expression": "available_transconductance/critical_transconductance"
+      },
+      {
+        "key": "design_transconductance",
+        "label": "gm needed for target margin",
+        "unit": "S",
+        "expression": "margin_target*critical_transconductance"
+      },
+      {
+        "key": "transconductance_headroom",
+        "label": "Signed gm headroom above target",
+        "unit": "S",
+        "expression": "available_transconductance-design_transconductance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "load_capacitance",
+        "op": ">",
+        "right": "stray_capacitance",
+        "message": "Specified load capacitance must exceed equivalent terminal stray capacitance for positive external capacitors."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "crystal_frequency": 16000000,
+        "crystal_esr": 40,
+        "shunt_capacitance": 3e-12,
+        "load_capacitance": 1.2e-11,
+        "stray_capacitance": 2e-12,
+        "available_transconductance": 0.005,
+        "margin_target": 5
+      },
+      "expected": {
+        "load_capacitor_each": 2e-11,
+        "critical_transconductance": 0.0003638330966417581,
+        "gain_margin": 13.742565055655621,
+        "design_transconductance": 0.0018191654832087907,
+        "transconductance_headroom": 0.0031808345167912092
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

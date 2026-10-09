@@ -293,3 +293,52 @@ Exact bindings: total L `tank_inductance`; differential C `tank_capacitance`; to
 
 Caption: “L, C and Rp are differential tank values; gm belongs to each transistor. The pair supplies −gm/2 conductance. Positive alpha predicts only small-signal growth, not final amplitude.”
 
+
+## 7. `oscillators.pierce_crystal_startup` — expert
+
+### Purpose, novelty and source
+
+Choose equal external load capacitors and assess whether the MCU/inverter can overcome the specified crystal loss with the requested startup margin. XTAL §§3.3–3.4 directly gives load capacitance and critical transconductance for equal capacitors, and distinguishes actual gm from maximum supported critical crystal transconductance.
+
+Closest old model: `ac.lossy_coil_antiresonance` concerns a lossy passive coil, not a piezoelectric crystal, shunt capacitance and an inverter loop. Adjacent LC startup concerns a cross-coupled differential negative shunt conductance; this Pierce model concerns an inverter, capacitive loading and crystal ESR. Load sizing and startup ratio are one design problem and one item. No standalone crystal resonance or inverse capacitor calculator is counted.
+
+### Model, domains and limitations
+
+Pierce topology: biased inverter between OSC_IN and OSC_OUT; high-valued feedback resistor across it; crystal bridging the same two nodes; one load capacitor from each node to ground. Under equal capacitors, terminal load is `CL=Ceach/2+Cs`, so `load_capacitor_each=2(CL−Cs)`.
+
+Use specified crystal load CL, shunt capacitance C0, nominal frequency f and worst-case ESR. For this AN2867 model:
+
+`gmcrit=4 ESR [2 pi f(C0+CL)]^2`.
+
+`gain_margin=gm_available/gmcrit`; `design_transconductance=margin_target gmcrit`; signed `transconductance_headroom=gm_available−design_transconductance`.
+
+Require f,ESR,CL,gm>0; C0 and Cs may equal zero; margin_target≥1; CL>Cs ensures physically positive external capacitors. Below-target gm is allowed and reported with negative headroom. Margin_target=1 is the ideal marginal design boundary, not robust hardware guidance; the nominal value 5 follows AN2867's actual-gm method. A product's own oscillator guidance takes precedence.
+
+**Do not substitute `Gm_crit_max` for actual gm.** Some MCU data sheets call their maximum supported critical crystal transconductance `Gm`; that parameter is compared directly with gmcrit instead, and already embodies its own design criterion. This catalog deliberately accepts actual available inverter gm only.
+
+Cs is equivalent terminal stray capacitance. Two pin-to-ground capacitances must be reduced with the full network; do not simply add them and also include them in Ceach. ESR means the crystal data-sheet parameter applicable to this startup model, not an arbitrary measured DC resistance. This version excludes a series drive-limiting resistor; fitting one requires the extended model and further device-specific checks. Fundamental-mode operation, symmetric load branches and correct crystal load tuning are assumed. Drive level, crystal nonlinearities, process/voltage/temperature, frequency-range compatibility and PCB coupling remain hardware checks. A large computed gm margin is not proof of safe crystal power or guaranteed startup.
+
+### Complete independent example
+
+Inputs: `crystal_frequency=16000000 Hz`, `crystal_esr=40 ohm`, `shunt_capacitance=3e-12 F`, `load_capacitance=1.2e-11 F`, `stray_capacitance=2e-12 F`, `available_transconductance=0.005 S`, `margin_target=5`.
+
+`C0+CL=15e-12 F`; `2 pi f(C0+CL)=0.00150796447372310075 S`; multiply its square by `4 ESR=160 ohm`.
+
+| Output key | Derivation | Expected |
+|---|---|---|
+| `load_capacitor_each` | 2(12−2) pF | 2e-11 F |
+| `critical_transconductance` | 160[2 pi×16e6×15e-12]^2 | 0.0003638330966417581 S |
+| `gain_margin` | 0.005/0.0003638330966417581161 | 13.742565055655622 |
+| `design_transconductance` | 5×0.0003638330966417581161 | 0.0018191654832087906 S |
+| `transconductance_headroom` | 0.005−0.001819165483208790581 | 0.0031808345167912094 S |
+
+Tester cases: Cs=0 gives each external C=24 pF with every gm output unchanged, because nominal CL stays fixed. C0=0 is valid and changes gmcrit by factor `(12/15)^2=0.64`. Doubling ESR doubles gmcrit and required gm, and halves gain_margin. With available gm=0.001 S, gain_margin≈2.7485130111311244 and headroom≈−0.0008191654832087906 S: valid failed-margin result. Set available gm equal to independently computed design gm and check near-zero headroom with a justified absolute tolerance. Reject Cs=CL, Cs>CL, negative C0/Cs, nonpositive f/ESR/CL/gm and margin_target<1. When Cs approaches CL from below, external C approaches zero; parasitic uncertainty then dominates physical accuracy.
+
+### Mandatory diagram specification
+
+Draw an inverter symbol with OSC_IN and OSC_OUT nodes, connected by a high-valued bias resistor above the inverter and by a crystal symbol on a separate lower branch. Draw C1 from OSC_IN to ground and C2 from OSC_OUT to ground; both bind to the same computed `load_capacitor_each`. Do not wire crystal or resistor in series with the inverter signal path. Put a small crystal equivalent-model inset or legend near the crystal identifying ESR and C0 without falsely depicting a simple standalone capacitor as the full crystal. Label Cs as “equivalent terminal stray,” optionally a dashed capacitor across the two nodes, not two copies to ground. Right annotation shows available gm versus M×gmcrit.
+
+Exact bindings: crystal f `crystal_frequency`; ESR `crystal_esr`; C0 `shunt_capacitance`; required CL `load_capacitance`; equivalent Cs `stray_capacitance`; both C1/C2 `load_capacitor_each`; inverter gm `available_transconductance`; target M `margin_target`; result legend `critical_transconductance`, `gain_margin`, `design_transconductance`, `transconductance_headroom`. Bias-resistor value is an unbound “RF bias” label, since no resistance is calculated here.
+
+Caption: “Equal Pierce load capacitors realize the specified CL after equivalent stray capacitance. Compare actual inverter gm with crystal critical gm; startup margin does not check crystal drive power.”
+
