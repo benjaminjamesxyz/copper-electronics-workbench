@@ -206,4 +206,35 @@
     "constraints": [],
     "example": {"inputs": {"pole_frequency": 1000.0, "q": 0.7071067811865476, "passband_gain": 2.0, "f": 500.0}, "expected": {"frequency_ratio": 0.5, "voltage_gain": 0.48507125007266594, "gain_db": -6.283889300503116, "half_power_hz": 1000.0}, "relative_tolerance": 1e-6}
   }
+  ,
+  {
+    "id": "filters.buffered_rc_cascade",
+    "title": "Buffered identical RC low-pass cascade",
+    "category": "Analog filters",
+    "level": "intermediate",
+    "description": "Evaluate an integer cascade of isolated identical RC sections, including the shift of the overall half-power cutoff below each stage's corner.",
+    "formula": "H(s)=(1/(1+sRC))^N; fc_total=fc_stage*sqrt(2^(1/N)-1); |H|=(1+x^2)^(-N/2); phase=-N*atan(x); attenuation=(10*N/ln(10))*log1p(x^2)",
+    "assumptions": ["N is an integer from 2 through 32; every section has the same R and C.", "Ideal unity-gain buffers isolate sections; multiplying responses is not valid for an unbuffered passive RC ladder.", "Overall phase is unwrapped in radians, so it may be less than -pi.", "Repeated real poles are not an Nth-order Butterworth response; the half-power cutoff shifts downward with N.", "Buffer bandwidth, source/load impedance, clipping, noise and parasitics are excluded.", "Log1p/expm1 expressions preserve small attenuation and cutoff factors; a transmission below binary64 representability may underflow while its directly calculated dB loss remains finite."],
+    "references": [
+      {"title": "University of Colorado Boulder, PHYS 3330 Lab 3, first-order low-pass transfer function", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab3/"},
+      {"title": "Texas Instruments AN-779 / SNOA224A, section 1.3 cascading transfer functions", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Each stage's series resistor", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Each stage's shunt capacitor", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "stage_count", "label": "Number of buffered stages", "unit": "1", "default": 3.0, "min": 2.0, "max": 32.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "stage_cutoff_hz", "label": "Individual stage half-power cutoff", "unit": "Hz", "expression": "1/(2*pi*r*c)"},
+      {"key": "overall_order", "label": "Overall filter order", "unit": "1", "expression": "stage_count"},
+      {"key": "cascade_cutoff_hz", "label": "Overall half-power cutoff", "unit": "Hz", "expression": "stage_cutoff_hz*sqrt(expm1(ln(2)/stage_count))"},
+      {"key": "frequency_ratio", "label": "Signal / individual stage cutoff", "unit": "1", "expression": "2*pi*f*r*c"},
+      {"key": "voltage_gain", "label": "Cascade voltage transmission", "unit": "V/V", "expression": "exp(-stage_count/2*log1p(frequency_ratio^2))"},
+      {"key": "phase_rad", "label": "Unwrapped output phase", "unit": "rad", "expression": "-stage_count*atan(frequency_ratio)"},
+      {"key": "attenuation_db", "label": "Total voltage insertion loss", "unit": "dB", "expression": "10*stage_count/ln(10)*log1p(frequency_ratio^2)"}
+    ],
+    "constraints": [{"left": "stage_count", "op": "==", "right": "floor(stage_count)", "message": "The number of physical filter stages must be an integer."}],
+    "example": {"inputs": {"r": 10000.0, "c": 1e-8, "stage_count": 3.0, "f": 1000.0}, "expected": {"stage_cutoff_hz": 1591.5494309189535, "overall_order": 3.0, "cascade_cutoff_hz": 811.4109382567457, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.6070709938555954, "phase_rad": -1.6829463483258713, "attenuation_db": 4.3352103486158615}, "relative_tolerance": 1e-6}
+  }
 ]

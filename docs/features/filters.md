@@ -278,3 +278,39 @@ For Q=1/√2, t=1; otherwise f0 is not generally the cutoff. Q bounds keep the p
 | half_power_hz | 1000.0 | Hz |
 
 **Sources/limits:** TI SNOA224A §§1.2–1.3 canonical response and TI CIRCUIT060053 active high-pass realization, linked above. Ideal biquad, realizable with Sallen–Key or multiple feedback; finite GBW, slew, clipping and tolerance are not included. The cited concrete circuit does not validate arbitrary operating frequency.
+
+## `filters.buffered_rc_cascade` — Buffered identical RC low-pass cascade (intermediate)
+
+**Purpose/topology:** N identical series-R/shunt-C low-pass sections separated by ideal unity-gain buffers. Isolation permits transfer-function multiplication:
+
+\[
+H(s)=\left(\frac1{1+sRC}\right)^N,\quad x=2\pi fRC,\quad
+|H|=(1+x^2)^{-N/2},\quad \phi=-N\arctan x,\quad
+A=10N\log_{10}(1+x^2).
+\]
+
+Half-power (1+x²)^−N=1/2 gives stage_fc=1/(2πRC) and overall_fc=stage_fc·√(2^(1/N)−1). Repeated real poles are **not Butterworth**; the overall cutoff falls below each stage's corner. Phase is unwrapped and may be below −π.
+
+**Conditioning:** Implement the cutoff factor as √expm1(ln2/N), magnitude as exp[−(N/2)log1p(x²)], and insertion loss as (10N/ln10)log1p(x²). These are algebraically identical to the displayed formulas. Logarithmic loss is computed directly, never from a rounded/underflowed transmission. At extreme admitted frequency/component/order combinations, a physically positive gain below binary64 representability can round to zero; finite dB attenuation remains available and no artificial rejection floor or fake finite notch value is introduced.
+
+**Inputs/domain/error rationale:** `r` (ohm) 0.001…1e9; `c` (F) 1e-15…1; `stage_count` (1) 2…32 inclusive; `f` (Hz) 0…1e12. The input-only constraint `stage_count==floor(stage_count)` rejects nonphysical fractional stage counts. Positive component/count bounds guard divisors and the cutoff root; 1+x² is positive. DC gives unit transmission with zero phase/loss. Output order: stage_cutoff_hz, overall_order, cascade_cutoff_hz, frequency_ratio, voltage_gain, phase_rad, attenuation_db.
+
+**Independent worked substitution/default:** r=10000 ohm, c=1e-8 F, stage_count=3, f=1000 Hz. Directly cube the complex 1/(1+j0.6283185307179586) response; the cutoff multiplier is √(2^(1/3)−1):
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| stage_cutoff_hz | 1591.5494309189535 | Hz |
+| overall_order | 3.0 | 1 |
+| cascade_cutoff_hz | 811.4109382567457 | Hz |
+| frequency_ratio | 0.6283185307179586 | 1 |
+| voltage_gain | 0.6070709938555954 | V/V |
+| phase_rad | -1.6829463483258713 | rad |
+| attenuation_db | 4.3352103486158615 | dB |
+
+**Sources/limits:** Colorado PHYS 3330 Lab 3 §5.4 and TI SNOA224A §1.3, linked above. Bare passive unbuffered ladders load preceding sections and need a different transfer model. Buffer bandwidth, source/load impedances, clipping, noise and parasitics are excluded.
+
+## Parent verification handoff — not executed by this author
+
+Exercise every full example/default and input guard after the complete lane is integrated. Check low-pass/cascade DC, high-pass DC rejection, both first-order corners, second-order/Sallen–Key half-power relative to the correct passband reference, Deliyannis Q=0.5 rejection/DC zero/peak Q, Sallen–Key damping and Q boundaries, and integer stage count. Check band-pass/notch edge difference f0/Q and edge product f0², band-pass gain Q/√2 at edges, notch unity DC/1/√2 edges/exact zero when f reuses returned notch_hz, with independent cancellation-scale tolerance for externally rounded centers.
+
+For Butterworth verify both attenuation inequalities, feasible cutoff interval, one-order-lower infeasibility, reversed edges/losses and >32 rejection; include near-equal positive losses and exact/near-integer ceil boundaries. Compare tiny positive RC/cascade losses using scale-aware tolerance (e.g. x≈1e-12), and high-pass phase/attenuation at large x against 1/x and (10/ln10)/x² asymptotes. Below representability the linear magnitude may round but finite logarithmic attenuation remains meaningful. Constraints use only input keys; outputs can reference earlier outputs. No runtime or test-pass claims accompany this handoff.
