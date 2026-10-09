@@ -347,3 +347,61 @@ All input values for this independent example are `{"r":1000.0,"c":1e-06,"v_high
 | `high_initial_current` | A | 0.0036552928931500245 | `(v_high-v_low)*(-expm1(-time_low/tau))/(-expm1(-(time_high+time_low)/tau))/r` |
 | `low_initial_current` | A | -0.0036552928931500245 | `-(v_high-v_low)*(-expm1(-time_high/tau))/(-expm1(-(time_high+time_low)/tau))/r` |
 
+
+## `transients.rl_step` — closed-path RL buildup and decay
+
+**Level:** basic. **Design purpose:** predict coil-current buildup or resistive decay without substituting an opened-inductor/clamp model. Sources: [MIT lecture](https://circuits.mit.edu/_static/S26/handouts/lec06a/slides.pdf), [MIT Rowell sections 1.1 and 1.3](https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf).
+
+### Model and derivation
+
+With `L di/dt + Ri = Vs` and initial current `I0`,
+
+`tau=L/R`, `If=Vs/R`,
+
+`iL(t)=If+(I0−If)exp(−t/tau)`,
+
+`vL(t)=L di/dt=(Vs−R I0)exp(−t/tau)`.
+
+The normalized current-error settling time is again `−tau ln(epsilon)`. `Vs=0` is source-free current decay in the **remaining closed series loop**. This is a different energy-storage element and current state from the RC voltage problem, not an inverse rearrangement of it. Standalone magnetic energy is intentionally omitted because it belongs to the magnetics lane.
+
+### Domain and limitations
+
+`R>0`, `L>0`, `t>=0`, `0<epsilon<1`. R includes winding/source resistance. L must remain linear and unsaturated; initial current is continuous for finite voltage. No diode, avalanche, arcing, open-circuit interruption, hysteretic/core loss or nonlinear clamp is included. If `I0=If`, the settling output is only a time-scale metric.
+
+### Independent worked example
+
+`R=10 ohm`, `L=10 mH`, `Vs=12 V`, `I0=0`, `t=1 ms`, `epsilon=0.01`.
+
+- `tau=0.01/10=0.001 s`; `If=12/10=1.2 A`.
+- `iL=1.2(1−exp(−1))=0.7585446705942692 A`.
+- `vL=12 exp(−1)=4.414553294057308 V`.
+- `t_settle=0.001 ln(100)=0.004605170185988092 s`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `r` | ohm | 10.0 | [0.001, 1000000000.0] |
+| `l` | H | 0.01 | [1e-12, 1000000.0] |
+| `v_source` | V | 12.0 | [-1000000.0, 1000000.0] |
+| `i_initial` | A | 0.0 | [-1000000.0, 1000000.0] |
+| `time` | s | 0.001 | [0.0, 1000000000.0] |
+| `error_fraction` | 1 | 0.01 | [1e-12, 1.0) |
+
+The executable current is `I0 exp(−t/tau)+If[−expm1(−t/tau)]`, algebraically identical to the derived waveform but preserving short-time buildup and small source-free residuals. At zero time it returns I0 exactly. Signed source/initial current, zero source, and an already steady current are admissible. Positive R/L and the tolerance bounds protect all divisions and logarithms; this closed-path model must not be used for an opened coil.
+
+No additional relational constraint is needed: positive component minima protect divisors, time is nonnegative, and any logarithm has an explicit positive tolerance bound. Signed excitations and valid zero boundaries are not rejected.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"r":10.0,"l":0.01,"v_source":12.0,"i_initial":0.0,"time":0.001,"error_fraction":0.01}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `tau` | s | 0.001 | `l/r` |
+| `final_current` | A | 1.2 | `v_source/r` |
+| `inductor_current` | A | 0.7585446705942692 | `i_initial*exp(-time/tau)+final_current*(-expm1(-time/tau))` |
+| `inductor_voltage` | V | 4.414553294057308 | `(v_source-r*i_initial)*exp(-time/tau)` |
+| `settling_time` | s | 0.004605170185988092 | `-tau*ln(error_fraction)` |
+
