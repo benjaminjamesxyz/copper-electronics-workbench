@@ -475,5 +475,224 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "precision.howland_mismatch_load",
+  "title": "Howland current pump resistor mismatch and load",
+  "category": "Precision analog front ends",
+  "level": "expert",
+  "description": "Solve a bidirectional basic Howland pump with unequal resistor ratios, including signed output conductance and op-amp compliance.",
+  "formula": "k=R4/R3; J=Vp/R1-k Vn/R2; g=1/R1-k/R2; Vx=J/(1/RL+g); IL=Vx/RL; Vo=(1+k)Vx-k Vn; Io=(Vo-Vx)(1/R2+1/R4)",
+  "assumptions": [
+    "Basic four-resistor Howland topology, not the improved five-resistor version. Ideal op amp in DC linear operation; load is a positive grounded resistor.",
+    "Load current is positive from node Vx into the grounded load. Norton output conductance g may be positive, zero or negative; no infinite output-resistance number is computed at balance.",
+    "Require 1/RL+g>0 for the negative-feedback DC branch. Near cancellation has very high sensitivity and is not a robust practical design.",
+    "Guaranteed output voltage/current and common-mode intervals are user supplied. Dynamic stability, compensation, bias currents, finite open-loop gain and capacitive loads require device-level analysis."
+  ],
+  "references": [
+    {
+      "title": "TI AN-1515/SNOA474A: Figures 1-2, section 2 and Appendix A",
+      "url": "https://www.ti.com/lit/an/snoa474a/snoa474a.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "r_one",
+      "label": "Positive drive to load-node resistor R1",
+      "unit": "ohm",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "r_two",
+      "label": "Amplifier output to load-node resistor R2",
+      "unit": "ohm",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "r_three",
+      "label": "Negative drive to minus-pin resistor R3",
+      "unit": "ohm",
+      "default": 10000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "r_four",
+      "label": "Amplifier feedback resistor R4",
+      "unit": "ohm",
+      "default": 9900,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "positive_drive",
+      "label": "Positive drive voltage",
+      "unit": "V",
+      "default": 1
+    },
+    {
+      "key": "negative_drive",
+      "label": "Negative drive voltage",
+      "unit": "V",
+      "default": 0
+    },
+    {
+      "key": "load_resistance",
+      "label": "Grounded load resistor",
+      "unit": "ohm",
+      "default": 5000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "output_min",
+      "label": "Guaranteed op-amp output minimum",
+      "unit": "V",
+      "default": -10
+    },
+    {
+      "key": "output_max",
+      "label": "Guaranteed op-amp output maximum",
+      "unit": "V",
+      "default": 10
+    },
+    {
+      "key": "common_min",
+      "label": "Guaranteed op-amp common-mode minimum",
+      "unit": "V",
+      "default": -8
+    },
+    {
+      "key": "common_max",
+      "label": "Guaranteed op-amp common-mode maximum",
+      "unit": "V",
+      "default": 8
+    },
+    {
+      "key": "output_current_limit",
+      "label": "Guaranteed op-amp source/sink magnitude",
+      "unit": "A",
+      "default": 0.01,
+      "min": 0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "norton_drive_current",
+      "label": "Norton source current",
+      "unit": "A",
+      "expression": "positive_drive/r_one-(r_four/r_three)*negative_drive/r_two"
+    },
+    {
+      "key": "output_conductance",
+      "label": "Signed Norton shunt conductance",
+      "unit": "S",
+      "expression": "1/r_one-(r_four/r_three)/r_two"
+    },
+    {
+      "key": "load_voltage",
+      "label": "Load and input-pin voltage",
+      "unit": "V",
+      "expression": "norton_drive_current/(1/load_resistance+output_conductance)"
+    },
+    {
+      "key": "load_current",
+      "label": "Current into grounded load",
+      "unit": "A",
+      "expression": "load_voltage/load_resistance"
+    },
+    {
+      "key": "amplifier_voltage",
+      "label": "Required amplifier output",
+      "unit": "V",
+      "expression": "(1+r_four/r_three)*load_voltage-(r_four/r_three)*negative_drive"
+    },
+    {
+      "key": "amplifier_current",
+      "label": "Required signed amplifier output current",
+      "unit": "A",
+      "expression": "(amplifier_voltage-load_voltage)/r_two+(amplifier_voltage-load_voltage)/r_four"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "output_max",
+      "op": ">",
+      "right": "output_min",
+      "message": "Output limits must be ordered"
+    },
+    {
+      "left": "common_max",
+      "op": ">",
+      "right": "common_min",
+      "message": "Common-mode limits must be ordered"
+    },
+    {
+      "left": "1/load_resistance+(1/r_one-(r_four/r_three)/r_two)",
+      "op": ">",
+      "right": "0",
+      "message": "The loaded Howland feedback must have positive total conductance"
+    },
+    {
+      "left": "((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))",
+      "op": ">=",
+      "right": "common_min",
+      "message": "Load node falls below input common-mode range"
+    },
+    {
+      "left": "((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))",
+      "op": "<=",
+      "right": "common_max",
+      "message": "Load node exceeds input common-mode range"
+    },
+    {
+      "left": "((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)",
+      "op": ">=",
+      "right": "output_min",
+      "message": "Amplifier output falls below available swing"
+    },
+    {
+      "left": "((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)",
+      "op": "<=",
+      "right": "output_max",
+      "message": "Amplifier output exceeds available swing"
+    },
+    {
+      "left": "abs(((((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)-((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two))))/r_two+(((1+(r_four/r_three))*((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two)))-(r_four/r_three)*negative_drive)-((positive_drive/r_one-(r_four/r_three)*negative_drive/r_two)/(1/load_resistance+(1/r_one-(r_four/r_three)/r_two))))/r_four))",
+      "op": "<=",
+      "right": "output_current_limit",
+      "message": "Amplifier drive exceeds source/sink current rating"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "r_one": 10000,
+      "r_two": 10000,
+      "r_three": 10000,
+      "r_four": 9900,
+      "positive_drive": 1,
+      "negative_drive": 0,
+      "load_resistance": 5000,
+      "output_min": -10,
+      "output_max": 10,
+      "common_min": -8,
+      "common_max": 8,
+      "output_current_limit": 0.01
+    },
+    "expected": {
+      "norton_drive_current": 0.0001,
+      "output_conductance": 1e-06,
+      "load_voltage": 0.4975124378109453,
+      "load_current": 9.950248756218905e-05,
+      "amplifier_voltage": 0.9900497512437811,
+      "amplifier_current": 9.900497512437811e-05
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]

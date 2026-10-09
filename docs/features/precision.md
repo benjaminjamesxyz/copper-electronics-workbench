@@ -185,3 +185,74 @@ Exact quantity bindings: current source `input_peak`; shunt capacitor `source_ca
 
 Caption: “Current entering the summing node produces negative output. Cf sets Butterworth damping in the single-integrator op-amp model; the displayed bandwidth is not a measured stability guarantee.” Avoid a fake live frequency plot.
 
+
+## 4. `precision.howland_mismatch_load` — expert
+
+### Purpose and novelty
+
+Predict bidirectional load current and compliance when a basic Howland pump's resistor ratios are not perfectly balanced. Nearest baseline is `opamps.difference_ratio_error`, but the positive feedback and grounded current-output port change the physical problem: mismatch creates signed source output conductance and load-dependent current. Nearest new mirror model has a transistor base-current deficit, not this resistor-feedback law. No transistor foldback limiter or protection threshold is modeled.
+
+### Exact topology and law
+
+Use TI AN-1515 Figure 1's basic circuit, not the improved five-resistor circuit:
+
+- R1 (`r_one`) connects `positive_drive` to load node Vx.
+- R2 (`r_two`) connects op-amp output Vo to Vx.
+- Vx directly connects to the op amp's plus input and the top of `load_resistance`; load bottom is ground.
+- R3 (`r_three`) connects `negative_drive` to the minus input.
+- R4 (`r_four`) connects Vo to the minus input.
+
+For an ideal op amp in its linear range, both pins equal Vx. Minus-node KCL gives `Vo=(1+k)Vx-k Vn`, where `k=R4/R3`. Load-node KCL gives
+
+`IL=(Vp-Vx)/R1 + (Vo-Vx)/R2 = J-g Vx`,
+
+with `J=Vp/R1-k Vn/R2`, `g=1/R1-k/R2`. Therefore
+
+- `norton_drive_current = J`.
+- `output_conductance = g`.
+- `load_voltage = J/(1/RL+g)`.
+- `load_current = load_voltage/RL`.
+- `amplifier_voltage = (1+k)load_voltage-k Vn`.
+- `amplifier_current = (Vo-Vx)/R2 + (Vo-Vx)/R4`.
+
+Positive load current leaves Vx into the load. Positive amplifier current leaves the op amp output. The two are not generally equal because the drive resistors also carry current. Perfect balance requires `R1/R2=R3/R4`; then g=0, not an invalid infinite numeric output. No reciprocal-g output is required.
+
+### Domain and limits
+
+All resistances are positive. The DC closed-loop branch must have `1/RL+g>0`. Negative g is admitted when the finite passive load retains this inequality. At equality the loop is singular; beyond it the assumed negative-feedback operating branch fails. Near the boundary, small resistor errors create huge sensitivity.
+
+Reject load/pin voltage outside the supplied guaranteed common-mode interval, amplifier voltage outside the supplied output interval, and absolute amplifier current above the supplied source/sink bound. Output and common-mode intervals must be strictly ordered. DC rejection is not a dynamic-stability certificate. Real op-amp poles, small compensation capacitors, load capacitance, output resistance, offset and bias must be checked separately. Source/sink limits should be conservative guaranteed values at the required voltage and temperature.
+
+### Complete independent example
+
+Inputs: `r_one=10000`, `r_two=10000`, `r_three=10000`, `r_four=9900`, `positive_drive=1`, `negative_drive=0`, `load_resistance=5000`, `output_min=-10`, `output_max=10`, `common_min=-8`, `common_max=8`, `output_current_limit=0.01`.
+
+`k=99/100`, J=100 µA and g=1 µS. The load conductance is 200 µS, so Vx=`100/201 V`. Vo=`(199/100)(100/201)=199/201 V`. The R2 current is 49.25373134328358 µA; the R4 current is 49.75124378109453 µA. Their sum is the amplifier output current.
+
+| Output key | Independent value |
+|---|---:|
+| `norton_drive_current` | 0.0001 A |
+| `output_conductance` | 0.000001 S |
+| `load_voltage` | 0.4975124378109453 V |
+| `load_current` | 0.00009950248756218905 A |
+| `amplifier_voltage` | 0.9900497512437811 V |
+| `amplifier_current` | 0.00009900497512437811 A |
+
+### Tester cases
+
+- Nominal: assert all values, both node KCL equations and amplifier-current decomposition.
+- Perfect balance: set R4=10000; J=100 µA, g=0, Vx=0.5 V, IL=100 µA, Vo=1 V and amplifier current=100 µA.
+- Reverse drive: set positive drive=-1 V with nominal resistors; all current/voltage outputs reverse, while g stays +1 µS.
+- Admissible negative conductance: R4=10100 gives g=-1 µS and Vx=`100/199`≈0.5025125628140703 V at nominal load. Do not reject solely because g is negative.
+- Zero drives: both drives zero gives exact zero voltages/currents while retaining g.
+- Singular/unstable: R4=30000 with nominal R1–R3 and RL=5000 gives zero total conductance; use neighboring representable cases to distinguish this boundary from a tiny positive denominator. R4=40000 is strictly invalid.
+- Compliance: reduce output limit below required Vo, common limit below Vx, or current limit below required absolute amplifier current; each must reject independently.
+
+### Mandatory diagram specification
+
+Draw the exact four-resistor netlist above. Place Vx below/left of the op amp plus pin and connect its grounded load vertically. R1 feeds Vx from a left drive source. R2 returns from the amplifier output to Vx; R4 is the distinct upper negative-feedback branch. R3 runs from the other drive source to the minus pin. Show the plus-feedback branch joining Vx, not the minus node. Clearly separate the load port from the amplifier output.
+
+Exact bindings: R1 `r_one`, R2 `r_two`, R3 `r_three`, R4 `r_four`; source ports `positive_drive`, `negative_drive`; load `load_resistance`; Vx `load_voltage`; downward load arrow `load_current`; op-amp output `amplifier_voltage`; output arrow before its R2/R4 split `amplifier_current`. A side annotation may bind `output_conductance` with label “Norton g”; do not depict that calculated equivalent as an extra physical resistor.
+
+Caption: “Basic Howland pump: ratio mismatch creates signed output conductance. The load node and amplifier output are different nodes; current and voltage compliance are checked separately. DC model only.”
+
