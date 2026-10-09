@@ -433,3 +433,63 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `generated_power` | 0.21857142857142858 | W |
 | `deposited_energy` | 0.04371428571428571 | J |
 
+
+## pcb.stencil_aperture_area_ratio — Rectangular solder-stencil aperture area ratio
+
+**Level:** intermediate
+
+**Purpose:** Calculate opening-to-wall area ratio and its signed margin against a selected assembly-process guideline for a rectangular stencil aperture.
+
+**Reference:** [TI-A](https://www.ti.com/lit/an/spraav2a/spraav2a.pdf), section 6.1 Area Ratio.
+
+TI defines area ratio as aperture opening area divided by the interior wall area wetted by paste. Its cited numerical 0.66 guideline is for round fine-pitch BGA apertures. The same geometric definition applies to a rectangular vertical-wall opening with length L, width W and stencil thickness T:
+
+- `opening_area = aperture_length*aperture_width`, m²;
+- `wall_area = 2*(aperture_length+aperture_width)*stencil_thickness`, m²;
+- `area_ratio = opening_area/wall_area`, dimensionless;
+- `ratio_margin = area_ratio-target_area_ratio`, dimensionless.
+
+The wall area is the sum of four wall rectangles: LT + LT + WT + WT. This is an independent geometric derivation rather than copying an unrelated circular expression. For a square opening it simplifies to L/(4T), consistent with the circular-diameter form D/(4T), but neither simplification is counted as another calculator.
+
+**Domain and limitations.** L, W, T and selected target must be strictly positive; a positive-wall-area constraint guards the division. Negative margin is a valid below-target result, not an invalid geometric input. The default target 0.66 is an explicitly labeled **screening extrapolation** of TI's round-aperture guideline; the assembler must approve any use for rectangular apertures. Actual transfer depends on paste particle size/rheology, wall coating/finish, aperture aspect ratio, rounding/taper, stencil spacing and printing settings. A straight rectangular opening is assumed; stepped or tapered stencils need the actual wetted areas. The output is neither solder volume nor measured transfer efficiency or certification.
+
+**Independent worked example.** L = 0.50 mm, W = 0.30 mm, T = 0.10 mm, target = 0.66:
+
+1. Opening area = 0.50 × 0.30 = 0.150 mm² = 1.5e-7 m².
+2. Wall area = 2(0.50 + 0.30)(0.10) = 0.160 mm² = 1.6e-7 m².
+3. AR = 0.150/0.160 = 0.9375.
+4. Signed margin = 0.9375 - 0.66 = 0.2775.
+
+The positive geometric margin alone does not establish reliable release.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `aperture_length` | Rectangular aperture length | m | 0.0005 | > 0.0 |
+| `aperture_width` | Rectangular aperture width | m | 0.00025 | > 0.0 |
+| `stencil_thickness` | Uniform stencil thickness | m | 0.0001 | > 0.0 |
+| `target_area_ratio` | Selected assembly screening target | 1 | 0.66 | > 0.0 |
+
+**Input-only guards and error rationale:**
+
+- `2*(aperture_length+aperture_width)*stencil_thickness > 0`: Aperture wall area must be positive.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `aperture_length` | 0.0005 | m |
+| `aperture_width` | 0.0003 | m |
+| `stencil_thickness` | 0.0001 | m |
+| `target_area_ratio` | 0.66 | 1 |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `opening_area` | 1.5e-07 | m^2 |
+| `wall_area` | 1.6e-07 | m^2 |
+| `area_ratio` | 0.9375 | 1 |
+| `ratio_margin` | 0.2775 | 1 |
+

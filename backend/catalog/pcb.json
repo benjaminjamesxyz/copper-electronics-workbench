@@ -658,5 +658,109 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.stencil_aperture_area_ratio",
+    "title": "Rectangular solder-stencil aperture area ratio",
+    "category": "PCB interconnect and manufacturing",
+    "level": "intermediate",
+    "description": "Calculate opening-to-wall area ratio and its signed margin against a selected assembly-process guideline for a rectangular stencil aperture.",
+    "formula": "A_open = L W; A_wall = 2 (L+W) T; AR = A_open/A_wall; margin = AR - target",
+    "assumptions": [
+      "Single rectangular opening with straight vertical walls and uniform stencil thickness; rounded-corner, tapered and stepped apertures require different areas.",
+      "Area ratio is a geometric release-screening metric, not a prediction of actual solder-paste transfer efficiency or deposited solder volume.",
+      "Default target 0.66 is TI's cited area-ratio guideline for fine-pitch round BGA apertures; applying it to rectangular openings is an explicit screening extrapolation requiring assembler approval.",
+      "Paste particle size/rheology, wall finish/coatings, aperture aspect ratio, printing settings and substrate spacing also affect release.",
+      "Below-target apertures remain valid calculations and return a negative margin; they are not silently rejected or called compliant."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SPRAAV2A, PCB Assembly Guidelines for 0.4mm PoP Packages Part II, section 6.1 Area Ratio",
+        "url": "https://www.ti.com/lit/an/spraav2a/spraav2a.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "aperture_length",
+        "label": "Rectangular aperture length",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "aperture_width",
+        "label": "Rectangular aperture width",
+        "unit": "m",
+        "default": 0.00025,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "stencil_thickness",
+        "label": "Uniform stencil thickness",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "target_area_ratio",
+        "label": "Selected assembly screening target",
+        "unit": "1",
+        "default": 0.66,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "opening_area",
+        "label": "Aperture opening area",
+        "unit": "m^2",
+        "expression": "aperture_length*aperture_width"
+      },
+      {
+        "key": "wall_area",
+        "label": "Total vertical aperture-wall area",
+        "unit": "m^2",
+        "expression": "2*(aperture_length+aperture_width)*stencil_thickness"
+      },
+      {
+        "key": "area_ratio",
+        "label": "Opening-to-wall area ratio",
+        "unit": "1",
+        "expression": "opening_area/wall_area"
+      },
+      {
+        "key": "ratio_margin",
+        "label": "Signed area-ratio margin",
+        "unit": "1",
+        "expression": "area_ratio-target_area_ratio"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "2*(aperture_length+aperture_width)*stencil_thickness",
+        "op": ">",
+        "right": "0",
+        "message": "Aperture wall area must be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "aperture_length": 0.0005,
+        "aperture_width": 0.0003,
+        "stencil_thickness": 0.0001,
+        "target_area_ratio": 0.66
+      },
+      "expected": {
+        "opening_area": 1.5e-07,
+        "wall_area": 1.6e-07,
+        "area_ratio": 0.9375,
+        "ratio_margin": 0.2775
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
