@@ -251,5 +251,126 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.stripline_impedance",
+    "title": "Symmetric finite-thickness stripline impedance",
+    "category": "Signal integrity and transmission lines",
+    "level": "expert",
+    "description": "Estimate the impedance of a centered conductor between two reference planes, including thickness and edge-fringing corrections.",
+    "formula": "u=w/b; q=t/b; ue=u-max(0,0.35-u)^2/(1+12*q); Cf=2/pi*ln(1/(1-q)+1)-q/pi*ln(q*(2-q)/(1-q)^2); Z0=30*pi*(1-q)/(sqrt(er)*(ue+Cf))",
+    "assumptions": [
+      "Centered, uniform rectangular strip between two continuous ground planes separated by b; homogeneous nonmagnetic dielectric and TEM operation.",
+      "Finite-thickness fit only: 0 < thickness/plane_spacing < 0.025 and width/(plane_spacing-thickness) > 0.05, matching the textbook's stated better-than-1% formula domain.",
+      "Zero thickness is excluded because the finite-thickness logarithm is singular; a zero-thickness limiting formula is not silently substituted.",
+      "No asymmetric stackup, nearby traces, copper roughness, finite-plane effects, dielectric dispersion or loss."
+    ],
+    "references": [
+      {
+        "title": "Michael Steer, Stripline, section 3.7.1, equations 1\u20133 and stated accuracy domain",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_%28Steer%29/03%3A_Planar_Transmission_Lines/3.07%3A_Stripline"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "width",
+        "label": "Strip width",
+        "unit": "m",
+        "default": 0.0006,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plane_spacing",
+        "label": "Total separation between ground planes",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "thickness",
+        "label": "Strip conductor thickness",
+        "unit": "m",
+        "default": 1.8e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Dielectric relative permittivity",
+        "unit": "1",
+        "default": 4,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "width_ratio",
+        "label": "Width to plane spacing ratio",
+        "unit": "1",
+        "expression": "width/plane_spacing"
+      },
+      {
+        "key": "thickness_ratio",
+        "label": "Thickness to plane spacing ratio",
+        "unit": "1",
+        "expression": "thickness/plane_spacing"
+      },
+      {
+        "key": "effective_width_ratio",
+        "label": "Corrected normalized width",
+        "unit": "1",
+        "expression": "width_ratio-max(0,0.35-width_ratio)^2/(1+12*thickness_ratio)"
+      },
+      {
+        "key": "fringe_factor",
+        "label": "Thickness-dependent fringe factor",
+        "unit": "1",
+        "expression": "2/pi*ln(1/(1-thickness_ratio)+1)-thickness_ratio/pi*ln(thickness_ratio*(2-thickness_ratio)/(1-thickness_ratio)^2)"
+      },
+      {
+        "key": "impedance",
+        "label": "Stripline characteristic impedance",
+        "unit": "ohm",
+        "expression": "30*pi*(1-thickness_ratio)/(sqrt(relative_permittivity)*(effective_width_ratio+fringe_factor))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "thickness/plane_spacing",
+        "op": "<",
+        "right": "0.025",
+        "message": "Finite-thickness fit requires thickness/plane_spacing < 0.025."
+      },
+      {
+        "left": "plane_spacing-thickness",
+        "op": ">",
+        "right": "0",
+        "message": "Conductor must fit strictly between ground planes."
+      },
+      {
+        "left": "width/(plane_spacing-thickness)",
+        "op": ">",
+        "right": "0.05",
+        "message": "Published accuracy domain requires width/(plane_spacing-thickness) > 0.05."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "width": 0.0006,
+        "plane_spacing": 0.001,
+        "thickness": 1.8e-05,
+        "relative_permittivity": 4
+      },
+      "expected": {
+        "width_ratio": 0.6,
+        "thickness_ratio": 0.018,
+        "effective_width_ratio": 0.6,
+        "fringe_factor": 0.4659693534707028,
+        "impedance": 43.41181070235101
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

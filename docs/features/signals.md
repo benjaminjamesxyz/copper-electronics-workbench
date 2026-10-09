@@ -145,6 +145,62 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 **Feature sources:**
 - [Michael Steer, Microstrip Transmission Lines, sections 4.4.1–4.4.2, equations 9–14](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines)
 
+## 2. Symmetric finite-thickness stripline impedance — expert
+
+**ID:** `signals.stripline_impedance`. **Source:** S2, section 3.7.1, equations 1–3.
+
+A centered strip between two ground planes is entirely immersed in dielectric, so its TEM permittivity is the bulk epsilon_r. Let b denote **total** ground-plane separation (not distance to a single plane), u = w/b and q = t/b. The empirical effective width and dimensionless fringe correction are:
+
+- u_eff = u - max(0, 0.35 - u)^2/(1 + 12q).
+- C_f = (2/pi) ln[1/(1-q) + 1] - (q/pi) ln[1/(1-q)^2 - 1].
+- Z0 = (30 pi/sqrt(epsilon_r))(1-q)/(u_eff + C_f).
+
+The `max` expression reproduces the published narrow/wide branches without unsupported conditionals: subtract the correction only when u < 0.35. The implemented second logarithm uses the algebraically equivalent **q(2-q)/(1-q)^2** argument to avoid subtracting nearly equal numbers for small q. Despite its name, C_f is dimensionless here, not a lumped capacitance in farads.
+
+**Domain guards:** w,b,t > 0; epsilon_r >= 1; 0 < t/b < 0.025; b-t > 0; w/(b-t) > 0.05. These are the source's quoted better-than-1% fit conditions; all logarithm arguments are then positive. The geometry must also be centered, homogeneous and operated in its TEM regime; those physical conditions are disclosed assumptions rather than pretended machine-checkable geometry. A strip of exactly zero thickness is excluded from this finite-thickness logarithmic expression; it would need the analytic limiting formula rather than an arbitrary epsilon thickness. No asymmetric embedding, coupled traces or losses are modeled.
+
+**Independent example/default:** w = 0.6 mm, b = 1 mm, t = 18 micrometres, epsilon_r = 4. Then u = 0.6, q = 0.018, u_eff = 0.6, C_f = 0.4659693534707028 and **Z0 = 43.41181070235101 ohm**. The width/clearance ratio is 0.6/0.982 = 0.61099796 > 0.05; q < 0.025. Retaining full pi and logarithms rather than rounded 94.25/0.441 values matters for the exact numerical reference.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `width` | Strip width | m | 0.0006 | > 0 |
+| `plane_spacing` | Total separation between ground planes | m | 0.001 | > 0 |
+| `thickness` | Strip conductor thickness | m | 1.8e-05 | > 0 |
+| `relative_permittivity` | Dielectric relative permittivity | 1 | 4 | >= 1 |
+
+**Input-only model guards:**
+- `thickness/plane_spacing < 0.025` — Finite-thickness fit requires thickness/plane_spacing < 0.025.
+- `plane_spacing-thickness > 0` — Conductor must fit strictly between ground planes.
+- `width/(plane_spacing-thickness) > 0.05` — Published accuracy domain requires width/(plane_spacing-thickness) > 0.05.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "width": 0.0006,
+  "plane_spacing": 0.001,
+  "thickness": 1.8e-05,
+  "relative_permittivity": 4
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `width_ratio` | Width to plane spacing ratio | 1 | `width/plane_spacing` | `0.6` |
+| `thickness_ratio` | Thickness to plane spacing ratio | 1 | `thickness/plane_spacing` | `0.018` |
+| `effective_width_ratio` | Corrected normalized width | 1 | `width_ratio-max(0,0.35-width_ratio)^2/(1+12*thickness_ratio)` | `0.6` |
+| `fringe_factor` | Thickness-dependent fringe factor | 1 | `2/pi*ln(1/(1-thickness_ratio)+1)-thickness_ratio/pi*ln(thickness_ratio*(2-thickness_ratio)/(1-thickness_ratio)^2)` | `0.4659693534707028` |
+| `impedance` | Stripline characteristic impedance | ohm | `30*pi*(1-thickness_ratio)/(sqrt(relative_permittivity)*(effective_width_ratio+fringe_factor))` | `43.41181070235101` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Michael Steer, Stripline, section 3.7.1, equations 1–3 and stated accuracy domain](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_%28Steer%29/03%3A_Planar_Transmission_Lines/3.07%3A_Stripline)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.
