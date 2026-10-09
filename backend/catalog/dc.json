@@ -394,5 +394,130 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "dc.series_parallel_branches",
+    "title": "Two series branches in parallel",
+    "category": "DC circuits and resistor networks",
+    "level": "basic",
+    "description": "Reduce two independent two-resistor series branches connected in parallel and find their DC branch currents.",
+    "formula": "A = R1 + R2; B = R3 + R4; Req = A B / (A + B); I1 = V / A; I2 = V / B",
+    "assumptions": [
+      "R1 and R2 form one series branch; R3 and R4 form another; both branches connect across the same ideal source.",
+      "No connection or load at either branch midpoint; wires and source resistance are neglected.",
+      "Constant positive resistances with 1e-9 <= R <= 1e12 ohm and abs(V) <= 1e6 V; bounds do not certify component ratings."
+    ],
+    "references": [
+      {
+        "title": "OpenStax, University Physics Volume 2, 10.2 Resistors in Series and Parallel",
+        "url": "https://openstax.org/books/university-physics-volume-2/pages/10-2-resistors-in-series-and-parallel"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "voltage",
+        "label": "Signed source voltage",
+        "unit": "V",
+        "default": 12.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "r_1",
+        "label": "Branch 1 first resistor",
+        "unit": "ohm",
+        "default": 100.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_2",
+        "label": "Branch 1 second resistor",
+        "unit": "ohm",
+        "default": 200.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_3",
+        "label": "Branch 2 first resistor",
+        "unit": "ohm",
+        "default": 300.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_4",
+        "label": "Branch 2 second resistor",
+        "unit": "ohm",
+        "default": 300.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_branch_1",
+        "label": "Branch 1 resistance",
+        "unit": "ohm",
+        "expression": "r_1+r_2"
+      },
+      {
+        "key": "r_branch_2",
+        "label": "Branch 2 resistance",
+        "unit": "ohm",
+        "expression": "r_3+r_4"
+      },
+      {
+        "key": "r_equivalent",
+        "label": "Equivalent input resistance",
+        "unit": "ohm",
+        "expression": "r_branch_1*r_branch_2/(r_branch_1+r_branch_2)"
+      },
+      {
+        "key": "i_total",
+        "label": "Total source current",
+        "unit": "A",
+        "expression": "voltage/r_equivalent"
+      },
+      {
+        "key": "i_branch_1",
+        "label": "Branch 1 current",
+        "unit": "A",
+        "expression": "voltage/r_branch_1"
+      },
+      {
+        "key": "i_branch_2",
+        "label": "Branch 2 current",
+        "unit": "A",
+        "expression": "voltage/r_branch_2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "min(min(r_1,r_2),min(r_3,r_4))",
+        "op": ">",
+        "right": "0",
+        "message": "All four resistances must be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "voltage": 12.0,
+        "r_1": 100.0,
+        "r_2": 200.0,
+        "r_3": 300.0,
+        "r_4": 300.0
+      },
+      "expected": {
+        "r_branch_1": 300.0,
+        "r_branch_2": 600.0,
+        "r_equivalent": 200.0,
+        "i_total": 0.06,
+        "i_branch_1": 0.04,
+        "i_branch_2": 0.02
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

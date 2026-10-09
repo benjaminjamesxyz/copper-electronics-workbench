@@ -162,3 +162,35 @@ An independent energy-flow cross-check gives a voltage drop of `0.012 × 680 = 8
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 3. `dc.series_parallel_branches` — Two series branches in parallel (basic)
+
+**Design question:** What equivalent input resistance and branch currents result when each of two parallel branches contains two series resistors?
+
+**Topology:** One source feeds branch 1 containing `r_1` then `r_2` in series and branch 2 containing `r_3` then `r_4` in series. Their midpoints are unconnected. This is **not** the three-resistor finite-load divider topology.
+
+**Derivation:** Current continuity within each branch gives `A = R1+R2`, `B = R3+R4`. Equal branch terminal voltage and KCL give `I_total = V/A + V/B`. Therefore `Req = 1/(1/A+1/B) = A B/(A+B)`; `I1 = V/A`, `I2 = V/B`. Source: S3.
+
+**Inputs:** `voltage` (V), `r_1`, `r_2`, `r_3`, `r_4` (ohm). **Outputs:** `r_branch_1`, `r_branch_2`, `r_equivalent` (ohm); `i_total`, `i_branch_1`, `i_branch_2` (A).
+
+**Domain and limitations:** All four resistances are positive, so branch sums and equivalent resistance are positive. The source and wires are ideal. Loading a midpoint invalidates this reduction.
+
+**Independent example/default:** `V = 12 V`, `R1 = 100`, `R2 = 200`, `R3 = R4 = 300 ohm`.
+
+- `A = 300 ohm`, `B = 600 ohm`.
+- Branch conductances are `1/300 + 1/600 = 1/200 S`; hence `Req = 200 ohm`.
+- `I1 = 12/300 = 0.04 A`; `I2 = 12/600 = 0.02 A`.
+- KCL gives `I_total = 0.04 + 0.02 = 0.06 A`, also `12/200 A`.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `r_branch_1` | `300.0` | ohm |
+| `r_branch_2` | `600.0` | ohm |
+| `r_equivalent` | `200.0` | ohm |
+| `i_total` | `0.06` | A |
+| `i_branch_1` | `0.04` | A |
+| `i_branch_2` | `0.02` | A |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+
