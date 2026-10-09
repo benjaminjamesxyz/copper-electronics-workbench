@@ -101,3 +101,31 @@ Outputs use volts, multiplying by 1e-3. `Vterminal=E(Th)-E(Tc)` and `hot_sensiti
 
 **Mandatory diagram.** Draw a measurement weld at (100,140), upper copper leg from the weld toward (470,85), lower constantan leg toward (470,195). The two legs do not reconnect at the right. Enclose their right terminations within an isothermal block x=435–515. Open measurement terminals at x=600, with upper “+ Cu” and lower “− constantan”; `terminal_emf` labels the voltage across these open terminals. Bind `hot_temperature` by the weld and `cold_temperature` above the isothermal block. Optional lower legend binds `hot_emf` and `cold_emf` to “E(Th), E(Tc), each relative to 0 degC”; never label either as the actual terminal signal. Caption: “Type-T copper/constantan pair with isothermal reference connections. Vterminal = E(Th) − E(Tc); both junction temperatures use the NIST 0–400 degC branch.”
 
+
+## 4. sensors.hall_plate_angle
+
+**Level:** basic.
+
+- [Allegro AN296065, Hall Effect Principles, equation 1](https://www.allegromicro.com/en/insights-and-innovations/technical-documents/hall-effect-sensor-ic-publications/allegro-hall-effect-sensor-ics)
+
+
+**Purpose and novelty.** Translate the normal projection of a tilted magnetic field into transverse Hall voltage and angular sensitivity. Closest baseline `magnetics.field_energy_density` predicts stored energy, not carrier separation or sensor voltage. The neighboring AMR calculation predicts longitudinal scattering resistance, has different terminals and different angular symmetry.
+
+**Model.** `Bn=B cos(theta)`, `VH=RH I Bn/t`, `dVH/dtheta=-RH I B sin(theta)/t`. `RH` is signed, in m³/C; `I` is signed longitudinal current; `t` is plate thickness in meters; theta is radians from the selected positive plate normal. `RH` includes the chosen voltage-contact polarity convention. For a simple one-carrier material its magnitude is `1/(n q)`; no universal carrier sign or geometry factor is presumed.
+
+**Validity.** Homogeneous plate, uniform field, fixed temperature, negligible loading and offset, calibrated linear Hall regime. `B>=0`, `t>0`, positive user-supplied field/current limits, `B<=field_limit`, `abs(I)<=current_limit`. These are real calibration inputs, not guessed universal sensor ratings. Both zero bias and zero field remain valid. No amplifier rail/clipping is modeled.
+
+**Complete example inputs.** `field_magnitude=0.05 T`, `field_angle=1.0471975511965976 rad` (pi/3), `bias_current=0.001 A`, `hall_coefficient=0.01 m³/C`, `plate_thickness=1e-5 m`, `field_limit=0.2 T`, `current_limit=0.005 A`. Since cos(pi/3)=1/2 and sin(pi/3)=sqrt(3)/2:
+
+| Output key | Independent expected value |
+|---|---:|
+| `normal_field` | 0.025 T |
+| `hall_voltage` | 0.025 V |
+| `angle_sensitivity` | -0.04330127018922193 V/rad |
+
+The two values stored as 0.02500000000000001 in JSON differ only by binary64 evaluation of the supplied radian input.
+
+**Tester cases.** At theta=0 with other defaults, outputs `(0.05 T,0.05 V,0 V/rad)`. At B=0 all three outputs are zero. I=0 leaves normal field unchanged but both voltage outputs zero. Reverse I or RH: both voltage outputs change sign, Bn does not. Reverse field orientation by pi: field and Hall voltage reverse. Bias or field equal to its declared maximum is accepted; larger magnitudes, negative B, zero thickness, or nonpositive limits are rejected. Quarter-turn angular values produce floating-point residuals; do not demand `cos(pi/2)` be exact zero.
+
+**Mandatory diagram.** Draw an oblique Hall plate occupying x=110–380,y=100–200. Current arrow crosses it longitudinally left-to-right and binds `bias_current`. Distinct transverse voltage contacts on the other two sides connect to open “+” and “−” sense terminals labeled `hall_voltage`; they must not short the bias contacts. From the plate center draw an outward normal arrow and a tilted B arrow with theta arc; bind `field_magnitude`, `field_angle` and `normal_field` to B, theta and “B normal” respectively. A thickness bracket binds `plate_thickness`. Caption: “Transverse Hall response follows the component normal to the plate. Contact signs use the entered signed Hall coefficient; geometry is schematic, not a calibrated device drawing.”
+

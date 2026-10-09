@@ -273,5 +273,127 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "sensors.hall_plate_angle",
+    "title": "Hall-plate field-angle transduction",
+    "category": "Sensor transduction",
+    "level": "basic",
+    "description": "Estimate transverse Hall voltage and angular sensitivity of a biased plate in a uniform tilted field.",
+    "formula": "Bn=B cos(theta); VH=RH I Bn/t; dVH/dtheta=-RH I B sin(theta)/t",
+    "assumptions": [
+      "Theta is the angle between magnetic flux density and the selected positive plate normal, in radians.",
+      "RH is a signed calibrated Hall coefficient; voltage-contact polarity must match that calibration.",
+      "Uniform single-carrier plate approximation and constant temperature; geometry factor, offset, planar Hall terms and loading are excluded.",
+      "Entered field and current limits must come from the sensor linear-region calibration; no amplifier or supply-rail model."
+    ],
+    "references": [
+      {
+        "title": "Allegro AN296065, Hall Effect Principles, equation 1",
+        "url": "https://www.allegromicro.com/en/insights-and-innovations/technical-documents/hall-effect-sensor-ic-publications/allegro-hall-effect-sensor-ics"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "field_magnitude",
+        "label": "Applied magnetic flux density magnitude",
+        "unit": "T",
+        "default": 0.05,
+        "min": 0
+      },
+      {
+        "key": "field_angle",
+        "label": "Field angle from plate normal",
+        "unit": "rad",
+        "default": 1.0471975511965976
+      },
+      {
+        "key": "bias_current",
+        "label": "Signed longitudinal bias current",
+        "unit": "A",
+        "default": 0.001
+      },
+      {
+        "key": "hall_coefficient",
+        "label": "Signed calibrated Hall coefficient",
+        "unit": "m^3/C",
+        "default": 0.01
+      },
+      {
+        "key": "plate_thickness",
+        "label": "Hall plate thickness",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "field_limit",
+        "label": "Maximum calibrated total field",
+        "unit": "T",
+        "default": 0.2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "current_limit",
+        "label": "Maximum calibrated bias magnitude",
+        "unit": "A",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "normal_field",
+        "label": "Field component normal to plate",
+        "unit": "T",
+        "expression": "field_magnitude*cos(field_angle)"
+      },
+      {
+        "key": "hall_voltage",
+        "label": "Signed transverse Hall voltage",
+        "unit": "V",
+        "expression": "hall_coefficient*bias_current*(field_magnitude/plate_thickness)*cos(field_angle)"
+      },
+      {
+        "key": "angle_sensitivity",
+        "label": "Signed angular voltage sensitivity",
+        "unit": "V/rad",
+        "expression": "-hall_coefficient*bias_current*(field_magnitude/plate_thickness)*sin(field_angle)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "field_magnitude",
+        "op": "<=",
+        "right": "field_limit",
+        "message": "Applied field exceeds calibrated Hall model range"
+      },
+      {
+        "left": "abs(bias_current)",
+        "op": "<=",
+        "right": "current_limit",
+        "message": "Bias current exceeds calibrated Hall model range"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "field_magnitude": 0.05,
+        "field_angle": 1.0471975511965976,
+        "bias_current": 0.001,
+        "hall_coefficient": 0.01,
+        "plate_thickness": 1e-05,
+        "field_limit": 0.2,
+        "current_limit": 0.005
+      },
+      "expected": {
+        "normal_field": 0.02500000000000001,
+        "hall_voltage": 0.02500000000000001,
+        "angle_sensitivity": -0.04330127018922193
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
