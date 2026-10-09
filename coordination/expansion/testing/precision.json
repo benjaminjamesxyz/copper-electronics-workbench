@@ -1,0 +1,632 @@
+{
+  "lane": "precision",
+  "base": "2cca03e",
+  "file": "backend/tests/precision.rs",
+  "authored_tests": 27,
+  "behaviors_covered": {
+    "precision.bjt_mirror_base_current": "Complete non-default Iref=1.28 mA / beta=62 oracle with two-base KCL and exact collector/base ratio; linear current scaling through 1e-200 with exact fractional deficit, inclusive margin==0 boundary and one-ulp-below rejection; beta=1000 preserves the 1/501 fractional deficit; every scalar invalid boundary and every NaN/+Inf/-Inf input followed by fully asserted valid recovery.",
+    "precision.instrumentation_internal_headroom": "Complete negative-differential oracle with final-stage node KCL on both difference-stage resistors; zero and reversed differential preserve the reference path; inclusive final-output and final-input-pin endpoints with one-ulp rejections; both hidden first-stage output clips rejected while both signal pins stay inside the common-mode interval; signal pins, final output and final pin each invalidated independently; every scalar invalid boundary and every NaN/+Inf/-Inf input followed by fully asserted valid recovery.",
+    "precision.transimpedance_butterworth": "Complete wt*Rf*Cs=5 oracle with independent damping identity (1/wt+RfCf)^2 = 2Rf(Cs+Cf)/wt and -3 dB magnitude check at the returned bandwidth; exact 2 wt Rf Cs = 1 boundary admitted with Cf=0, bandwidth sqrt(2)*GBW and noise-gain zero 2/GBW, one-ulp-below rejection and one-ulp-above positive Cf; zero-signal and inclusive swing boundary with adjacent rejection and recovery; GBW=1000 unsolvable rejection; every scalar invalid boundary and every NaN/+Inf/-Inf input followed by fully asserted valid recovery.",
+    "precision.howland_mismatch_load": "Complete mismatched-pump oracle with both node KCL equations and amplifier-current decomposition; balanced ratios remove load dependence of current but not output drive; negative, zero and reversed signed conductance admitted by symmetry; both polarities accept exact output/common-mode/current limits and reject each independent 1 percent excess with recovery; PRECISION-T1: exact decimal singularity with zero drive must reject (expected FAIL, see suspected defects); representable tiny positive total conductance 2^-61 retains the exact finite solution while exact and 4/3-singular neighbors reject; every scalar invalid boundary and every NaN/+Inf/-Inf input followed by fully asserted valid recovery.",
+    "precision.brokaw_first_order_trim": "Complete T=320 K N=4 oracle from exact SI k and q with 2 I R1 = Vref-VBE, 2 (R1/R2) dVBE/T = |slope| zero-slope identities; area-ratio and R2 scaling laws keep the 1.186 V reference; N=1+epsilon admitted with series ln(1+eps) oracles and fractional N=1.5 admitted; local-temperature trajectory on the characterized VBE curve cancels the first-order slope and keeps R1 constant; every scalar invalid boundary including slope==0 and slope>0 and every NaN/+Inf/-Inf input followed by fully asserted valid recovery.",
+    "precision.log114_current_ratio": "Complete 0.1-decade negative oracle with transimpedance identity dV/dI = 0.375/(ln10 I1); equal and one-ulp-adjacent currents retain the signed tiny output through exact Sterbenz differences; one-decade and reference-resistor scaling follow the 0.375 V/decade device law; PRECISION-T2: all four device range corners demand full log-ratio precision (expected FAIL at the 5e-8 ratio corner, see suspected defects); every scalar invalid boundary including 100 pA / 10 mA / 1250 ohm / 25 Gohm endpoints and every NaN/+Inf/-Inf input followed by fully asserted valid recovery."
+  },
+  "oracle_provenance": "Non-default vectors derived independently from node KCL, the documented two-pole closed-loop denominator, exact SI k=1.380649e-23 / q=1.602176634e-19, logarithm identities and binary64 Sterbenz/series analysis; confirmed against research/expansion/precision.md formulas, never against catalog example outputs. Suspected-defect reproductions T1/T2 verified by independent binary64 evaluation of the exact catalog expressions (guard total +2.7105054e-20; corner decades relative error 3.5e-11).",
+  "verification": "Not executed. No builds, tests, lint, formatter, backend process or native launches. Independent arithmetic and source inspection only; all 27 Rust tests and 19 flat process scenarios await Main. Two authored tests (PRECISION-T1, PRECISION-T2) are expected to fail against current source by design and are listed as suspected defects.",
+  "untested_gaps": [
+    "Main must compile and run the precision integration target and full integrated suite; the two PRECISION-T1/T2 reproduction tests are expected failures that gate the listed defects.",
+    "Main must run the flat scenarios in one real JSON-lines process and inspect the native desktop scenarios; nonfinite inputs are covered in the Rust suite only because scenario JSON must remain strictly valid JSON.",
+    "No device-level LOG114 conformity, instrumentation amplifier bandwidth/noise, transimpedance slew, Howland stability or bandgap curvature/startup validation.",
+    "No exhaustive binary64 domain sweep beyond the constructed boundary vectors."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "precision.howland_mismatch_load",
+      "location": "backend/catalog/precision.json constraint 'The loaded Howland feedback must have positive total conductance' (1/load_resistance+(1/r_one-(r_four/r_three)/r_two) > 0)",
+      "evidence": "Source-derived, not executed; reproduced by independent binary64 evaluation of the exact catalog expressions.",
+      "inputs": {
+        "r_one": 10000.0,
+        "r_two": 10000.0,
+        "r_three": 10000.0,
+        "r_four": 30000.0,
+        "positive_drive": 0.0,
+        "negative_drive": 0.0,
+        "load_resistance": 5000.0
+      },
+      "expected_outputs": {},
+      "contradiction": "Exact decimal cancellation gives 1/RL+g = 1/5000 + 1/10000 - 3/10000 = 0, an indeterminate load-node equation, so the strict guard must reject. binary64 summation rounds the guard to +2.7105054e-20, the constraint passes, and the model silently returns the all-zero 'solution' with g=-2e-4 instead of reporting the singular bias point.",
+      "minimal_correction": "Evaluate the loaded-conductance guard with compensated/exact arithmetic or reject |total| <= eps*(1/load_resistance+|g|) before dividing; do not widen the bound into a heuristic that also hides genuine small-positive designs. Gated by backend/tests/precision.rs::howland_decimal_exact_singularity_rejects_even_with_zero_drive, which is expected to fail until fixed."
+    },
+    {
+      "severity": "medium",
+      "id": "precision.log114_current_ratio",
+      "location": "backend/catalog/precision.json output log_decades expression 'log1p((signal_current-reference_current)/reference_current)/ln(10)'",
+      "evidence": "Source-derived, not executed; reproduced by independent binary64 evaluation of the exact catalog expressions.",
+      "inputs": {
+        "signal_current": 1e-10,
+        "reference_resistance": 1250.0
+      },
+      "expected_outputs": {
+        "reference_current": 0.002,
+        "current_ratio": 5e-08,
+        "log_decades": -7.301029995663981,
+        "log_output": -2.737886248373993,
+        "local_transimpedance": 1628604307.1371942
+      },
+      "contradiction": "signal_current-reference_current cancels all but ~8 digits of the tiny signal (x=-0.99999995, absolute error ~1.1e-16), and d(log1p)/dx = 1/(1+x) amplifies it by 2e7, giving log_decades = -7.30102999541041, a 3.5e-11 relative error versus ln(5e-8)/ln(10) = -7.301029995663981; the device still specifies full accuracy at its 100 pA endpoint. Near-unity vectors are unaffected (Sterbenz-exact differences), so only log(ratio) computed from the isolated ratio fixes this without regressing the adjacent-current precision.",
+      "minimal_correction": "Compute log_decades from ln(signal_current/reference_current)/ln(10), or keep log1p but feed it the relative difference formed without the catastrophic subtraction; do not loosen the corner tolerance. Gated by backend/tests/precision.rs::log114_all_device_range_corners_keep_full_log_ratio_precision, which is expected to fail at this corner until fixed."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "mirror_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "precision.bjt_mirror_base_current",
+        "inputs": {
+          "reference_current": 0.00128,
+          "beta": 62.0,
+          "base_emitter_voltage": 0.7,
+          "collector_voltage": 1.9
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent KCL derivation Iref/(1+2/beta), Iref/(beta+2); not an implementation example.",
+      "expected_outputs": {
+        "collector_current": 0.00124,
+        "base_current_each": 2e-05,
+        "current_deficit": 4e-05,
+        "fractional_deficit": 0.03125,
+        "compliance_margin": 1.2
+      }
+    },
+    {
+      "name": "mirror_invalid_collector_below_vbe",
+      "request": {
+        "command": "calculate",
+        "id": "precision.bjt_mirror_base_current",
+        "inputs": {
+          "reference_current": 0.00128,
+          "beta": 62.0,
+          "base_emitter_voltage": 0.7,
+          "collector_voltage": 0.6
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Collector-base junction forward-biased; reject without terminating the process."
+    },
+    {
+      "name": "mirror_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "precision.bjt_mirror_base_current",
+        "inputs": {
+          "reference_current": 0.00128,
+          "beta": 62.0,
+          "base_emitter_voltage": 0.7,
+          "collector_voltage": 1.9
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; full independent output map must recover.",
+      "expected_outputs": {
+        "collector_current": 0.00124,
+        "base_current_each": 2e-05,
+        "current_deficit": 4e-05,
+        "fractional_deficit": 0.03125,
+        "compliance_margin": 1.2
+      }
+    },
+    {
+      "name": "instrumentation_independent_nondefault_negative_differential",
+      "request": {
+        "command": "calculate",
+        "id": "precision.instrumentation_internal_headroom",
+        "inputs": {
+          "feedback_resistance": 12000.0,
+          "gain_resistance": 3000.0,
+          "difference_input_resistance": 20000.0,
+          "difference_feedback_resistance": 10000.0,
+          "common_voltage": -0.5,
+          "differential_voltage": -0.125,
+          "reference_voltage": 0.25,
+          "output_min": -3.0,
+          "output_max": 3.0,
+          "common_min": -2.0,
+          "common_max": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent G1=9, G=4.5 node solution with negative differential and reference offset; not an implementation example.",
+      "expected_outputs": {
+        "first_stage_gain": 9.0,
+        "total_gain": 4.5,
+        "first_low_voltage": 0.0625,
+        "first_high_voltage": -1.0625,
+        "difference_pin_voltage": -0.1875,
+        "output_voltage": -0.3125
+      }
+    },
+    {
+      "name": "instrumentation_invalid_hidden_first_stage_clip",
+      "request": {
+        "command": "calculate",
+        "id": "precision.instrumentation_internal_headroom",
+        "inputs": {
+          "feedback_resistance": 12000.0,
+          "gain_resistance": 3000.0,
+          "difference_input_resistance": 20000.0,
+          "difference_feedback_resistance": 10000.0,
+          "common_voltage": 2.75,
+          "differential_voltage": 0.125,
+          "reference_voltage": 0.25,
+          "output_min": -3.0,
+          "output_max": 3.0,
+          "common_min": -3.0,
+          "common_max": 3.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Both signal pins (2.6875/2.8125 V) and final output (0.8125 V) fit, but the positive first-stage branch reaches 3.3125 V; hidden internal clipping must reject."
+    },
+    {
+      "name": "instrumentation_recovery_after_hidden_clip",
+      "request": {
+        "command": "calculate",
+        "id": "precision.instrumentation_internal_headroom",
+        "inputs": {
+          "feedback_resistance": 12000.0,
+          "gain_resistance": 3000.0,
+          "difference_input_resistance": 20000.0,
+          "difference_feedback_resistance": 10000.0,
+          "common_voltage": 2.0,
+          "differential_voltage": 0.125,
+          "reference_voltage": 0.25,
+          "output_min": -3.0,
+          "output_max": 3.0,
+          "common_min": -3.0,
+          "common_max": 3.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the hidden-clip rejection; common mode lowered to 2 V puts every node inside the intervals and the full independent map must recover.",
+      "expected_outputs": {
+        "first_stage_gain": 9.0,
+        "total_gain": 4.5,
+        "first_low_voltage": 1.4375,
+        "first_high_voltage": 2.5625,
+        "difference_pin_voltage": 1.0208333333333333,
+        "output_voltage": 0.8125
+      }
+    },
+    {
+      "name": "transimpedance_independent_nondefault_butterworth",
+      "request": {
+        "command": "calculate",
+        "id": "precision.transimpedance_butterworth",
+        "inputs": {
+          "feedback_resistance": 20000.0,
+          "source_capacitance": 3.978873577297384e-11,
+          "gain_bandwidth": 1000000.0,
+          "input_peak": 2.5e-05,
+          "output_peak_limit": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent wt*Rf*Cs=5 vector; Butterworth solution requires wt*Rf*Cf=3 exactly, which a Cs>>Cf approximation cannot produce.",
+      "expected_outputs": {
+        "feedback_capacitance": 2.3873241463784302e-11,
+        "butterworth_bandwidth": 353553.39059327374,
+        "dc_transimpedance": -20000.0,
+        "output_peak": 0.5,
+        "noise_gain_zero": 125000.0
+      }
+    },
+    {
+      "name": "transimpedance_invalid_unsolvable_gbw",
+      "request": {
+        "command": "calculate",
+        "id": "precision.transimpedance_butterworth",
+        "inputs": {
+          "feedback_resistance": 20000.0,
+          "source_capacitance": 3.978873577297384e-11,
+          "gain_bandwidth": 1000.0,
+          "input_peak": 2.5e-05,
+          "output_peak_limit": 2.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "2 wt Rf Cs << 1 cannot realize a nonnegative Butterworth capacitor; reject."
+    },
+    {
+      "name": "transimpedance_exact_zero_cf_boundary",
+      "request": {
+        "command": "calculate",
+        "id": "precision.transimpedance_butterworth",
+        "inputs": {
+          "feedback_resistance": 20000.0,
+          "source_capacitance": 3.978873577297384e-12,
+          "gain_bandwidth": 1000000.0,
+          "input_peak": 2.5e-05,
+          "output_peak_limit": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Exactly 2 wt Rf Cs = 1 must be admitted with Cf=0, bandwidth sqrt(2)*GBW and noise-gain zero 2/GBW; equality is inclusive, not clamped.",
+      "expected_outputs": {
+        "feedback_capacitance": 0.0,
+        "butterworth_bandwidth": 1414213.562373095,
+        "dc_transimpedance": -20000.0,
+        "output_peak": 0.5,
+        "noise_gain_zero": 2000000.0
+      }
+    },
+    {
+      "name": "transimpedance_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "precision.transimpedance_butterworth",
+        "inputs": {
+          "feedback_resistance": 20000.0,
+          "source_capacitance": 3.978873577297384e-11,
+          "gain_bandwidth": 1000000.0,
+          "input_peak": 2.5e-05,
+          "output_peak_limit": 2.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the unsolvable rejection; full independent output map must recover.",
+      "expected_outputs": {
+        "feedback_capacitance": 2.3873241463784302e-11,
+        "butterworth_bandwidth": 353553.39059327374,
+        "dc_transimpedance": -20000.0,
+        "output_peak": 0.5,
+        "noise_gain_zero": 125000.0
+      }
+    },
+    {
+      "name": "howland_independent_nondefault_mismatch",
+      "request": {
+        "command": "calculate",
+        "id": "precision.howland_mismatch_load",
+        "inputs": {
+          "r_one": 2000.0,
+          "r_two": 4000.0,
+          "r_three": 1000.0,
+          "r_four": 1800.0,
+          "positive_drive": 0.6,
+          "negative_drive": -0.2,
+          "load_resistance": 1000.0,
+          "output_min": -4.0,
+          "output_max": 4.0,
+          "common_min": -2.0,
+          "common_max": 2.0,
+          "output_current_limit": 0.01
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent two-node KCL solution J=3.9e-4, g=5e-5 with both drives nonzero and negative drive; not an implementation example.",
+      "expected_outputs": {
+        "norton_drive_current": 0.00039,
+        "output_conductance": 5e-05,
+        "load_voltage": 0.3714285714285714,
+        "load_current": 0.0003714285714285714,
+        "amplifier_voltage": 1.4,
+        "amplifier_current": 0.0008285714285714286
+      }
+    },
+    {
+      "name": "howland_invalid_strictly_negative_total_conductance",
+      "request": {
+        "command": "calculate",
+        "id": "precision.howland_mismatch_load",
+        "inputs": {
+          "r_one": 2000.0,
+          "r_two": 4000.0,
+          "r_three": 1000.0,
+          "r_four": 40000.0,
+          "positive_drive": 0.6,
+          "negative_drive": -0.2,
+          "load_resistance": 1000.0,
+          "output_min": -4.0,
+          "output_max": 4.0,
+          "common_min": -2.0,
+          "common_max": 2.0,
+          "output_current_limit": 0.01
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "R4=40000 gives g=-9.5e-3 S with 1/RL=1e-3 S; the negative-feedback branch is unstable by a wide margin, not a rounding artifact; reject."
+    },
+    {
+      "name": "howland_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "precision.howland_mismatch_load",
+        "inputs": {
+          "r_one": 2000.0,
+          "r_two": 4000.0,
+          "r_three": 1000.0,
+          "r_four": 1800.0,
+          "positive_drive": 0.6,
+          "negative_drive": -0.2,
+          "load_resistance": 1000.0,
+          "output_min": -4.0,
+          "output_max": 4.0,
+          "common_min": -2.0,
+          "common_max": 2.0,
+          "output_current_limit": 0.01
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the unstable rejection; full independent output map must recover.",
+      "expected_outputs": {
+        "norton_drive_current": 0.00039,
+        "output_conductance": 5e-05,
+        "load_voltage": 0.3714285714285714,
+        "load_current": 0.0003714285714285714,
+        "amplifier_voltage": 1.4,
+        "amplifier_current": 0.0008285714285714286
+      }
+    },
+    {
+      "name": "brokaw_independent_nondefault_trim",
+      "request": {
+        "command": "calculate",
+        "id": "precision.brokaw_first_order_trim",
+        "inputs": {
+          "temperature": 320.0,
+          "area_ratio": 4.0,
+          "ptat_resistance": 8000.0,
+          "base_emitter_voltage": 0.61,
+          "base_emitter_slope": -0.0018
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent exact-SI kT/q derivation at non-default T, N and slope with 2 I R1 = 0.576 V PTAT term; not an implementation example.",
+      "expected_outputs": {
+        "thermal_voltage": 0.027575466438864566,
+        "delta_vbe": 0.03822771362944874,
+        "branch_current": 4.778464203681092e-06,
+        "resistor_ratio": 7.533801335639886,
+        "common_resistor": 60270.41068511909,
+        "reference_voltage": 1.186
+      }
+    },
+    {
+      "name": "brokaw_invalid_area_ratio_one",
+      "request": {
+        "command": "calculate",
+        "id": "precision.brokaw_first_order_trim",
+        "inputs": {
+          "temperature": 320.0,
+          "area_ratio": 1.0,
+          "ptat_resistance": 8000.0,
+          "base_emitter_voltage": 0.61,
+          "base_emitter_slope": -0.0018
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "N=1 gives ln(N)=0 and a diverging resistor ratio; reject instead of dividing by zero."
+    },
+    {
+      "name": "brokaw_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "precision.brokaw_first_order_trim",
+        "inputs": {
+          "temperature": 320.0,
+          "area_ratio": 4.0,
+          "ptat_resistance": 8000.0,
+          "base_emitter_voltage": 0.61,
+          "base_emitter_slope": -0.0018
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the N=1 rejection; full independent output map must recover.",
+      "expected_outputs": {
+        "thermal_voltage": 0.027575466438864566,
+        "delta_vbe": 0.03822771362944874,
+        "branch_current": 4.778464203681092e-06,
+        "resistor_ratio": 7.533801335639886,
+        "common_resistor": 60270.41068511909,
+        "reference_voltage": 1.186
+      }
+    },
+    {
+      "name": "log114_independent_nondefault_negative_decade",
+      "request": {
+        "command": "calculate",
+        "id": "precision.log114_current_ratio",
+        "inputs": {
+          "signal_current": 2e-07,
+          "reference_resistance": 1250000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Independent resistor-referenced 0.1-decade vector with signed output and transimpedance identity; not an implementation example.",
+      "expected_outputs": {
+        "reference_current": 2e-06,
+        "current_ratio": 0.1,
+        "log_decades": -1.0,
+        "log_output": -0.375,
+        "local_transimpedance": 814302.1535685972
+      }
+    },
+    {
+      "name": "log114_invalid_below_device_range_then_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "precision.log114_current_ratio",
+        "inputs": {
+          "signal_current": 5e-11,
+          "reference_resistance": 1250000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Signal below the modeled 100 pA device input range; reject without terminating the process."
+    },
+    {
+      "name": "log114_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "precision.log114_current_ratio",
+        "inputs": {
+          "signal_current": 2e-07,
+          "reference_resistance": 1250000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the below-range rejection; full independent output map must recover.",
+      "expected_outputs": {
+        "reference_current": 2e-06,
+        "current_ratio": 0.1,
+        "log_decades": -1.0,
+        "log_output": -0.375,
+        "local_transimpedance": 814302.1535685972
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "precision.bjt_mirror_base_current",
+      "inputs": {
+        "reference_current": 0.00128,
+        "beta": 62.0,
+        "base_emitter_voltage": 0.7,
+        "collector_voltage": 1.9
+      },
+      "expected_outputs": {
+        "collector_current": 0.00124,
+        "base_current_each": 2e-05,
+        "current_deficit": 4e-05,
+        "fractional_deficit": 0.03125,
+        "compliance_margin": 1.2
+      },
+      "steps": "Select the mirror calculator; enter the complete non-default vector; calculate; compare all five outputs and units against the independent KCL oracle. Then set collector_voltage to 0.6 (below VBE), confirm rejection, restore 1.9 without reopening the app and confirm recovery. Inspect diagram labels: Q1 collector/base short explicit, reference and output arrows downward, margin label bound to collector_voltage minus base_emitter_voltage."
+    },
+    {
+      "id": "precision.instrumentation_internal_headroom",
+      "inputs": {
+        "feedback_resistance": 12000.0,
+        "gain_resistance": 3000.0,
+        "difference_input_resistance": 20000.0,
+        "difference_feedback_resistance": 10000.0,
+        "common_voltage": -0.5,
+        "differential_voltage": -0.125,
+        "reference_voltage": 0.25,
+        "output_min": -3.0,
+        "output_max": 3.0,
+        "common_min": -2.0,
+        "common_max": 2.0
+      },
+      "expected_outputs": {
+        "first_stage_gain": 9.0,
+        "total_gain": 4.5,
+        "first_low_voltage": 0.0625,
+        "first_high_voltage": -1.0625,
+        "difference_pin_voltage": -0.1875,
+        "output_voltage": -0.3125
+      },
+      "steps": "Enter the negative-differential vector; compare all six node outputs. Then set common_voltage to 2.75 with common limits +/-3 and confirm the hidden first-stage clip rejects although the final output would fit; restore 2.0 and confirm recovery. Inspect diagram: floating gain resistor between the two first-stage minus pins, four-resistor difference stage, reference port and both internal branch outputs labeled with their exact keys."
+    },
+    {
+      "id": "precision.transimpedance_butterworth",
+      "inputs": {
+        "feedback_resistance": 20000.0,
+        "source_capacitance": 3.978873577297384e-11,
+        "gain_bandwidth": 1000000.0,
+        "input_peak": 2.5e-05,
+        "output_peak_limit": 2.0
+      },
+      "expected_outputs": {
+        "feedback_capacitance": 2.3873241463784302e-11,
+        "butterworth_bandwidth": 353553.39059327374,
+        "dc_transimpedance": -20000.0,
+        "output_peak": 0.5,
+        "noise_gain_zero": 125000.0
+      },
+      "steps": "Enter the wt*Rf*Cs=5 vector; compare all five outputs. Then set gain_bandwidth to 1000, confirm the unsolvable rejection, restore 1000000 and confirm recovery. Inspect diagram: current source into the grounded summing node, Cs shunting input, separate Rf/Cf branches to the output, signed DC transimpedance label."
+    },
+    {
+      "id": "precision.howland_mismatch_load",
+      "inputs": {
+        "r_one": 2000.0,
+        "r_two": 4000.0,
+        "r_three": 1000.0,
+        "r_four": 1800.0,
+        "positive_drive": 0.6,
+        "negative_drive": -0.2,
+        "load_resistance": 1000.0,
+        "output_min": -4.0,
+        "output_max": 4.0,
+        "common_min": -2.0,
+        "common_max": 2.0,
+        "output_current_limit": 0.01
+      },
+      "expected_outputs": {
+        "norton_drive_current": 0.00039,
+        "output_conductance": 5e-05,
+        "load_voltage": 0.3714285714285714,
+        "load_current": 0.0003714285714285714,
+        "amplifier_voltage": 1.4,
+        "amplifier_current": 0.0008285714285714286
+      },
+      "steps": "Enter the mismatched two-drive vector; compare all six outputs including the signed conductance and amplifier current. Then set r_four to 40000, confirm the unstable rejection, restore 1800 and confirm recovery. Inspect diagram: R2 positive feedback meets the loaded Vx node, R4 negative feedback separate, signed load-current arrow out of Vx into the grounded load."
+    },
+    {
+      "id": "precision.brokaw_first_order_trim",
+      "inputs": {
+        "temperature": 320.0,
+        "area_ratio": 4.0,
+        "ptat_resistance": 8000.0,
+        "base_emitter_voltage": 0.61,
+        "base_emitter_slope": -0.0018
+      },
+      "expected_outputs": {
+        "thermal_voltage": 0.027575466438864566,
+        "delta_vbe": 0.03822771362944874,
+        "branch_current": 4.778464203681092e-06,
+        "resistor_ratio": 7.533801335639886,
+        "common_resistor": 60270.41068511909,
+        "reference_voltage": 1.186
+      },
+      "steps": "Enter the T=320 K N=4 vector; compare all six outputs against the exact-SI derivation. Then set area_ratio to 1, confirm the rejection, restore 4 and confirm recovery. Inspect diagram: unequal-area BJTs with shared bases, R2 between emitters, R1 carrying 2I to ground, servo amplifier between equal collector branches, reference node labeled reference_voltage."
+    },
+    {
+      "id": "precision.log114_current_ratio",
+      "inputs": {
+        "signal_current": 2e-07,
+        "reference_resistance": 1250000.0
+      },
+      "expected_outputs": {
+        "reference_current": 2e-06,
+        "current_ratio": 0.1,
+        "log_decades": -1.0,
+        "log_output": -0.375,
+        "local_transimpedance": 814302.1535685972
+      },
+      "steps": "Enter the 0.1-decade vector; compare all five outputs including the negative signed log output. Then set signal_current to 5e-11, confirm the below-range rejection, restore 2e-07 and confirm recovery. Inspect diagram: I1 receives the signal, VREF drives I2 through the external resistor, COM/VCM/VREF grounds and +/-5 V rails explicit, VLOGOUT label bound to log_output."
+    }
+  ]
+}
