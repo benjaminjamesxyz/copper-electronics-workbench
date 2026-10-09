@@ -141,4 +141,74 @@
     "constraints": [],
     "example": {"inputs": {"first_noise_figure_db": 2.0, "second_noise_figure_db": 6.0, "third_noise_figure_db": 10.0, "first_gain_db": 20.0, "second_gain_db": 10.0}, "expected": {"first_noise_factor": 1.5848931924611136, "second_noise_factor": 3.9810717055349722, "third_noise_factor": 10.0, "first_power_gain": 100.0, "second_power_gain": 10.0, "cascade_noise_factor": 1.6237039095164632, "cascade_noise_figure_db": 2.1050683636637153, "cascade_noise_temperature": 180.8741337597743}, "relative_tolerance": 0.000001}
   }
+,
+{
+  "id": "noise.junction_shot",
+  "title": "Junction shot noise",
+  "category": "Noise measurement and analog budgets",
+  "level": "intermediate",
+  "description": "Estimate current noise due to independent carriers crossing a junction barrier.",
+  "formula": "i_n = sqrt(2 q I); i_rms = sqrt(2 q I B)",
+  "assumptions": [
+    "I is the nonnegative magnitude of a single Poisson carrier-current stream; use photocurrent plus dark-current magnitudes when both independently contribute.",
+    "One-sided white shot-noise spectrum, unity Fano factor and no avalanche multiplication.",
+    "Not a general noise model for current in a metal resistor or for the net difference of opposing junction currents.",
+    "B is the equivalent noise bandwidth; excludes thermal, flicker and readout noise."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments SLVA043B, Shot Noise",
+      "url": "https://www.ti.com/lit/an/slva043b/slva043b.pdf"
+    },
+    {
+      "title": "NIST CODATA: exact elementary charge",
+      "url": "https://physics.nist.gov/cgi-bin/cuu/Value?e"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "dc_current",
+      "label": "Carrier-current magnitude",
+      "unit": "A",
+      "default": 1e-06,
+      "min": 0.0,
+      "max": 1000.0
+    },
+    {
+      "key": "bandwidth",
+      "label": "Equivalent noise bandwidth",
+      "unit": "Hz",
+      "default": 10000.0,
+      "min": 0.0,
+      "exclusive_min": true,
+      "max": 1000000000000.0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "current_noise_density",
+      "label": "Shot current-noise density",
+      "unit": "A/sqrt(Hz)",
+      "expression": "sqrt(2*1.602176634e-19*dc_current)"
+    },
+    {
+      "key": "current_noise_rms",
+      "label": "RMS shot current noise",
+      "unit": "A",
+      "expression": "current_noise_density*sqrt(bandwidth)"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "dc_current": 1e-06,
+      "bandwidth": 10000.0
+    },
+    "expected": {
+      "current_noise_density": 5.660700723408719e-13,
+      "current_noise_rms": 5.660700723408719e-11
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

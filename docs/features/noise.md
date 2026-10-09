@@ -124,3 +124,33 @@ NF_c = 10 log10(F_c), T_e,c = 290(F_c − 1) K. Third-stage gain cancels and is 
 
 All supporting outputs remain in the original order (three factors, two gains, cascade factor, cascade NF, cascade temperature). The 1e-6 nominal oracle is unchanged; small-NF tests require quantity-scaled tolerances rather than a blanket absolute 1e-6.
 
+
+## Junction shot noise
+
+**ID:** `noise.junction_shot` — **intermediate**. Sources [S1], [S6].
+
+Independent charge carriers crossing a junction barrier have Poisson counting variance. A single carrier-current stream of magnitude I produces one-sided current power spectral density
+
+\[
+S_i=2qI\quad[\mathrm{A^2/Hz}].
+\]
+
+Consequently
+
+\[
+i_n=\sqrt{2qI}\quad[\mathrm{A/\sqrt{Hz}}],\qquad
+ i_{n,\mathrm{rms}}=\sqrt{2qIB}=i_n\sqrt B\quad[\mathrm A].
+\]
+
+**Inputs/domain:** 0 <= I <= 1000 A, 0 < B <= 1e12 Hz. Zero carrier current produces exactly zero shot noise in this ideal model. I is a nonnegative magnitude, not signed current. For independent photocurrent and dark-current streams, their positive magnitudes contribute to the shot-noise variance. A tiny *net* current resulting from cancellation of large opposing streams cannot be substituted as though only one stream exists. Unity Fano factor, no avalanche gain, and white spectra are assumed. Shot noise is not the model for every ordinary metallic-conductor DC current; thermal, flicker and readout noise are separate.
+
+**Independent example:** I = 1e-6 A, B = 10000 Hz.
+
+- 2qI = 3.204353268e-25 A²/Hz.
+- `current_noise_density` = **5.660700723408719e-13 A/sqrt(Hz)** = 0.566070072341 pA/sqrt(Hz).
+- RMS variance = 3.204353268e-21 A².
+- `current_noise_rms` = **5.660700723408719e-11 A** = 56.6070072341 pA RMS.
+
+
+**Error rationale and output order:** Reject nonfinite values, negative current, nonpositive ENBW and inputs above the declared maxima. Positive bandwidth establishes the integration band; nonnegative current protects the square root, including the exact zero-current limit. Density precedes integrated RMS; no current absolute-value fallback silently accepts signed inputs.
+
