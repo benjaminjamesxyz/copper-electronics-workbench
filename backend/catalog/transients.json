@@ -1,0 +1,136 @@
+[
+  {
+    "id": "transients.rc_step",
+    "title": "RC charge or discharge after a voltage step",
+    "category": "Passive transients",
+    "level": "basic",
+    "description": "Calculate a capacitor's arbitrary-initial-condition step trajectory, relative-error settling time, stored energy, and accumulated resistor pulse energy.",
+    "formula": "tau=RC; vC=Vs+(V0-Vs)exp(-t/tau); iC=(Vs-vC)/R; t_settle=-tau ln(epsilon); EC=C vC^2/2; ER=C(Vs-V0)^2[1-exp(-2t/tau)]/2",
+    "assumptions": [
+      "Ideal constant capacitance and positive series resistance driven by an ideal constant voltage after t=0; R includes source resistance and capacitor ESR where their lumped approximation is valid.",
+      "Positive current flows from source into capacitor. Vs=0 describes discharge; no separate inverse calculator is counted.",
+      "Settling tolerance is a fraction of the initial-to-final voltage difference, not an ADC or digital threshold specification. For V0=Vs there is no transient and the reported normalized settling time is a conventional time-scale metric only.",
+      "Stored energy excludes dielectric loss; resistor pulse energy does not establish a resistor pulse-rating or safety certification.",
+      "Voltage increments and accumulated resistive energy use expm1 so arbitrarily short positive elapsed times do not lose the exponential difference to subtraction; adding a tiny increment to a nonzero initial voltage remains subject to ordinary floating-point resolution."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.200: Optional Review, RC Circuit Derivations and Key Values",
+        "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"
+      },
+      {
+        "title": "Georgia State University HyperPhysics: Energy Stored on a Capacitor",
+        "url": "https://hyperphysics.gsu.edu/hbase/electric/capeng.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r",
+        "label": "Total series resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 0.001,
+        "max": 1000000000.0
+      },
+      {
+        "key": "c",
+        "label": "Capacitance",
+        "unit": "F",
+        "default": 1e-06,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "v_source",
+        "label": "Post-step source voltage",
+        "unit": "V",
+        "default": 5.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "v_initial",
+        "label": "Initial capacitor voltage",
+        "unit": "V",
+        "default": 0.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "time",
+        "label": "Elapsed time",
+        "unit": "s",
+        "default": 0.001,
+        "min": 0.0,
+        "max": 1000000000.0
+      },
+      {
+        "key": "error_fraction",
+        "label": "Remaining normalized error",
+        "unit": "1",
+        "default": 0.01,
+        "min": 1e-12,
+        "max": 1.0,
+        "exclusive_max": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "tau",
+        "label": "Time constant",
+        "unit": "s",
+        "expression": "r*c"
+      },
+      {
+        "key": "capacitor_voltage",
+        "label": "Capacitor voltage",
+        "unit": "V",
+        "expression": "v_initial*exp(-time/tau)+v_source*(-expm1(-time/tau))"
+      },
+      {
+        "key": "capacitor_current",
+        "label": "Charging current",
+        "unit": "A",
+        "expression": "(v_source-v_initial)/r*exp(-time/tau)"
+      },
+      {
+        "key": "settling_time",
+        "label": "Normalized-error settling time",
+        "unit": "s",
+        "expression": "-tau*ln(error_fraction)"
+      },
+      {
+        "key": "capacitor_energy",
+        "label": "Stored capacitor energy",
+        "unit": "J",
+        "expression": "c*capacitor_voltage^2/2"
+      },
+      {
+        "key": "resistor_energy",
+        "label": "Resistor energy accumulated by time t",
+        "unit": "J",
+        "expression": "c*(v_source-v_initial)^2/2*(-expm1(-2*time/tau))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "r": 1000.0,
+        "c": 1e-06,
+        "v_source": 5.0,
+        "v_initial": 0.0,
+        "time": 0.001,
+        "error_fraction": 0.01
+      },
+      "expected": {
+        "tau": 0.001,
+        "capacitor_voltage": 3.1606027941427883,
+        "capacitor_current": 0.0018393972058572117,
+        "settling_time": 0.004605170185988092,
+        "capacitor_energy": 4.9947050111716e-06,
+        "resistor_energy": 1.080830895954234e-05
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
