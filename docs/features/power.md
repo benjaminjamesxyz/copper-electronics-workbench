@@ -86,3 +86,28 @@ Sequential outputs are `duty=vout/vin` (unit `1`) and `i_cin_rms=sqrt(iout^2*dut
 | `i_cin_rms` | `sqrt(4*(5/12)*(7/12)+(5/12)*0.36/12)` | `0.9923317097736131 A` |
 
 Mean-square AC current is `35/36+1/80=0.9847222222222222 A²`; the independent DC mean is 5/6 A. At zero ripple, the formula reduces to `Iout*sqrt(D(1-D))` and peaks at D=1/2; no single-capacitor rating or temperature claim follows.
+
+## `power.boost_rhp_zero` — expert
+
+**Purpose:** estimate the nonminimum-phase dynamic limitation of an averaged boost CCM duty-to-output plant, not passive resonance or a stable compensation design. Source: S5 equation 7/bandwidth discussion; S3 ripple equation 2 supplies the CCM check.
+
+Increasing duty initially removes output-delivery time: voltage initially falls even though its final steady-state value rises. The model zero is `fRHPZ=Vout(1-D)^2/(2*pi*L*Iout)`. For a resistive incremental load, sequential outputs are `duty=(vout-vin)/vout`, `r_load=vout/iout`, `f_rhp_zero=r_load*(vin/vout)^2/(2*pi*inductance)` and `f_crossover_guideline=f_rhp_zero/10`. Units: `1`, ohm, Hz, Hz; ohm/H is s⁻¹ and `2*pi` converts angular frequency to Hz.
+
+The direct off-fraction `vin/vout` avoids reconstructing a very small `1-D` by subtracting an almost-one duty; difference-before-division duty preserves near-unity-conversion on-time. No physical model or expected value changes.
+
+**Inputs/defaults:** `vin=5 V`, `vout=12 V`, `iout=0.5 A`, `inductance=0.000022 H`, `fs=500000 Hz`. Every input must be positive.
+
+**Model-domain errors:** reject `vout<=vin` and reject `iout*vout/vin <= vin*((vout-vin)/vout)/(2*fs*inductance)`. The latter compares average inductor current with half predicted ripple, requiring strictly positive valley for CCM. Frequency is needed for this guard although absent from fRHPZ itself. The incremental load must be resistive: constant-power loads, DCM, nonlinear operation, interleaving and material loss/drop departures invalidate this ideal plant estimate.
+
+The one-tenth guideline is the conservative end of TI's one-fifth-to-one-tenth range, not computed closed-loop crossover. You must still design full loop gain/phase and keep crossover well below switching frequency; no stability certification or silent switching-frequency clamp is applied.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `duty` | `7/12` | `0.5833333333333334` |
+| `r_load` | `12/0.5` | `24 ohm` |
+| `f_rhp_zero` | `24*(5/12)^2/(2*pi*22e-6)=25/(12*pi*22e-6)` | `30142.9816461923 Hz` |
+| `f_crossover_guideline` | `30142.9816461923/10` | `3014.29816461923 Hz` |
+
+Independent CCM check: ripple `5*(7/12)/(500000*22e-6)=0.2651515151515152 A`; average 1.2 A; valley 1.0674242424242424 A > 0. Holding voltages/load fixed, doubling L halves fRHPZ; no steady-state sizing feature is duplicated.

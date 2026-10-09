@@ -80,5 +80,33 @@
       {"left": "iout", "op": ">", "right": "delta_i/2", "message": "Positive inductor valley current is required for the CCM model."}
     ],
     "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "delta_i": 0.6}, "expected": {"duty": 0.4166666666666667, "i_cin_rms": 0.9923317097736131}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.boost_rhp_zero",
+    "title": "Boost right-half-plane zero",
+    "category": "Power conversion and regulation",
+    "level": "expert",
+    "description": "Estimate the boost CCM duty-to-output right-half-plane zero and conservative one-tenth-frequency crossover guideline.",
+    "formula": "D = (Vout-Vin)/Vout; Rload = Vout/Iout; fRHPZ = Rload (Vin/Vout)^2/(2 pi L); fc_guideline = fRHPZ/10",
+    "assumptions": ["Ideal single-phase boost averaged small-signal power stage in CCM with resistive incremental load Rload=Vout/Iout.", "Fixed-frequency PWM, small perturbations, negligible winding resistance and semiconductor drops. Constant-power loads, DCM, interleaving and strongly nonlinear operation invalidate the model.", "Positive valley current is enforced from ideal triangular switching ripple.", "One-tenth RHP-zero frequency is the conservative end of TI's one-fifth-to-one-tenth guideline, not a stability guarantee. Full loop analysis and switching-frequency separation remain necessary."],
+    "references": [{"title": "TI SLVAFJ5, How to Approach a Power-Supply Design Part 3, boost equation 7 and bandwidth limitation", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}, {"title": "TI SLVA372D, boost inductor ripple equation 2", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Resistive output load current", "unit": "A", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "inductance", "label": "Effective boost inductance", "unit": "H", "default": 0.000022, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "(vout-vin)/vout"},
+      {"key": "r_load", "label": "Resistive incremental load", "unit": "ohm", "expression": "vout/iout"},
+      {"key": "f_rhp_zero", "label": "Right-half-plane zero frequency", "unit": "Hz", "expression": "r_load*(vin/vout)^2/(2*pi*inductance)"},
+      {"key": "f_crossover_guideline", "label": "Conservative crossover guideline, not stability certification", "unit": "Hz", "expression": "f_rhp_zero/10"}
+    ],
+    "constraints": [
+      {"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."},
+      {"left": "iout*vout/vin", "op": ">", "right": "vin*((vout-vin)/vout)/(2*fs*inductance)", "message": "Inductor average current must exceed half the ideal ripple to remain in CCM."}
+    ],
+    "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "inductance": 0.000022, "fs": 500000}, "expected": {"duty": 0.5833333333333334, "r_load": 24, "f_rhp_zero": 30142.9816461923, "f_crossover_guideline": 3014.29816461923}, "relative_tolerance": 0.000001}
   }
 ]
