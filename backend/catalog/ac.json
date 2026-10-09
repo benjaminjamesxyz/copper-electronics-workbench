@@ -69,5 +69,32 @@
     ],
     "constraints": [],
     "example": {"inputs": {"frequency": 1000.0, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"reactance_magnitude": 159.15494309189535, "impedance_imaginary": -159.15494309189535, "current_rms": 0.031415926535897934, "impedance_phase": -1.5707963267948966}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.series_rlc_impedance",
+    "title": "Series RLC impedance, phase and current",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Calculate complex input impedance and displacement power factor for a resistor, ideal inductor and ideal capacitor connected in series.",
+    "formula": "Z = R + j(2 pi f L - 1/(2 pi f C)); |Z| = sqrt(R^2 + X^2); phi = atan(X/R)",
+    "assumptions": ["Single-frequency sinusoidal steady state with lumped, linear, frequency-independent R, L and C.", "Resistance is the total series resistance, including source/winding/ESR only if represented by a frequency-independent resistance.", "Positive impedance phase means current lags voltage; R is strictly positive so atan gives the correct quadrant."],
+    "references": [{"title": "MIT OCW, Alternating-Current Circuits, sections 12.3 and 12.4", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "resistance", "label": "Total series resistance", "unit": "ohm", "default": 100.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Series inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Series capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Source RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "impedance_real", "label": "Real impedance", "unit": "ohm", "expression": "resistance"},
+      {"key": "impedance_imaginary", "label": "Imaginary impedance", "unit": "ohm", "expression": "2*pi*frequency*inductance-1/(2*pi*frequency*capacitance)"},
+      {"key": "impedance_magnitude", "label": "Impedance magnitude", "unit": "ohm", "expression": "sqrt(impedance_real^2+impedance_imaginary^2)"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "atan(impedance_imaginary/resistance)"},
+      {"key": "current_rms", "label": "Source RMS current", "unit": "A", "expression": "voltage_rms/impedance_magnitude"},
+      {"key": "power_factor", "label": "Displacement power factor", "unit": "1", "expression": "resistance/impedance_magnitude"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "resistance": 100.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"impedance_real": 100.0, "impedance_imaginary": -96.32309002009949, "impedance_magnitude": 138.84573335547688, "impedance_phase": -0.7666714810055317, "current_rms": 0.03601118939102619, "power_factor": 0.7202237878205238}, "relative_tolerance": 0.000001}
   }
 ]

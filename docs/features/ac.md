@@ -80,3 +80,26 @@ From i=C dv/dt, I=j omega C V, so ZC=1/(j omega C)=-j/(omega C). XC=1/(2 pi f C)
 | `impedance_phase` | -1.5707963267948966 | rad |
 
 **Parent verification scenarios:** Increasing frequency reduces XC and increases current; V=0; reject f=0/C=0; confirm negative imaginary impedance and phase.
+
+## `ac.series_rlc_impedance` — complete series network (intermediate)
+
+**Purpose/topology:** Determine input impedance, phase, RMS current and displacement PF of series R, L and C at a specified off-resonance frequency.
+
+Series voltages add: Z=R+j omega L+1/(j omega C)=R+jX, X=omega L-1/(omega C). |Z|=sqrt(R²+X²); phase=atan(X/R); I=V/|Z|; PF=R/|Z|=cos(phase). R>0 puts Z in the right half-plane, so atan suffices without atan2. Real/imaginary/modulus outputs are ohm; phase rad; current A RMS; PF dimensionless. Source: [M1], §§12.3–12.4, equations 12.3.6, 12.3.15, 12.4.5.
+
+**Domain/error rationale:** f,R,L,C strictly positive within shared envelopes; V>=0. Positive R prevents infinite ideal-LC current at resonance and guards atan/current divisors. At cancellation X=0, |Z|=R, phase=0, PF=1. Floating-point subtraction may leave a small near-resonance residue; zero-boundary comparisons need scale-aware absolute tolerance.
+
+**Assumptions/limits:** Lumped linear constant elements, one sinusoidal frequency; total R may include source/winding/ESR only where constant ohmic loss is justified. Frequency-dependent/nonlinear losses, gain/filter synthesis and time settling are excluded.
+
+**Complete independent example inputs:** `frequency=1000 Hz`, `resistance=100 ohm`, `inductance=0.01 H`, `capacitance=1e-6 F`, `voltage_rms=5 V`. Independently add ZR=100, ZL=j62.83185307179586, ZC=-j159.15494309189535; take the complex modulus/atan2, then compute V/|Z| for current and R/|Z| for PF.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `impedance_real` | 100.0 | ohm |
+| `impedance_imaginary` | -96.32309002009949 | ohm |
+| `impedance_magnitude` | 138.84573335547688 | ohm |
+| `impedance_phase` | -0.7666714810055317 | rad |
+| `current_rms` | 0.03601118939102619 | A RMS |
+| `power_factor` | 0.7202237878205238 | 1 |
+
+Negative phase identifies current lead. **Parent verification scenarios:** Compare independent complex impedance, below/above/resonant frequency signs and PF=1 at resonance; V=0; reject zero components/frequency/resistance.
