@@ -365,3 +365,83 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 - [TI SLOA185: Extending Op Amp Bandwidth using Active Feedback Phase Correction, section 4, equations 1-3](https://www.ti.com/lit/an/sloa185/sloa185.pdf)
 - [TI SLOA011B: Understanding Operational Amplifier Specifications, sections 2.1 and 5.16](https://www.ti.com/lit/an/sloa011b/sloa011b.pdf)
 
+## 2. `opamps.noninverting_stage` — basic
+
+### Physical problem and connections
+
+Find the gain and reference-shifted output when `Vin` directly drives the noninverting pin. `Rg` connects the inverting node to `Vref`; `Rf` is output-to-inverting-node feedback. The `r_ground` key names `Rg`, even when the reference is nonzero.
+
+### Derivation
+
+With `Vminus=Vin`, KCL at the inverting node gives
+
+\[
+\frac{V_{in}-V_{ref}}{R_g}+\frac{V_{in}-V_o}{R_f}=0,
+\quad
+V_o=V_{ref}+\left(1+\frac{R_f}{R_g}\right)(V_{in}-V_{ref}).
+\]
+
+The limiting `Rf=0` case is a unity buffer, permitted by the catalog. The output expression remains finite without evaluating the KCL form's intermediate division by zero. H p. 17 and S section 2 establish the noninverting feedback relationship.
+
+### Domain and limitations
+
+`Rg>0`, `Rf>=0`. Both op-amp input pins reside at `Vin`, so validate `Vin`, not `Vref`, against common-mode limits. The ideally infinite signal-input impedance is a distinct physical property from calculator 1; signal gain is positive and cannot be below unity. Output current and reference-source drive are not modeled.
+
+### Independent example — all expected outputs
+
+`Rg=10,000 ohm`, `Rf=90,000 ohm`, `Vin=0.4 V`, `Vref=0.1 V`; common-mode/output limits ±10 V.
+
+- `gain = 1+90000/10000 = 10 V/V`.
+- Divider current is `(0.4-0.1)/10000 = 30 microA`.
+- Feedback drop is `30 microA * 90000 = 2.7 V` above the 0.4 V node.
+- `v_out = 0.4+2.7 = 3.1 V`.
+
+The pins sit at 0.4 V and the output at 3.1 V; both pass their domains.
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `r_ground` | Resistance to reference | ohm | `10000.0` | > 0.0 |
+| `r_feedback` | Feedback resistance | ohm | `90000.0` | >= 0.0 |
+| `v_in` | Noninverting input voltage | V | `0.4` | Any finite value, subject to relational guards |
+| `v_reference` | Feedback-divider reference | V | `0.1` | Any finite value, subject to relational guards |
+| `v_out_min` | Minimum linear output voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_out_max` | Maximum linear output voltage | V | `10.0` | Any finite value, subject to relational guards |
+| `v_cm_min` | Minimum input common-mode voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_cm_max` | Maximum input common-mode voltage | V | `10.0` | Any finite value, subject to relational guards |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `gain` | V/V | `1+r_feedback/r_ground` | `10.0` |
+| `v_out` | V | `v_reference+gain*(v_in-v_reference)` | `3.1` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `v_out_min < v_out_max`: Output limits must be ordered.
+- Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
+- Require `v_in >= v_cm_min`: Input is below the common-mode range.
+- Require `v_in <= v_cm_max`: Input is above the common-mode range.
+- Require `v_reference+(1+r_feedback/r_ground)*(v_in-v_reference) >= v_out_min`: Predicted output is below the linear output range.
+- Require `v_reference+(1+r_feedback/r_ground)*(v_in-v_reference) <= v_out_max`: Predicted output is above the linear output range.
+
+### Catalog model assumptions
+
+- Rg connects the inverting node to Vref and Rf connects that node to the output; Vin drives the noninverting input.
+- Ideal, stable negative feedback; negligible bias current, offset and source loading.
+- DC or slow signals; finite gain, bandwidth, slew rate and load current limitations are not modeled.
+- Entered common-mode limits apply to Vin; output limits are the actual device linear-swing limits.
+
+### Feature sources
+
+- [TI SBOA092B: Handbook of Operational Amplifier Applications, p. 17](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
+- [TI SLOA011B: Understanding Operational Amplifier Specifications, section 2](https://www.ti.com/lit/an/sloa011b/sloa011b.pdf)
+
