@@ -187,5 +187,37 @@
       "expected": {"enob_bits": 11.002074272256452},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.nyquist_sampling_margin",
+    "title": "Baseband Nyquist sampling margin",
+    "category": "ADC DAC and sampled systems",
+    "level": "basic",
+    "description": "Compare a selected sample rate against the highest frequency in a bandlimited baseband input and show the available anti-alias transition interval.",
+    "formula": "f_N = f_s/2; margin = f_N - f_max; rate_ratio = f_s/(2f_max)",
+    "assumptions": [
+      "Uniform real-valued baseband sampling; the highest input frequency is positive and includes all signal components that must be preserved.",
+      "Strict positive margin is needed for the stated no-alias baseband condition; zero margin is a boundary, not a safe practical design.",
+      "A negative margin intentionally reports an undersampled design and is not an invalid arithmetic input.",
+      "Practical anti-alias attenuation, out-of-band interferers, filter order, ADC aperture response and bandpass undersampling are not calculated."
+    ],
+    "references": [
+      {"title": "Texas Instruments AN-236/SNAA079C, An Introduction to the Sampling Theorem, sections 2 and 4", "url": "https://www.ti.com/lit/an/snaa079c/snaa079c.pdf"}
+    ],
+    "inputs": [
+      {"key": "sample_rate", "label": "Selected sample rate", "unit": "Hz", "default": 48000, "min": 1e-9, "max": 1e12},
+      {"key": "highest_frequency", "label": "Highest preserved baseband frequency", "unit": "Hz", "default": 20000, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "nyquist_frequency", "label": "Nyquist frequency", "unit": "Hz", "expression": "sample_rate/2"},
+      {"key": "frequency_margin", "label": "Baseband to Nyquist margin", "unit": "Hz", "expression": "nyquist_frequency-highest_frequency"},
+      {"key": "rate_ratio", "label": "Rate relative to twice highest frequency", "unit": "1", "expression": "sample_rate/(2*highest_frequency)"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"sample_rate": 48000, "highest_frequency": 20000},
+      "expected": {"nyquist_frequency": 24000, "frequency_margin": 4000, "rate_ratio": 1.2},
+      "relative_tolerance": 0.000001
+    }
   }
 ]

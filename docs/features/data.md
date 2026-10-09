@@ -127,3 +127,23 @@ At this time the remaining full-scale error fraction is exp(−ln(8192))=1/8192,
 **Independent example/default:** `sinad_db=68 dB`; `enob_bits=(68−1.760912590556812)/6.020599913279624=11.002074272256452 bit`. This is the sole expected output at relative tolerance 1e-6.
 
 **Parent verification scenarios (not exercised here):** example; ideal-sine SINAD for an independently selected integer N recovers N; +20 log10(2) dB increases ENOB by one; zero SINAD yields negative ENOB; out-of-range/nonfinite SINAD rejection.
+
+## `data.nyquist_sampling_margin` — Baseband Nyquist sampling margin
+
+**Level/purpose:** Basic. Compare chosen uniform real sample rate against twice the highest preserved baseband component, reporting available ideal anti-alias transition space.
+
+**Model/formulas and units:** For `sample_rate=f_s` [Hz] and `highest_frequency=f_max` [Hz], sequential outputs are `nyquist_frequency=f_N=f_s/2` [Hz], `frequency_margin=f_N−f_max` [Hz], and `rate_ratio=f_s/(2 f_max)` [1]. S5 §§2 and 4 supports uniform-sampling spectral separation when baseband support lies strictly below f_s/2.
+
+**Assumptions:** Uniform real-valued baseband sampling and a highest-frequency input including every component that must be preserved. Positive margin is the stated ideal no-overlap condition; practical anti-alias attenuation, out-of-band interferers, filter order, aperture response and bandpass undersampling are excluded. The gap is not a filter design or rejection guarantee. Equality is not sufficient phase-robust/practical sampling: a Nyquist sine can produce zero samples at certain phases.
+
+**Domain/error rationale:** Both inputs ∈ [1e-9,1e12] Hz, so the rate-ratio denominator is positive and bounded arithmetic is finite. Zero/negative frequencies are invalid, but **negative margin remains a valid diagnostic output**. No constraint rejects undersampling or equality.
+
+**Independent example/default:** `sample_rate=48000 Hz`, `highest_frequency=20000 Hz`.
+
+| Output | Worked substitution | Expected |
+|---|---|---|
+| `nyquist_frequency` | 48000/2 | 24000 Hz |
+| `frequency_margin` | 24000−20000 | 4000 Hz |
+| `rate_ratio` | 48000/(2×20000) | 1.2 |
+
+**Parent verification scenarios (not exercised here):** example; f_s below/equal/above 2 f_max gives negative/zero/positive margin; doubling both frequencies preserves rate_ratio and doubles margin; reject nonpositive/out-of-range frequencies.
