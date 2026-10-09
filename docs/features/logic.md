@@ -207,3 +207,79 @@ Cross-input constraints:
 
 - [Texas Instruments SCAA035B, equations 3-10 and Cpd testing considerations](https://www.ti.com/lit/pdf/scaa035)
 
+## 4. `logic.synchronizer_metastability` — expert
+
+### Purpose and novelty
+
+Quantify the exponential dependence of asynchronous sampling reliability on available regeneration time. Nearest baseline: `timing.synchronous_setup_slack` checks deterministic synchronous arrival timing, whereas this model assumes asynchronous aperture encounters and characterizes unresolved metastability statistically. `thermal.arrhenius_acceleration` is another exponential model but describes temperature-activated wear, not bistable regeneration. No clock jitter, sampling-aperture SNR or measurement model is claimed.
+
+### Model and limits
+
+The Stanford lecture gives MTBF = exp(tres/tau)/(T0·fclock·fdata). T0 and tau both have units seconds; the denominator has units 1/s. T0 is a characterized fit parameter, not automatically the setup-plus-hold interval.
+
+The model reports logarithms in reference seconds:
+
+- `log10_chain_mtbf = (resolution_time/resolution_constant - ln(aperture_parameter) - ln(clock_frequency) - ln(data_transition_rate))/ln(10)`.
+- `log10_system_mtbf = log10_chain_mtbf - log10(chain_count)`.
+- `required_resolution_time = max(0, resolution_constant * [ln(target_system_mtbf)+ln(chain_count)+ln(aperture_parameter)+ln(clock_frequency)+ln(data_transition_rate)])`.
+- `resolution_margin = resolution_time - required_resolution_time`.
+
+Separate logarithms avoid multiplying tiny T0 by large rates, and avoid exponentiating an enormous MTBF. The dimensionless outputs explicitly mean log10(MTBF/1 s), not seconds or decibels.
+
+The identical-chain extension is derived here: independent rare Poisson failure rates sum, so lambda_system=N·lambda_chain and MTBF_system=MTBF_chain/N. This is not a quoted additional device law. Required time follows by solving the same inequality for tres, limited below by zero because available physical resolution time cannot be negative.
+
+Use asynchronous transitions/s, not waveform periods/s. Characterization must cover process, voltage, temperature, fit time origin and the selected cell. Input `resolution_time` is the effective fitted regeneration interval from actual implementation, not an unqualified clock period. The model accepts zero time mathematically, but actual short-time extrapolation needs characterization. Require all logarithm operands positive, integral N≥1, tres≥0, and T0·fdata<1; practical rare-event use requires that last product much smaller than one. This mathematical guard is not proof of fit validity.
+
+Repeated sampling does not guarantee pulse capture. Independently synchronizing each bus bit does not guarantee coherent data. Common-mode failure mechanisms violate the independent-chain assumption. Defaults below are illustrative fit constants, not a promised MTBF for any FPGA or ASIC.
+
+### Complete independent example
+
+Inputs: `clock_frequency=1e8 Hz`, `data_transition_rate=1e6 1/s`, `aperture_parameter=1e-10 s`, `resolution_constant=5e-11 s`, `resolution_time=2e-9 s`, `chain_count=100`, `target_system_mtbf=31557600000 s` (1000 Julian years).
+
+The exponent is 2e-9/5e-11=40 and T0·fclock·fdata=10000 s⁻¹.
+
+- `log10_chain_mtbf = 40/ln(10)−4 = 13.371779276130073`.
+- `log10_system_mtbf = 13.371779276130073−2 = 11.371779276130073`.
+- For the target, N·T0·fclock·fdata·target = 3.15576e16; `required_resolution_time = 5e-11*ln(3.15576e16) = 1.8995295421184684e-9 s`.
+- `resolution_margin = 2e-9−1.8995295421184684e-9 = 1.0047045788153165e-10 s`.
+
+For interpretation only, chain MTBF is exp(40)/10000 seconds. It is intentionally not an additional exponential catalog output.
+
+### Independent test cases
+
+- Nominal: all four outputs above.
+- Shorter resolution: nominal with tres=1e-9 s gives log chain=4.6858896380650366, log system=2.6858896380650366, required time unchanged, margin=−8.995295421184684e-10 s. Negative margin must remain visible.
+- N=1 raises system log MTBF by exactly two relative to nominal and lowers required time by tau·ln(100).
+- Tiny target: nominal with target=1e-8 s gives required time=0 and margin=2e-9 s; MTBF outputs are unchanged.
+- Zero resolution: default rates/fit/N give chain log=−4 and system log=−6; required time remains nominal and margin is its negative. This checks mathematical boundary behavior, not device accuracy there.
+- Large exponent: tres=1e-6 s gives chain log=8681.8896380650366; it remains finite without exp(20000). The result is an extreme mathematical extrapolation only.
+- Invalid: zero/negative rate, T0, tau or target; negative resolution; N<1 or fractional; T0=1e-6 s with fdata=1e6 1/s reaches the disallowed aperture-factor equality. Nonfinite input must fail before evaluation.
+
+### Illustration and accessible quantity bindings
+
+One 700×280 synchronizer/regeneration diagram. Draw asynchronous input arrow into first D/Q register block, then an isolated short interstage wire into a second D/Q register block, then a valid-domain output arrow. Connect the same destination clock to both clock pins through an explicit branched net with junction dots. Label asynchronous arrow `data_transition_rate`; destination clock `clock_frequency`. Mark the first Q node “May be metastable”; do not label it safe or draw multiple independent bus-bit paths.
+
+Below the first Q and second sampling edge, draw an illustrative shrinking exponential envelope with a horizontal time arrow. Bind `resolution_time` to the available interval, `resolution_constant` to a separate “Regeneration tau” label, and `required_resolution_time` to a separate required-time callout. Put output `log10_system_mtbf` and input `chain_count` in a right-side reliability callout. `aperture_parameter` is labeled “Fit parameter T0”, not a literal drawn aperture width. The two-register chain is representative; the numeric available time is not automatically one full period.
+
+Caption: “First stage may become metastable. Extra regeneration time reduces unresolved-event probability exponentially. Curves are illustrative; fit constants and routed timing determine the estimate. Independent chains are not a coherent bus synchronizer.”
+
+### Catalog input units and bounds
+
+| Key | Unit | Default | Bounds |
+|---|---|---|---|
+| `clock_frequency` | Hz | `100000000` | > 0 |
+| `data_transition_rate` | 1/s | `1000000` | > 0 |
+| `aperture_parameter` | s | `1e-10` | > 0 |
+| `resolution_constant` | s | `5e-11` | > 0 |
+| `resolution_time` | s | `2e-09` | >= 0 |
+| `chain_count` | count | `100` | >= 1 |
+| `target_system_mtbf` | s | `31557600000` | > 0 |
+
+Cross-input constraints:
+- `chain_count == floor(chain_count)` — Synchronizer chain count must be a whole number.
+- `aperture_parameter < 1/data_transition_rate` — The aperture-times-transition-rate factor must be below one; rare-event characterization must also be valid.
+
+### Sources
+
+- [Stanford EE183, Ryan Donohue, Synchronization in Digital Logic Circuits: MTBF and synchronizer requirements, pages 1-4](https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf)
+

@@ -373,5 +373,140 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "logic.synchronizer_metastability",
+    "title": "Synchronizer metastability reliability budget",
+    "category": "Digital logic and interfaces",
+    "level": "expert",
+    "description": "Estimate single-chain and identical-chain system MTBF logarithmically, and compare available metastability resolution time with a required system reliability target.",
+    "formula": "MTBFchain = exp(tres/tau)/(T0*fclock*fdata); MTBFsystem = MTBFchain/N; trequired = max(0,tau*ln(MTBFtarget*N*T0*fclock*fdata)); margin = tres-trequired",
+    "assumptions": [
+      "T0 and tau are positive technology-characterized metastability fit parameters in seconds. Numerical defaults are illustrative, not specifications for any part or process.",
+      "fdata counts asynchronous transitions, not square-wave periods. The random relative phase and rare-event exponential resolution model must apply; T0*fdata must be less than one and in practice much less than one.",
+      "resolution_time is the effective available regeneration time under the same time-origin convention as the fitted T0/tau. Obtain it from characterized cells and routed timing, not merely the nominal clock period.",
+      "System estimate assumes N identical independent rare-failure chains; their failure rates add. This does not make separately synchronized bits coherent and does not guarantee pulse capture or correct CDC protocol.",
+      "MTBF outputs are log10(MTBF / 1 second), avoiding exponent overflow. No absolute lifetime or certification claim; correlated events, PVT changes and invalid fit extrapolation require a different model."
+    ],
+    "references": [
+      {
+        "title": "Stanford EE183, Ryan Donohue, Synchronization in Digital Logic Circuits: MTBF and synchronizer requirements, pages 1-4",
+        "url": "https://web.stanford.edu/class/ee183/handouts_spr2003/synchronization_pres.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "clock_frequency",
+        "label": "Destination sampling clock frequency",
+        "unit": "Hz",
+        "default": 100000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "data_transition_rate",
+        "label": "Asynchronous data transitions per second",
+        "unit": "1/s",
+        "default": 1000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "aperture_parameter",
+        "label": "Characterized metastability T0 parameter",
+        "unit": "s",
+        "default": 1e-10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resolution_constant",
+        "label": "Characterized regeneration time constant",
+        "unit": "s",
+        "default": 5e-11,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resolution_time",
+        "label": "Effective available resolution time",
+        "unit": "s",
+        "default": 2e-09,
+        "min": 0
+      },
+      {
+        "key": "chain_count",
+        "label": "Identical independent synchronizer chains",
+        "unit": "count",
+        "default": 100,
+        "min": 1
+      },
+      {
+        "key": "target_system_mtbf",
+        "label": "Required system mean time between failures",
+        "unit": "s",
+        "default": 31557600000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "log10_chain_mtbf",
+        "label": "log10 of single-chain MTBF in seconds",
+        "unit": "1",
+        "expression": "(resolution_time/resolution_constant-ln(aperture_parameter)-ln(clock_frequency)-ln(data_transition_rate))/ln(10)"
+      },
+      {
+        "key": "log10_system_mtbf",
+        "label": "log10 of system MTBF in seconds",
+        "unit": "1",
+        "expression": "log10_chain_mtbf-log10(chain_count)"
+      },
+      {
+        "key": "required_resolution_time",
+        "label": "Resolution time required for target system MTBF",
+        "unit": "s",
+        "expression": "max(0,resolution_constant*(ln(target_system_mtbf)+ln(chain_count)+ln(aperture_parameter)+ln(clock_frequency)+ln(data_transition_rate)))"
+      },
+      {
+        "key": "resolution_margin",
+        "label": "Available minus required resolution time",
+        "unit": "s",
+        "expression": "resolution_time-required_resolution_time"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "chain_count",
+        "op": "==",
+        "right": "floor(chain_count)",
+        "message": "Synchronizer chain count must be a whole number"
+      },
+      {
+        "left": "aperture_parameter",
+        "op": "<",
+        "right": "1/data_transition_rate",
+        "message": "The aperture-times-transition-rate factor must be below one; rare-event characterization must also be valid"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "clock_frequency": 100000000,
+        "data_transition_rate": 1000000,
+        "aperture_parameter": 1e-10,
+        "resolution_constant": 5e-11,
+        "resolution_time": 2e-09,
+        "chain_count": 100,
+        "target_system_mtbf": 31557600000
+      },
+      "expected": {
+        "log10_chain_mtbf": 13.371779276130074,
+        "log10_system_mtbf": 11.371779276130074,
+        "required_resolution_time": 1.8995295421184683e-09,
+        "resolution_margin": 1.0047045788153165e-10
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
