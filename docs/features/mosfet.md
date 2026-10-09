@@ -245,6 +245,57 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 2. MOSFET channel conduction loss with on-state current ripple
+
+**ID:** `mosfet.channel_conduction_loss` — **basic**. Source: S2 equation 5, P_cond = I_RMS² R_ds_on. The ripple factor is derived here by waveform integration, not inferred from a typical converter current.
+
+During a conduction interval, let the positive current traverse uniformly between I_mean − ΔI_pp/2 and I_mean + ΔI_pp/2. The ramp's mean square is
+
+(1/ΔI_pp) ∫[I_mean−ΔI_pp/2 to I_mean+ΔI_pp/2] i² di = I_mean² + ΔI_pp²/12.
+
+The ΔI_pp = 0 limit is I_mean² and the implemented expression contains no division by ripple. Current is zero during the rest of the cycle, so
+
+- I_RMS = sqrt(D (I_mean² + ΔI_pp²/12)).
+- P_cond = I_RMS² R_ds_on.
+
+This result also applies to a triangular excursion with uniform traversal of the same endpoint range; it does not require computing converter inductance or duty from a voltage ratio.
+
+**Inputs and model domain:** I_mean ≥ 0 A, ΔI_pp ≥ 0 A, 0 ≤ D ≤ 1, R_ds_on > 0 ohm. Constraint I_mean ≥ ΔI_pp/2 excludes a negative-current minimum and use of this positive-current model for an unaccounted discontinuous-conduction interval. D = 0 produces zero current/loss without a singularity. I_mean is the on-interval mean, not the full-cycle drain-current mean. R_ds_on must already correspond to gate voltage and temperature; temperature is intentionally not solved. Dead-time/body-diode and switching losses are omitted.
+
+**Independent example:** I_mean = 8 A, ΔI_pp = 6 A, D = 0.6, R_ds_on = 15 milliohm. Endpoints are 5 and 11 A, so direct ramp integration also gives (5² + 5×11 + 11²)/3 = **67 A²** during on time. Full-cycle mean square is 0.6 × 67 = **40.2 A²**; I_RMS = **6.340346993658943 A** and P_cond = 40.2 × 0.015 = **0.603 W**. This endpoint calculation is independent of the JSON expression form.
+
+**Defaults:** 10 A mean, 4 A ripple, D = 0.4, 8 milliohm yield I_RMS = **6.366579406033772 A**, P_cond = **0.324266666666667 W**. Minimum current is 8 A, inside the positive-current domain.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `i_mean` | Mean current during channel on interval | A | 10 | ≥ 0 |
+| `delta_i_pp` | Peak-to-peak on-state current ripple | A | 4 | ≥ 0 |
+| `duty` | Channel conduction duty fraction | 1 | 0.4 | ≥ 0, ≤ 1 |
+| `r_ds_on` | On-resistance at operating conditions | ohm | 0.008 | > 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `i_rms` | Full-cycle channel RMS current | A | `sqrt(duty*(i_mean^2+delta_i_pp^2/12))` | 6.340346993658943 |
+| `p_cond` | Average channel conduction loss | W | `i_rms^2*r_ds_on` | 0.603 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "i_mean": 8,
+  "delta_i_pp": 6,
+  "duty": 0.6,
+  "r_ds_on": 0.015
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.

@@ -397,5 +397,93 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.channel_conduction_loss",
+    "title": "MOSFET conduction loss with on-state current ripple",
+    "category": "MOSFET and gate drive",
+    "level": "basic",
+    "description": "Compute full-cycle channel RMS current and conduction loss for a duty-gated, linearly ramping positive current.",
+    "formula": "I_rms = sqrt(D (I_mean^2 + Delta_I_pp^2/12)); P_cond = I_rms^2 R_ds_on",
+    "assumptions": [
+      "Channel current is zero outside duty fraction D. During the on interval it traverses uniformly between I_mean - Delta_I_pp/2 and I_mean + Delta_I_pp/2.",
+      "I_mean is the average during the on interval, not the average drain current over the whole cycle. Ripple is peak-to-peak.",
+      "Current stays nonnegative; discontinuous conduction with a zero-current subinterval requires a different waveform model.",
+      "R_ds_on is supplied at the actual gate voltage and junction temperature. No temperature calculation or feedback is performed.",
+      "Body-diode conduction, dead time and switching losses are excluded."
+    ],
+    "references": [
+      {
+        "title": "Infineon OptiMOS device selection for synchronous rectification, section 3.2, equation 5",
+        "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-mosfet-optimos-device-selection-for-synchronous-rectification-applicationnotes-en.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "i_mean",
+        "label": "Mean current during channel on interval",
+        "unit": "A",
+        "default": 10,
+        "min": 0
+      },
+      {
+        "key": "delta_i_pp",
+        "label": "Peak-to-peak on-state current ripple",
+        "unit": "A",
+        "default": 4,
+        "min": 0
+      },
+      {
+        "key": "duty",
+        "label": "Channel conduction duty fraction",
+        "unit": "1",
+        "default": 0.4,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "r_ds_on",
+        "label": "On-resistance at operating conditions",
+        "unit": "ohm",
+        "default": 0.008,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "i_rms",
+        "label": "Full-cycle channel RMS current",
+        "unit": "A",
+        "expression": "sqrt(duty*(i_mean^2+delta_i_pp^2/12))"
+      },
+      {
+        "key": "p_cond",
+        "label": "Average channel conduction loss",
+        "unit": "W",
+        "expression": "i_rms^2*r_ds_on"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "i_mean",
+        "op": ">=",
+        "right": "delta_i_pp/2",
+        "message": "The triangular current minimum must be nonnegative."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "i_mean": 8,
+        "delta_i_pp": 6,
+        "duty": 0.6,
+        "r_ds_on": 0.015
+      },
+      "expected": {
+        "i_rms": 6.340346993658943,
+        "p_cond": 0.603
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
