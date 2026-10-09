@@ -392,5 +392,64 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.nominal_copper_thickness",
+    "title": "Nominal PCB copper weight to thickness",
+    "category": "PCB interconnect and manufacturing",
+    "level": "basic",
+    "description": "Convert a PCB manufacturing copper-weight designation to nominal thickness using the explicit 35 micrometres per ounce convention.",
+    "formula": "t_nominal = copper_weight * 35e-6 m; t_mil = t_nominal / 25.4e-6 m",
+    "assumptions": [
+      "Copper weight denotes the PCB manufacturing oz/ft^2 convention; this is not a fluid ounce, troy ounce or component mass.",
+      "The 35 micrometres per 1 oz factor is the JLCPCB nominal manufacturing convention, not an exact mass-density SI conversion.",
+      "For resistance, current or manufacturing-limit analysis use the fabricator's actual finished copper thickness and tolerance, not this nominal result.",
+      "Outer-layer plating and etching can change finished thickness; the result does not specify starting foil versus finished plating automatically."
+    ],
+    "references": [
+      {
+        "title": "JLCPCB Copper Weight (Thickness) Guide, definition of 1 oz copper",
+        "url": "https://jlcpcb.com/help/article/jlcpcb-copper-weight"
+      },
+      {
+        "title": "NIST Handbook 133 (2026), Appendix E, general tables of units, international inch",
+        "url": "https://www.nist.gov/document/2026-hb-133-appendix-e"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "copper_weight",
+        "label": "Nominal copper-weight designation",
+        "unit": "oz/ft^2",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "nominal_thickness",
+        "label": "Nominal copper thickness",
+        "unit": "m",
+        "expression": "copper_weight*35e-6"
+      },
+      {
+        "key": "nominal_thickness_mil",
+        "label": "Nominal copper thickness in mil",
+        "unit": "mil",
+        "expression": "nominal_thickness/25.4e-6"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "copper_weight": 2.0
+      },
+      "expected": {
+        "nominal_thickness": 7e-05,
+        "nominal_thickness_mil": 2.7559055118110236
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

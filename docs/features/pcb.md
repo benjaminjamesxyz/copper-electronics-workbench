@@ -264,3 +264,51 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `nominal_ring` | 0.0002 | m |
 | `minimum_ring` | 0.00015 | m |
 
+
+## pcb.nominal_copper_thickness — Nominal PCB copper weight to thickness
+
+**Level:** basic
+
+**Purpose:** Convert a PCB manufacturing copper-weight designation to nominal thickness using the explicit 35 micrometres per ounce convention.
+
+**References:** [JLC-C](https://jlcpcb.com/help/article/jlcpcb-copper-weight), explicit copper-weight definition; [NIST-U](https://www.nist.gov/document/2026-hb-133-appendix-e), international-inch conversion.
+
+PCB copper weight is a manufacturing designation in oz/ft², historically referring to copper distributed over an area. JLCPCB explicitly maps 1 oz copper to **nominal** 35 µm. The model deliberately implements that declared manufacturing convention:
+
+- `nominal_thickness = copper_weight*35e-6`, metres;
+- `nominal_thickness_mil = nominal_thickness/25.4e-6`, mil.
+
+The first factor is a nominal convention; the second is an exact length conversion. Fractional positive weight designations are allowed, but availability is supplier-specific.
+
+**Domain and limitations.** Copper weight must be positive. Ounces here are neither fluid ounces nor troy ounces. This calculator is **not** the exact physical conversion `mass/(density*area)`: the familiar rounded 35 µm manufacturing convention must not be relabeled an exact SI mass-density equality. It does not determine the thickness at a specific point after etching and plating, or automatically distinguish base foil from finished outer-layer copper. Feed fabricator-guaranteed/measured finished thickness into resistance/current calculations rather than blindly forwarding this nominal result.
+
+**Independent worked example.** A 2 oz/ft² designation:
+
+1. Nominal thickness = 2 × 35 µm = 70 µm = 0.000070 m.
+2. Nominal mil = 70/25.4 = 2.7559055118110236 mil.
+
+No density assumption or exact areal-mass claim is introduced.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `copper_weight` | Nominal copper-weight designation | oz/ft^2 | 1.0 | > 0.0 |
+
+**Input-only guards and error rationale:**
+
+- No additional relational constraints; the scalar ranges enforce this model’s domain.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `copper_weight` | 2.0 | oz/ft^2 |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `nominal_thickness` | 7e-05 | m |
+| `nominal_thickness_mil` | 2.7559055118110236 | mil |
+
