@@ -242,3 +242,55 @@ Inputs: `area_mm2=4 mm²`, `initial_temperature=90 °C`, `limit_temperature=250 
 ### Mandatory diagram
 
 Use a conductor cross-section inside a short cable segment, x=50–320, with positive current arrow along the conductor bound to `fault_current`. Cross-sectional area bracket binds `area_mm2`. At x=380–660 show a thermal progression box from `initial_temperature` to `limit_temperature`, separated by a time arrow bound to `clearing_time`; crossed outward heat arrows are labeled “adiabatic: no heat escape,” not unbound computed zero watt labels. Under the segment identify `minimum_area_mm2` as a required-area result distinct from actual geometry. A small equation annotation `k(Ti,Tf)` binds `material_k`. Caption: “Uniform warm-copper adiabatic fault heating, at most 5 s; actual insulation, joints and electrodynamic limits remain separate.”
+
+## 6. `protection.foldback_fault_envelope` — expert
+
+### Purpose and novelty
+
+Find a resistive fault's operating point on a characterized foldback branch, then locate worst pass-element dissipation over the entire branch. A short circuit need not be the worst heating condition. Closest baseline `power.ldo_dissipation` takes fixed voltage/current as inputs and merely budgets loss; this model derives current from a nonlinear protection characteristic and optimizes stress. Closest `dc.resistive_source_matching` is a passive Thevenin source with a decreasing I–V line, whereas foldback has an output-dependent increasing current limit and a distinct regulation knee. It is not a renamed maximum-power-transfer calculation.
+
+### Physical model and derivation
+
+P7 describes the foldback curve from short current to a normal current-limit knee and explains possible latch-up. Approximate the characterized branch as:
+
+`b=(Ik−Isc)/Vk > 0`, `I(V)=Isc+bV`, `0<=V<=Vk`.
+
+This affine fit is an explicit approximation requiring manufacturer characterization. It is not asserted as a universal transistor threshold equation. A resistive fault obeys `V=R I`, giving `Vfault=R Isc/(1−bR)`, `Ifault=Isc+bVfault`. Restrict `0<=R<=Vk/Ik`. This guarantees `1−bR>=Isc/Ik>0` and keeps the intersection on the modeled branch. The catalog evaluates current first with `r=R/(Vk/Ik)` and the equivalent denominator `(1−r)+r(Isc/Ik)`, then evaluates `Vfault=R Ifault`. This avoids subtracting a rounded unity `bR` at the knee when Isc is much smaller than Ik.
+
+For a series pass device at constant Vin, `P(V)=(Vin−V)(Isc+bV)`. Differentiate: `dP/dV=b Vin−Isc−2bV`. Since the second derivative is `−2b<0`, the unconstrained maximum is `(Vin−Isc/b)/2`; clamp that voltage to `[0,Vk]` to include either endpoint. Maximum power then follows from the same branch, not a separately fitted curve.
+
+Inputs require `Vin>Vk>0`, `Ik>Isc>0`, and the fault-resistance interval above. Current is positive into the load. Pass voltage is Vin minus output voltage. Quiescent current and external sense-resistor drop are neglected. Compensation, transient overshoot, thermal shutdown, SOA and nonresistive-load recovery are excluded. Source P7's latch-up warning is preserved; the resistive-fault model is not a claim of guaranteed restart.
+
+### Complete independent example
+
+Inputs: `input_voltage=9 V`, `knee_voltage=5 V`, `knee_current=1 A`, `short_current=0.2 A`, `fault_resistance=2 ohm`.
+
+`b=0.8/5=0.16 A/V`; `Rk=5 ohm`; denominator `1−0.16×2=0.68`.
+
+| Output key | Independent result |
+|---|---:|
+| `foldback_slope` | `0.16 A/V` |
+| `knee_load_resistance` | `5 ohm` |
+| `fault_output_voltage` | `0.4/0.68 = 0.5882352941176471 V` |
+| `fault_output_current` | `0.2+0.16×0.5882352941176471 = 0.29411764705882354 A` |
+| `fault_pass_power` | `(9−0.5882352941176471)×0.29411764705882354 = 2.4740484429065744 W` |
+| `short_pass_power` | `9×0.2 = 1.8 W` |
+| `peak_stress_voltage` | `(9−0.2/0.16)/2 = 3.875 V` |
+| `peak_stress_current` | `0.2+0.16×3.875 = 0.82 A` |
+| `maximum_pass_power` | `(9−3.875)×0.82 = 4.2025 W` |
+
+The knee itself dissipates `(9−5)×1=4 W`, less than the interior maximum. This numerical example deliberately demonstrates why testing only short and knee misses worst pass stress.
+
+### Tester cases
+
+- Nominal complete vector; verify `Vfault=R Ifault`, the affine current relation and the maximum exceeding both endpoint powers.
+- Hard short `R=0`: fault voltage zero, current `0.2 A`, power `1.8 W`; optimized envelope remains unchanged.
+- Knee `R=5`: fault voltage `5 V`, current `1 A`, power `4 W`.
+- Upper endpoint maximum: change Vin to `12 V`; unconstrained vertex is `5.375 V`, so reported peak voltage is `5 V`, peak current `1 A`, maximum `7 W`.
+- Lower endpoint maximum: keep Vin=9, Vk=5, Ik=1 but set Isc=`0.9 A`; b=`0.02 A/V`, vertex negative, peak voltage zero and maximum power `8.1 W`.
+- Reject equal/reversed knee and short currents, zero Isc, input not above knee, negative fault resistance or resistance above `Vk/Ik`.
+- Conditioning probe: use `short_current=1e-20 A` with the other nominal inputs except `fault_resistance=5 ohm`. The physical solution is exactly the knee `(5 V,1 A)`, and fault pass power is `4 W`. The normalized positive-term denominator preserves this limit; no new helper or artificial minimum short-current bound is used.
+
+### Mandatory diagram
+
+Left x=25–320: series-pass block between input source and output, resistive fault from output to return. Label `input_voltage`, `fault_resistance`, `fault_output_voltage`, `fault_output_current`, and `fault_pass_power`; current arrow points toward the fault and pass drop polarity is Vin positive relative to Vout. Right x=385–670: V-horizontal/I-vertical conceptual foldback graph. The increasing branch begins at `(0,short_current)` and ends at `(knee_voltage,knee_current)`; draw a vertical normal-regulation branch at Vk as context only. Draw a resistive load line through origin and the foldback branch. Mark an independent stress locator on the branch, labeled by `peak_stress_voltage` and `peak_stress_current`, with `maximum_pass_power` placed clear of curves. Do not place the stress point at the supplied fault intersection or assume a hard short is worst. Caption: “Affine characterized foldback branch; static load-line and stress sketch, not a live plot. Worst pass heating may lie between short circuit and knee.”

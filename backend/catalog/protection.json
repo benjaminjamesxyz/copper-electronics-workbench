@@ -779,5 +779,164 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "protection.foldback_fault_envelope",
+    "title": "Foldback limiter fault equilibrium and peak pass stress",
+    "category": "Protection",
+    "level": "expert",
+    "description": "Find a resistive-fault operating point on an affine foldback characteristic and the worst pass-element dissipation anywhere between a short circuit and the current-limit knee.",
+    "formula": "b=(Ik-Isc)/Vk; I(V)=Isc+bV; Vfault=R Isc/(1-bR); Vstress=clamp[(Vin-Isc/b)/2,0,Vk]; P(V)=(Vin-V)(Isc+bV)",
+    "assumptions": [
+      "The limiter is represented by its characterized affine foldback branch from (V=0,I=Isc) to (V=Vk,I=Ik), not by an uncharacterized transistor or universal regulator formula.",
+      "The resistive fault is no larger than Vk/Ik, so its load line has a unique intersection on the foldback branch. The normal voltage-regulation branch is not solved.",
+      "A series linear pass element has fixed input voltage greater than the knee voltage. Controller quiescent current and external sense-resistor voltage drop are neglected in pass dissipation.",
+      "The quasi-static curve does not predict compensation, oscillations, capacitive startup, transient overshoot or guaranteed recovery with constant-power/current loads; foldback can cause load-dependent latch-up.",
+      "The maximum power is taken over the entire characterized foldback voltage interval, not only the short circuit. SOA, current crowding, junction temperature, shutdown timing and fault interruption still require hardware-specific checks; no safety certification."
+    ],
+    "references": [
+      {
+        "title": "onsemi SR005AN/D, Short Circuit Protection, Figures 2 and 3 and foldback latch-up discussion",
+        "url": "https://www.onsemi.com/download/application-notes/pdf/sr005an-d.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "input_voltage",
+        "label": "Pass-element input voltage",
+        "unit": "V",
+        "default": 9,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "knee_voltage",
+        "label": "Foldback current-limit knee voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "knee_current",
+        "label": "Current at foldback knee",
+        "unit": "A",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "short_current",
+        "label": "Short-circuit foldback current",
+        "unit": "A",
+        "default": 0.2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fault_resistance",
+        "label": "Resistive fault load",
+        "unit": "ohm",
+        "default": 2,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "foldback_slope",
+        "label": "Foldback current-voltage slope",
+        "unit": "A/V",
+        "expression": "(knee_current-short_current)/knee_voltage"
+      },
+      {
+        "key": "knee_load_resistance",
+        "label": "Load resistance at foldback knee",
+        "unit": "ohm",
+        "expression": "knee_voltage/knee_current"
+      },
+      {
+        "key": "fault_output_current",
+        "label": "Foldback fault output current",
+        "unit": "A",
+        "expression": "short_current/((1-fault_resistance/knee_load_resistance)+(fault_resistance/knee_load_resistance)*(short_current/knee_current))"
+      },
+      {
+        "key": "fault_output_voltage",
+        "label": "Foldback fault output voltage",
+        "unit": "V",
+        "expression": "fault_resistance*fault_output_current"
+      },
+      {
+        "key": "fault_pass_power",
+        "label": "Pass dissipation at the specified fault",
+        "unit": "W",
+        "expression": "(input_voltage-fault_output_voltage)*fault_output_current"
+      },
+      {
+        "key": "short_pass_power",
+        "label": "Pass dissipation at a hard short",
+        "unit": "W",
+        "expression": "input_voltage*short_current"
+      },
+      {
+        "key": "peak_stress_voltage",
+        "label": "Output voltage at worst foldback dissipation",
+        "unit": "V",
+        "expression": "min(knee_voltage,max(0,(input_voltage-short_current/foldback_slope)/2))"
+      },
+      {
+        "key": "peak_stress_current",
+        "label": "Current at worst foldback dissipation",
+        "unit": "A",
+        "expression": "short_current+foldback_slope*peak_stress_voltage"
+      },
+      {
+        "key": "maximum_pass_power",
+        "label": "Maximum pass dissipation over foldback branch",
+        "unit": "W",
+        "expression": "(input_voltage-peak_stress_voltage)*peak_stress_current"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "input_voltage",
+        "op": ">",
+        "right": "knee_voltage",
+        "message": "The pass input must exceed the regulated knee voltage"
+      },
+      {
+        "left": "knee_current",
+        "op": ">",
+        "right": "short_current",
+        "message": "A foldback branch requires knee current greater than short-circuit current"
+      },
+      {
+        "left": "fault_resistance",
+        "op": "<=",
+        "right": "knee_voltage/knee_current",
+        "message": "This calculation requires a fault load on the foldback branch"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "input_voltage": 9,
+        "knee_voltage": 5,
+        "knee_current": 1,
+        "short_current": 0.2,
+        "fault_resistance": 2
+      },
+      "expected": {
+        "foldback_slope": 0.16,
+        "knee_load_resistance": 5,
+        "fault_output_voltage": 0.5882352941176471,
+        "fault_output_current": 0.29411764705882354,
+        "fault_pass_power": 2.4740484429065743,
+        "short_pass_power": 1.8,
+        "peak_stress_voltage": 3.875,
+        "peak_stress_current": 0.82,
+        "maximum_pass_power": 4.2025
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
