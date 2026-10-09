@@ -62,6 +62,8 @@ v_{n,\mathrm{rms}}=\sqrt{4kTRB}=e_n\sqrt B\quad[\mathrm V].
 
 **Error rationale:** Reject nonfinite values, nonpositive resistance/absolute temperature/ENBW, and values outside the catalog operating bounds. These restrictions protect the nonnegative square root and meaningful white-noise integration; they cannot certify the qualitative classical or frequency-flat assumptions. Outputs are evaluated in declared order: density first, RMS second.
 
+**Amplitude conditioning (review N2):** Evaluate density as sqrt(4k) sqrt(T) sqrt(R), taking roots before multiplying. Forming the spectral variance first can underflow to zero even when its square root is representable. This is algebraically the same Johnson model; units, limits and nominal values do not change.
+
 ## Complete non-inverting amplifier white-noise budget
 
 **ID:** `noise.noninverting_amplifier_budget` — **expert**. Purpose: integrate all six uncorrelated white-noise sources in a high-loop-gain non-inverting stage. Sources [S2, equations 1–5 and 11], [S5].
@@ -94,6 +96,8 @@ Thus e_o² = (e_n G_N)² + (i_plus R_S G_N)² + 4kTR_S G_N² + (i_minus R_F)² +
 
 Sequential output order is noise gain, output density, output RMS, input-referred RMS; the independent example tolerance is 1e-6.
 
+**Amplitude conditioning (review N1/N2):** The implementation evaluates the six table entries as amplitudes and combines them with nested `hypot`, rather than squaring tiny values before summing. Thermal amplitudes use separate sqrt(4k), sqrt(T) and resistor factors; the ground-resistor contribution is sqrt(4k) sqrt(T) R_F/sqrt(R_G). Plus-input current uses i_plus (R_S G_N), and source thermal amplitude folds G_N into the prefactor before multiplying roots. This preserves representable tiny densities and avoids variance-product underflow; `hypot(0,0)=0` admits ideal zero contributions. The six-source physical model and all worked values remain unchanged.
+
 ## Three-stage Friis noise cascade
 
 **ID:** `noise.friis_three_stage` — **expert**. Purpose: refer independently added stage noise back through preceding available power gains. Source [S4, section 3.6, equations 32–40].
@@ -104,7 +108,7 @@ F_c = F1 + (F2 − 1)/G1 + (F3 − 1)/(G1 G2), with Fi = 10^(NFi/10), Gi = 10^(g
 
 NF_c = 10 log10(F_c), T_e,c = 290(F_c − 1) K. Third-stage gain cancels and is not required. This is not simple RMS aggregation or a voltage-gain cascade.
 
-**Stable numerical realization:** x_i = NFi ln(10)/10; X = expm1(x_1) + expm1(x_2)/G1 + expm1(x_3)/(G1 G2). Compute NF_c = 10 log1p(X)/ln(10), then T_e,c = 290 expm1(NF_c ln(10)/10). This preserves tiny positive excess noise lost by subtracting unity from rounded factors. With NF1 = 1e-16 dB, NF2 = NF3 = 0, g1 = g2 = 0 dB, independently the small-x limit gives NF_c ≈ 1e-16 dB and T_e,c ≈ 6.67749676968e-15 K. Linear factors necessarily round to unity below binary64 spacing. The all-ideal NF/temperature outputs remain exactly zero. Main owns the approved native Rust log1p extension; no local evaluator is introduced.
+**Stable numerical realization (review N3):** Let c = ln(10)/10, exprel(x) = expm1(x)/x with exprel(0) = 1, and log1prel(x) = log1p(x)/x with log1prel(0) = 1. Accumulate in dB-scale first: s = NF1 exprel(c NF1) + NF2 exprel(c NF2)/G1 + NF3 exprel(c NF3)/(G1 G2). Then X = c s, F_c = 1 + X, NF_c = s log1prel(X), and T_e,c = s (290 c). Keeping NF amplitudes outside scaled exponential/log arguments preserves deep-subnormal inputs even when c*NF rounds to zero. No additional output keys are introduced; expressions repeat s to preserve the original sequential interface. With NF1 = 1e-16 dB, other NFs zero and gains zero dB, NF_c ≈ 1e-16 dB and T_e,c ≈ 6.67749676968e-15 K. With first-stage NF = 1e-323 dB, the positive representable NF survives and temperature remains positive. Linear factors necessarily round to unity below binary64 spacing. Exact all-ideal NF/temperature remain zero. Shared native helpers are parent-owned; there is no local evaluator.
 
 **Inputs/domain/error rationale:** all NFi in [0,100] dB, gains g1,g2 in [-120,120] dB. Reject nonfinite/out-of-range inputs and negative conventional NF. Gains in [1e-12,1e12] are strictly positive; their product cannot vanish or overflow within these bounds. F_c ≥ 1 and X ≥ 0 guard logarithms; upper ranges bound cascade excess by roughly 1e34. Negative gain is permitted for loss, provided the supplied NF is consistent with physical attenuator temperature. No extra numerical NF minimum is imposed.
 
@@ -154,6 +158,8 @@ i_n=\sqrt{2qI}\quad[\mathrm{A/\sqrt{Hz}}],\qquad
 
 **Error rationale and output order:** Reject nonfinite values, negative current, nonpositive ENBW and inputs above the declared maxima. Positive bandwidth establishes the integration band; nonnegative current protects the square root, including the exact zero-current limit. Density precedes integrated RMS; no current absolute-value fallback silently accepts signed inputs.
 
+**Amplitude conditioning (review N2):** Evaluate density as sqrt(2q) sqrt(I), rather than sqrt of a multiplied variance. Tiny positive current can have representable amplitude even when 2qI underflows. Zero current still yields exactly zero; the physical Poisson model and expected values are unchanged.
+
 
 ## Three-source uncorrelated RMS noise sum
 
@@ -179,7 +185,7 @@ This calculation aggregates already established contributions; it does not gener
 **Independent example:** 3, 4 and 12 microvolt RMS. Squared values sum to (9 + 16 + 144) microvolt² = 169 microvolt². `total_noise_rms` = **13 microvolt = 0.000013 V**, not the arithmetic sum of 19 microvolt.
 
 
-**Error rationale and sequential outputs:** Reject nonfinite, negative or above-1e6-V RMS contributions. Nonnegative inputs represent amplitudes; their squares keep the sole total-noise root nonnegative. Upper bounds bound squared sums. Individual zero inputs and the all-zero budget are admitted. Correlation, common-node and common-bandwidth requirements remain qualitative assumptions, not numeric validation.
+**Error rationale and sequential outputs:** Reject nonfinite, negative or above-1e6-V RMS contributions. The sole total-noise output uses hypot(hypot(v1,v2),v3), algebraically sqrt(v1²+v2²+v3²) without prematurely underflowing tiny squared amplitudes (review N1). Upper bounds still limit physical operating magnitudes. Individual zero inputs and the all-zero budget are admitted. Correlation, common-node and common-bandwidth requirements remain qualitative assumptions, not numeric validation.
 
 
 ## Decibel gain to linear ratios
@@ -278,14 +284,14 @@ The distinct physical purpose is device-added-noise equivalence; this is not a s
 - Do not approximate 3 dB as exactly F = 2 when matching the worked precision.
 
 
-**Stable numerical realization:** T_e = 290 expm1(NF ln(10)/10) avoids subtracting unity from a rounded factor. For NF = 1e-16 dB, independent small-x arithmetic gives T_e ≈ 6.67749676968e-15 K. F necessarily rounds to unity below binary64 spacing, but temperature is separately representable. Zero NF still yields exactly zero temperature. This correction changes neither physical model nor bounds nor nominal expected values.
+**Stable numerical realization (review N3):** With c = ln(10)/10, evaluate T_e = NF (290 c) exprel(c NF), where exprel(x) = expm1(x)/x and exprel(0) = 1. Keep the NF amplitude outside the exponential argument and scale it by the temperature prefactor first. This avoids both rounded-factor subtraction and argument underflow for deep-subnormal NF = 1e-323 dB; its temperature must remain positive even if c*NF rounds to zero. For NF = 1e-16 dB, independent small-x arithmetic gives T_e ≈ 6.67749676968e-15 K. F necessarily rounds to unity below binary64 spacing, but temperature is separately representable. Zero NF yields exactly zero temperature. Neither physical model, bounds nor nominal expected values change.
 
 **Error rationale and sequential outputs:** Reject nonfinite NF, negative NF and values above 100 dB. Nonnegative NF enforces conventional nonnegative added noise; the maximum bounds power factors by 1e10 and temperature by approximately 2.9e12 K. Factor is reported first; stable temperature is evaluated directly from input rather than subtracting one from that rounded factor. The fixed 290 K reference is not an adjustable physical temperature. No cross-input constraint is needed.
 
 
 ## Integration and independent QA handoff
 
-The backend/catalog/noise.json array contains exactly the eight IDs documented above. The shared Rust engine handles finite/exact input keys, inclusive/exclusive bounds, input-only constraints and ordered expression evaluation; Flutter consumes catalog metadata and performs no noise math. The frozen worker engine lacks the newly parent-approved log1p helper; Main must integrate this lane with its extended shared engine.
+The backend/catalog/noise.json array contains exactly the eight IDs documented above. The shared Rust engine handles finite/exact input keys, inclusive/exclusive bounds, input-only constraints and ordered expression evaluation; Flutter consumes catalog metadata and performs no noise math. Main must integrate the lane with its parent-owned `hypot`, `exprel` and `log1prel` helpers; the worker substrate remains unchanged.
 
 Recommended checks for Main and independent QA, not executed here:
 
@@ -298,5 +304,7 @@ Recommended checks for Main and independent QA, not executed here:
 - Dynamic range rejects an impossible margin before output evaluation; equal maximum and threshold gives zero usable range.
 - 0 dB conventional NF gives unity factor/zero temperature. At NF = 1e-16 dB, temperature remains approximately 6.67749676968e-15 K despite rounded F = 1.
 - All-ideal Friis gives unity factor/zero NF/zero temperature; negative gains are valid. Test tiny first-stage NF with other stages ideal and also NF2 = 1e-16 dB following first-stage gain -120 dB: the second-stage excess must be computed before weighting, so X ≈ ln(10)*1e-5, not zero. Tiny physical quantities need scale-aware tolerances, not blanket absolute 1e-6.
+- Review N1/N2: tiny RMS amplitudes whose squares underflow must retain their root-sum-square; test all-zero RSS too. Tiny positive R/T/I and amplifier voltage/current/thermal amplitudes must not be lost by first forming variances; factor roots and independently compare quantity-scaled results.
+- Review N3: NF = 1e-323 dB must give positive equivalent temperature; ideal later-stage Friis with this first NF must retain positive NF and temperature. The zero-NF case remains exactly zero. Expected values must account for binary64 representation of the input, not a broad absolute tolerance.
 
 No build, linter, formatter, test, smoke command or numerical engine run was performed by this developer. Sources and independent nominal substitutions are inherited from research with the source-access caveat above; the small-noise corrections are explicitly derived algebraic implementations.

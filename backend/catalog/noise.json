@@ -56,7 +56,7 @@
         "key": "voltage_noise_density",
         "label": "Open-circuit voltage-noise density",
         "unit": "V/sqrt(Hz)",
-        "expression": "sqrt(4*1.380649e-23*temperature*resistance)"
+        "expression": "sqrt(4*1.380649e-23)*sqrt(temperature)*sqrt(resistance)"
       },
       {
         "key": "voltage_noise_rms",
@@ -104,7 +104,7 @@
     ],
     "outputs": [
       {"key": "noise_gain", "label": "Noise gain", "unit": "V/V", "expression": "1+feedback_resistance/ground_resistance"},
-      {"key": "output_noise_density", "label": "Total output voltage-noise density", "unit": "V/sqrt(Hz)", "expression": "sqrt((voltage_density^2+(plus_current_density*source_resistance)^2+4*1.380649e-23*temperature*source_resistance)*noise_gain^2+(minus_current_density*feedback_resistance)^2+4*1.380649e-23*temperature*feedback_resistance*noise_gain)"},
+      {"key": "output_noise_density", "label": "Total output voltage-noise density", "unit": "V/sqrt(Hz)", "expression": "hypot(hypot(hypot(voltage_density*noise_gain,plus_current_density*(source_resistance*noise_gain)),hypot((sqrt(4*1.380649e-23)*noise_gain)*sqrt(temperature)*sqrt(source_resistance),minus_current_density*feedback_resistance)),hypot(sqrt(4*1.380649e-23)*sqrt(temperature)*sqrt(feedback_resistance),(sqrt(4*1.380649e-23)*(feedback_resistance/sqrt(ground_resistance)))*sqrt(temperature)))"},
       {"key": "output_noise_rms", "label": "Integrated output RMS noise", "unit": "V", "expression": "output_noise_density*sqrt(bandwidth)"},
       {"key": "input_referred_noise_rms", "label": "Input-referred RMS noise", "unit": "V", "expression": "output_noise_rms/noise_gain"}
     ],
@@ -118,8 +118,8 @@
     "category": "Noise measurement and analog budgets",
     "level": "expert",
     "description": "Predict cascade noise factor, noise figure and equivalent input noise temperature from three stages and the first two available power gains.",
-    "formula": "F_i=10^(NF_i/10); G_i=10^(g_i/10); X=expm1(NF_1 ln(10)/10)+expm1(NF_2 ln(10)/10)/G_1+expm1(NF_3 ln(10)/10)/(G_1G_2); F_total=1+X; NF_total=10 log1p(X)/ln(10); T_e=290 expm1(NF_total ln(10)/10)",
-    "assumptions": ["Linear, stable cascade at a common frequency/band; all stage noise figures use the 290 K reference.", "Gains are available power gains, not voltage gains; compatible/matched terminations prevent mismatch and multiple-reflection corrections.", "Stage-added noise is uncorrelated, gains and noise factors are constant across the band and stages are not compressed.", "Negative gain dB is permitted for passive loss, but its noise figure must independently match the attenuator's physical temperature.", "The third-stage gain is not required to compute the input-referred cascade noise figure. No arbitrary-source output-noise prediction or frequency-converting mixer model is implied.", "Linear factors round to unity for sub-epsilon excess noise; stable expm1/log1p preserve the representable cascade noise figure and equivalent temperature."],
+    "formula": "c=ln(10)/10; G_i=10^(g_i/10); s=NF_1 exprel(c NF_1)+NF_2 exprel(c NF_2)/G_1+NF_3 exprel(c NF_3)/(G_1G_2); F_total=1+c s; NF_total=s log1prel(c s); T_e=290 c s",
+    "assumptions": ["Linear, stable cascade at a common frequency/band; all stage noise figures use the 290 K reference.", "Gains are available power gains, not voltage gains; compatible/matched terminations prevent mismatch and multiple-reflection corrections.", "Stage-added noise is uncorrelated, gains and noise factors are constant across the band and stages are not compressed.", "Negative gain dB is permitted for passive loss, but its noise figure must independently match the attenuator's physical temperature.", "The third-stage gain is not required to compute the input-referred cascade noise figure. No arbitrary-source output-noise prediction or frequency-converting mixer model is implied.", "Linear factors round to unity for sub-epsilon excess noise; dB-scale accumulation with exprel/log1prel preserves representable deep-subnormal noise figure and equivalent temperature."],
     "references": [{"title": "Rohde & Schwarz 1SL378, section 3.6 Friis Cascade Equations, equations 32-40", "url": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_application/application_notes/1sl378/1SL378_0e_ColdSrcNF.pdf"}],
     "inputs": [
       {"key": "first_noise_figure_db", "label": "First stage noise figure", "unit": "dB", "default": 2.0, "min": 0.0, "max": 100.0},
@@ -134,9 +134,9 @@
       {"key": "third_noise_factor", "label": "Third stage linear noise factor", "unit": "1", "expression": "10^(third_noise_figure_db/10)"},
       {"key": "first_power_gain", "label": "First stage linear power gain", "unit": "1", "expression": "10^(first_gain_db/10)"},
       {"key": "second_power_gain", "label": "Second stage linear power gain", "unit": "1", "expression": "10^(second_gain_db/10)"},
-      {"key": "cascade_noise_factor", "label": "Cascade linear noise factor", "unit": "1", "expression": "1+expm1(first_noise_figure_db*ln(10)/10)+expm1(second_noise_figure_db*ln(10)/10)/first_power_gain+expm1(third_noise_figure_db*ln(10)/10)/(first_power_gain*second_power_gain)"},
-      {"key": "cascade_noise_figure_db", "label": "Cascade noise figure", "unit": "dB", "expression": "10*log1p(expm1(first_noise_figure_db*ln(10)/10)+expm1(second_noise_figure_db*ln(10)/10)/first_power_gain+expm1(third_noise_figure_db*ln(10)/10)/(first_power_gain*second_power_gain))/ln(10)"},
-      {"key": "cascade_noise_temperature", "label": "Cascade equivalent input noise temperature", "unit": "K", "expression": "290*expm1(cascade_noise_figure_db*ln(10)/10)"}
+      {"key": "cascade_noise_factor", "label": "Cascade linear noise factor", "unit": "1", "expression": "1+(first_noise_figure_db*exprel(first_noise_figure_db*(ln(10)/10))+second_noise_figure_db*exprel(second_noise_figure_db*(ln(10)/10))/first_power_gain+third_noise_figure_db*exprel(third_noise_figure_db*(ln(10)/10))/(first_power_gain*second_power_gain))*(ln(10)/10)"},
+      {"key": "cascade_noise_figure_db", "label": "Cascade noise figure", "unit": "dB", "expression": "(first_noise_figure_db*exprel(first_noise_figure_db*(ln(10)/10))+second_noise_figure_db*exprel(second_noise_figure_db*(ln(10)/10))/first_power_gain+third_noise_figure_db*exprel(third_noise_figure_db*(ln(10)/10))/(first_power_gain*second_power_gain))*log1prel((first_noise_figure_db*exprel(first_noise_figure_db*(ln(10)/10))+second_noise_figure_db*exprel(second_noise_figure_db*(ln(10)/10))/first_power_gain+third_noise_figure_db*exprel(third_noise_figure_db*(ln(10)/10))/(first_power_gain*second_power_gain))*(ln(10)/10))"},
+      {"key": "cascade_noise_temperature", "label": "Cascade equivalent input noise temperature", "unit": "K", "expression": "(first_noise_figure_db*exprel(first_noise_figure_db*(ln(10)/10))+second_noise_figure_db*exprel(second_noise_figure_db*(ln(10)/10))/first_power_gain+third_noise_figure_db*exprel(third_noise_figure_db*(ln(10)/10))/(first_power_gain*second_power_gain))*(290*(ln(10)/10))"}
     ],
     "constraints": [],
     "example": {"inputs": {"first_noise_figure_db": 2.0, "second_noise_figure_db": 6.0, "third_noise_figure_db": 10.0, "first_gain_db": 20.0, "second_gain_db": 10.0}, "expected": {"first_noise_factor": 1.5848931924611136, "second_noise_factor": 3.9810717055349722, "third_noise_factor": 10.0, "first_power_gain": 100.0, "second_power_gain": 10.0, "cascade_noise_factor": 1.6237039095164632, "cascade_noise_figure_db": 2.1050683636637153, "cascade_noise_temperature": 180.8741337597743}, "relative_tolerance": 0.000001}
@@ -189,7 +189,7 @@
       "key": "current_noise_density",
       "label": "Shot current-noise density",
       "unit": "A/sqrt(Hz)",
-      "expression": "sqrt(2*1.602176634e-19*dc_current)"
+      "expression": "sqrt(2*1.602176634e-19)*sqrt(dc_current)"
     },
     {
       "key": "current_noise_rms",
@@ -261,7 +261,7 @@
       "key": "total_noise_rms",
       "label": "Combined RMS noise",
       "unit": "V",
-      "expression": "sqrt(noise_one^2+noise_two^2+noise_three^2)"
+      "expression": "hypot(hypot(noise_one,noise_two),noise_three)"
     }
   ],
   "constraints": [],
@@ -438,13 +438,13 @@
   "category": "Noise measurement and analog budgets",
   "level": "intermediate",
   "description": "Represent a device's added input-referred noise as an equivalent temperature at the standard 290 K noise-figure reference.",
-  "formula": "F=10^(NF/10); T_e=290(F-1)=290 expm1(NF ln(10)/10)",
+  "formula": "F=10^(NF/10); c=ln(10)/10; T_e=NF (290 c) exprel(c NF)",
   "assumptions": [
     "Noise figure follows the standard 290 K source reference and a specified frequency, bandwidth convention and source termination.",
     "Equivalent input noise temperature describes device-added noise, not the device's physical temperature or source temperature.",
     "Conventional nonnegative-added-noise model F >= 1; excludes negative-noise-factor/nonclassical devices.",
     "Conversion does not itself account for mismatch, frequency variation or determine output noise for an arbitrary source temperature.",
-    "Linear factor rounds to unity for sub-epsilon excess noise; direct expm1 evaluation preserves representable tiny positive equivalent temperature."
+    "Linear factor rounds to unity for sub-epsilon excess noise; amplitude-preserving exprel evaluation retains representable deep-subnormal equivalent temperature."
   ],
   "references": [
     {
@@ -473,7 +473,7 @@
       "key": "equivalent_noise_temperature",
       "label": "Equivalent input noise temperature",
       "unit": "K",
-      "expression": "290*expm1(noise_figure_db*ln(10)/10)"
+      "expression": "noise_figure_db*(290*ln(10)/10)*exprel(noise_figure_db*(ln(10)/10))"
     }
   ],
   "constraints": [],
