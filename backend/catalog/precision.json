@@ -1,0 +1,110 @@
+[
+  {
+    "id": "precision.bjt_mirror_base_current",
+    "title": "Matched BJT current mirror base-current error",
+    "category": "Precision analog front ends",
+    "level": "basic",
+    "description": "Predict current-copy deficit and forward-active compliance for a two-NPN current mirror.",
+    "formula": "Ic=Iref/(1+2/beta); Ib=Iref/(beta+2); deficit=2Ib; margin=Vce-Vbe",
+    "assumptions": [
+      "Equal-area matched NPNs share base voltage and temperature; Q1 collector is tied to its base; both emitters are grounded.",
+      "Equal constant beta; neglect Early effect, mismatch, leakage and self-heating. Iref includes both base currents.",
+      "Conservative forward-active domain Vce >= Vbe; verify device breakdown, power and current ratings separately. Not a high-accuracy current reference by itself."
+    ],
+    "references": [
+      {
+        "title": "Analog Devices University: Chapter 11, sections 11.4 and 11.5",
+        "url": "https://wiki.analog.com/university/courses/electronics/text/chapter-11"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "reference_current",
+        "label": "Current into reference node",
+        "unit": "A",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta",
+        "label": "Matched DC current gain",
+        "unit": "1",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "base_emitter_voltage",
+        "label": "Base-emitter voltage at bias",
+        "unit": "V",
+        "default": 0.65,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "collector_voltage",
+        "label": "Output collector voltage",
+        "unit": "V",
+        "default": 2,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "collector_current",
+        "label": "Mirrored collector current",
+        "unit": "A",
+        "expression": "reference_current/(1+2/beta)"
+      },
+      {
+        "key": "base_current_each",
+        "label": "Base current per transistor",
+        "unit": "A",
+        "expression": "reference_current/(beta+2)"
+      },
+      {
+        "key": "current_deficit",
+        "label": "Reference-to-output current deficit",
+        "unit": "A",
+        "expression": "2*base_current_each"
+      },
+      {
+        "key": "fractional_deficit",
+        "label": "Fractional current-copy deficit",
+        "unit": "1",
+        "expression": "2/(beta+2)"
+      },
+      {
+        "key": "compliance_margin",
+        "label": "Collector-base reverse-bias margin",
+        "unit": "V",
+        "expression": "collector_voltage-base_emitter_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "collector_voltage",
+        "op": ">=",
+        "right": "base_emitter_voltage",
+        "message": "Output transistor must not forward-bias its collector-base junction"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "reference_current": 0.001,
+        "beta": 100,
+        "base_emitter_voltage": 0.65,
+        "collector_voltage": 2
+      },
+      "expected": {
+        "collector_current": 0.000980392156862745,
+        "base_current_each": 9.803921568627451e-06,
+        "current_deficit": 1.9607843137254903e-05,
+        "fractional_deficit": 0.0196078431372549,
+        "compliance_margin": 1.35
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
