@@ -36,3 +36,26 @@ From v = L di/dt, V = j omega L I, so ZL = j omega L, XL = 2 pi f L, I_rms = V_r
 | `impedance_phase` | 1.5707963267948966 | rad |
 
 **Parent verification scenarios:** Scale f/L; V=0; reject f=0 or L=0; confirm +pi/2 impedance phase.
+
+## `ac.lossy_coil_antiresonance` — lossy-coil phase resonance (expert)
+
+**Purpose/topology:** Find the unity-power-factor resonance and circulating-current/copper-loss consequences of a series (r + j omega L) branch in parallel with an ideal capacitor, without additional shunt loading.
+
+Adding branch admittances gives Y = r/[r²+(omega L)²] + j{omega C - omega L/[r²+(omega L)²]}. For positive omega, zero susceptance implies r² + omega²L² = L/C, hence omega_r² = (L-Cr²)/(L²C). The factored numerator avoids subtracting two large reciprocal terms. At that frequency G=rC/L, so Zr=L/(Cr) is purely real; source current is V/Zr. Coil branch impedance magnitude is sqrt(L/C), giving Icoil=V sqrt(C/L) and copper loss=Icoil²r=V²/Zr. Ideal comparison frequency is 1/(2 pi sqrt(LC)). Sources: [G] (admittance and resonance definition) and [M1] (phasors); these specialized identities are the displayed independent derivation.
+
+**Units/domain/error rationale:** C r² has units H; the strict input-only constraint L > C r² guards the square root and excludes equality, which leaves no positive-frequency resonance. r, L and C are positive within shared envelopes; r=0 is excluded because ideal resonant tank impedance is infinite. V may be zero. Zr is ohm, frequency Hz, current A RMS and copper loss W.
+
+**Assumptions/limits:** r and L are constant applicable AC values; DC winding resistance is not automatically appropriate. Core loss, self-capacitance, capacitor ESR and external loading are excluded. This is zero-susceptance **phase resonance, not necessarily maximum impedance**; no high-Q or lossless-frequency shortcut is used. Near L=C r² the result is inherently sensitive to component/rounding uncertainty; the strict guard does not certify component tolerances.
+
+**Complete independent example inputs:** `coil_resistance=30 ohm`, `inductance=0.01 H`, `capacitance=1e-6 F`, `voltage_rms=5 V`. L-Cr²=0.0091 H; omega_r²=91000000 s^-2; omega_r=9539.39201417 rad/s. Coil admittance=0.003-j0.00953939201417 S; capacitor admittance=+j0.00953939201417 S. Their sum is 0.003 S; coil current is 5/100=0.05 A and loss is 0.05²×30.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `resonance_frequency` | 1518.2413931464207 | Hz |
+| `ideal_lc_frequency` | 1591.5494309189535 | Hz |
+| `resonance_resistance` | 333.3333333333333 | ohm |
+| `source_current_rms` | 0.015 | A RMS |
+| `coil_current_rms` | 0.05 | A RMS |
+| `copper_loss` | 0.075 | W |
+
+Reactive circulating currents cancel, so coil current exceeds source current without creating power. **Parent verification scenarios:** Reject L<=Cr² and r=0; verify zero net susceptance and V²/Zr=Icoil²r; V=0 remains valid.
