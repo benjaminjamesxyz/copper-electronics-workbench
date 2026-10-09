@@ -132,5 +132,151 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "transients.rc_ladder_step",
+    "title": "Unbuffered two-stage RC ladder startup",
+    "category": "Passive transients",
+    "level": "expert",
+    "description": "Compute both capacitor-node voltages and the downstream capacitor current in a passive two-stage RC ladder, retaining interstage loading instead of multiplying independent RC step responses.",
+    "formula": "a=R1R2C1C2; b=R1C1+R1C2+R2C2; tau_s=(b+sqrt(b^2-4a))/2; tau_f=a/tau_s; v2=Vs[1-(tau_s exp(-t/tau_s)-tau_f exp(-t/tau_f))/(tau_s-tau_f)]; v1=v2+R2 C2 dv2/dt",
+    "assumptions": [
+      "Topology: ideal source, R1, node one, R2, node two in sequence; C1 and C2 connect their respective nodes to common ground. Both capacitors initially uncharged; no external output load or buffer.",
+      "All four components are positive and linear. R1 incorporates source resistance; parasitic inductance, capacitor ESR and leakage are neglected.",
+      "The R1C2 cross term explicitly accounts for downstream loading. This is a startup transient calculation, not cutoff or filter synthesis.",
+      "The relative discriminant must be at least 1e-8 for distinct-pole numerical conditioning. The fast time constant is evaluated as a/tau_s to avoid subtracting nearly equal b and sqrt(discriminant). The shared Rust step_overdamped(t,1/tau_s,1/tau_f) primitive evaluates the same normalized analytic two-real-pole step with stable short-time conditioning; no additional time exclusion or seed output is used."
+    ],
+    "references": [
+      {
+        "title": "Harvey Mudd College Matthew Spencer: Review of Linear Circuits and Dynamics, KCL and step-response methods",
+        "url": "https://pages.hmc.edu/mspencer/e151/sp26/notes/02.pdf"
+      },
+      {
+        "title": "MIT D. Rowell: Review of First- and Second-Order System Response, overdamped characteristic step response",
+        "url": "https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_one",
+        "label": "First series resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 0.001,
+        "max": 1000000000.0
+      },
+      {
+        "key": "r_two",
+        "label": "Second series resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 0.001,
+        "max": 1000000000.0
+      },
+      {
+        "key": "c_one",
+        "label": "First shunt capacitance",
+        "unit": "F",
+        "default": 1e-06,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "c_two",
+        "label": "Second shunt capacitance",
+        "unit": "F",
+        "default": 1e-06,
+        "min": 1e-15,
+        "max": 1.0
+      },
+      {
+        "key": "v_step",
+        "label": "Source step amplitude",
+        "unit": "V",
+        "default": 5.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "time",
+        "label": "Elapsed time",
+        "unit": "s",
+        "default": 0.001,
+        "min": 0.0,
+        "max": 1000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "quadratic_coefficient",
+        "label": "Second-derivative coefficient",
+        "unit": "s^2",
+        "expression": "r_one*r_two*c_one*c_two"
+      },
+      {
+        "key": "linear_coefficient",
+        "label": "First-derivative coefficient",
+        "unit": "s",
+        "expression": "r_one*c_one+r_one*c_two+r_two*c_two"
+      },
+      {
+        "key": "tau_slow",
+        "label": "Slow modal time constant",
+        "unit": "s",
+        "expression": "(linear_coefficient+sqrt(linear_coefficient^2-4*quadratic_coefficient))/2"
+      },
+      {
+        "key": "tau_fast",
+        "label": "Fast modal time constant",
+        "unit": "s",
+        "expression": "quadratic_coefficient/tau_slow"
+      },
+      {
+        "key": "voltage_two",
+        "label": "Second capacitor voltage",
+        "unit": "V",
+        "expression": "v_step*step_overdamped(time,1/tau_slow,1/tau_fast)"
+      },
+      {
+        "key": "capacitor_two_current",
+        "label": "Second capacitor charging current",
+        "unit": "A",
+        "expression": "c_two*v_step*exp(-time/tau_slow)*(-expm1(-time*(1/tau_fast-1/tau_slow)))/(tau_slow-tau_fast)"
+      },
+      {
+        "key": "voltage_one",
+        "label": "First capacitor voltage",
+        "unit": "V",
+        "expression": "voltage_two+r_two*capacitor_two_current"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "(r_one*c_one+r_one*c_two+r_two*c_two)^2-4*r_one*r_two*c_one*c_two",
+        "op": ">=",
+        "right": "1e-8*(r_one*c_one+r_one*c_two+r_two*c_two)^2",
+        "message": "Distinct modal time constants require a relative discriminant of at least 1e-8."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_one": 1000.0,
+        "r_two": 1000.0,
+        "c_one": 1e-06,
+        "c_two": 1e-06,
+        "v_step": 5.0,
+        "time": 0.001
+      },
+      "expected": {
+        "quadratic_coefficient": 1e-06,
+        "linear_coefficient": 0.003,
+        "tau_slow": 0.002618033988749895,
+        "tau_fast": 0.0003819660112501051,
+        "voltage_two": 1.0667720034831585,
+        "capacitor_two_current": 0.0013630446883126453,
+        "voltage_one": 2.4298166917958035
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

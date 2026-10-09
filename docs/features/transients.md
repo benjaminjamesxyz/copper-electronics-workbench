@@ -2,7 +2,7 @@
 
 This lane contains exactly eight physical calculations in [`backend/catalog/transients.json`](../../backend/catalog/transients.json): two one-state voltage-step problems, an imposed-current capacitor ramp, isolated two-capacitor redistribution, periodic two-level excitation, finite-slope voltage-source tracking, a loaded two-capacitor RC ladder, and an underdamped series-RLC step. Charge/discharge, time-target inversions and stored-energy outputs are deliberately **not** counted as separate calculators. No frequency-domain filter synthesis, converter sizing, digital-edge threshold, ADC acquisition requirement, standalone magnetic-energy calculation or transistor drive design is included.
 
-All models are closed-form lumped-element calculations, not circuit simulations. The expressions use only the contract's arithmetic, `exp`, `expm1`, `ln`, `sqrt`, `sin`, `cos`, and `pi`, with sequential scalar outputs. Constraints use input keys and constants only. Every supporting output is included in its JSON example. Units are SI: resistance in ohm, capacitance in F, inductance in H, time in s, voltage in V, current in A, charge in C, energy in J and angular frequency in rad/s. Dimensionless quantities use `1`.
+All models are closed-form lumped-element calculations, not circuit simulations. The expressions use contract arithmetic/functions and the parent-approved shared Rust scalar primitives `expm1mx`, `step_overdamped` and `step_underdamped` for stable evaluation of the same analytic response near zero. No lane-local evaluator or frontend mathematics is introduced. Outputs are sequential scalars; constraints use input keys/constants only. Every supporting output is included in its independent example. Units are SI: resistance in ohm, capacitance in F, inductance in H, time in s, voltage in V, current in A, charge in C, energy in J and angular frequency in rad/s. Dimensionless quantities use `1`.
 
 ## Primary-source ledger
 
@@ -94,4 +94,86 @@ All input values for this independent example are `{"r":1000.0,"c":1e-06,"v_sour
 | `settling_time` | s | 0.004605170185988092 | `-tau*ln(error_fraction)` |
 | `capacitor_energy` | J | 4.9947050111716e-06 | `c*capacitor_voltage^2/2` |
 | `resistor_energy` | J | 1.080830895954234e-05 | `c*(v_source-v_initial)^2/2*(-expm1(-2*time/tau))` |
+
+
+## `transients.rc_ladder_step` — loaded passive two-stage ladder
+
+**Level:** expert. **Design purpose:** predict startup of an unbuffered two-capacitor ladder, where the second stage loads the first. Sources: [HMC KCL and dynamics methods](https://pages.hmc.edu/mspencer/e151/sp26/notes/02.pdf), [MIT second-order real-pole step response](https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf). The specific circuit equations below are independently derived.
+
+### Topology and derivation
+
+The ideal source drives R1, then node one, then R2, then node two. C1 connects node one to ground; C2 connects node two to ground. Both initially uncharged; no output load and no interstage buffer.
+
+KCL gives
+
+`(Vs−v1)/R1=C1 dv1/dt+(v1−v2)/R2`,
+
+`(v1−v2)/R2=C2 dv2/dt`.
+
+From the second equation `v1=v2+R2 C2 dv2/dt`. Substitute into the first:
+
+`a d²v2/dt²+b dv2/dt+v2=Vs`,
+
+where `a=R1R2C1C2` has units `s²` and `b=R1C1+R1C2+R2C2` has units `s`.
+
+The cross term **R1C2** is essential. Multiplying two independently buffered RC responses would omit loading and solve the wrong circuit. Factoring the homogeneous characteristic polynomial as `(1+tau_s s)(1+tau_f s)` gives
+
+`tau_s=(b+sqrt(b²−4a))/2`, `tau_f=a/tau_s`.
+
+With zero initial voltage and current,
+
+`v2(t)=Vs[1−(tau_s exp(−t/tau_s)−tau_f exp(−t/tau_f))/(tau_s−tau_f)]`,
+
+`iC2(t)=C2 Vs[exp(−t/tau_s)−exp(−t/tau_f)]/(tau_s−tau_f)`,
+
+`v1(t)=v2(t)+R2 iC2(t)`.
+
+Writing `x=R1C1`, `y=R1C2`, `z=R2C2`, `b²−4a=(x−z)²+y²+2y(x+z)>0` for positive components. Thus this passive topology has distinct real decay modes mathematically. The catalog additionally guards numerical separation. The fast constant is obtained from `a/tau_s`, rather than cancellation-prone `(b−sqrt(...))/2`.
+
+### Domain and limitations
+
+All component values are positive; `t>=0`. The input-only discriminant constraint requires `(b²−4a)/b²>=1e-8`. No buffer, output resistance, leakage, initial capacitor charge or inductance is modeled. Signed source steps are valid. The calculation is a startup problem with both node voltages, not frequency-response filter synthesis. The promoted catalog delegates short-time evaluation to the shared stable scalar primitive for this same analytic response; no waveform clipping or additional time restriction is substituted.
+
+### Independent worked example
+
+`R1=R2=1 kohm`, `C1=C2=1 microF`, `Vs=5 V`, `t=1 ms`.
+
+- `a=10^-6 s²`; `b=0.003 s`.
+- `sqrt(b²−4a)=sqrt(5)×0.001 s`.
+- `tau_s=(3+sqrt(5)) ms/2=0.002618033988749895 s`.
+- `tau_f=(3−sqrt(5)) ms/2=0.0003819660112501051 s`.
+- Substitution gives `v2=1.066772003483159 V` and `iC2=0.001363044688312645 A`.
+- Independently using the resistor voltage gives `v1=v2+1000 iC2=2.429816691795804 V`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `r_one` | ohm | 1000.0 | [0.001, 1000000000.0] |
+| `r_two` | ohm | 1000.0 | [0.001, 1000000000.0] |
+| `c_one` | F | 1e-06 | [1e-15, 1.0] |
+| `c_two` | F | 1e-06 | [1e-15, 1.0] |
+| `v_step` | V | 5.0 | [-1000000.0, 1000000.0] |
+| `time` | s | 0.001 | [0.0, 1000000000.0] |
+
+`step_overdamped(t,slow_rate,fast_rate)` is the integration-owned stable scalar evaluation of the displayed unit-gain analytic step, with `slow_rate=1/tau_s` and `fast_rate=1/tau_f`, strictly ordered and positive. It changes numerical evaluation only, not topology, waveform, accepted time domain or public outputs. Current uses `exp(−t/tau_s)[−expm1(−t(1/tau_f−1/tau_s))]` instead of subtracting two nearly identical decays. The input-only discriminant guard retains the researched near-degenerate exclusion and protects the root and modal difference; positive components protect all other divisors. At t=0 both node voltages and downstream current are exactly zero. At default components and t=1e-20 s, the independent startup asymptote is `v2≈Vs*t²/(2a)=2.5e-34 V`, not zero. Signed steps remain valid. This requires the parent-owned stable primitive at integration; no lane-local evaluator or Taylor-seed output is introduced.
+
+Additional input-only constraints (checked before any output):
+
+- `(r_one*c_one+r_one*c_two+r_two*c_two)^2-4*r_one*r_two*c_one*c_two >= 1e-8*(r_one*c_one+r_one*c_two+r_two*c_two)^2`: Distinct modal time constants require a relative discriminant of at least 1e-8.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"r_one":1000.0,"r_two":1000.0,"c_one":1e-06,"c_two":1e-06,"v_step":5.0,"time":0.001}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `quadratic_coefficient` | s^2 | 1e-06 | `r_one*r_two*c_one*c_two` |
+| `linear_coefficient` | s | 0.003 | `r_one*c_one+r_one*c_two+r_two*c_two` |
+| `tau_slow` | s | 0.002618033988749895 | `(linear_coefficient+sqrt(linear_coefficient^2-4*quadratic_coefficient))/2` |
+| `tau_fast` | s | 0.0003819660112501051 | `quadratic_coefficient/tau_slow` |
+| `voltage_two` | V | 1.0667720034831585 | `v_step*step_overdamped(time,1/tau_slow,1/tau_fast)` |
+| `capacitor_two_current` | A | 0.0013630446883126453 | `c_two*v_step*exp(-time/tau_slow)*(-expm1(-time*(1/tau_fast-1/tau_slow)))/(tau_slow-tau_fast)` |
+| `voltage_one` | V | 2.4298166917958035 | `voltage_two+r_two*capacitor_two_current` |
 
