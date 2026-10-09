@@ -179,3 +179,60 @@ At the top-left include the static transfer `C(s)=Kc(1+sτ)/(1+sατ)`. Place a 
 
 Caption: “A lead zero precedes its pole. Peak phase boost is centered at the selected crossover; Kc normalizes local loop magnitude. Curves are schematic, not computed Bode plots.”
 
+## 4. `control.pi_pole_placement` — intermediate
+
+### Purpose, novelty and sources
+
+Choose two controller gains from a first-order voltage-domain plant and desired closed-loop characteristic polynomial. This is not `opamps.integrator_constant_input`, which computes an isolated capacitor ramp, or `transients.rlc_underdamped_step`, which computes a passive RLC transient. No step waveform or overshoot is returned. Unlike the preceding lead item, this model introduces integral action and directly assigns two closed-loop polynomial coefficients rather than adding a localized phase boost.
+
+Source P page 1 equation 1 defines the parallel PID/PI convention. Source S supplies the negative-feedback denominator `1+PC`. Source M page 1 gives the normalized polynomial `s²+2ζωn s+ωn²`. The design below is an explicit independent coefficient-matching derivation from those equations, not an attributed numerical example from a source.
+
+### Equations, units, signs and validity
+
+For `P(s)=K/(1+sτ)` and `C(s)=Kp+Ki/s`, with unity negative feedback:
+
+`T(s)=K(Kp s+Ki)/[τs²+(1+K Kp)s+K Ki]`.
+
+Divide the denominator by τ and match it to `s²+2ζωn s+ωn²`:
+
+- `Kp=(2ζωnτ-1)/K`.
+- `Ki=τωn²/K`.
+- `Ti=Kp/Ki`.
+- PI zero is at `s=-Ki/Kp`, with positive zero frequency `Ki/(2πKp)`.
+
+Plant input/output, controller input/output and reference use voltage units, so K and Kp are dimensionless; Ki has `1/s`. The requested characteristic angular frequency is in rad/s, not Hz. K, τ, ωn and ζ must be positive. This design intentionally requires `2ζωnτ>1` so Kp is positive and Ti/zero are finite. The equality would be a pure-integrator controller, outside this positive-PI item; the separate two-lag integral model is not this equality limit because its plant order differs.
+
+All positive damping ratios are allowed, including critical and overdamped polynomial choices. First-order plant accuracy must extend through the designed control band. No delay, sample/hold, actuator saturation, windup or finite-amplifier effect is modeled. The numerator has a zero: textbook zero-free second-order overshoot formulas do not automatically describe this closed loop.
+
+### Complete independent example
+
+Inputs: `plant_gain=2`, `plant_time_constant=0.01 s`, `natural_frequency=200 rad/s`, `damping_ratio=0.75`.
+
+`2ζωnτ=3`, so Kp is `(3-1)/2=1`; Ki is `0.01×40000/2=200 1/s`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `proportional_gain` | `(3-1)/2` | `1` |
+| `integral_gain` | `0.01×200²/2` | `200 1/s` |
+| `integral_time` | `1/200` | `0.005 s` |
+| `zero_frequency` | `200/(2π)` | `31.830988618379067 Hz` |
+
+Independent polynomial reconstruction gives `0.01s²+3s+400`, or `s²+300s+40000`. Its target coefficients are `2×0.75×200=300` and `200²=40000`. Poles are `-150 ± j50sqrt(7) rad/s`; this pole check is not a step-response claim.
+
+### Independent test cases
+
+- Nominal: complete vector plus reconstructed polynomial above.
+- Double plant gain to 4: Kp `0.5`, Ki `100 1/s`, Ti `0.005 s`, zero `100/π Hz`; the target denominator remains unchanged after normalization.
+- `damping_ratio=1` with other defaults: Kp `1.5`, Ki `200`, Ti `0.0075`, zero `200/(3π) Hz`; polynomial has a repeated pole at `-200 rad/s`.
+- `damping_ratio=2`: valid overdamped target; no square root of `1-ζ²` may be introduced.
+- At `natural_frequency=200`, `plant_time_constant=0.01`, `damping_ratio=0.25`, the gain-positive boundary equals one and must reject. Smaller damping also rejects; just above the boundary returns small positive Kp.
+- Reject nonpositive K, τ, ωn or ζ and nonfinite inputs.
+
+### Mandatory diagram
+
+Reference r enters the plus input of a summing circle `(90,100)`, with a unity-feedback return entering its minus input from below. Split the error explicitly at a junction into two parallel controller branches: upper block `Kp` at `(210,45)`–`(300,85)` and lower block `Ki/s` at `(210,120)`–`(300,160)`. Bind these labels to `proportional_gain` and `integral_gain`. Sum both positive branches at `(360,100)`, then drive plant block `K/(1+sτ)` at `(420,70)`–`(580,130)`. Bind K and τ to `plant_gain` and `plant_time_constant`. Output y returns below at y=215 to the negative input.
+
+Place target-polynomial labels `ωn` and `ζ` with bindings `natural_frequency` and `damping_ratio` near the top-right, not on a fictitious RLC component. Include static text `match τs²+(1+K Kp)s+K Ki` outside wires. Optionally label controller zero in a spare lower-right legend using `zero_frequency`; no step plot is needed.
+
+Caption: “Parallel PI branches place the closed-loop characteristic polynomial of a first-order plant. The controller zero changes the step response; saturation and sample delay are omitted.”
+

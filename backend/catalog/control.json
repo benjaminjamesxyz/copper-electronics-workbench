@@ -311,5 +311,117 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "control.pi_pole_placement",
+    "title": "PI pole placement for a first-order voltage-domain plant",
+    "category": "Feedback and control design",
+    "level": "intermediate",
+    "description": "Choose proportional and integral gains so a first-order plant has a specified closed-loop characteristic frequency and damping.",
+    "formula": "P(s)=K/(1+s tau); C(s)=Kp+Ki/s; tau s^2+(1+K Kp)s+K Ki=0; Kp=(2 zeta wn tau-1)/K; Ki=tau wn^2/K",
+    "assumptions": [
+      "Plant input, plant output and unity-feedback reference are voltage-domain signals. Plant gain K is positive and dimensionless.",
+      "The plant is adequately modeled by one real stable pole with no transport delay or zeros over the control band.",
+      "The requested design uses positive proportional and integral gains; 2 zeta wn tau must exceed one.",
+      "The controller is continuous-time PI. Sampling, finite amplifier bandwidth, saturation and anti-windup behavior are not modeled.",
+      "The desired characteristic polynomial does not imply the standard zero-free second-order step overshoot: the closed-loop transfer also has the PI zero. No RLC step response is calculated."
+    ],
+    "references": [
+      {
+        "title": "University of Utah ME3210 Lab 7: PID Controllers, page 1 equation 1",
+        "url": "https://my.mech.utah.edu/~me3200/labs/S05Labs/S05_PID_L07.pdf"
+      },
+      {
+        "title": "Lehigh University ME450 Lecture 5, equations 10-19: negative-feedback characteristic equation",
+        "url": "https://www.lehigh.edu/~eus204/teaching/ME450_SIRC/lectures/lecture05.pdf"
+      },
+      {
+        "title": "MIT 18.03 Supplementary Notes chapter 13: normalized characteristic polynomial, page 1",
+        "url": "https://ocw.mit.edu/courses/18-03-differential-equations-spring-2010/d48ecf2076cc72288ff8d35c859d7551_MIT18_03S10_chapter_13.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "plant_gain",
+        "label": "First-order plant DC voltage gain",
+        "unit": "1",
+        "default": 2,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plant_time_constant",
+        "label": "First-order plant time constant",
+        "unit": "s",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "natural_frequency",
+        "label": "Target characteristic angular frequency",
+        "unit": "rad/s",
+        "default": 200,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "damping_ratio",
+        "label": "Target characteristic damping ratio",
+        "unit": "1",
+        "default": 0.75,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "proportional_gain",
+        "label": "PI proportional gain",
+        "unit": "1",
+        "expression": "(2*damping_ratio*natural_frequency*plant_time_constant-1)/plant_gain"
+      },
+      {
+        "key": "integral_gain",
+        "label": "PI integral gain",
+        "unit": "1/s",
+        "expression": "plant_time_constant*natural_frequency*(natural_frequency/plant_gain)"
+      },
+      {
+        "key": "integral_time",
+        "label": "PI integral time Kp/Ki",
+        "unit": "s",
+        "expression": "proportional_gain/integral_gain"
+      },
+      {
+        "key": "zero_frequency",
+        "label": "PI zero frequency",
+        "unit": "Hz",
+        "expression": "integral_gain/proportional_gain/(2*pi)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "2*damping_ratio*natural_frequency*plant_time_constant",
+        "op": ">",
+        "right": "1",
+        "message": "The requested pole placement must produce positive proportional gain"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "plant_gain": 2,
+        "plant_time_constant": 0.01,
+        "natural_frequency": 200,
+        "damping_ratio": 0.75
+      },
+      "expected": {
+        "proportional_gain": 1,
+        "integral_gain": 200,
+        "integral_time": 0.005,
+        "zero_frequency": 31.830988618379067
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
