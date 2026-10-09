@@ -111,3 +111,24 @@ The one-tenth guideline is the conservative end of TI's one-fifth-to-one-tenth r
 | `f_crossover_guideline` | `30142.9816461923/10` | `3014.29816461923 Hz` |
 
 Independent CCM check: ripple `5*(7/12)/(500000*22e-6)=0.2651515151515152 A`; average 1.2 A; valley 1.0674242424242424 A > 0. Holding voltages/load fixed, doubling L halves fRHPZ; no steady-state sizing feature is duplicated.
+
+## `power.converter_input_budget` — basic
+
+**Purpose:** estimate DC supply demand and aggregate conversion loss from specified operating-point total power efficiency. It applies to step-up or step-down conversion without inferring topology duty or device losses. Sources: S6 equation 2 and S7 section 3; their LDO examples establish conservation identities, not a universal switching-loss model.
+
+From `eta=Pout/Pin`, sequential outputs are `p_out=vout*iout`, `p_in=p_out/efficiency`, `i_in=p_in/vin`, and `p_loss=p_out*((1-efficiency)/efficiency)`. Power outputs use W; current uses A. The loss expression is algebraically `Pin-Pout` but avoids subtracting separately rounded near-equal powers near unity efficiency. At eta=1 loss is exactly zero; this is not a clamp.
+
+**Inputs/defaults:** `vin=12 V`, `vout=5 V`, `iout=2 A`, `efficiency=0.9` (dimensionless). Voltage/current must be positive and `0<efficiency<=1`. No buck/boost voltage-order constraint applies.
+
+**Model-domain errors:** nonpositive voltage/current invalidates this positive-load power-efficiency model; nonpositive efficiency divides by zero or implies nonphysical budgeting, and efficiency above one implies negative passive conversion loss. Zero-load efficiency is deliberately excluded because it requires an explicit quiescent-power model. Total efficiency already includes control/ground losses, so do not add them again. Startup surge, switching ripple, transients and multi-rail bias power are excluded.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `p_out` | `5*2` | `10 W` |
+| `p_in` | `10/(9/10)=100/9` | `11.11111111111111 W` |
+| `i_in` | `(100/9)/12=25/27` | `0.9259259259259259 A` |
+| `p_loss` | `10*(1/10)/(9/10)=10/9` | `1.1111111111111112 W` |
+
+Conservation identities: `Pin=Pout+Ploss` and `Pout/Pin=0.9`. At unity efficiency the same vector gives `Pin=10 W`, `Iin=5/6 A`, `Ploss=0 W`; changing Vin alone inversely scales DC source current.

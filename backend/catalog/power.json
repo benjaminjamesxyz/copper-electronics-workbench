@@ -108,5 +108,29 @@
       {"left": "iout*vout/vin", "op": ">", "right": "vin*((vout-vin)/vout)/(2*fs*inductance)", "message": "Inductor average current must exceed half the ideal ripple to remain in CCM."}
     ],
     "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "inductance": 0.000022, "fs": 500000}, "expected": {"duty": 0.5833333333333334, "r_load": 24, "f_rhp_zero": 30142.9816461923, "f_crossover_guideline": 3014.29816461923}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.converter_input_budget",
+    "title": "Converter input current and loss budget",
+    "category": "Power conversion and regulation",
+    "level": "basic",
+    "description": "Budget DC source current and aggregate converter loss from output power and operating-point total efficiency.",
+    "formula": "Pout = Vout Iout; Pin = Pout/eta; Iin = Pin/Vin; Ploss = Pout (1-eta)/eta = Pin-Pout",
+    "assumptions": ["Steady-state single-input, single-output DC converter with positive nonzero load and 0<total efficiency<=1.", "Efficiency is total power efficiency at this operating point, including control/ground power; do not add those losses again.", "Power-conservation budgeting, not topology voltage transfer or device-loss prediction. Startup, switching ripple, transients and multi-rail bias power are excluded."],
+    "references": [{"title": "TI SLYY206, power efficiency definition, equation 2", "url": "https://www.ti.com/lit/wp/slyy206/slyy206.pdf"}, {"title": "TI SLVA118A, Linear Regulator Design Guide For LDOs, section 3 conservation of energy equations 1-4", "url": "https://www.ti.com/lit/an/slva118a/slva118a.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "DC input voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "DC output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "DC output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "efficiency", "label": "Total power efficiency as a fraction", "unit": "1", "default": 0.9, "min": 0, "exclusive_min": true, "max": 1}
+    ],
+    "outputs": [
+      {"key": "p_out", "label": "Output load power", "unit": "W", "expression": "vout*iout"},
+      {"key": "p_in", "label": "Required DC input power", "unit": "W", "expression": "p_out/efficiency"},
+      {"key": "i_in", "label": "Required average DC input current", "unit": "A", "expression": "p_in/vin"},
+      {"key": "p_loss", "label": "Aggregate converter loss", "unit": "W", "expression": "p_out*((1-efficiency)/efficiency)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "efficiency": 0.9}, "expected": {"p_out": 10, "p_in": 11.11111111111111, "i_in": 0.9259259259259259, "p_loss": 1.1111111111111112}, "relative_tolerance": 0.000001}
   }
 ]
