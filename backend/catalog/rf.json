@@ -491,5 +491,162 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "rf.two_tone_im3",
+    "title": "Equal-tone third-order intermodulation",
+    "category": "RF networks, antennas and links",
+    "level": "expert",
+    "description": "Predict the two nearby IM3 spurs from equal input tones, small-signal gain and an input-referred third-order intercept characterized for the same operating conditions.",
+    "formula": "fIML=2 f1-f2; fIMH=2 f2-f1; Pout=Pin+G; OIP3=IIP3+G; PIM3=3 Pin+G-2 IIP3; C/IM3=2(IIP3-Pin); Ptotal=Pout+10 log10(2)",
+    "assumptions": [
+      "Two equal-power coherent sinusoidal input tones, positive lower IM3 frequency, and both fundamentals/products within the characterized RF band.",
+      "Per-tone powers are dBm, not summed two-tone power. Gain and intercept use the same impedance and measurement reference planes.",
+      "Weak cubic nonlinearity: the fundamental slope is one and each IM3 slope is three. IP3 is an extrapolated intersection, not an achievable output level.",
+      "The maximum total linear output is a user-supplied characterized safe operating limit, not the one-dB compression point. It must include crest-factor, bias, spacing and temperature effects.",
+      "Equal predicted product powers assume the same cubic transfer response at both products. Memory effects, compression, unequal tones, IM2, harmonics and noise are excluded."
+    ],
+    "references": [
+      {
+        "title": "Mini-Circuits, Terms and Definitions: Amplifiers, Two-tone third-order intercept point",
+        "url": "https://blog.minicircuits.com/amplifier-terms-defined/"
+      },
+      {
+        "title": "Texas Instruments TRF1208 EVM guide SBOU266B, section 3.3, OIP3 test equation and reference-plane loss correction",
+        "url": "https://www.ti.com/document-viewer/lit/html/SBOU266B/GUID-95C24EAC-F2FA-4597-8D9E-02715CFD493B"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "lower_frequency",
+        "label": "Lower input-tone frequency",
+        "unit": "Hz",
+        "default": 100000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "upper_frequency",
+        "label": "Upper input-tone frequency",
+        "unit": "Hz",
+        "default": 101000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "input_tone_power_dbm",
+        "label": "Input power per tone",
+        "unit": "dBm",
+        "default": -20.0
+      },
+      {
+        "key": "gain_db",
+        "label": "Small-signal power gain",
+        "unit": "dB",
+        "default": 20.0
+      },
+      {
+        "key": "input_intercept_dbm",
+        "label": "Input third-order intercept",
+        "unit": "dBm",
+        "default": 10.0
+      },
+      {
+        "key": "maximum_total_linear_output_dbm",
+        "label": "Characterized total linear-output limit",
+        "unit": "dBm",
+        "default": 10.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "lower_product_frequency",
+        "label": "Lower IM3 frequency",
+        "unit": "Hz",
+        "expression": "lower_frequency-(upper_frequency-lower_frequency)"
+      },
+      {
+        "key": "upper_product_frequency",
+        "label": "Upper IM3 frequency",
+        "unit": "Hz",
+        "expression": "upper_frequency+(upper_frequency-lower_frequency)"
+      },
+      {
+        "key": "output_tone_power_dbm",
+        "label": "Output power per fundamental tone",
+        "unit": "dBm",
+        "expression": "input_tone_power_dbm+gain_db"
+      },
+      {
+        "key": "output_intercept_dbm",
+        "label": "Output third-order intercept",
+        "unit": "dBm",
+        "expression": "input_intercept_dbm+gain_db"
+      },
+      {
+        "key": "product_power_dbm",
+        "label": "Power of each IM3 product",
+        "unit": "dBm",
+        "expression": "output_tone_power_dbm-2*(input_intercept_dbm-input_tone_power_dbm)"
+      },
+      {
+        "key": "carrier_to_product_db",
+        "label": "Per-tone carrier to IM3 separation",
+        "unit": "dB",
+        "expression": "2*(input_intercept_dbm-input_tone_power_dbm)"
+      },
+      {
+        "key": "total_fundamental_power_dbm",
+        "label": "Total fundamental average power",
+        "unit": "dBm",
+        "expression": "output_tone_power_dbm+10*log10(2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "upper_frequency",
+        "op": ">",
+        "right": "lower_frequency",
+        "message": "The upper tone must lie above the lower tone."
+      },
+      {
+        "left": "upper_frequency-lower_frequency",
+        "op": "<",
+        "right": "lower_frequency",
+        "message": "The lower near-band IM3 product must have positive frequency."
+      },
+      {
+        "left": "input_tone_power_dbm",
+        "op": "<",
+        "right": "input_intercept_dbm",
+        "message": "Per-tone input must remain below the extrapolated IIP3."
+      },
+      {
+        "left": "input_tone_power_dbm+gain_db+10*log10(2)",
+        "op": "<=",
+        "right": "maximum_total_linear_output_dbm",
+        "message": "Total fundamental power exceeds the supplied characterized linear-output limit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "lower_frequency": 100000000.0,
+        "upper_frequency": 101000000.0,
+        "input_tone_power_dbm": -20.0,
+        "gain_db": 20.0,
+        "input_intercept_dbm": 10.0,
+        "maximum_total_linear_output_dbm": 10.0
+      },
+      "expected": {
+        "lower_product_frequency": 99000000.0,
+        "upper_product_frequency": 102000000.0,
+        "output_tone_power_dbm": 0.0,
+        "output_intercept_dbm": 30.0,
+        "product_power_dbm": -60.0,
+        "carrier_to_product_db": 60.0,
+        "total_fundamental_power_dbm": 3.010299956639812
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

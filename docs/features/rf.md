@@ -340,3 +340,88 @@ Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outpu
 
 The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
 
+## 6. `rf.two_tone_im3`
+
+### Purpose, novelty and evidence
+
+This is a nonlinear RF spectral model absent from the baseline. `noise.analog_dynamic_range` compares signal and random noise floors; it does not create deterministic in-band spurs. `data.dynamic_enob` interprets measured SINAD but does not predict amplifier cubic mixing. S5 directly states frequency products, slopes and intercept equations; S6 establishes power-reference-plane practice.
+
+### Equations, units and domain
+
+Let `f1=lower_frequency`, `f2=upper_frequency`, `Pin=input_tone_power_dbm`, `G=gain_db`, and `IIP3=input_intercept_dbm`.
+
+- `lower_product_frequency = 2f1-f2` Hz.
+- `upper_product_frequency = 2f2-f1` Hz.
+- `output_tone_power_dbm = Pin+G`.
+- `output_intercept_dbm = IIP3+G`.
+- `carrier_to_product_db = 2(IIP3-Pin)`.
+- `product_power_dbm = output_tone_power_dbm-carrier_to_product_db` for each product.
+- `total_fundamental_power_dbm = output_tone_power_dbm+10 log10(2)`.
+
+These follow from the intercept equation `OIP3=Pout+(Pout-PIM3)/2`. Both input powers are per tone; adding 3.0103 dB gives their total **average** fundamental power. Two-tone peak-envelope power is higher and must already be allowed for in the supplied characterized linear-output limit.
+
+Require `f1<f2<2f1` so this near-band formulation has two positive ordered products, `Pin<IIP3`, and total fundamental average output not exceeding `maximum_total_linear_output_dbm`. The latter is supplied from characterization for the actual bias, frequency, spacing, temperature and crest factor; it is not P1dB or OIP3. The engine cannot infer an unprovided amplifier response or verify the manufacturer's characterization. The two equal IM3 levels require a weak cubic response with sufficiently flat gain at both products. No compression, memory, unequal-tone or mixer-LO model is claimed.
+
+### Complete independent example
+
+Inputs: `lower_frequency=100000000 Hz`, `upper_frequency=101000000 Hz`, `input_tone_power_dbm=-20`, `gain_db=20`, `input_intercept_dbm=10`, `maximum_total_linear_output_dbm=10`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `lower_product_frequency` | `2*100e6-101e6` | `99000000 Hz` |
+| `upper_product_frequency` | `2*101e6-100e6` | `102000000 Hz` |
+| `output_tone_power_dbm` | `-20+20` | `0 dBm` |
+| `output_intercept_dbm` | `10+20` | `30 dBm` |
+| `product_power_dbm` | `3*(-20)+20-2*10` | `-60 dBm` |
+| `carrier_to_product_db` | `0-(-60)` | `60 dB` |
+| `total_fundamental_power_dbm` | each fundamental is 1 mW; total is 2 mW | `3.010299956639812 dBm` |
+
+Each product is `1e-9 W`; each fundamental is `1e-3 W`; their ratio is `1e6`. This is an independent linear-power interpretation of the dB prediction.
+
+### Nominal, limiting and invalid cases
+
+- Increase per-tone input by 1 dB to -19 dBm: each fundamental becomes 1 dBm, each IM3 becomes -57 dBm, separation becomes 58 dB, total becomes `4.010299956639812 dBm`. Frequencies and OIP3 do not change.
+- Increase IIP3 by 3 dB while holding all other inputs: each IM3 drops 6 dB; fundamentals stay fixed.
+- Exact characterized-limit equality is accepted. An input increment that puts summed fundamental power above that limit is rejected, even if each tone separately remains below it.
+- Reject equal/reversed tones, f2>=2f1, nonpositive frequencies, Pin>=IIP3 and nonfinite values. Negative dBm intercepts and negative gain are not intrinsically invalid if all relational domains pass.
+- Very low Pin produces small but finite logarithmic product power. No arbitrary noise-floor clamp is allowed; the model does not claim the spur can be measured below instrument noise.
+
+### Catalog inputs and bounds
+
+| Key | Meaning | Unit | Default | Bounds |
+|---|---|---|---|---|
+| `lower_frequency` | Lower input-tone frequency | Hz | 100000000.0 | > 0.0 |
+| `upper_frequency` | Upper input-tone frequency | Hz | 101000000.0 | > 0.0 |
+| `input_tone_power_dbm` | Input power per tone | dBm | -20.0 | Any finite value |
+| `gain_db` | Small-signal power gain | dB | 20.0 | Any finite value |
+| `input_intercept_dbm` | Input third-order intercept | dBm | 10.0 | Any finite value |
+| `maximum_total_linear_output_dbm` | Characterized total linear-output limit | dBm | 10.0 | Any finite value |
+
+All inputs must be finite. Constraints run before outputs; invalid domains return errors, not clamps.
+
+- `upper_frequency > lower_frequency`: The upper tone must lie above the lower tone.
+- `upper_frequency-lower_frequency < lower_frequency`: The lower near-band IM3 product must have positive frequency.
+- `input_tone_power_dbm < input_intercept_dbm`: Per-tone input must remain below the extrapolated IIP3.
+- `input_tone_power_dbm+gain_db+10*log10(2) <= maximum_total_linear_output_dbm`: Total fundamental power exceeds the supplied characterized linear-output limit.
+
+### Executable output sequence
+
+| Key | Unit | Expression |
+|---|---|---|
+| `lower_product_frequency` | Hz | `lower_frequency-(upper_frequency-lower_frequency)` |
+| `upper_product_frequency` | Hz | `upper_frequency+(upper_frequency-lower_frequency)` |
+| `output_tone_power_dbm` | dBm | `input_tone_power_dbm+gain_db` |
+| `output_intercept_dbm` | dBm | `input_intercept_dbm+gain_db` |
+| `product_power_dbm` | dBm | `output_tone_power_dbm-2*(input_intercept_dbm-input_tone_power_dbm)` |
+| `carrier_to_product_db` | dB | `2*(input_intercept_dbm-input_tone_power_dbm)` |
+| `total_fundamental_power_dbm` | dBm | `output_tone_power_dbm+10*log10(2)` |
+
+Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outputs require an absolute tolerance. All defaults equal the full worked-example inputs above.
+
+### Sources and illustration
+
+- [Mini-Circuits, Terms and Definitions: Amplifiers, Two-tone third-order intercept point](https://blog.minicircuits.com/amplifier-terms-defined/)
+- [Texas Instruments TRF1208 EVM guide SBOU266B, section 3.3, OIP3 test equation and reference-plane loss correction](https://www.ti.com/document-viewer/lit/html/SBOU266B/GUID-95C24EAC-F2FA-4597-8D9E-02715CFD493B)
+
+The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
+
