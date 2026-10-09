@@ -1,0 +1,743 @@
+{
+  "dc": {
+    "lane": "dc",
+    "base": "906b351",
+    "branch": "feat/dc",
+    "commits": [
+      "1ec1723d346e14341cf4f998f461c6595efd6bbf",
+      "f6f4f9b3900be2e0986a605efe1a1174581c4455",
+      "f420b887dc7fc7701476289bf5ed38980030a6bc",
+      "bf819419fdf231c7a682e31186e444e0bd0508bd",
+      "b03f857830bd2e03cdd72a3e710bd464ab374d8e",
+      "6ce661ee8a71f0ff1917821d83be1df516319544",
+      "7cee82b81d3ef98efddcd6cd03db11bdb4f3f37a",
+      "3bc26294044e3b4d8dbf08ea2476a83cbd6e6627"
+    ],
+    "files": [
+      "backend/catalog/dc.json",
+      "docs/features/dc.md"
+    ],
+    "ids": [
+      "dc.ohm_current",
+      "dc.loaded_wheatstone_bridge",
+      "dc.two_source_node",
+      "dc.resistor_dissipation",
+      "dc.series_parallel_branches",
+      "dc.loaded_divider",
+      "dc.resistive_source_matching",
+      "dc.delta_to_star"
+    ],
+    "substantive_formula_changes": [],
+    "implementation": "Promoted all eight researched executable models without changing formulas, defaults, constraints, source metadata or complete independent expected-output maps. Full sourced documentation preserves worked derivations, all outputs, units, topology/sign conventions, evidence caveats and domain-error rationale.",
+    "handoff": "Ordered actual SHAs and parent verification scenarios appended to root COMMUNICATION.md.",
+    "verification": "No builds, tests, lint, formatters or smoke commands run. Parent should execute examples/defaults, signed/zero boundaries, balanced bridge, backfeed/cancellation, conservation identities, delta/star equivalence and domain rejection.",
+    "blockers": []
+  },
+  "bjt": {
+    "lane": "bjt",
+    "base": "906b351",
+    "branch": "feat/bjt",
+    "commits": [
+      "74097cb1b0526519aca672319426bd4921340395",
+      "d47a5ba44a81fb99030b07a22cbaf94668fb9b2a",
+      "13a056f53b8c072c431595d5ee651ac37b1a8ca2",
+      "03c56089ba00b641ba1d28a84a1ca91ccb391d7b",
+      "278b62a0e356c3674345198bfff55b1f71d8dde8",
+      "0560be9fb6a042515348c79ca401cea66b8f5afc",
+      "8091fc8a51c036e1729b8503600754fe4dab9966",
+      "fcd8500d7897a05d24951daef357d82d74fb1dc0"
+    ],
+    "files": [
+      "backend/catalog/bjt.json",
+      "docs/features/bjt.md"
+    ],
+    "IDs": [
+      "bjt.saturated_switch_drive",
+      "bjt.early_output_resistance",
+      "bjt.differential_pair_steering",
+      "bjt.divider_bias",
+      "bjt.hybrid_pi_parameters",
+      "bjt.emitter_degeneration_gain",
+      "bjt.terminal_dissipation",
+      "bjt.emitter_follower_loading"
+    ],
+    "substantive_formula_changes": [
+      "Differential-pair i_difference uses alpha*i_tail*expm1(v_differential/v_thermal)/(1+current_ratio), algebraically preserving the researched model while avoiding near-balance collector-current subtraction cancellation. All independent expected values and domains retained."
+    ],
+    "documentation": "Complete sourced derivations, units, assumptions, domain-error rationale and every worked output; ordered commit handoff appended to root COMMUNICATION.md.",
+    "blockers": [],
+    "verification": "Not run as instructed. Parent should run catalog/schema/default/example checks and independent numerical/domain QA after integration."
+  },
+  "signals": {
+    "lane": "signals",
+    "base": "906b351",
+    "branch": "feat/signals",
+    "commits": [
+      {
+        "sha": "b2e82988d00c4883c545b21743a2a83f797252b2",
+        "id": "signals.line_propagation"
+      },
+      {
+        "sha": "892a23f887abb55ea3677580b3d768c5ba80407a",
+        "id": "signals.microstrip_impedance"
+      },
+      {
+        "sha": "b47f649d7022469d462ad61522c5760c53fe0c40",
+        "id": "signals.stripline_impedance"
+      },
+      {
+        "sha": "378303d84a5799df5492def8fc6c2159931fc68c",
+        "id": "signals.quarter_wave_transformer"
+      },
+      {
+        "sha": "20392644e5b0fc2f1f1e866f3d0c8fd9834f44f2",
+        "id": "signals.coax_impedance"
+      },
+      {
+        "sha": "311a0e2398b77fb38b672745fb30eaa228e51602",
+        "id": "signals.load_reflection"
+      },
+      {
+        "sha": "8ccda4cc77a851a472ca90f3d21fc214b63c1cae",
+        "id": "signals.source_series_termination"
+      },
+      {
+        "sha": "29e90702ba7f2bc2f8a997b9865198277e19ea10",
+        "id": "signals.rise_time_bandwidth"
+      }
+    ],
+    "files": [
+      "backend/catalog/signals.json",
+      "docs/features/signals.md"
+    ],
+    "IDs": [
+      "signals.line_propagation",
+      "signals.microstrip_impedance",
+      "signals.stripline_impedance",
+      "signals.quarter_wave_transformer",
+      "signals.coax_impedance",
+      "signals.load_reflection",
+      "signals.source_series_termination",
+      "signals.rise_time_bandwidth"
+    ],
+    "substantive_formula_changes": [
+      "Quarter-wave geometric mean uses separate square roots; physical length uses sequential divisions to avoid unnecessary intermediate overflow/underflow.",
+      "Reflection uses maximum-normalized impedance ratios; load voltage and accepted power use direct ratio expressions to avoid near-short/open cancellation.",
+      "Exact source matching simplifies launched voltage to step/2 and open-receiver voltage to step."
+    ],
+    "preserved": "All researched source metadata, physical domains, output keys/order, defaults and complete independent nominal expected maps; sourced documentation includes units, derivations, model/error rationale and every worked output.",
+    "communication": "Ordered SHA handoff and numerical findings appended to root COMMUNICATION.md.",
+    "blockers": [],
+    "verification": "Not run, as instructed. Main should run integrated schema/default/example checks and independent boundary/conditioning QA."
+  },
+  "thermal": {
+    "lane": "thermal",
+    "base": "906b351",
+    "branch": "feat/thermal",
+    "commits": [
+      "522eece282b89f7f100103c7ad0bf2194743c246",
+      "12486796bf2fe84901c708112a504bee2dc84e06",
+      "e3e4c48b3f5cb328d048b42e6e9e06963338e084",
+      "05d0c0d32640cb4d1d411b7864d1740ff7a948f0",
+      "d2a0919704922d38e55cde86be2a369f91f37e2a",
+      "028fe91c98d4e409f635f99711c5a3b2577a4d84",
+      "a85e2ba1da7eee16467e2217c48b4d21ec43febd",
+      "810939f745170a1dd44e3b69f60890275c114f2b"
+    ],
+    "files": [
+      "backend/catalog/thermal.json",
+      "docs/features/thermal.md"
+    ],
+    "IDs": [
+      "thermal.resistor_power_derating",
+      "thermal.junction_feedback_equilibrium",
+      "thermal.arrhenius_acceleration",
+      "thermal.heatsink_resistance_budget",
+      "thermal.parallel_conduction_paths",
+      "thermal.lumped_thermal_step",
+      "thermal.resistor_tcr_drift",
+      "thermal.free_linear_expansion"
+    ],
+    "substantive_formula_changes": [
+      "Equivalent direct equilibrium-power expression avoids rounded absolute-temperature subtraction.",
+      "Arrhenius reciprocal difference rewritten using temperature difference; numerical-domain constraint uses identical expression.",
+      "Lumped thermal step uses complementary exp/-expm1 weights, preserving initial temperature at zero time and short-time heating fraction."
+    ],
+    "documentation": "Complete sourced derivations, units, assumptions/domain rationale, explicit input contracts, all independent example vectors and supporting expected outputs; ten primary references and research evidence caveats retained.",
+    "bus": "Ordered actual commit handoff appended to root COMMUNICATION.md.",
+    "verification": "None run, as assigned. Parent should execute complete examples/defaults and model/boundary acceptance after integration.",
+    "blockers": []
+  },
+  "pcb": {
+    "lane": "pcb",
+    "branch": "feat/pcb",
+    "base": "906b351b6ba19b3070e12dece085df58db431654",
+    "commits": [
+      {
+        "sha": "0ddc1420db8ab3b09e047474c62c5d76c2e5f88f",
+        "id": "pcb.trace_resistance_drop"
+      },
+      {
+        "sha": "8865bde58eea098198a7a845f4bea13d9bd1a6e3",
+        "id": "pcb.ipc2221_current_estimate"
+      },
+      {
+        "sha": "f40a57a6df781461c9fbd44962c7cd86a524b7a3",
+        "id": "pcb.via_barrel_resistance"
+      },
+      {
+        "sha": "7e9687e4ab77b6348994018dee266401bed4243f",
+        "id": "pcb.annular_ring_registration"
+      },
+      {
+        "sha": "1ad3c265d6ef9f2d95c0dd9359835feb28eef6b1",
+        "id": "pcb.nominal_copper_thickness"
+      },
+      {
+        "sha": "46f14bc240046485bf42dbd6ae55a2fce76b99d4",
+        "id": "pcb.differential_length_skew"
+      },
+      {
+        "sha": "4133014b86df8eb9ee8c03f637d43ae611b0eedb",
+        "id": "pcb.trace_joule_heat_density"
+      },
+      {
+        "sha": "7100e16993d8a31ef97549ef24d172fda16d0e63",
+        "id": "pcb.stencil_aperture_area_ratio"
+      }
+    ],
+    "files": [
+      "backend/catalog/pcb.json",
+      "docs/features/pcb.md"
+    ],
+    "ids": [
+      "pcb.trace_resistance_drop",
+      "pcb.ipc2221_current_estimate",
+      "pcb.via_barrel_resistance",
+      "pcb.annular_ring_registration",
+      "pcb.nominal_copper_thickness",
+      "pcb.differential_length_skew",
+      "pcb.trace_joule_heat_density",
+      "pcb.stencil_aperture_area_ratio"
+    ],
+    "substantive_formula_changes": [],
+    "implementation": "All eight researched models promoted with original formulas, source/model metadata, input-only constraints, sequential outputs and complete independent examples. Documentation includes derived formulas, units, defaults/domain/error rationale, every worked output and original source-access caveats.",
+    "communication": "Ordered actual SHA handoff appended to root COMMUNICATION.md.",
+    "verification": "No builds, tests, lint, formatters or smoke commands run. Parent should exercise complete examples/defaults, all guards, via integer/scaling behavior, annular tangency/breakout, skew sign/zero identities, heat zero/integration identities, IPC layer/policy endpoints, copper conversion and negative stencil margin.",
+    "blockers": []
+  },
+  "mosfet": {
+    "lane": "mosfet",
+    "base": "906b351",
+    "branch": "feat/mosfet",
+    "commits": [
+      "24e31c564988ffc3574d2ed94ba6e6e7fcda02c2",
+      "47ce8e4005fbb39c3a368bec6d87c7482daf1d7f",
+      "6acb9a90d525357f7e96cf7f41e7d6dc4f94815c",
+      "3626bcaf07e44dfcffe61aa126ce1f5e84271783",
+      "e7a8a829c2b41c8a8ac6cd9a4ac335227ec23a84",
+      "bf370741e9c5162e9986e8b0e6280849180b388e",
+      "c15dd2224b7e04fb68ed3e30b64501601fa4fd3a",
+      "6106b93a4286e5ead0fda05104ab00f0d3132b26"
+    ],
+    "files": [
+      "backend/catalog/mosfet.json",
+      "docs/features/mosfet.md"
+    ],
+    "ids": [
+      "mosfet.gate_charge_supply",
+      "mosfet.gate_loop_damping_resistor",
+      "mosfet.bootstrap_charge_budget",
+      "mosfet.output_capacitance_hard_turn_on_loss",
+      "mosfet.channel_conduction_loss",
+      "mosfet.hard_switch_overlap_loss",
+      "mosfet.miller_plateau_timing",
+      "mosfet.long_channel_triode_current"
+    ],
+    "substantive_formula_changes": [],
+    "implementation": "Promoted all eight researched programs unchanged, preserving sequential outputs, constraints, source/model metadata, defaults and independent expected values. Documentation includes sourced derivations, complete input/output tables, all worked examples/defaults, domain/error rationale and source-access caveats.",
+    "bus": "Appended ordered actual commit handoff and numerical/model distinctions to root COMMUNICATION.md.",
+    "blockers": [],
+    "verification": "No builds, tests, lint, formatters or smoke commands run. Main should exercise full examples/defaults and documented admissible/rejected boundaries after integration."
+  },
+  "opamps": {
+    "lane": "opamps",
+    "branch": "feat/opamps",
+    "base": "906b351",
+    "commits": [
+      {
+        "id": "opamps.inverting_stage",
+        "sha": "4fa854655d68b2a008658d6fe3d5bbdaa717f597"
+      },
+      {
+        "id": "opamps.difference_ratio_error",
+        "sha": "4fdc9abac393396daedb63f836cef5d1f102543b"
+      },
+      {
+        "id": "opamps.dominant_pole_gain_bandwidth",
+        "sha": "4e288b035f6be55e886c57c01d0fb0fce8aa44a8"
+      },
+      {
+        "id": "opamps.noninverting_stage",
+        "sha": "6dc3d97364c231e21717609726f93d264ad49134"
+      },
+      {
+        "id": "opamps.weighted_summing_stage",
+        "sha": "8e0650e390074aecd7f656bd4233374e51a9d9f9"
+      },
+      {
+        "id": "opamps.integrator_constant_input",
+        "sha": "478fc3204c5b0e31db6d1140a2763ce03a2959be"
+      },
+      {
+        "id": "opamps.differentiator_ramp",
+        "sha": "904d9f88e5f8ac47b81bb33aa1002e73671c1c03"
+      },
+      {
+        "id": "opamps.sinusoidal_slew_requirement",
+        "sha": "1c30f799dea9535bc5b0c344ce3db4c8ca2c042b"
+      }
+    ],
+    "files": [
+      "backend/catalog/opamps.json",
+      "docs/features/opamps.md"
+    ],
+    "IDs": [
+      "opamps.inverting_stage",
+      "opamps.difference_ratio_error",
+      "opamps.dominant_pole_gain_bandwidth",
+      "opamps.noninverting_stage",
+      "opamps.weighted_summing_stage",
+      "opamps.integrator_constant_input",
+      "opamps.differentiator_ramp",
+      "opamps.sinusoidal_slew_requirement"
+    ],
+    "substantive_formula_changes": [
+      "Difference-stage common_mode_gain uses equivalent (R4/R3-R2/R1)/(1+R4/R3), preserving exact matched computed-ratio zero without separately rounded divider-product subtraction. All nominal expected outputs, output order and physical domains preserved."
+    ],
+    "documentation": "Complete cited derivations, source/evidence caveats, model assumptions, units, input/output tables, every independent example input/output, and domain/error rationale included.",
+    "bus": "Findings and final ordered SHA handoff appended to root COMMUNICATION.md.",
+    "verification": "No builds, tests, lint, formatters, engine evaluations or smoke commands run. Main should exercise full examples/defaults, range/model rejection, reference bias, unity follower, matched/small-mismatch difference ratios, zero-duration integration, descending/flat differentiation, inadequate slew-margin diagnostics, and finite/high-loop-gain bandwidth/minimum-stable-gain boundaries.",
+    "blockers": []
+  },
+  "diodes": {
+    "lane": "diodes",
+    "branch": "feat/diodes",
+    "base": "906b351",
+    "commits": [
+      "27a17558910b30943de8f17eca7596b84a0dceff",
+      "f4b60c4207867f2afcdc690d217d5ad2b0477b27",
+      "1275b5a9d624a788bd5fae4aba55aca602fb5fc4",
+      "a3c9f557df13d0bd1a5390031a170ef5e101789d",
+      "517aee3d2795f20d4c6dcd1191a7ec0097b1d334",
+      "43f32fd5db490ff25dbf5cb05cf8b7117f325e77",
+      "fd9cf1a50fecefb8b6c17bb0ead0cbcbb220fb30",
+      "3bdf2161e92b85906b407af87fd33dd38d246bd4"
+    ],
+    "files": [
+      "backend/catalog/diodes.json",
+      "docs/features/diodes.md"
+    ],
+    "IDs": [
+      "diodes.led_series_resistor",
+      "diodes.shockley_forward_current",
+      "diodes.zener_shunt_resistor_window",
+      "diodes.reverse_recovery_charge_budget",
+      "diodes.bridge_conduction_loss",
+      "diodes.full_wave_capacitor_ripple",
+      "diodes.biased_two_sided_clipper",
+      "diodes.parallel_led_ballast"
+    ],
+    "substantive_formula_changes": [
+      "Shockley current and fitted-current constraint use expm1 to preserve tiny positive forward currents.",
+      "LED ballast imbalance uses abs(VF2-VF1)/R, avoiding subtraction of nearly equal branch currents.",
+      "Recovery readable formula consistently names the full fitted triangular duration, not ambiguous datasheet trr."
+    ],
+    "documentation": "Complete sourced derivations, input ranges, sequential expressions, all worked outputs, model/error rationale and inherited source-access caveats; catalog assumptions disclose Vishay/ST access limitations.",
+    "communication": "Conditioning finding and ordered actual commit handoff appended to root COMMUNICATION.md.",
+    "blockers": [],
+    "verification": "No builds, lint, tests, formatters, smoke commands or engine evaluations run. Main owns integrated verification."
+  },
+  "magnetics": {
+    "lane": "magnetics",
+    "base": "906b351",
+    "branch": "feat/magnetics",
+    "commits": [
+      {
+        "sha": "7841578ab5bb31446bf1019b7f12f22f52c15f74",
+        "id": "magnetics.turns_ratio"
+      },
+      {
+        "sha": "94fb395c3bb35a1e2e5e1c8a7af36d1f5f244e4e",
+        "id": "magnetics.rectangular_toroid_inductance"
+      },
+      {
+        "sha": "c161751d201f081adc5706b4c79f467d5c43c968",
+        "id": "magnetics.gapped_core_inductance"
+      },
+      {
+        "sha": "39309ed0cbb040b1fe87f7399ab630fd9f26db2e",
+        "id": "magnetics.conductor_skin_depth"
+      },
+      {
+        "sha": "275c3724f7e4c9a5d561bf6b0ad5981eda03b7ac",
+        "id": "magnetics.coupled_coil_inductance"
+      },
+      {
+        "sha": "905006e41190688a79871f594c219488e70d1d2a",
+        "id": "magnetics.sinusoidal_flux_density"
+      },
+      {
+        "sha": "ec65693af1712fbe78c5b25dcd88dcb1919c8c1f",
+        "id": "magnetics.field_energy_density"
+      },
+      {
+        "sha": "c8f74bff7e91c5a5baae053d8ecdcb65f34c313d",
+        "id": "magnetics.transformer_va_budget"
+      }
+    ],
+    "files": [
+      "backend/catalog/magnetics.json",
+      "docs/features/magnetics.md"
+    ],
+    "IDs": [
+      "magnetics.turns_ratio",
+      "magnetics.rectangular_toroid_inductance",
+      "magnetics.gapped_core_inductance",
+      "magnetics.conductor_skin_depth",
+      "magnetics.coupled_coil_inductance",
+      "magnetics.sinusoidal_flux_density",
+      "magnetics.field_energy_density",
+      "magnetics.transformer_va_budget"
+    ],
+    "substantive_formula_changes": [
+      "Reflected resistance uses load_resistance/voltage_ratio/voltage_ratio, avoiding premature underflow or overflow of the squared ratio.",
+      "Coupled mutual inductance uses separate square roots rather than forming L1*L2; opposing inductance uses the rationalized root difference, retaining exact equal-winding/k=1 zero without clamping.",
+      "All nominal independent oracles, physical input domains, sequential output keys/order, source metadata and approximation caveats are preserved."
+    ],
+    "documentation": "Complete sourced derivations, purposes, units, input/default tables, assumptions, model-domain/error rationale and every independent worked output.",
+    "communication": "Root COMMUNICATION.md contains conditioning findings and ordered actual SHA handoff.",
+    "verification": "No builds, tests, lint, formatters, smoke commands or engine evaluations run. Parent should exercise all examples/defaults, model guards, zero and coupling boundaries, and documented conditioning probes after integration.",
+    "blockers": []
+  },
+  "timing": {
+    "lane": "timing",
+    "branch": "feat/timing",
+    "base": "906b351",
+    "commits": [
+      "c62019959748ed210012a8d8699b79a5c8181af7",
+      "60870af53ebd276221c8202dddd1f9a310f86c85",
+      "a1cc99d2f104143152b4f508dbc202f1ebf72e41",
+      "f1868136a59c3176da14108802293db150164789",
+      "5e6c4701a301e8c31790f9cec3425c3354b1a3d4",
+      "7d29ee3059d2d062d4e5335fe96ce689740ab9d0",
+      "7a6056b67140ec91497fdba130495d1e66bd7b81",
+      "4d8e5715e6ca07778d45f09d3dc43b3c724cecb9",
+      "c3c6c3384ee3bf0f8bc2c2aa408d9bab1c385f56"
+    ],
+    "files": [
+      "backend/catalog/timing.json",
+      "docs/features/timing.md",
+      "research/timing.json",
+      "research/timing.md"
+    ],
+    "IDs": [
+      "timing.timer_clock_divider",
+      "timing.capacitive_crosstalk_peak",
+      "timing.uart_sampling_margin",
+      "timing.plate_displacement_current",
+      "timing.i2c_pullup_bounds",
+      "timing.schmitt_rc_delay_bounds",
+      "timing.synchronous_setup_slack",
+      "timing.inductive_turnoff_spike"
+    ],
+    "substantive_formula_changes": [
+      "Crosstalk uses capacitive-divider voltage multiplied by (-expm1(-x)/x), evaluating the quotient first; preserves output order, physical fast-edge domain, zero coupling/swing and all independent nominal expected outputs. Research/catalog/docs updated consistently.",
+      "Follow-on ninth fix commit uses shared native log1p for Schmitt crossings, preserving valid tiny threshold fractions without changing physical domains or nominal oracles. Main owns the already-approved shared log1p extension."
+    ],
+    "handoff": "Ordered actual SHAs, numerical counterexamples and parent QA scenarios appended to root COMMUNICATION.md.",
+    "verification": "No builds, tests, lint, formatters, smoke commands or engine evaluations run.",
+    "blockers": []
+  },
+  "ac": {
+    "lane": "ac",
+    "base": "906b351",
+    "branch": "feat/ac",
+    "commits": [
+      {
+        "sha": "36cc14040d0b114405eb24dafa1c02a8c7c4bb0f",
+        "id": "ac.inductor_reactance"
+      },
+      {
+        "sha": "bd3b31f39c94c1dea5d95312c0efad585e5d0820",
+        "id": "ac.lossy_coil_antiresonance"
+      },
+      {
+        "sha": "7d92d3eb9001b260d33cefff9bec0154e539d629",
+        "id": "ac.capacitor_reactance"
+      },
+      {
+        "sha": "29f8b61ea6d63051194b94ed785a38f8de73fae5",
+        "id": "ac.series_rlc_impedance"
+      },
+      {
+        "sha": "6b908583bb27314a0c5b9b36784956c68bc5989c",
+        "id": "ac.parallel_rlc_impedance"
+      },
+      {
+        "sha": "ea7d62ee1fc20855cbf53d07f6895dc4f5ae5f76",
+        "id": "ac.series_resonator_bandwidth"
+      },
+      {
+        "sha": "eb91901eefb2e62778bd4fe5268d73233c68d8dc",
+        "id": "ac.sinusoidal_power_triangle"
+      },
+      {
+        "sha": "bc4c75799385bbe0c62544e82e413ed962950787",
+        "id": "ac.shunt_power_factor_correction"
+      }
+    ],
+    "files": [
+      "backend/catalog/ac.json",
+      "docs/features/ac.md"
+    ],
+    "IDs": [
+      "ac.inductor_reactance",
+      "ac.lossy_coil_antiresonance",
+      "ac.capacitor_reactance",
+      "ac.series_rlc_impedance",
+      "ac.parallel_rlc_impedance",
+      "ac.series_resonator_bandwidth",
+      "ac.sinusoidal_power_triangle",
+      "ac.shunt_power_factor_correction"
+    ],
+    "substantive_formula_changes": [],
+    "notes": "All researched formulas, model guards, sources and complete independent expected-output maps preserved. Documentation includes sourced derivations, units, all worked inputs/results and numerical/model caveats. Ordered SHA handoff appended to root COMMUNICATION.md.",
+    "blockers": [],
+    "verification": "Not run as instructed. Parent should evaluate all examples/defaults and range/model boundaries, resonance/complex-power identities, low/high-Q behavior, signed leading Q and equal/unity/invalid-order PF correction."
+  },
+  "noise": {
+    "lane": "noise",
+    "branch": "feat/noise",
+    "base": "906b351",
+    "commits": [
+      "fefa9f2523bd3b9ba9af2b018ee57fc290236d1c",
+      "d7000b91d1260a8463e80d8dd30fecbfc8a58de6",
+      "5afb6940f0b4474c00a2381569c5fc61b7b425d6",
+      "9e77111d61d3494ab5e9ed3090e2586f6e0ef54a",
+      "c5cdfe2f00c731189d7a481ad7402b6d625274e7",
+      "a1dcba257da915c6cb027ab3959f811b0c1c7704",
+      "3dc02e3deb8d67134b892892c0acbdbf1af56e89",
+      "bcf9a778bd9764ed11039d28fb66ff2e68ff36dc"
+    ],
+    "files": [
+      "backend/catalog/noise.json",
+      "docs/features/noise.md",
+      "research/noise.json",
+      "research/noise.md"
+    ],
+    "IDs": [
+      "noise.johnson_resistor",
+      "noise.noninverting_amplifier_budget",
+      "noise.friis_three_stage",
+      "noise.junction_shot",
+      "noise.uncorrelated_rms_sum",
+      "noise.decibel_to_linear",
+      "noise.analog_dynamic_range",
+      "noise.figure_equivalent_temperature"
+    ],
+    "substantive_formula_changes": [
+      "Equivalent temperature uses expm1 directly, preserving tiny positive NF contributions.",
+      "Friis weights stable expm1 excess factors before combining; log1p preserves tiny cascade NF; temperature derives from preceding stable NF.",
+      "All original nominal oracles, output keys/order, defaults and domains retained. Parent authorized research consistency edits."
+    ],
+    "handoff": "Root COMMUNICATION.md records numerical counterexamples, approved shared helper dependency and ordered actual commits. Feature documentation includes complete sourced derivations, units, assumptions, error rationale, worked outputs and independent-QA scenarios.",
+    "verification": "No builds, tests, linters, formatters, smoke commands or engine execution performed.",
+    "integration_dependency": "Main's approved shared log1p registration; worker substrate intentionally unchanged.",
+    "blockers": []
+  },
+  "data": {
+    "lane": "data",
+    "branch": "feat/data",
+    "base": "906b351",
+    "commits": [
+      {
+        "sha": "34d5ad2354ce449962db159318900702092cf6db",
+        "id": "data.adc_lsb"
+      },
+      {
+        "sha": "4061a4d10adb51ea4ec9bcbdf41afed4b94b15da",
+        "id": "data.adc_quantization_error"
+      },
+      {
+        "sha": "916df6bda94e3f6be32954bd3938fae4e2962744",
+        "id": "data.bandlimited_quantization_snr"
+      },
+      {
+        "sha": "5931f7a0ae5d35ab8499d8b82bb991df659ddcb2",
+        "id": "data.sar_acquisition_settling"
+      },
+      {
+        "sha": "7100671f23685bbba0cb8b06a5c6c2969023dc07",
+        "id": "data.dynamic_enob"
+      },
+      {
+        "sha": "1e09be0ec0c89397d5613219f97e634b9617a751",
+        "id": "data.nyquist_sampling_margin"
+      },
+      {
+        "sha": "bcfd08f30bf949be5e6baf95885258d923aff1b3",
+        "id": "data.tone_alias_frequency"
+      },
+      {
+        "sha": "c5fe7587839fbf6087f9c21f14e37c44784d6ed6",
+        "id": "data.unipolar_dac_output"
+      }
+    ],
+    "files": [
+      "backend/catalog/data.json",
+      "docs/features/data.md"
+    ],
+    "ids": [
+      "data.adc_lsb",
+      "data.adc_quantization_error",
+      "data.bandlimited_quantization_snr",
+      "data.sar_acquisition_settling",
+      "data.dynamic_enob",
+      "data.nyquist_sampling_margin",
+      "data.tone_alias_frequency",
+      "data.unipolar_dac_output"
+    ],
+    "substantive_formula_changes": [
+      "Quantization error uses (code+0.5)*quantization_step-(v_in-v_low), preserving small local errors lost by subtraction of rounded absolute reconstruction. Domain, output keys and independent nominal expectations unchanged; large-offset narrow-span reproducer documented."
+    ],
+    "documentation": "Complete source/evidence register, purposes, derivations, units, domains/error rationale, assumptions and every worked output. Ordered actual SHA handoff and conditioning finding appended to root COMMUNICATION.md.",
+    "blockers": [],
+    "verification": "No builds, tests, lint, formatters, smoke commands or engine evaluations run. Parent scenarios documented per feature, including large-offset quantization half-LSB regression."
+  },
+  "power": {
+    "lane": "power",
+    "base": "906b351",
+    "branch": "feat/power",
+    "commits": [
+      "56c6586ab29ac2781b0bc54c089e8555611e80c3",
+      "c2b6897c506fde9c0a4c6df8f4befb863eb75bed",
+      "29fe3fa517b41eb8fec65ccd4f3fa3b59ae7ef5e",
+      "aaeac1bf7732567adaefa91e8b2f212336c77b49",
+      "f1eb1d8b5563351a3ab0dc90a4c5dc73db71a687",
+      "444450672cba7e664c144c62fcd8c77cc6848bee",
+      "80a1ea76a0e339e0976e3cae7792e1e76ab456ad",
+      "6a2f3f20eb66f941903f83a6141469004b59aaaf"
+    ],
+    "files": [
+      "backend/catalog/power.json",
+      "docs/features/power.md"
+    ],
+    "IDs": [
+      "power.ldo_dissipation",
+      "power.boost_output_capacitor",
+      "power.buck_input_capacitor_rms",
+      "power.boost_rhp_zero",
+      "power.converter_input_budget",
+      "power.buck_inductor_design",
+      "power.boost_inductor_design",
+      "power.buck_output_capacitor"
+    ],
+    "substantive_formula_changes": [
+      "Boost duty uses (vout-vin)/vout; mean/peak currents use direct voltage ratio rather than division by 1-duty.",
+      "Boost RHP-zero uses direct (vin/vout)^2; CCM guard uses difference-form duty.",
+      "Buck input-capacitor RMS uses direct (vin-vout)/vin off-fraction.",
+      "Inductor peak/valley expressions factor mean current times 1 +/- ripple_ratio/2.",
+      "Converter loss uses p_out*((1-efficiency)/efficiency), avoiding near-equal power subtraction."
+    ],
+    "documentation": "All seven source links/provenance, model assumptions, formula derivations, SI units, input-domain/error rationale and every independent worked output retained; physical domains and nominal oracles unchanged.",
+    "handoff": "Ordered actual SHAs and findings appended to root COMMUNICATION.md.",
+    "verification": "No builds, lint, tests, formatters, smoke commands or engine evaluations run. Parent should exercise all examples/guards and documented conditioning boundaries.",
+    "blockers": []
+  },
+  "filters": {
+    "lane": "filters",
+    "base": "906b351",
+    "branch": "feat/filters",
+    "commits": [
+      "f0da53b71cba6be204e0f13d28d05512bab3ba79",
+      "2a1e09b8ad688930d012fba8b4f9aaa248c3bff1",
+      "3043b61b9d3d8c5b4bcdae5de5bbd69dfcd6dc6e",
+      "7fafba9e1ab4a2e61126362c6a48f00a0ddd65a1",
+      "0f71c7f43f079436a0835d800e0dd61c3298d27b",
+      "5509483efc21075b545cfc7f636dff7b5a5db9aa",
+      "1bc139a7340b68628a10d33315dc3252b155916b",
+      "dee94f90f3f24e83a59d57ed8c4ef81f3a53ec4b"
+    ],
+    "files": [
+      "backend/catalog/filters.json",
+      "docs/features/filters.md"
+    ],
+    "IDs": [
+      "filters.rc_lowpass_response",
+      "filters.deliyannis_bandpass_design",
+      "filters.butterworth_spec_synthesis",
+      "filters.sallen_key_lowpass",
+      "filters.fliege_notch_response",
+      "filters.rc_highpass_response",
+      "filters.second_order_highpass",
+      "filters.buffered_rc_cascade"
+    ],
+    "substantive_formula_changes": [
+      "Butterworth continuous order uses log1p(expm1(delta)/(-expm1(-a))) to preserve near-equal attenuation specifications; cutoff factors use expm1 and actual losses use log1p.",
+      "RC low-pass/high-pass/cascade insertion loss uses log1p to preserve tiny positive losses.",
+      "RC high-pass phase uses atan(1/x) to avoid high-frequency subtraction cancellation.",
+      "Fliege frequency ratio uses f/notch_hz for exact zero when reusing the returned center.",
+      "Cascade cutoff uses sqrt(expm1(ln(2)/N)); magnitude uses exp(-(N/2)*log1p(x^2))."
+    ],
+    "preserved": "All eight researched IDs, metadata, source links, domains/defaults, sequential output keys and complete independent expected maps at 1e-6 tolerance; full sourced feature documentation.",
+    "blockers": [],
+    "integration_dependency": "Main must integrate its already approved shared native log1p extension before catalog startup; worker did not modify shared engine.",
+    "verification": "No builds, tests, lint, formatters or smoke/engine commands run. Parent scenarios documented in feature docs and root COMMUNICATION.md.",
+    "bus_handoff": "Root COMMUNICATION.md contains conditioning findings and ordered actual commit handoff."
+  },
+  "transients": {
+    "lane": "transients",
+    "base": "906b351",
+    "branch": "feat/transients",
+    "commits": [
+      "9dc0a008485b0700208c639cd4babed13b599b40",
+      "c31684a867173b2f848ff13754fb84916526c78d",
+      "65e5466ec3824abc8c5cbe9f441c01c1290e7a5a",
+      "af6ff76db90f565685482c914b710313a286e204",
+      "ed068c7f3abcc5e14aa75533af81d7c6fa1f5df6",
+      "6fc9c9f6df99247626b88005a3be854607e28630",
+      "62ce55b900950a048287e95d9655d02a972587e3",
+      "6058b8bb13678c0e1e00faac183c744b69feb0e6"
+    ],
+    "files": [
+      "backend/catalog/transients.json",
+      "docs/features/transients.md"
+    ],
+    "IDs": [
+      "transients.rc_step",
+      "transients.rc_ladder_step",
+      "transients.rlc_underdamped_step",
+      "transients.rc_periodic_switching",
+      "transients.rl_step",
+      "transients.capacitor_constant_current",
+      "transients.capacitor_charge_sharing",
+      "transients.rc_ramp_source"
+    ],
+    "substantive_formula_changes": [
+      "RC/RL/charge-sharing trajectories separate initial-state exponential decay from expm1-based equilibrium buildup; energy and charge differences use expm1.",
+      "Ladder capacitor voltage uses parent-approved step_overdamped(time,1/tau_slow,1/tau_fast); downstream current uses stable exponential difference.",
+      "RLC capacitor voltage uses parent-approved step_underdamped(omega_n*time,damping_ratio).",
+      "Ramp quadratic startup uses parent-approved expm1mx(-time/tau); tracking error avoids subtraction of absolute ramp voltages.",
+      "Periodic extrema, ripple and edge currents use expm1 differences and source-level difference; original numerical guards retained.",
+      "Constant-current signed energy change uses deltaQ*(V0+deltaQ/(2C))."
+    ],
+    "preserved": "Every researched ID, output key/order, default/example input, independent expected output, source reference and model guard; no added short-time exclusions or seed outputs.",
+    "integration_dependencies": [
+      "Main-owned expm1mx, step_overdamped and step_underdamped shared scalar primitives must be integrated before catalog startup."
+    ],
+    "blockers": [],
+    "verification": "No builds, lint, tests, formatters, smoke commands or engine evaluations performed. Parent should exercise all examples/domains and documented 1e-20-second startup counterexamples after integration.",
+    "communication": "Root COMMUNICATION.md contains resolved conditioning decision and complete ordered actual-SHA handoff."
+  }
+}

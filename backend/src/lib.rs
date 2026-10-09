@@ -1,3 +1,4 @@
+mod numerics;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use meval::{Context, Expr};
 use serde::{Deserialize, Serialize};
@@ -67,6 +68,9 @@ impl Engine {
         context.func("log10", f64::log10);
         context.func("expm1", f64::exp_m1);
         context.func("log1p", f64::ln_1p);
+        context.func("expm1mx", numerics::expm1mx);
+        context.func3("step_overdamped", numerics::step_overdamped);
+        context.func2("step_underdamped", numerics::step_underdamped);
         let engine = Self { definitions, compiled, by_id, context };
         for calc in &engine.definitions {
             let defaults = calc.inputs.iter().map(|i| (i.key.clone(), i.default)).collect();
