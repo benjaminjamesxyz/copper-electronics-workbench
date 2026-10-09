@@ -656,5 +656,128 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "protection.copper_adiabatic_fault_limit",
+    "title": "Copper conductor temperature-limited fault withstand",
+    "category": "Protection",
+    "level": "expert",
+    "description": "Use the temperature-dependent copper adiabatic heating integral to determine fault-current withstand and the minimum conductor area for a clearing interval.",
+    "formula": "k = 226 sqrt(ln[(234+Tf)/(234+Ti)]); Iallow = k S/sqrt(t); Jallow=(k S)²; Smin=Ifault sqrt(t)/k",
+    "assumptions": [
+      "S is copper cross-sectional area in mm²; temperatures are degrees Celsius. Material constants 226 A sqrt(s)/mm² and 234 degC come from the cited copper cable adiabatic formula.",
+      "This warm-copper cable application is limited to initial temperatures at least 0 degC and final limits at most 250 degC; it does not model cryogenic properties, melting or insulation above that limit.",
+      "Uniform conductor current and temperature, negligible heat escape, and a fault-clearing interval of at most 5 s. Skin/proximity effects, joints, contact hotspots and electrodynamic forces are excluded.",
+      "Fault current is the equivalent RMS current over the interval; for a nonconstant waveform use its actual integral to establish the equivalent RMS value.",
+      "The selected final temperature must also respect the actual insulation and termination ratings; 250 degC is not permission to use that limit for PVC. Negative area margin indicates an undersized conductor. No standards-compliance or safety-certification claim."
+    ],
+    "references": [
+      {
+        "title": "Liban Cables, Generalities section 5.3, copper conductor short-circuit current rating",
+        "url": "https://www.libancables.com/.rest/eservice/dam/v1/file/224143/Generalities_17.pdf"
+      },
+      {
+        "title": "Schneider Electric Electrical Installation Guide, cable thermal constraints",
+        "url": "https://www.electrical-installation.org/enwiki/Verification_of_the_withstand_capabilities_of_cables_under_short-circuit_conditions"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "area_mm2",
+        "label": "Copper cross-sectional area",
+        "unit": "mm²",
+        "default": 4,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_temperature",
+        "label": "Initial copper temperature",
+        "unit": "degC",
+        "default": 90,
+        "min": 0
+      },
+      {
+        "key": "limit_temperature",
+        "label": "Permitted final temperature",
+        "unit": "degC",
+        "default": 250,
+        "min": 0,
+        "max": 250
+      },
+      {
+        "key": "clearing_time",
+        "label": "Fault clearing interval",
+        "unit": "s",
+        "default": 0.5,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 5
+      },
+      {
+        "key": "fault_current",
+        "label": "Equivalent RMS fault current",
+        "unit": "A",
+        "default": 500,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "material_k",
+        "label": "Temperature-dependent copper k",
+        "unit": "A sqrt(s)/mm²",
+        "expression": "226*sqrt(log1p((limit_temperature-initial_temperature)/(234+initial_temperature)))"
+      },
+      {
+        "key": "allowable_fault_current",
+        "label": "Adiabatic allowable RMS fault current",
+        "unit": "A",
+        "expression": "material_k*area_mm2/sqrt(clearing_time)"
+      },
+      {
+        "key": "allowable_i2t",
+        "label": "Conductor thermal integral limit",
+        "unit": "A² s",
+        "expression": "(material_k*area_mm2)^2"
+      },
+      {
+        "key": "minimum_area_mm2",
+        "label": "Minimum thermal-withstand area",
+        "unit": "mm²",
+        "expression": "fault_current*sqrt(clearing_time)/material_k"
+      },
+      {
+        "key": "area_margin_mm2",
+        "label": "Installed minus required area",
+        "unit": "mm²",
+        "expression": "area_mm2-minimum_area_mm2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "limit_temperature",
+        "op": ">",
+        "right": "initial_temperature",
+        "message": "The permitted final temperature must exceed the initial copper temperature"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "area_mm2": 4,
+        "initial_temperature": 90,
+        "limit_temperature": 250,
+        "clearing_time": 0.5,
+        "fault_current": 500
+      },
+      "expected": {
+        "material_k": 143.1744142046674,
+        "allowable_fault_current": 809.9167934122551,
+        "allowable_i2t": 327982.6061255947,
+        "minimum_area_mm2": 2.4693894684833158,
+        "area_margin_mm2": 1.5306105315166842
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

@@ -199,3 +199,46 @@ Required zener current is `0.005+0.8/1000=0.0058 A`.
 ### Mandatory diagram
 
 Use x=30–660 for an electrically complete circuit, not a decorative switch icon. Source at left, Rs in top rail, explicit node A after Rs. At x≈530 put a three-terminal outlined block “SCR” with A top, K bottom, G left; use named pins and ordinary wires, because the shared primitives have no native SCR glyph. K joins return. The gate branch runs from node A through Rg and a block “Vz, reverse avalanche” into G; clearly mark zener cathode toward Rg/A, anode toward G. Shunt Rgk connects G to K with explicit junctions. Bind labels to `fault_voltage`, `source_resistance`, `gate_resistance`, `zener_voltage`, `gate_shunt_resistance`, `available_gate_current`, and `available_anode_current`. Put a compact separate state legend using `latching_current` and `holding_current`. Caption explains positive A→K current, gate current vanishing after clamp, and the required gate pulse until IL. Never depict a two-terminal diode as a complete SCR or connect the gate directly to the cathode wire.
+
+## 5. `protection.copper_adiabatic_fault_limit` — expert
+
+### Purpose and novelty
+
+Derive a conductor's fault withstand from temperature-dependent copper heating and a permitted thermal endpoint. Closest baseline `pcb.trace_joule_heat_density` uses constant resistivity to report heat, not a material-temperature integral or insulation endpoint. Closest fuse item consumes supplied device I²t values, whereas this model derives the conductor limit from material behavior and initial/final temperatures. Cables confirmed no overlap.
+
+### Physical model and domain
+
+For uniform current density J, adiabatic volumetric heating satisfies `Cv dT/dt = rho(T) J²`. Copper resistivity varies approximately linearly with the absolute-offset temperature `234+T` when T is in °C. Integrating this relation gives the logarithmic thermal budget in P5:
+
+`k=226 sqrt(ln[(234+Tf)/(234+Ti)])` in A sqrt(s)/mm².
+
+Then `Iallow=k S/sqrt(t)`, `allowable_i2t=(k S)²`, `Smin=Ifault sqrt(t)/k`, and area margin `S−Smin`. `log1p((Tf−Ti)/(234+Ti))` preserves small positive temperature headroom. P6 independently corroborates the resulting k≈143 for copper XLPE 90–250 °C and the five-second adiabatic screening horizon.
+
+The implemented scope is explicitly **warm copper cable**, `0<=Ti<Tf<=250 °C`, not cryogenic conductors, other metals or material melting. The 0 °C application boundary deliberately avoids extrapolating this cable approximation to low-temperature copper; it was not chosen to mask numerical behavior. `0<t<=5 s`, positive installed area, and nonnegative RMS fault current. Use a lower final limit when insulation/terminations require it. No PVC assumption is hidden behind the 250 °C example. Source constants are rounded engineering constants; do not replace the resulting 143.174414… with rounded table k=143 in numerical tests.
+
+### Complete independent example
+
+Inputs: `area_mm2=4 mm²`, `initial_temperature=90 °C`, `limit_temperature=250 °C`, `clearing_time=0.5 s`, `fault_current=500 A`.
+
+`k=226 sqrt[ln(484/324)] = 143.1744142046674 A sqrt(s)/mm²`.
+
+| Output key | Independent result |
+|---|---:|
+| `material_k` | `143.1744142046674 A sqrt(s)/mm²` |
+| `allowable_fault_current` | `4k/sqrt(0.5) = 809.9167934122551 A` |
+| `allowable_i2t` | `(4k)² = 327982.6061255947 A² s` |
+| `minimum_area_mm2` | `500 sqrt(0.5)/k = 2.4693894684833158 mm²` |
+| `area_margin_mm2` | `1.5306105315166842 mm²` |
+
+### Tester cases
+
+- Nominal complete vector above; verify `Iallow² t=(kS)²` as an independent physical invariant.
+- Change clearing time to `2 s`: allowable current halves, required area doubles, k and allowable integral stay unchanged.
+- Zero fault current: minimum area zero, area margin equals installed `4 mm²`; withstand outputs remain nonzero.
+- Initial and final temperatures approaching each other from below: k and withstand tend to zero, required area grows. A tiny positive temperature difference must not cancel in the logarithm.
+- The 5 s endpoint and 0 °C initial endpoint are admitted. Reject longer intervals, zero/negative time, zero area, equal/inverted temperatures, subzero initial temperature or final temperature above 250 °C.
+- A high specified fault current may give a negative area margin; keep that result rather than reject a physically meaningful failed design.
+
+### Mandatory diagram
+
+Use a conductor cross-section inside a short cable segment, x=50–320, with positive current arrow along the conductor bound to `fault_current`. Cross-sectional area bracket binds `area_mm2`. At x=380–660 show a thermal progression box from `initial_temperature` to `limit_temperature`, separated by a time arrow bound to `clearing_time`; crossed outward heat arrows are labeled “adiabatic: no heat escape,” not unbound computed zero watt labels. Under the segment identify `minimum_area_mm2` as a required-area result distinct from actual geometry. A small equation annotation `k(Ti,Tf)` binds `material_k`. Caption: “Uniform warm-copper adiabatic fault heating, at most 5 s; actual insulation, joints and electrodynamic limits remain separate.”
