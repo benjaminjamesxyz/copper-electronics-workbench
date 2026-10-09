@@ -1,0 +1,85 @@
+# Signal integrity and transmission-line calculators
+
+Eight distinct calculations execute in the shared Rust engine from [the signal catalog](../../backend/catalog/signals.json); the desktop frontend contains no numerical implementation. The lane covers basic, intermediate and expert hardware design. A wavelength is an output of line propagation, not a ninth calculator or an inverse rearrangement counted as a separate physical problem. Source termination, load reflection and quarter-wave transformation represent three different boundary/design tasks. PCB trace current, resistance and pair skew; EMC coupling; filter synthesis; op-amp gain-bandwidth; and digital RC threshold timing remain outside this lane.
+
+## Research scope and evidence quality
+
+Research question: which closed-form, real-valued models can estimate isolated transmission-line geometries, propagation, boundary reflections and practical matching choices using the contract's expression language?
+
+Searches used public web search followed by direct source reads: Hammerstad–Jensen microstrip equations, symmetric stripline fringe correction, TI reflection/source termination, TI rise-time bandwidth, and Ellingson coax/quarter-wave derivations. English-language manufacturer application notes and university-authored open textbooks were included, without a publication-date cutoff. Wiki, vendor calculator result pages and unattributed equations were excluded as supporting evidence. This is a focused engineering-model review, not a systematic literature census. Six directly inspected references support the eight definitions:
+
+| Ref | Inspected source and origin | Evidentiary role / limitations |
+|---|---|---|
+| S1 | [Michael Steer, *Microstrip Transmission Lines*, NC State](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines) | University-authored technical textbook: explicit fit coefficients, source references and applicability ranges. Strong support for implementing the documented quasi-static fit, not a primary experimental validation of a specific PCB. |
+| S2 | [Michael Steer, *Stripline*, NC State](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_%28Steer%29/03%3A_Planar_Transmission_Lines/3.07%3A_Stripline) | University-authored technical textbook: finite-thickness equations and quoted accuracy domain, tracing the fit to its cited literature. Same author as S1; not independent corroboration of S1. |
+| S3 | [Steven W. Ellingson, *Coaxial Line*, Virginia Tech](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line) | University-authored analytic derivation of TEM coax quantities; high confidence within explicit low-loss assumptions. Geometry and material variability remain outside the model. |
+| S4 | [Texas Instruments AN-807, *Reflections: Computations and Waveforms*](https://www.ti.com/lit/an/snla027b/snla027b.pdf) | Manufacturer application report, revised reprint of the Fairchild handbook; develops launch and boundary relations from circuit laws. Strong support for ideal reflection/termination physics; no certification of particular drivers. |
+| S5 | [John Rice / Texas Instruments, *Are You Accurately Measuring the Picosecond Rise Time of Your GaN Device?*](https://www.ti.com/document-viewer/lit/html/SSZTCJ0/GUID-3646E4F7-2FCF-4F97-8465-C0F6DF48F197) | Manufacturer technical article derives rounded 0.35/tr and shows measurement limitations. Device marketing context does not change the elementary single-pole derivation. |
+| S6 | [Steven W. Ellingson, *Quarter-Wavelength Transmission Line*, Virginia Tech](https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line) | University-authored analytic impedance-inversion/matching derivation; high confidence for lossless lines and real resistances. Same author as S3, not an additional independent measurement campaign. |
+
+There are six directly inspected sources (S1–S6); the manufacturer article's extracted step-response expression loses the minus sign, and some textbook examples contain dimensional/typographical mistakes. Definitions here follow the correctly derived physical equations, not those incidental transcription/example errors. In particular, propagation velocity is **1/sqrt(L'C')**, not 1/(L'C'), and an exponential step is **1-exp(-t/tau)**. No disagreement in the underlying ideal-line relationships was found. The material not established here is quantitative accuracy on solder-masked, rough-copper, asymmetric, dispersive or coupled fabricated stackups; use a suitable field solver or measurement for those cases. Fit confidence is conditional on stated domains and is not a standards-compliance assertion.
+
+## Numerical and implementation conventions
+
+All geometry uses metres, time seconds, frequency hertz, impedance ohms and voltage volts. Relative permittivity, ratios, fit coefficients and power fractions have unit `1`. Electrical length is in radians. Use natural logarithms. The speed constant is exactly 299792458 m/s. The coax/microstrip impedance coefficient is the textbook's rounded 60 ohm; do not replace it with a different free-space-impedance coefficient while retaining these expected numbers.
+
+Only contract operators/functions are needed: arithmetic, powers, sqrt, ln, exp and max. Outputs are sequential; constraints contain input keys/constants only. Every example lists every output. The examples below were calculated independently using ordinary Python mathematical arithmetic from the source equations, not the Rust engine or the catalog evaluator. These are research numerical derivations, not executed implementation tests. Defaults equal the worked-example inputs and have finite valid outputs. Relative numerical tolerance is 1e-6; it is not a statement of physical fit accuracy.
+
+
+## 4. Transmission-line delay and wavelength — basic
+
+**ID:** `signals.line_propagation`. **Sources:** S3 phase-velocity/wavelength derivation and S1 effective-permittivity discussion.
+
+A low-loss nondispersive line has v = 1/sqrt(L'C') = c/sqrt(epsilon_eff). Consequently:
+
+- One-way flight time t_d = l/v seconds.
+- Round-trip flight time = 2 t_d.
+- Guide wavelength lambda = v/f metres.
+- Electrical length theta = beta l = 2 pi l/lambda radians.
+
+These are related outputs of one propagation model, not four independent calculators. The reported theta is unwrapped positive phase accumulation for positive l, not the negative transfer-function phase angle.
+
+**Domain guards:** l >= 0, f > 0 and epsilon_eff >= 1. These ensure finite positive velocity/wavelength and valid denominators/roots. Use bulk epsilon_r for homogeneous coax/stripline, but **effective** permittivity for microstrip. Identifying phase velocity with signal-flight/group velocity presumes negligible dispersion. No pair skew, waveform degradation or “electrically short” pass/fail heuristic is included.
+
+**Independent example/default:** l = 0.15 m, epsilon_eff = 3 and f = 1 GHz. v = 299792458/sqrt(3) = **173085256.3273196 m/s**; t_d = **8.666249406959115e-10 s** (0.8666249407 ns); round trip = **1.733249881391823e-9 s**; lambda = **0.17308525632731958 m**; theta = **5.445165094215932 rad**. A zero-length line legitimately returns zero time and zero electrical length while retaining a nonzero wavelength.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `length` | Line physical length | m | 0.15 | >= 0 |
+| `effective_permittivity` | Effective relative permittivity | 1 | 3 | >= 1 |
+| `frequency` | Signal frequency | Hz | 1000000000 | > 0 |
+
+**Input-only model guards:**
+The scalar bounds above suffice for the physical model; no additional relational constraint is needed.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "length": 0.15,
+  "effective_permittivity": 3,
+  "frequency": 1000000000
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `velocity` | Propagation velocity | m/s | `299792458/sqrt(effective_permittivity)` | `173085256.3273196` |
+| `delay` | One-way flight time | s | `length/velocity` | `8.666249406959115e-10` |
+| `round_trip_delay` | Round-trip flight time | s | `2*delay` | `1.733249881391823e-09` |
+| `wavelength` | Guide wavelength | m | `velocity/frequency` | `0.17308525632731958` |
+| `electrical_length` | Unwrapped electrical length | rad | `2*pi*length/wavelength` | `5.445165094215932` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Steven W. Ellingson, Coaxial Line, velocity and wavelength discussion](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line)
+- [Michael Steer, Microstrip Transmission Lines, equations 5–8 and guide wavelength](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines)
+
+## Integration checks to run
+
+No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.

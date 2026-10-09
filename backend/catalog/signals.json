@@ -1,0 +1,98 @@
+[
+  {
+    "id": "signals.line_propagation",
+    "title": "Transmission-line delay and wavelength",
+    "category": "Signal integrity and transmission lines",
+    "level": "basic",
+    "description": "Calculate one-way flight time, round-trip time, wavelength and electrical length using effective permittivity.",
+    "formula": "v=c/sqrt(ee); td=l/v; lambda=v/f; theta=2*pi*l/lambda; c=299792458 m/s",
+    "assumptions": [
+      "Uniform low-loss nonmagnetic line with a frequency-independent effective relative permittivity.",
+      "Use bulk relative permittivity for homogeneous coax/stripline, and effective relative permittivity (not bulk substrate value) for microstrip.",
+      "Delay equals length divided by phase velocity only in this nondispersive model; group-delay dispersion and PCB differential skew are excluded.",
+      "Electrical length is unwrapped phase accumulation in radians, not the negative phase angle of the propagation transfer function."
+    ],
+    "references": [
+      {
+        "title": "Steven W. Ellingson, Coaxial Line, velocity and wavelength discussion",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line"
+      },
+      {
+        "title": "Michael Steer, Microstrip Transmission Lines, equations 5\u20138 and guide wavelength",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "length",
+        "label": "Line physical length",
+        "unit": "m",
+        "default": 0.15,
+        "min": 0
+      },
+      {
+        "key": "effective_permittivity",
+        "label": "Effective relative permittivity",
+        "unit": "1",
+        "default": 3,
+        "min": 1
+      },
+      {
+        "key": "frequency",
+        "label": "Signal frequency",
+        "unit": "Hz",
+        "default": 1000000000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "velocity",
+        "label": "Propagation velocity",
+        "unit": "m/s",
+        "expression": "299792458/sqrt(effective_permittivity)"
+      },
+      {
+        "key": "delay",
+        "label": "One-way flight time",
+        "unit": "s",
+        "expression": "length/velocity"
+      },
+      {
+        "key": "round_trip_delay",
+        "label": "Round-trip flight time",
+        "unit": "s",
+        "expression": "2*delay"
+      },
+      {
+        "key": "wavelength",
+        "label": "Guide wavelength",
+        "unit": "m",
+        "expression": "velocity/frequency"
+      },
+      {
+        "key": "electrical_length",
+        "label": "Unwrapped electrical length",
+        "unit": "rad",
+        "expression": "2*pi*length/wavelength"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "length": 0.15,
+        "effective_permittivity": 3,
+        "frequency": 1000000000
+      },
+      "expected": {
+        "velocity": 173085256.3273196,
+        "delay": 8.666249406959115e-10,
+        "round_trip_delay": 1.733249881391823e-09,
+        "wavelength": 0.17308525632731958,
+        "electrical_length": 5.445165094215932
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
