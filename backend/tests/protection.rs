@@ -243,6 +243,24 @@ fn scr_source_loaded_gate_kcl_and_negative_latch_margin() {
 }
 
 #[test]
+fn scr_extreme_source_resistances_keep_representable_gate_drive() {
+    // Rs=Rg=1e300 stays finite: (1.3e300-9)/2e300 = 0.65 gate drive, trigger 1.225e299.
+    let inputs = [("zener_voltage", 8.0), ("gate_voltage", 1.0),
+        ("gate_trigger_current", 0.03), ("gate_resistance", 1e300),
+        ("gate_shunt_resistance", 32.0), ("fault_voltage", 1.3e300),
+        ("source_resistance", 1e300), ("on_voltage", 1.0),
+        ("latching_current", 4.0), ("holding_current", 0.25)];
+    let out = calculate("protection.scr_crowbar_trigger_latch", &inputs)
+        .expect("teraohm-scale source and gate strings must keep a representable trigger");
+    for (key, expected) in [("trigger_source_voltage", 1.225e299),
+        ("available_gate_current", 0.61875), ("available_anode_current", 1.3),
+        ("latch_margin", -2.7), ("holding_release_voltage", 2.5e299)] {
+        assert_close(out[key], expected, REL, 0.0);
+    }
+    assert_close(out["available_gate_current"] + 1.0 / 32.0, 0.65, REL, 0.0);
+}
+
+#[test]
 fn scr_exact_trigger_holding_equality_and_zero_on_drop() {
     let mut inputs = SCR;
     inputs[5].1 = 10.0;

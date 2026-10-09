@@ -1,8 +1,8 @@
 {
   "lane": "protection",
-  "base": "4c46fa1",
+  "base": "2cca03e",
   "file": "backend/tests/protection.rs",
-  "authored_tests": 29,
+  "authored_tests": 30,
   "behaviors_covered": {
     "protection.fuse_pulse_coordination": [
       "All six outputs with asymmetric pulse",
@@ -30,6 +30,7 @@
       "All five outputs from binary-exact source/gate KCL",
       "Exact trigger, IH=IL, zero on drop",
       "Negative latch margin and shunt-loading effect",
+      "Teraohm-scale source/gate strings keep representable trigger and release outputs",
       "Below-trigger, IH>IL, Von>=Vz, resistance/current positivity and nonfinite recovery"
     ],
     "protection.copper_adiabatic_fault_limit": [
@@ -48,7 +49,7 @@
       "Underflowing Isc/Ik knee regression"
     ]
   },
-  "verification": "NOT EXECUTED: no build, test, lint, formatter, Rust process or native launch. Independent scalar arithmetic only. Main must execute all Rust tests and ordered JSON-lines scenarios after integration.",
+  "verification": "NOT EXECUTED: no build, test, lint, formatter, Rust process or native launch. Independent scalar arithmetic only. Main must execute all Rust tests and ordered JSON-lines scenarios after integration. Reverified at 2cca03e: backend/catalog/protection.json and backend/src are byte-identical to 4c46fa1 (git diff empty), so all oracles remain valid against the fixed catalog; defect regressions still expect physically finite outputs the checked evaluator currently rejects.",
   "untested_gaps": [
     "Worker did not run authored tests or process scenarios.",
     "Native UI and pixels belong to Main and V2ProtectionRun; tester makes no native acceptance claim.",
@@ -698,6 +699,35 @@
         "available_anode_current": 2.5,
         "latch_margin": 2.25,
         "holding_release_voltage": 1
+      }
+    },
+    {
+      "name": "SCR extreme source resistance keeps representable trigger",
+      "request": {
+        "command": "calculate",
+        "id": "protection.scr_crowbar_trigger_latch",
+        "inputs": {
+          "zener_voltage": 8,
+          "gate_voltage": 1,
+          "gate_trigger_current": 0.03,
+          "gate_resistance": 1e+300,
+          "gate_shunt_resistance": 32,
+          "fault_voltage": 1e+300,
+          "source_resistance": 1e+300,
+          "on_voltage": 1,
+          "latching_current": 4,
+          "holding_current": 0.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-10,
+      "rationale": "Independent algebra, not executed: Rs=Rg=1e300 keeps every intermediate finite and the gate drive at 0.5-0.03125=0.46875 A.",
+      "expected_outputs": {
+        "trigger_source_voltage": 1.225e+299,
+        "available_gate_current": 0.46875,
+        "available_anode_current": 1,
+        "latch_margin": -3,
+        "holding_release_voltage": 2.5e+299
       }
     },
     {
