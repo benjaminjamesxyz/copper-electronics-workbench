@@ -201,5 +201,135 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "passives.mlcc_bias_charge_energy",
+    "title": "Voltage-dependent capacitor usable charge and energy",
+    "category": "Nonideal passive components",
+    "level": "intermediate",
+    "description": "Integrate a manufacturer-fitted linear differential-capacitance curve over a voltage window instead of treating biased MLCC capacitance as constant.",
+    "formula": "k=(C_0-C_fit)/V_fit; C(V)=C_0-kV; DeltaQ=(V_hi-V_lo)[C_0-k(V_hi+V_lo)/2]; DeltaW=(V_hi-V_lo)[C_0(V_hi+V_lo)/2-k(V_hi^2+V_hi V_lo+V_lo^2)/3]",
+    "assumptions": [
+      "C(V)=dQ/dV is a reversible, memoryless differential-capacitance fit from zero to fit_voltage, not a static Q/V value.",
+      "Unipolar operation, positive capacitance, and a nonincreasing linear C(V) curve. Only interpolation within the fitted voltage range is allowed.",
+      "Reported charge and energy are released when moving from upper to lower voltage. No ESR loss, dielectric hysteresis, aging, leakage or temperature dependence is included.",
+      "Real MLCC curves can be strongly non-linear; do not extrapolate or assume the linear fit is conservative. Supply measured part-specific endpoint values."
+    ],
+    "references": [
+      {
+        "title": "Analog Devices RAQ Issue 192, first-order voltage-dependent capacitance and integrated charge model",
+        "url": "https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-192.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "zero_bias_capacitance",
+        "label": "Differential capacitance at zero bias",
+        "unit": "F",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_capacitance",
+        "label": "Differential capacitance at fit voltage",
+        "unit": "F",
+        "default": 4e-06,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "fit_voltage",
+        "label": "Upper voltage of characterized fit",
+        "unit": "V",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "lower_voltage",
+        "label": "Lower usable voltage",
+        "unit": "V",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "upper_voltage",
+        "label": "Upper usable voltage",
+        "unit": "V",
+        "default": 8,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "upper_capacitance",
+        "label": "Differential capacitance at upper voltage",
+        "unit": "F",
+        "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*(upper_voltage/fit_voltage)"
+      },
+      {
+        "key": "usable_charge",
+        "label": "Usable charge in voltage window",
+        "unit": "C",
+        "expression": "(upper_voltage-lower_voltage)*(zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*((upper_voltage+lower_voltage)/fit_voltage)/2)"
+      },
+      {
+        "key": "usable_energy",
+        "label": "Usable reversible energy in window",
+        "unit": "J",
+        "expression": "(upper_voltage-lower_voltage)*(zero_bias_capacitance*(upper_voltage+lower_voltage)/2-(zero_bias_capacitance-fit_capacitance)*(upper_voltage*(upper_voltage/fit_voltage)+lower_voltage*(upper_voltage/fit_voltage)+lower_voltage*(lower_voltage/fit_voltage))/3)"
+      },
+      {
+        "key": "charge_equivalent_capacitance",
+        "label": "Window charge-equivalent capacitance",
+        "unit": "F",
+        "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*((upper_voltage+lower_voltage)/fit_voltage)/2"
+      },
+      {
+        "key": "energy_equivalent_capacitance",
+        "label": "Window energy-equivalent capacitance",
+        "unit": "F",
+        "expression": "zero_bias_capacitance-(zero_bias_capacitance-fit_capacitance)*(2/3)*((upper_voltage/fit_voltage)+(lower_voltage/fit_voltage)*(lower_voltage/(upper_voltage+lower_voltage)))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "fit_capacitance",
+        "op": "<=",
+        "right": "zero_bias_capacitance",
+        "message": "This MLCC fit requires nonincreasing capacitance."
+      },
+      {
+        "left": "upper_voltage",
+        "op": ">",
+        "right": "lower_voltage",
+        "message": "The usable voltage window must have positive width."
+      },
+      {
+        "left": "upper_voltage",
+        "op": "<=",
+        "right": "fit_voltage",
+        "message": "Do not extrapolate beyond the characterized voltage range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "zero_bias_capacitance": 1e-05,
+        "fit_capacitance": 4e-06,
+        "fit_voltage": 10,
+        "lower_voltage": 2,
+        "upper_voltage": 8
+      },
+      "expected": {
+        "upper_capacitance": 5.2e-06,
+        "usable_charge": 4.2e-05,
+        "usable_energy": 0.0001992,
+        "charge_equivalent_capacitance": 7e-06,
+        "energy_equivalent_capacitance": 6.64e-06
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

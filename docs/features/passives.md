@@ -103,3 +103,52 @@ First, R_a C_a=10 s. The internal voltage after charging is `10(1−exp(−2))`;
 
 Left two-thirds: terminals A at (120,65) and B at (120,220). Draw C_m vertically on the x=230 branch. On x=400 draw R_a above C_a, with explicit internal junction between them. Top and bottom rails connect the branches; the internal node must not connect to the C_m branch. Show a detached “charge → short → open” three-phase timing strip at x=35…650, y=245; no switch is electrically closed in the recovery picture. Label the A terminal positive and B reference. Bound labels: C_m → `main_capacitance`, R_a → `absorption_resistance`, C_a → `absorption_capacitance`, internal V_a0 → `memory_voltage`, terminal V_rec → `recovered_voltage`. Put timing labels in the legend if cramped. Caption: “After finite charging and shorting, the open terminal recovers voltage from retained polarization. One fitted absorption branch; no leakage or meter loading.”
 
+
+## 3. `passives.mlcc_bias_charge_energy` — intermediate
+
+### Purpose and novelty
+
+Calculate usable charge and energy when a ceramic capacitor's differential capacitance changes across the operating window. Closest baseline: `transients.capacitor_constant_current` assumes a fixed C and computes ideal stored energy. `mosfet.output_capacitance_hard_turn_on_loss` accepts an already energy-equivalent C; it does not integrate a C(V) characteristic. This model introduces a nonlinear constitutive relation, not extra fixed-capacitance outputs.
+
+### Equations, conventions and domain
+
+ADI RAQ192 explicitly integrates its first-order differential-capacitance curve:
+
+`k=(C_0−C_fit)/V_fit`, `C(V)=C_0−kV=dQ/dV`.
+
+For `0≤V_lo<V_hi≤V_fit`:
+
+- `upper_capacitance=C_0−k V_hi`.
+- `usable_charge=∫[V_lo,V_hi] C(V)dV = ΔV[C_0−k(V_hi+V_lo)/2]`.
+- `usable_energy=∫[V_lo,V_hi] V C(V)dV = ΔV[C_0(V_hi+V_lo)/2−k(V_hi²+V_hi V_lo+V_lo²)/3]`.
+- `charge_equivalent_capacitance=usable_charge/ΔV`.
+- `energy_equivalent_capacitance=2 usable_energy/(V_hi²−V_lo²)`.
+
+Energy follows directly from dW=V dQ. The last expression is evaluated algebraically without subtracting nearly equal squares: `C_0−(2k/3)[V_hi+V_lo²/(V_hi+V_lo)]`. Charge and energy factor ΔV rather than subtracting two large antiderivatives. Units: capacitances F, voltages V, charge C, energy J, k F/V. Positive charge and energy describe what is released in discharge from V_hi to V_lo; charge delivered during charging has equal magnitude only in this reversible model.
+
+C_fit must be positive and no greater than C_0; V_fit>0. The fit is interpolation-only. It does not imply that measured small-signal capacitance at arbitrary frequency equals an energy-storage constitutive law. Use a quasistatic/reversible characterization relevant to the application. Hysteresis, ESR dissipation and rate dependence require a different model.
+
+### Complete independent example
+
+Inputs: `zero_bias_capacitance=10e−6 F`, `fit_capacitance=4e−6 F`, `fit_voltage=10 V`, `lower_voltage=2 V`, `upper_voltage=8 V`. Thus k=0.6e−6 F/V, ΔV=6 V, Δ(V²)=60 V², Δ(V³)=504 V³.
+
+| Output key | Independent polynomial integration | Expected |
+|---|---|---:|
+| `upper_capacitance` | 10e−6−0.6e−6×8 | 5.2e−6 F |
+| `usable_charge` | 10e−6×6−(0.6e−6/2)×60 | 42e−6 C |
+| `usable_energy` | (10e−6/2)×60−(0.6e−6/3)×504 | 199.2e−6 J |
+| `charge_equivalent_capacitance` | 42e−6/6 | 7e−6 F |
+| `energy_equivalent_capacitance` | 2×199.2e−6/60 | 6.64e−6 F |
+
+### Independent tester cases
+
+- Nominal table and independent charge/energy integrals.
+- Constant-C boundary C_fit=C_0 gives C_Q=C_E=C_0, Q=C_0 ΔV and W=C_0 Δ(V²)/2.
+- With nominal fit and window 0…10 V: C_hi=4 µF, Q=70 µC, W=300 µJ, C_Q=7 µF, C_E=6 µF.
+- As window width approaches zero around a positive voltage, both equivalent capacitances approach local differential C; both dimensional amounts approach zero. Test a narrow representable window without cancellation from antiderivative subtraction.
+- Reject equal/reversed voltage endpoints, upper voltage above V_fit, negative lower voltage, nonpositive capacitances/V_fit, and C_fit>C_0.
+
+### Mandatory diagram
+
+Draw a C_diff versus V plot at x=60…425, y=45…210. The descending straight conceptual curve starts at C_0 and ends at C_fit at V_fit. Show two generic vertical window markers labeled V_lo and V_hi and shade/hatch the intervening area as “∫C(V)dV = ΔQ”. At x=490…655 draw a capacitor with a positive upper terminal and an energy annotation “ΔW = ∫V C(V)dV”. Bound keys: `zero_bias_capacitance`, `fit_capacitance`, `fit_voltage`, `lower_voltage`, `upper_voltage`, `usable_charge`, `usable_energy`. Curves and marker positions are explanatory, not live-scaled. Caption: “Differential capacitance must be integrated; energy-equivalent C differs from endpoint C. Linear reversible fit, only inside the characterized voltage range.”
+
