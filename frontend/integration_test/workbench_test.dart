@@ -8,6 +8,7 @@ import 'package:pcb_design_calculator/models.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets('real Rust examples render at all experience levels; edits clear stale results', (tester) async {
+    IntegrationTestWidgetsFlutterBinding.instance.testTextInput.register();
     final backend = await BackendClient.start();
     final response = await backend.request({'command': 'catalog'});
     final catalog = (response['calculations'] as List).map((c) => Calculator(c as Map<String, dynamic>)).toList();

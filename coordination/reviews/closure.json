@@ -1,0 +1,115 @@
+{
+  "baseline_revision": "7f12f45",
+  "baseline_reports": [
+    "coordination/reviews/dc.md",
+    "coordination/reviews/ac.md",
+    "coordination/reviews/transients.md",
+    "coordination/reviews/diodes.md",
+    "coordination/reviews/bjt.md",
+    "coordination/reviews/mosfet.md",
+    "coordination/reviews/opamps.md",
+    "coordination/reviews/filters.md",
+    "coordination/reviews/power.md",
+    "coordination/reviews/magnetics.md",
+    "coordination/reviews/signals.md",
+    "coordination/reviews/pcb.md",
+    "coordination/reviews/thermal.md",
+    "coordination/reviews/data.md",
+    "coordination/reviews/noise.md",
+    "coordination/reviews/timing.md"
+  ],
+  "post_fix_static_reviews": {
+    "dc": {
+      "overall_correctness": "correct",
+      "explanation": "Focused dc re-review: decision clear; DC-R1 is resolved in backend/catalog/dc.json:296-307. Both source currents now use algebraically equivalent expanded KCL expressions, preserving the independently expected 0.0078125 A, -0.00390625 A and 0.00390625 A for the exact-power-of-two counterexample without changing topology, units, signed domains or nominal outputs; docs/features/dc.md explains the conditioning correction. No new findings in the changed ID; assessed statically only, tested=false, with executed regression verification remaining parent-owned.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "ac": {
+      "overall_correctness": "correct",
+      "explanation": "Lane ac focused re-review: decision=clear, findings=[], tested=false. The rationalized pf_tangent_difference helper, equal/unity handling, function registration and consuming dispatch resolve F1 without narrowing accepted inputs; updated documentation matches the implementation. Baseline report coordination/reviews/ac.md is parent-persisted; disposition was handed to Main, and runtime verification remains unexecuted by this reviewer.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "transients": {
+      "overall_correctness": "correct",
+      "explanation": "Lane transients: decision clear after focused static re-review. The corrected overdamped direct branch divides the normalized modal numerator before amplitude scaling, resolving the reported regression while retaining amplitude-first evaluation for short-time startup; the original ramp, ladder, and RLC underflow findings are also resolved. No remaining actionable findings in the changed scope; tested=false, with report and disposition persistence and executed verification owned by Main.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "diodes": {
+      "overall_correctness": "correct",
+      "explanation": "Focused diodes re-review: decision=clear, findings=[], tested=false. DIODE-R1 is resolved: direct signed-mismatch evaluation preserves the expected 2^-54 A branch current for the original and swapped counterexamples, and the formula and feature documentation match the correction. This disposition is based on source inspection and independent algebra only; parent owns executed verification and report persistence.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "opamps": {
+      "overall_correctness": "correct",
+      "explanation": "Focused opamps re-review decision: clear. OPA-1 is resolved: the noninverting output and both swing guards preserve the direct input, including tiny signed unity-follower inputs. OPA-2 is resolved: the difference-stage output and both swing guards independently retain differential, mismatch, and reference contributions; the algebra is equivalent to the original topology, and documentation accurately records both corrections without claiming executed verification. No remaining findings in the changed IDs; tested=false.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "power": {
+      "overall_correctness": "correct",
+      "explanation": "Power remediation review is clear: POWER-R1 and POWER-R2 are resolved by scale-safe hypot evaluation and the rearranged RHP-zero numerator. Changed formulas, shared function registration/dispatch and documentation agree with the independent oracles; no new findings in the focused scope. Baseline report was persisted by Main at coordination/reviews/power.md; tested=false, with runtime verification remaining Main's responsibility.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "magnetics": {
+      "overall_correctness": "correct",
+      "explanation": "Focused final magnetics disposition: clear; all previously reported counterexamples are addressed. The final field-energy expression normalizes B before multiplying by sqrt(volume), preserving both the original large-volume case and the tiny-volume/low-permeability case; documentation and permanent regression assertions include appropriate subnormal tolerances. No checks were executed by this reviewer (tested=false); runtime verification remains parent-owned.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "signals": {
+      "overall_correctness": "correct",
+      "explanation": "Focused re-review decision: clear; SIG-R1 and SIG-R2 are resolved by preserving the impedance difference before normalization and guarding busy-state cleanup with active-request identity. The local Material surface change is also correct on static inspection. No new findings; tested=false, with runtime verification remaining parent-owned.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "thermal": {
+      "overall_correctness": "correct",
+      "explanation": "Thermal final focused decision: clear. The parallel_heat helper repairs both reported counterexamples, preserves branch-swapped, zero-power, equal-path and nominal algebra, and is correctly registered and called; documentation matches the correction. Both findings are closed by static re-review; tested=false, with runtime verification and durable report/disposition persistence owned by Main.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "data": {
+      "overall_correctness": "correct",
+      "explanation": "Focused data re-review is clear: the sole change corrects the adc_quantization_error documentation to an admissible exact dyadic endpoint, giving q=2^-61 V and half-LSB error=2^-62 V. The former decimal endpoint is correctly disclosed as rejected; parent was advised to update that scenario in the persisted baseline report. No runtime verification was performed (tested=false).",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "noise": {
+      "overall_correctness": "correct",
+      "explanation": "Noise focused re-review: clear; no remaining actionable findings. N1, N2 and N3, including the residual Friis temperature counterexample, are resolved by the inspected changes, and documentation matches the dimensional temperature calculation. tested=false: conclusions are static; Main owns executed verification and persisted dispositions.",
+      "confidence": 0.99,
+      "findings": []
+    },
+    "timing": {
+      "overall_correctness": "correct",
+      "explanation": "Focused re-review finds T1 resolved: crosstalk guards reject zero/nonfinite time constants and ratios, and the integrated checked-RPN evaluator rejects nonfinite token results before subsequent operations can conceal them. No remaining actionable finding in this scope; parent confirmed report persistence at coordination/reviews/timing.md. Static review only, tested=false; runtime regression and native-platform acceptance remain unverified by this reviewer.",
+      "confidence": 0.98,
+      "findings": []
+    }
+  },
+  "unchanged_clear_baseline_lanes": [
+    "bjt",
+    "mosfet",
+    "filters",
+    "pcb"
+  ],
+  "runtime_owner": "Main",
+  "reviewers_executed_checks": false,
+  "parent_executed": [
+    "cargo test --locked --manifest-path backend/Cargo.toml: 431 passed, 21 suites",
+    "128 complete independent example vectors through actual Rust process; invalid request recovery passed",
+    "23 baseline review counterexamples and 4 post-fix counterexamples through actual Rust process, independent expected values passed"
+  ],
+  "numerical_evidence": [
+    "coordination/numerical_before.json",
+    "coordination/numerical_after.json",
+    "coordination/numerical_followup_before.json",
+    "coordination/numerical_followup_after.json"
+  ],
+  "baseline_data_scenario_correction": "Former v_high=999.000000001 is rejected because rounded span is below 1e-9. Correct admissible v_high=999.0000000018626 (=999+2^-29) gives quantization_step=2^-61 and error=2^-62."
+}

@@ -1,0 +1,158 @@
+{
+  "lane": "filters",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "f743548"
+  ],
+  "file": "backend/tests/filters.rs",
+  "authored_tests": 21,
+  "verification": "Static syntax/API review only. No builds, tests, linters, formatters, backend smokes or desktop checks executed; no pass claim.",
+  "behaviors_covered": [
+    "All eight complete research examples assert every output with explicit inputs and shared mod common.",
+    "RC low-pass: cutoff/scaling, negative phase, DC at minimum components and tiny positive attenuation.",
+    "RC high-pass: opposite corner phase, minimum positive frequency, high-frequency tiny phase/attenuation and DC rejection.",
+    "Second-order high-pass: Q-dependent true cutoff, pole gain KQ, half-power, inclusive Q endpoints and very small nonzero gain.",
+    "Deliyannis: resistor mapping/product, exact edge bandwidth/product, half-power edges, DC zero, exclusive Q=0.5, next representable Q and Q=50.",
+    "Butterworth: minimal feasible order, cutoff interval, nearest integer-boundary representation and both sides, adjacent positive losses, minimum edge ratio, 32 poles and all cross-input rejections.",
+    "Sallen\u2013Key: capacitor labels, asymmetric resistor feedback weighting, DC, non-Butterworth half-power, Q endpoints and low-Q/high-Q/zero-damping/negative-damping rejection.",
+    "Fliege: DC unity, independent and reused center zero, near-notch positive gain, reciprocal-frequency symmetry, half-power edge identities and Q endpoints.",
+    "Buffered cascade: total cutoff, integer order endpoints, fractional rejection, DC, unwrapped phase, tiny attenuation and underflowed magnitude with finite dB.",
+    "Every scalar field: below/above bounds, zero-or-negative values, nonfinite inputs and subsequent valid recovery. Output-specific exact-zero or documented notch cancellation tolerances."
+  ],
+  "untested_gaps": [
+    "Parent must compile and execute the integrated full suite.",
+    "Actual JSON-lines process, Flutter desktop interactions and native-platform packaging remain unexecuted.",
+    "Ideal-model tests do not validate hardware loading, component matching/tolerance, amplifier bandwidth/slew or guaranteed notch depth."
+  ],
+  "suspected_defects": [],
+  "communication": "Appended committed handoff to root COMMUNICATION.md.",
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.rc_lowpass_response",
+        "inputs": {
+          "r": 0.001,
+          "c": 1e-15,
+          "f": 0
+        }
+      },
+      "expect": {
+        "voltage_gain": 1,
+        "frequency_ratio": 0,
+        "phase_rad": 0,
+        "attenuation_db": 0
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.rc_highpass_response",
+        "inputs": {
+          "r": 2000,
+          "c": 5e-08,
+          "f": 0
+        }
+      },
+      "expect": "Explicit error; follow with f=1591.5494309189535 and verify gain=1/sqrt(2), phase=+pi/4."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.second_order_highpass",
+        "inputs": {
+          "pole_frequency": 1000,
+          "q": 1,
+          "passband_gain": 3,
+          "f": 786.1513777574233
+        }
+      },
+      "expect": {
+        "half_power_hz": 786.1513777574233,
+        "voltage_gain": 2.121320343559643
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.deliyannis_bandpass_design",
+        "inputs": {
+          "center_frequency": 1000,
+          "q": 0.5,
+          "c0": 1e-08,
+          "f": 1000
+        }
+      },
+      "expect": "Explicit exclusive-boundary error; q=2 recovers with peak_gain=voltage_gain=2."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.butterworth_spec_synthesis",
+        "inputs": {
+          "passband_edge": 1000,
+          "stopband_edge": 4000,
+          "passband_loss": 1,
+          "stopband_loss": 1.0000000000000002
+        }
+      },
+      "expect": {
+        "order_bound": 8.965939131579341e-17,
+        "order": 1,
+        "cutoff_min_hz": 1965.226728360272
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.sallen_key_lowpass",
+        "inputs": {
+          "r1": 10000,
+          "r2": 10000,
+          "c1": 1e-08,
+          "c2": 1e-08,
+          "amplifier_gain": 3,
+          "f": 0
+        }
+      },
+      "expect": "Explicit unstable-damping error; gain=2 recovers with DC voltage_gain=2."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.fliege_notch_response",
+        "inputs": {
+          "r0": 10000,
+          "c0": 1e-07,
+          "rq": 200000,
+          "f": 159.15494309189535
+        }
+      },
+      "expect": "Zero linear gain within documented cancellation-scale tolerance; reuse reported notch_hz as input for exact zero. No finite notch dB floor."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "filters.buffered_rc_cascade",
+        "inputs": {
+          "r": 10000,
+          "c": 1e-08,
+          "stage_count": 8,
+          "f": 1591.5494309189535
+        }
+      },
+      "expect": {
+        "voltage_gain": 0.0625,
+        "phase_rad": -6.283185307179586,
+        "attenuation_db": 24.082399653118497
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Load all eight research examples and inspect every output, unit, formula, source and topology assumption.",
+    "Exercise high-pass DC, Deliyannis Q=0.5, unstable Sallen\u2013Key gain, reversed Butterworth specifications and fractional cascade order; errors must clear stale results and corrected inputs must recover.",
+    "Inspect scientific notation for tiny RC attenuation, high-pass phase and adjacent-loss positive Butterworth order bound.",
+    "Verify notch center shows zero linear transmission without a fabricated dB value; a nearby frequency restores positive transmission.",
+    "Verify eight-stage cascade retains phase below -pi, and distinguish natural frequency from true half-power cutoff for non-Butterworth sections."
+  ]
+}

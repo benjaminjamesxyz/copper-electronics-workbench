@@ -1,0 +1,92 @@
+{
+  "lane": "ac",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "66d1248be5bbe96aab28fafcf90299bacd935a57"
+  ],
+  "file": "backend/tests/ac.rs",
+  "behaviors_covered": [
+    "All eight complete researched numerical vectors, explicit inputs and every output at 1e-6 relative tolerance",
+    "Inductor/capacitor frequency and component scaling, signed phase, zero drive and inclusive envelope corners",
+    "Series/parallel RLC independent phasors, leading/lagging signs, conjugate inversion, finite resonance, zero excitation and envelope extremes",
+    "Exact series half-power roots, geometric-center and dissipated-power identities, low/high Q and cancellation-safe tiny lower endpoint",
+    "Lossy-coil branch admittance cancellation, source/coil current distinction, power conservation, zero drive, one-ulp admissible threshold and equality/no-resonance rejection",
+    "Signed sinusoidal power triangles, Pythagorean identity, zero phase, both purely reactive endpoints and tiny admitted amplitudes",
+    "PF correction unity target, equal factors including unity, near-unity root, ordinary small increment and adjacent-f64 small nonzero compensation",
+    "Every scalar bound/nonfinite guard, every relational model guard, exact required input keys and error recovery"
+  ],
+  "verification": {
+    "executed": false,
+    "review": "Static syntax/API consistency review only; no build, tests, lint, formatter, smoke or engine evaluation."
+  },
+  "untested_gaps": [
+    "Parent must compile and execute authored suite after integration and PF remediation.",
+    "Actual JSON-lines framing and real desktop/platform acceptance remain parent-owned.",
+    "Ideal-model arithmetic tests do not validate hardware ratings, parasitics, harmonics or physical accuracy."
+  ],
+  "suspected_defects": [
+    {
+      "id": "ac.shunt_power_factor_correction",
+      "finding": "ReviewAc F1 independently corroborated and reported to parent/bus: separate rounded tangent subtraction loses near-equal PF correction.",
+      "inputs": {
+        "real_power": 1000000000000,
+        "voltage_rms": 230,
+        "frequency": 50,
+        "initial_pf": 0.5,
+        "target_pf": 0.5000000000000002
+      },
+      "expected": "Qc approximately 0.00102558009940457 var; C=Qc/(2*pi*50*230^2); Ic=Qc/230. Strict relative-only full-output regression authored.",
+      "evidence": "Analytic derivative and binary64 spacing proof, not executed runtime output.",
+      "status": "Unresolved on frozen baseline; parent owns stable implementation remediation."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "id": "ac.shunt_power_factor_correction",
+      "inputs": {
+        "real_power": 1000000000000,
+        "voltage_rms": 230,
+        "frequency": 50,
+        "initial_pf": 0.5,
+        "target_pf": 0.5000000000000002
+      },
+      "expect": "Success with positive Qc\u22480.00102558009940457 and full suite oracle outputs."
+    },
+    {
+      "id": "ac.shunt_power_factor_correction",
+      "inputs": {
+        "real_power": 300,
+        "voltage_rms": 100,
+        "frequency": 50,
+        "initial_pf": 1,
+        "target_pf": 1
+      },
+      "expect": "Success: Qc=C=Ic=0; initial and corrected source current=3 A."
+    },
+    {
+      "id": "ac.lossy_coil_antiresonance",
+      "inputs": {
+        "coil_resistance": 1,
+        "inductance": 1,
+        "capacitance": 1,
+        "voltage_rms": 1
+      },
+      "expect": "Explicit error; follow with inductance=2 to demonstrate valid recovery."
+    },
+    {
+      "id": "ac.sinusoidal_power_triangle",
+      "inputs": {
+        "voltage_rms": 10,
+        "current_rms": 2,
+        "phase": -0.7853981633974483
+      },
+      "expect": "S=20 VA, P=10sqrt(2) W, Q=-10sqrt(2) var, PF=1/sqrt(2)."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select all eight AC models and display each complete researched example with SI/RMS units.",
+    "Inspect negative capacitor impedance, leading negative phase/Q and exact-zero resonance/compensation outputs.",
+    "Enter lossy-coil threshold equality and target PF below initial; ensure errors clear stale outputs, then correct and calculate successfully.",
+    "Display adjacent-PF compensation and tiny low-Q lower-half-power frequency using scientific notation; verify zero is not substituted for nonzero outputs."
+  ]
+}

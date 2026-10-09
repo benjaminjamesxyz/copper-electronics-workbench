@@ -1,0 +1,4 @@
+# Noise independent review
+Baseline: 7f12f45. Lane: noise. Decision: findings. Tested: false.
+
+All eight catalog models, research derivations, feature documentation, input domains and sequential runtime consumers were reviewed independently. Three P2 numerical-conditioning findings were reported incrementally and immediately sent to Main: RMS squaring underflow (noise.uncorrelated_rms_sum, catalog line263); thermal/shot variance underflow (noise.johnson_resistor line59, noise.junction_shot line192, noise.noninverting_amplifier_budget line107); deep-subnormal NF argument loss (noise.friis_three_stage lines138-139, noise.figure_equivalent_temperature line476). Full evidence and model-by-model report are provided to Main for persistence because filesystem writes are unavailable in this tool transport. No runtime, tests, builds, lint, formatting or smoke commands were executed.

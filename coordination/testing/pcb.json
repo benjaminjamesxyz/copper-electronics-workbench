@@ -1,0 +1,93 @@
+{
+  "lane": "pcb",
+  "base": "7f12f45",
+  "commits": [
+    "a0fd398"
+  ],
+  "file": "backend/tests/pcb.rs",
+  "behaviors_covered": [
+    "All eight independently researched nominal vectors assert every output with explicit complete inputs and 1e-6 relative tolerance.",
+    "Trace: alternate geometry/resistivity, zero current, all scalar restrictions, cross-section underflow and arithmetic overflow rejection.",
+    "IPC-2221: both inclusive temperature-rise endpoints, independent decimal upper-endpoint oracle, internal/external coefficient identity, invalid dimensions/rise and collapsed-area rejection.",
+    "Via: exact thick-wall annulus oracle, single-via boundary, parallel scaling, positive material/geometry guards, fractional/sub-unit counts and collapsed-section rejection.",
+    "Copper: fractional weight designations, small positive open-boundary approach, zero/negative/nonfinite rejection.",
+    "Skew: signed leg swapping, equal nonzero lengths, both zero lengths, each zero-length leg, attosecond-scale nonzero output, invalid lengths/delay rejection.",
+    "Annular ring: concentric/alternate offset, tangent zero-ring boundary, equal/reversed diameters, negative inputs and just-outside breakout rejection.",
+    "Joule: independent I\u00b2R integral, current-square scaling, zero current/duration, all scalar guards, cross-section underflow and heat-rate overflow rejection.",
+    "Stencil: rectangular orientation invariance, square identity, positive/zero/negative margins, all scalar guards and wall-area underflow rejection."
+  ],
+  "verification": {
+    "executed": false,
+    "static_review": "Reviewed authored assertions and Rust API usage against the supplied common helper; no builds, tests, linters, formatters or smokes executed.",
+    "parent_checks": [
+      "cargo test --manifest-path backend/Cargo.toml --test pcb",
+      "Complete integrated Rust suite after all QA commits land."
+    ]
+  },
+  "untested_gaps": [
+    "Execution and real JSON-lines/desktop behavior remain parent-owned and unverified by this worker.",
+    "Physical manufacturing/thermal accuracy beyond the documented idealized models is not established by numerical regressions."
+  ],
+  "suspected_defects": [],
+  "parent_json_lines_desktop_scenarios": [
+    {
+      "feature": "pcb.via_barrel_resistance",
+      "inputs": {
+        "barrel_length": 0.001,
+        "finished_diameter": 0.0002,
+        "plating_thickness": 0.0002,
+        "plated_resistivity": 2e-08,
+        "via_count": 1
+      },
+      "expected": {
+        "barrel_copper_area": 2.5132741228718345e-07,
+        "single_resistance": 7.957747154594768e-05,
+        "bank_resistance": 7.957747154594768e-05
+      },
+      "interaction": "Change count to 1.5: reject and clear stale results; recover with count 2 and verify half bank resistance."
+    },
+    {
+      "feature": "pcb.annular_ring_registration",
+      "inputs": {
+        "pad_diameter": 0.001,
+        "tool_diameter": 0.0005,
+        "registration_offset": 0.00025
+      },
+      "expected": {
+        "nominal_ring": 0.00025,
+        "minimum_ring": 0
+      },
+      "interaction": "Show zero minimum ring as geometry, not certification; increase offset beyond 0.00025 and show breakout error."
+    },
+    {
+      "feature": "pcb.differential_length_skew",
+      "inputs": {
+        "positive_length": 0.0625,
+        "negative_length": 0.125,
+        "delay_per_length": 8e-09
+      },
+      "expected": {
+        "signed_length_mismatch": -0.0625,
+        "signed_skew": -5e-10,
+        "skew_magnitude": 5e-10
+      },
+      "interaction": "Preserve negative signed result and positive magnitude; equalize lengths and verify exact zeros."
+    },
+    {
+      "feature": "pcb.stencil_aperture_area_ratio",
+      "inputs": {
+        "aperture_length": 0.0003,
+        "aperture_width": 0.0005,
+        "stencil_thickness": 0.0001,
+        "target_area_ratio": 1
+      },
+      "expected": {
+        "opening_area": 1.5e-07,
+        "wall_area": 1.6e-07,
+        "area_ratio": 0.9375,
+        "ratio_margin": -0.0625
+      },
+      "interaction": "Display negative target margin as a valid calculation, retaining manufacturing caveats."
+    }
+  ]
+}

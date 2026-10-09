@@ -1,0 +1,140 @@
+{
+  "lane": "data",
+  "base": "7f12f45",
+  "commits": [
+    "19b299e2a2012e127a7a6a97982f8f1a9ce33d95"
+  ],
+  "file": "backend/tests/data.rs",
+  "authored_tests": 27,
+  "behaviors_covered": [
+    "All eight explicit researched nominal vectors assert every output through mod common.",
+    "ADC 1/32-bit counts, span scaling, tiny LSB; bipolar midrise boundaries, signed/zero errors, minimum span, normalized upper-edge rejection, last bin and sub-ULP offset-relative error.",
+    "Quantization variance-derived SNR, Nyquist and 16-LSB equalities, filtering/rate/amplitude identities; continuous and negative ENOB.",
+    "Signed/zero Nyquist margins; DC/Nyquist/fold/periodic aliases, tiny resolvable alias and ratio=1e9 boundary.",
+    "DAC zero/highest codes, reference/gain scaling, 32-bit one-LSB gap and tiny outputs.",
+    "SAR full/half-scale logarithmic factors, RC scaling, zero individual resistances, half-LSB exclusion and one-ULP-above positive-time boundary.",
+    "Every declared scalar/discrete/cross-input guard, nonfinite inputs, exact-key errors and recovery."
+  ],
+  "verification": "Static syntax/API review only; no builds, tests, linters, formatters, engine evaluations, smokes or desktop checks executed.",
+  "untested_gaps": [
+    "Parent execution of authored tests, process and native desktop scenarios.",
+    "Real-device accuracy, correlated quantization error, acquisition nonidealities and hardware measurements."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "P3",
+      "id": "data.adc_quantization_error",
+      "location": "docs/features/data.md:52",
+      "evidence": "Original illustrative upper endpoint 999.000000001 has binary64 span 8796*2^-43 = approximately 9.999894245993346e-10 V, below the 1e-9 V minimum; this vector must reject.",
+      "disposition": "Reported on root bus and to Main/DevData; DevData authored docs-only correction 6c85a878ea48292b5706ec0aaf354473fb55f7a6. Tests cover original rejection and admissible dyadic span retaining 2^-62 V error."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.adc_quantization_error",
+        "inputs": {
+          "bits": 32,
+          "v_low": 999,
+          "v_high": 999.0000000018626,
+          "v_in": 999
+        }
+      },
+      "expected": {
+        "quantization_step": 4.336808689942018e-19,
+        "code": 0,
+        "reconstructed_v": 999,
+        "error_v": 2.168404344971009e-19,
+        "absolute_error_v": 2.168404344971009e-19
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.adc_quantization_error",
+        "inputs": {
+          "bits": 32,
+          "v_low": 999,
+          "v_high": 999.000000001,
+          "v_in": 999
+        }
+      },
+      "expected": "Explicit domain error; subsequent corrected request succeeds."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.nyquist_sampling_margin",
+        "inputs": {
+          "sample_rate": 32000,
+          "highest_frequency": 20000
+        }
+      },
+      "expected": {
+        "nyquist_frequency": 16000,
+        "frequency_margin": -4000,
+        "rate_ratio": 0.8
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.dynamic_enob",
+        "inputs": {
+          "sinad_db": 0
+        }
+      },
+      "expected": {
+        "enob_bits": -0.2924812503605781
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.tone_alias_frequency",
+        "inputs": {
+          "input_frequency": 96000,
+          "sample_rate": 48000
+        }
+      },
+      "expected": {
+        "nearest_sample_multiple": 2,
+        "alias_frequency": 0
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.unipolar_dac_output",
+        "inputs": {
+          "bits": 1,
+          "code": 2,
+          "reference_v": 2,
+          "gain": 1
+        }
+      },
+      "expected": "Domain error; change code to 1 and expect span=2, output=1, maximum=1."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "data.sar_acquisition_settling",
+        "inputs": {
+          "bits": 12,
+          "source_resistance": 0,
+          "switch_resistance": 0,
+          "sample_capacitance": 1.5e-11,
+          "step_fraction": 1
+        }
+      },
+      "expected": "Domain error; restore source=1000/switch=20 and verify all three researched nominal outputs."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Run all eight researched examples; inspect every output, explicit units and model/source assumptions.",
+    "Display tiny 32-bit LSB, offset-relative quantization error and SAR times in scientific notation without a zero floor.",
+    "Keep negative Nyquist margin and negative ENOB as successful signed results; DC alias and zero-code DAC remain zero.",
+    "ADC excluded upper edge, DAC code overflow, alias ratio violation and zero-total-R SAR must clear stale outputs and recover after correction."
+  ]
+}

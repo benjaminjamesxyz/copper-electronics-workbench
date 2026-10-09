@@ -189,7 +189,7 @@
       {"key": "target_pf", "label": "Target lagging or unity power factor", "unit": "1", "default": 0.95, "min": 1e-9, "max": 1.0}
     ],
     "outputs": [
-      {"key": "capacitor_reactive_power", "label": "Capacitive reactive power magnitude", "unit": "var", "expression": "real_power*(sqrt(1-initial_pf^2)/initial_pf-sqrt(1-target_pf^2)/target_pf)"},
+      {"key": "capacitor_reactive_power", "label": "Capacitive reactive power magnitude", "unit": "var", "expression": "real_power*pf_tangent_difference(initial_pf,target_pf)"},
       {"key": "required_capacitance", "label": "Required shunt capacitance", "unit": "F", "expression": "capacitor_reactive_power/(2*pi*frequency*voltage_rms^2)"},
       {"key": "initial_source_current", "label": "Initial source RMS current", "unit": "A", "expression": "real_power/(voltage_rms*initial_pf)"},
       {"key": "corrected_source_current", "label": "Corrected source RMS current", "unit": "A", "expression": "real_power/(voltage_rms*target_pf)"},

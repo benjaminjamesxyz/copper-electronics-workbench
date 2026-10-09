@@ -1,0 +1,106 @@
+{
+  "lane": "transients",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "7b36db37a3e648e7b8e1e01ecf496f4b2cf06ccc",
+    "00a9f56e8f5f90896690728866e125ed7bf87294"
+  ],
+  "file": "backend/tests/transients.rs",
+  "behaviors_covered": [
+    "All eight independently researched complete numerical examples assert every output using explicit inputs and mod common.",
+    "Every feature has independent alternates/identities, accepted boundaries, scalar-range/nonfinite rejection; all periodic, ladder-discriminant and RLC damping guards covered.",
+    "Signed RC/RL decay, initial continuity, steady-state and tiny positive startup; capacitor discharge/zero crossings/tiny energy changes; charge-sharing conservation/reverse transfer/equal voltages.",
+    "Periodic asymmetric fixed point, equal-level zero ripple, inclusive conditioning boundary and tiny ripple on a nonzero DC offset.",
+    "Signed/zero/arbitrary-initial ramp; loaded ladder modal constants/node-current relation; RLC peak/trough/signed current/envelope.",
+    "Accepted 1e-20-second ramp/ladder/RLC positive startup, independent high-precision goldens around all three primitive branch transitions, signed representable subnormal startup with explicit ULP tolerances."
+  ],
+  "verification": "Static syntax/API review and independent arithmetic derivation only. No engine evaluation, build, tests, lint, formatter, smoke or desktop execution; no pass claim.",
+  "untested_gaps": [
+    "Parent must execute integrated full suite and real JSON-lines/desktop scenarios.",
+    "Nonideal circuit physics, component ratings and native platform runtime behavior are outside these arithmetic regressions."
+  ],
+  "suspected_defects": [
+    {
+      "status": "Static frozen-baseline underflow; independently corroborated, not executed",
+      "features": [
+        "transients.rc_ramp_source",
+        "transients.rc_ladder_step",
+        "transients.rlc_underdamped_step"
+      ],
+      "evidence": "Default-component ramp slope=\u00b11e9,time=1e-165 and ladder v_step=\u00b11e6,time=1e-165 require signed 5e-319 V; RLC v_step=1e6,time=1e-168 requires positive 5e-323 V. Unscaled unit responses underflow prematurely.",
+      "remediation_dependency": "Developer commit 184292c9a56f66a423ee96ac706b9823db9e792d plus parent-owned scaled primitives. Bus and Main notified; supplemental regression committed."
+    }
+  ],
+  "parent_json_lines_scenarios": {
+    "all_examples": "Execute all eight explicit EXAMPLES vectors through the actual Rust process and compare every output.",
+    "requests": [
+      {
+        "command": "calculate",
+        "id": "transients.rc_ramp_source",
+        "inputs": {
+          "r": 1000,
+          "c": 1e-06,
+          "v_source_initial": 0,
+          "v_initial": 0,
+          "slope": 1000,
+          "time": 1e-20
+        }
+      },
+      {
+        "command": "calculate",
+        "id": "transients.rc_ladder_step",
+        "inputs": {
+          "r_one": 1000,
+          "r_two": 1000,
+          "c_one": 1e-06,
+          "c_two": 1e-06,
+          "v_step": 5,
+          "time": 1e-20
+        }
+      },
+      {
+        "command": "calculate",
+        "id": "transients.rlc_underdamped_step",
+        "inputs": {
+          "r": 10,
+          "l": 0.001,
+          "c": 1e-05,
+          "v_step": 5,
+          "time": 1e-20,
+          "error_fraction": 0.01
+        }
+      },
+      {
+        "command": "calculate",
+        "id": "transients.rlc_underdamped_step",
+        "inputs": {
+          "r": 20,
+          "l": 0.001,
+          "c": 1e-05,
+          "v_step": 5,
+          "time": 0.0001,
+          "error_fraction": 0.01
+        }
+      },
+      {
+        "command": "calculate",
+        "id": "transients.rlc_underdamped_step",
+        "inputs": {
+          "r": 10,
+          "l": 0.001,
+          "c": 1e-05,
+          "v_step": 5,
+          "time": 0.0001,
+          "error_fraction": 0.01
+        }
+      }
+    ],
+    "expected": "First three capacitor voltages are respectively 5e-35, 2.5e-34 and 2.5e-32 V, not zero; fourth request rejects critical damping; fifth succeeds with the complete nominal RLC outputs. Also exercise supplemental subnormal vectors after remediation."
+  },
+  "parent_desktop_scenarios": [
+    "Select all eight models and run complete examples, inspecting every output and SI units.",
+    "Inspect scientific-notation positive startup results and signed discharge/charge-transfer/return-current outputs.",
+    "Reject reversed periodic levels, too-short intervals, nearly degenerate ladder and critical RLC; clear stale results and recover after correction.",
+    "Run RLC at first peak and settling bound, inspect stress/envelope interpretation and documented model limits."
+  ]
+}

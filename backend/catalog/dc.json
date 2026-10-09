@@ -291,13 +291,13 @@
         "key": "i_source_1",
         "label": "Source 1 current toward node",
         "unit": "A",
-        "expression": "(v_1-v_node)/r_1"
+        "expression": "((v_1-v_2)/r_2+v_1/r_load)/(r_1*g_total)"
       },
       {
         "key": "i_source_2",
         "label": "Source 2 current toward node",
         "unit": "A",
-        "expression": "(v_2-v_node)/r_2"
+        "expression": "((v_2-v_1)/r_1+v_2/r_load)/(r_2*g_total)"
       },
       {
         "key": "i_load",

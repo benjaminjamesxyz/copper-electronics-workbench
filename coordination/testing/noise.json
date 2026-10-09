@@ -1,0 +1,131 @@
+{
+  "lane": "noise",
+  "base": "7f12f45",
+  "commits": [
+    "882f2ea"
+  ],
+  "file": "backend/tests/noise.rs",
+  "behaviors_covered": [
+    "All eight complete researched examples assert every output using explicit complete inputs.",
+    "Johnson and shot square-root scaling, admissible maxima, zero shot current and all domain bounds.",
+    "RSS permutation, isolated contributions, all-zero budget and maximum amplitudes.",
+    "Amplifier six-source variance transfers, zero source impedance/densities, input referral, minimum ground resistance, maximum inputs and every model guard.",
+    "Signed dB attenuation/gain, exact unity and both gain endpoints.",
+    "Dynamic-range peak/RMS conversion, independent margin vector, exact threshold equality, admissible extremes and impossible detection thresholds.",
+    "Fixed 290 K noise-temperature reference, exact ideal factor/temperature, maximum NF and tiny positive NF.",
+    "Friis negative power gains, exact ideal boundaries, extreme gains/NFs and tiny excess from each stage, including second-stage excess amplified by -120 dB preceding gain.",
+    "Every input of every feature rejects NaN/infinities and missing keys; every feature rejects extra keys.",
+    "Representable tiny-amplitude regressions for Johnson, shot, RSS and amplifier feedback thermal noise."
+  ],
+  "verification": "Authored and reasoned through syntax/API consistency only. No builds, tests, linters, formatters or smoke commands executed; no pass claim.",
+  "untested_gaps": [
+    "Parent must execute integrated Cargo suite and real JSON-lines/desktop scenarios.",
+    "Qualitative independence, spectral flatness, classical approximation, matching and hardware limits cannot be established from these scalar inputs.",
+    "Primary-source retrieval was not repeated; source grounding uses supplied research."
+  ],
+  "suspected_defects": [
+    {
+      "id": "noise.johnson_resistor",
+      "inputs": {
+        "resistance": 1e-310,
+        "temperature": 300,
+        "bandwidth": 1
+      },
+      "expected": "density = RMS = sqrt(1.6567788e-20)*1e-155 V",
+      "evidence": "Static variance-first multiplication underflows despite representable amplitude; strict regression authored."
+    },
+    {
+      "id": "noise.junction_shot",
+      "inputs": {
+        "dc_current": 1e-310,
+        "bandwidth": 1
+      },
+      "expected": "density = RMS = sqrt(3.204353268e-19)*1e-155 A",
+      "evidence": "Static variance-first multiplication underflows despite representable amplitude; strict regression authored."
+    },
+    {
+      "id": "noise.uncorrelated_rms_sum",
+      "inputs": {
+        "noise_one": 1e-200,
+        "noise_two": 0,
+        "noise_three": 0
+      },
+      "expected": "total_noise_rms = 1e-200 V",
+      "evidence": "Static squared contribution underflows; regressions cover each isolated input position."
+    },
+    {
+      "id": "noise.noninverting_amplifier_budget",
+      "inputs": {
+        "source_resistance": 0,
+        "feedback_resistance": 1e-310,
+        "ground_resistance": 1,
+        "voltage_density": 0,
+        "plus_current_density": 0,
+        "minus_current_density": 0,
+        "temperature": 300,
+        "bandwidth": 1
+      },
+      "expected": "noise_gain = 1; density/output RMS/input RMS = sqrt(1.6567788e-20)*1e-155 V",
+      "evidence": "Static feedback thermal variance underflows; strict regression authored."
+    }
+  ],
+  "defect_notifications": "All four findings appended to root COMMUNICATION.md and messaged to Main before handoff.",
+  "parent_json_lines": [
+    {
+      "command": "calculate",
+      "id": "noise.noninverting_amplifier_budget",
+      "inputs": {
+        "source_resistance": 1000,
+        "feedback_resistance": 9000,
+        "ground_resistance": 1000,
+        "voltage_density": 5e-09,
+        "plus_current_density": 1e-12,
+        "minus_current_density": 2e-12,
+        "temperature": 300,
+        "bandwidth": 20000
+      }
+    },
+    {
+      "command": "calculate",
+      "id": "noise.friis_three_stage",
+      "inputs": {
+        "first_noise_figure_db": 0,
+        "second_noise_figure_db": 1e-16,
+        "third_noise_figure_db": 0,
+        "first_gain_db": -120,
+        "second_gain_db": 0
+      }
+    },
+    {
+      "command": "calculate",
+      "id": "noise.analog_dynamic_range",
+      "inputs": {
+        "maximum_sine_peak": 1,
+        "noise_rms": 1,
+        "required_snr_db": 0
+      }
+    },
+    {
+      "command": "calculate",
+      "id": "noise.junction_shot",
+      "inputs": {
+        "dc_current": 0,
+        "bandwidth": 10000
+      }
+    },
+    {
+      "command": "calculate",
+      "id": "noise.figure_equivalent_temperature",
+      "inputs": {
+        "noise_figure_db": 1e-16
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select/search each of the eight noise IDs; inspect SI density/RMS units, ENBW/model assumptions and complete supporting outputs.",
+    "Execute amplifier nominal example: gain 10, density 7.79222671641425e-8, output RMS 1.1019872703439002e-5, input RMS 1.1019872703439002e-6.",
+    "Run impossible dynamic-range request, then zero-current shot request in the same process/UI; require explicit error followed by successful exact-zero recovery without stale results.",
+    "Display NF=1e-16: rounded factor 1 must coexist with positive temperature 6.677496769682733e-15 K; inspect scientific-notation rendering.",
+    "Run tiny second-stage Friis request with first gain -120 dB; positive cascade NF/temperature must survive rounded stage factor 1."
+  ]
+}

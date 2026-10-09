@@ -1,0 +1,106 @@
+{
+  "lane": "signals",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "3abbd3ee466be8e5ae218cccf7c9f43797bfe029"
+  ],
+  "file": "backend/tests/signals.rs",
+  "authored_tests": 34,
+  "behaviors_covered": [
+    "All eight complete researched numerical examples; every output asserted with explicit inputs and shared common API.",
+    "Microstrip: independent vacuum and fit-endpoint vectors, zero thickness, inclusive conductor/electrical-thickness limits, geometry/frequency scaling, every scalar and relational guard.",
+    "Stripline: narrow-width correction, branch join, finite-thickness logarithmic limit, immediately admissible strict width/thickness boundaries, geometry and scalar rejection.",
+    "Coax: vacuum boundary, radius scaling, dielectric square-root scaling, adjacent-radius tiny impedance, touching/reversed/invalid geometry rejection.",
+    "Propagation: exact speed of light, effective dielectric, zero length, unwrapped phase, picosecond delay, all domain errors.",
+    "Reflection: short/matched loads, signed/zero excitation, power conservation, near-short/open tiny accepted power, large finite impedances, direct/swapped adjacent-f64 near-match regressions.",
+    "Source termination: passive matching endpoints, signed/zero steps, excessive-driver rejection, large impedances, preservation of smallest-subnormal receiver steps.",
+    "Rise-time bandwidth: exact single-pole factor, inverse scaling, small positive rise time, invalid/nonrepresentable output rejection.",
+    "Quarter-wave matching: impedance inversion, reciprocity, vacuum/section-dielectric boundaries, geometric-mean overflow/underflow conditioning, high-frequency tiny length, all domain errors.",
+    "All eight features: missing/extra/nonfinite input rejection and subsequent valid-request recovery."
+  ],
+  "verification": {
+    "review": "Static syntax/API consistency review only.",
+    "executed_checks": [],
+    "pass_claim": false
+  },
+  "untested_gaps": [
+    "Authored Rust tests have not been compiled or executed; parent must run the integrated full suite.",
+    "Actual JSON-lines process and Flutter/native desktop journeys remain parent-owned and unexecuted by this worker.",
+    "Physical fit accuracy, dispersion, losses, fabricated stackups and nonideal drivers are outside these ideal-model behavioral tests."
+  ],
+  "suspected_defects": [
+    {
+      "id": "signals.load_reflection",
+      "status": "Static baseline defect; reported on root bus and directly to parent, not an executed failure.",
+      "inputs": {
+        "line_impedance": 50,
+        "load_resistance": 50.00000000000001,
+        "incident_voltage": 1
+      },
+      "expected": {
+        "reflection_coefficient": 7.105427357601001e-17,
+        "reflected_voltage": 7.105427357601001e-17,
+        "reflected_fraction": 5.048709793414475e-33
+      },
+      "evidence": "Exact binary64 resistance difference is 2^-47 ohm. Independent 80-digit decimal source-equation arithmetic disagrees with subtracting separately rounded normalized ratios, which statically predicts coefficient 2^-54. Direct and swapped regression vectors use relative-only tolerances.",
+      "suggested_fix": "Normalize RL-Z0 before dividing by the normalized impedance sum; preserve existing stable near-short/open formulas."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "signals.load_reflection",
+        "inputs": {
+          "line_impedance": 50,
+          "load_resistance": 50.00000000000001,
+          "incident_voltage": 1
+        }
+      },
+      "expect": "Successful response; Gamma/reflected voltage approximately 7.105427357601001e-17 and reflected fraction 5.048709793414475e-33. Repeat with impedances swapped: negative Gamma/reflected voltage, unchanged power fraction."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "signals.load_reflection",
+        "inputs": {
+          "line_impedance": 1,
+          "load_resistance": 1e-20,
+          "incident_voltage": 1
+        }
+      },
+      "expect": "Successful response; nonzero load voltage approximately 2e-20 V and accepted fraction approximately 4e-20. Repeat with impedances swapped: load voltage approximately 2 V, same tiny accepted fraction."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "signals.source_series_termination",
+        "inputs": {
+          "line_impedance": 60,
+          "driver_resistance": 60.00000000000001,
+          "step_voltage": 3.3
+        }
+      },
+      "expect": "Error, not clamped resistor. Follow on the same process with driver_resistance=60: successful zero series resistance, launch 1.65 V, receiver 3.3 V."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "signals.stripline_impedance",
+        "inputs": {
+          "width": 0.6,
+          "plane_spacing": 1,
+          "thickness": 0.025,
+          "relative_permittivity": 4
+        }
+      },
+      "expect": "Strict-boundary error. Follow with thickness=0.01,width=0.2,relative_permittivity=1: success, all outputs matching the independent narrow-width vector."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select all eight signal models and execute each complete example; inspect every output, SI unit, formula, sources and assumptions.",
+    "Enter inadmissible microstrip thickness, stripline q=0.025, coax touching radii and driver resistance above Z0; verify readable error, cleared stale outputs and successful correction.",
+    "Display zero-length propagation, short/matched load and negative source steps: legitimate zeros/signed voltages must remain successful results.",
+    "Display adjacent-f64 near-match reflection, near-short tiny accepted power and picosecond propagation in scientific notation without rounding nonzero quantities into apparent zero."
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "lane": "thermal",
+  "base": "7f12f45",
+  "commits": [
+    "84cce1f"
+  ],
+  "file": "backend/tests/thermal.rs",
+  "behaviors_covered": [
+    "All eight researched nominal vectors specify every input and assert every output at 1e-6 relative tolerance.",
+    "Junction: heat balance, zero feedback, shifted reference, inclusive fit endpoints, gain at/above unity, positive ambient-power requirement, every fit guard and equilibrium outside fit.",
+    "Heatsink: series budget identity, zero interface resistance, power scaling, reversed/equal temperature allowance and zero/negative sink headroom.",
+    "Conduction: geometry-derived resistances, equal sharing, exchanged paths, energy conservation, zero heat and tiny nonzero heat below temperature-resolution scale.",
+    "Lumped response: complete capacitance/resistance/time/Biot outputs, initial condition, unpowered cooling/warming, long-time equilibrium, short-time conditioning, Biot just below and at/above 0.1.",
+    "Arrhenius: independent exponent 0.5 and 500 vectors, unity at equal temperatures, zero exposure, inclusive energy/duration maxima, reversed stress, factor overflow and separately exposure overflow.",
+    "Derating: plateau, breakpoint, midpoint, zero-power endpoint, zero margin, negative overload margin, inverted curve and above-endpoint rejection.",
+    "TCR: signed slopes and cooling, zero slope/delta-temperature, both fit endpoints, every fit guard and zero/negative extrapolated resistance.",
+    "Expansion: signed CTE and cooling, zero CTE/delta-temperature, both inclusive 1% strain limits, all fit guards and excessive strain of either sign.",
+    "Every scalar positive/nonnegative bound, Arrhenius upper bounds and nonfinite values across every input. Algebraic zeros explicitly require zero absolute tolerance; no blanket near-zero allowance."
+  ],
+  "verification": "Authored and statically reviewed for shared API/syntax consistency only. No builds, tests, linters, formatters or smoke commands executed.",
+  "untested_gaps": [
+    "Parent must execute the authored integration target and complete suite.",
+    "Real JSON-lines process and native desktop behavior remain parent-owned and unexecuted by this worker.",
+    "No exhaustive floating-point extreme sweep or physical hardware validation; documented qualitative applicability assumptions cannot be inferred from scalar inputs."
+  ],
+  "suspected_defects": [],
+  "parent_checks": [
+    "cargo test --manifest-path backend/Cargo.toml --test thermal",
+    "Run full integrated Rust suite after all tester commits land."
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.junction_feedback_equilibrium",
+        "inputs": {
+          "ambient_temperature": 300,
+          "reference_temperature": 320,
+          "reference_power": 2,
+          "power_coefficient": 0.01,
+          "thermal_resistance": 10,
+          "fit_temperature_min": 280,
+          "fit_temperature_max": 350
+        }
+      },
+      "expected_outputs": {
+        "feedback_gain": 0.2,
+        "junction_temperature": 320,
+        "equilibrium_power": 2
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.heatsink_resistance_budget",
+        "inputs": {
+          "ambient_temperature": 300,
+          "junction_limit": 330,
+          "dissipated_power": 10,
+          "junction_case_resistance": 2,
+          "case_sink_resistance": 0
+        }
+      },
+      "expected_outputs": {
+        "total_resistance_budget": 3,
+        "maximum_sink_resistance": 1
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.parallel_conduction_paths",
+        "inputs": {
+          "path_one_length": 0.004,
+          "path_one_area": 0.0001,
+          "path_one_conductivity": 20,
+          "path_two_length": 0.008,
+          "path_two_area": 0.0001,
+          "path_two_conductivity": 40,
+          "sink_temperature": 300,
+          "source_power": 0
+        }
+      },
+      "expected_outputs": {
+        "path_one_resistance": 2,
+        "path_two_resistance": 2,
+        "equivalent_resistance": 1,
+        "hot_temperature": 300,
+        "path_one_heat": 0,
+        "path_two_heat": 0
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.lumped_thermal_step",
+        "inputs": {
+          "volume": 1e-05,
+          "density": 2700,
+          "specific_heat": 900,
+          "surface_area": 0.01,
+          "convection_coefficient": 10,
+          "thermal_conductivity": 200,
+          "ambient_temperature": 300,
+          "initial_temperature": 350,
+          "power": 0,
+          "elapsed_time": 243
+        }
+      },
+      "expected_outputs": {
+        "thermal_capacitance": 24.3,
+        "convection_resistance": 10,
+        "time_constant": 243,
+        "biot_number": 5e-05,
+        "steady_temperature": 300,
+        "body_temperature": 318.3939720585721
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.arrhenius_acceleration",
+        "inputs": {
+          "activation_energy": 10,
+          "use_temperature": 300,
+          "test_temperature": 300,
+          "test_duration": 0
+        }
+      },
+      "expected_outputs": {
+        "acceleration_factor": 1,
+        "equivalent_use_duration": 0
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.resistor_power_derating",
+        "inputs": {
+          "rated_power": 2,
+          "rated_temperature": 300,
+          "zero_power_temperature": 400,
+          "ambient_temperature": 350,
+          "actual_power": 1.5
+        }
+      },
+      "expected_outputs": {
+        "rating_fraction": 0.5,
+        "allowed_power": 1,
+        "power_margin": -0.5
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.resistor_tcr_drift",
+        "inputs": {
+          "reference_resistance": 1000,
+          "tcr_ppm": -200,
+          "reference_temperature": 250,
+          "operating_temperature": 350,
+          "fit_temperature_min": 250,
+          "fit_temperature_max": 350
+        }
+      },
+      "expected_outputs": {
+        "fractional_drift": -0.02,
+        "resistance_change": -20,
+        "operating_resistance": 980
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "thermal.free_linear_expansion",
+        "inputs": {
+          "initial_length": 0.2,
+          "expansion_coefficient": -0.0001,
+          "initial_temperature": 250,
+          "final_temperature": 350,
+          "fit_temperature_min": 250,
+          "fit_temperature_max": 350
+        }
+      },
+      "expected_outputs": {
+        "thermal_strain": -0.01,
+        "length_change": -0.002,
+        "final_length": 0.198
+      }
+    }
+  ],
+  "parent_error_recovery_scenario": "Send the junction scenario with power_coefficient changed to 0.05 (gain=1), require ok=false, then send the original valid scenario on the same process and require all three outputs above.",
+  "parent_desktop_scenarios": [
+    "Select each of the eight thermal IDs, apply its complete researched example, and compare every displayed output and unit with docs/features/thermal.md.",
+    "Display derating overload scenario: negative -0.5 W margin must remain a successful result, not an error or zero clamp.",
+    "Display negative TCR and negative expansion scenarios; signed changes and positive final resistance/length must remain visible.",
+    "For junction, calculate valid shifted-reference vector, then set coefficient to 0.05: editing must invalidate prior outputs and calculation must show an error; restore 0.01 and recover.",
+    "For lumped model, use zero power and initially hotter body: body temperature must decrease toward ambient; elapsed_time=0 must recover the entered initial temperature."
+  ]
+}

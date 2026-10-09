@@ -1,0 +1,112 @@
+{
+  "lane": "magnetics",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "50a70b022613633eb7e2109169915c4e0a9862b5"
+  ],
+  "file": "backend/tests/magnetics.rs",
+  "authored_tests": 26,
+  "behaviors_covered": {
+    "magnetics.turns_ratio": "All nominal outputs; step-up, unity/zero excitation, inverse-square reflection, ratio-square underflow, integer turns and input boundaries.",
+    "magnetics.sinusoidal_flux_density": "All nominal outputs; exact sine coefficient, frequency/area scaling, zero excitation, inclusive field limit, integer turns and all scalar/model rejections.",
+    "magnetics.rectangular_toroid_inductance": "All nominal outputs; radial logarithm, quadratic turns scaling, minimum turns/zero current, empty/reversed geometry, material limit and scalar guards.",
+    "magnetics.gapped_core_inductance": "All nominal outputs; equal finite-core/gap reluctances, permeability=1, minimum turns/zero current, geometry equality, axis interchange, both min branches, independent path screen and field/scalar rejections.",
+    "magnetics.field_energy_density": "All nominal outputs; field/permeability/volume scaling, inclusive field limit, zero field, tiny nonzero energy and scalar/model rejections.",
+    "magnetics.conductor_skin_depth": "Nominal output; independent frequency/conductivity/permeability scaling, conduction/displacement equality and below-boundary rejection, permittivity guard and all positive-coefficient bounds.",
+    "magnetics.transformer_va_budget": "All nominal outputs; winding interchange, disabled secondary, total zero load, headroom=1 and invalid RMS/budget boundaries.",
+    "magnetics.coupled_coil_inductance": "All nominal outputs; reciprocity, coupling endpoints, unequal/equal perfect coupling, adjacent-f64 mismatch, nearly perfect coupling, representable geometric-mean extremes and passive-domain rejections.",
+    "shared": "Nonfinite rejection at every input of all eight models and subsequent fully asserted valid recovery; shared common helper only; no absolute tolerance floor hiding tiny nonzero quantities."
+  },
+  "verification": "Not executed: no builds, tests, lint, formatting, smoke or backend evaluation. Syntax/API reviewed during authoring against common/mod.rs.",
+  "untested_gaps": [
+    "Parent must execute authored regressions and integrated full suite.",
+    "Real JSON-lines process and Flutter/native desktop scenarios remain prescribed, not exercised.",
+    "Material curves, fringing, dispersion, losses, physical transformer thermal suitability and complete binary64 extreme-input space are not experimentally validated."
+  ],
+  "suspected_defects": [],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "magnetics.gapped_core_inductance",
+        "inputs": {
+          "core_length": 0.1,
+          "pole_width": 0.01,
+          "pole_height": 0.01,
+          "gap_length": 0.0005,
+          "relative_permeability": 2000,
+          "turns": 100,
+          "peak_current": 1,
+          "linear_flux_limit": 0.3
+        }
+      },
+      "expected_outputs": {
+        "core_reluctance": 397887.35772973835,
+        "gap_reluctance": 3978873.5772973835,
+        "inductance": 0.0022847946571562133,
+        "peak_flux_density": 0.22847946571562133
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "magnetics.gapped_core_inductance",
+        "inputs": {
+          "core_length": 0.1,
+          "pole_width": 0.004,
+          "pole_height": 0.01,
+          "gap_length": 0.0005,
+          "relative_permeability": 2000,
+          "turns": 100,
+          "peak_current": 1,
+          "linear_flux_limit": 0.3
+        }
+      },
+      "expected": "Explicit model-domain error; follow with the valid preceding request to verify recovery and correct ID correlation."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "magnetics.coupled_coil_inductance",
+        "inputs": {
+          "inductance_one": 1,
+          "inductance_two": 1.0000000000000002,
+          "coupling": 1
+        }
+      },
+      "expected_outputs": {
+        "mutual_inductance": 1,
+        "series_aiding": 4,
+        "series_opposing": 1.232595164407831e-32
+      },
+      "tolerance": "1e-6 relative, zero absolute floor."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "magnetics.transformer_va_budget",
+        "inputs": {
+          "secondary_one_voltage": 24,
+          "secondary_one_current": 2,
+          "secondary_two_voltage": 12,
+          "secondary_two_current": 0,
+          "headroom_factor": 1
+        }
+      },
+      "expected_outputs": {
+        "secondary_one_va": 48,
+        "secondary_two_va": 0,
+        "total_load_va": 48,
+        "minimum_rating_va": 48
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Search/select all eight magnetics IDs; inspect SI/RMS units, integer-turn forms, every output and sources/model assumptions.",
+    "Run the gapped-core nominal example and compare all four outputs; change pole_width to 0.004 m, ensure old results invalidate and error appears; restore 0.01 m and recalculate successfully.",
+    "For coupled coils, enter both inductances as 0.0001 H and k=1: show M=0.0001 H, aiding=0.0004 H, opposing exactly zero without a fabricated floor; change k above 1 and verify rejection.",
+    "Disable VA winding two with current=0 and set headroom=1; show 48/0/48/48 VA, then set both currents=0 and show all zero.",
+    "Inspect tiny opposing inductance/scientific notation with adjacent-f64 scenario; resize/scroll long expert forms and navigate calculate/example controls by keyboard."
+  ],
+  "communication": "Committed test handoff appended to root COMMUNICATION.md; bus not staged or committed by tester."
+}

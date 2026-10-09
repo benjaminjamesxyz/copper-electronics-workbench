@@ -1,0 +1,9 @@
+{
+  "lane": "mosfet",
+  "base": "7f12f45",
+  "commits": [
+    "501ff17fa2980c18641aef4ab43cc3312ca27c82"
+  ],
+  "handoff_recovery": "Tester authored and committed tests; provider transport failed before final response. Parent recovered committed SHA from isolated branch.",
+  "verification": "No checks executed by agent; parent runs integrated suite."
+}

@@ -1,0 +1,121 @@
+[
+  {
+    "request": {
+      "command": "calculate",
+      "id": "thermal.parallel_conduction_paths",
+      "inputs": {
+        "path_one_length": 1e-200,
+        "path_one_area": 1.0,
+        "path_one_conductivity": 1.0,
+        "path_two_length": 1e+200,
+        "path_two_area": 1.0,
+        "path_two_conductivity": 1.0,
+        "sink_temperature": 300.0,
+        "source_power": 1e+200
+      }
+    },
+    "response": {
+      "id": "thermal.parallel_conduction_paths",
+      "ok": true,
+      "outputs": {
+        "equivalent_resistance": 1e-200,
+        "hot_temperature": 301.0,
+        "path_one_heat": 1e+200,
+        "path_one_resistance": 1e-200,
+        "path_two_heat": 1e-200,
+        "path_two_resistance": 1e+200
+      }
+    },
+    "independent_expected": {
+      "path_two_heat": 1e-200
+    },
+    "passed": true
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "transients.rc_ladder_step",
+      "inputs": {
+        "r_one": 0.001,
+        "r_two": 10000.0,
+        "c_one": 1.0,
+        "c_two": 1e-07,
+        "v_step": 1e-321,
+        "time": 0.0002
+      }
+    },
+    "response": {
+      "id": "transients.rc_ladder_step",
+      "ok": true,
+      "outputs": {
+        "capacitor_two_current": 0.0,
+        "linear_coefficient": 0.0020000001,
+        "quadratic_coefficient": 1e-06,
+        "tau_fast": 0.0009996838222297267,
+        "tau_slow": 0.0010003162777702734,
+        "voltage_one": 2e-323,
+        "voltage_two": 2e-323
+      }
+    },
+    "independent_expected": {
+      "voltage_two": 2e-323
+    },
+    "passed": true
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.friis_three_stage",
+      "inputs": {
+        "first_noise_figure_db": 0.0,
+        "second_noise_figure_db": 0.0,
+        "third_noise_figure_db": 1e-301,
+        "first_gain_db": 120.0,
+        "second_gain_db": 120.0
+      }
+    },
+    "response": {
+      "id": "noise.friis_three_stage",
+      "ok": true,
+      "outputs": {
+        "cascade_noise_factor": 1.0,
+        "cascade_noise_figure_db": 0.0,
+        "cascade_noise_temperature": 5e-324,
+        "first_noise_factor": 1.0,
+        "first_power_gain": 1000000000000.0,
+        "second_noise_factor": 1.0,
+        "second_power_gain": 1000000000000.0,
+        "third_noise_factor": 1.0
+      }
+    },
+    "independent_expected": {
+      "cascade_noise_temperature": 5e-324
+    },
+    "passed": true
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "magnetics.field_energy_density",
+      "inputs": {
+        "flux_density": 1e-170,
+        "relative_permeability": 5e-324,
+        "volume": 1e-310,
+        "linear_flux_limit": 0.3
+      }
+    },
+    "response": {
+      "id": "magnetics.field_energy_density",
+      "ok": true,
+      "outputs": {
+        "energy_density": 8.053329776699101e-12,
+        "field_energy": 8.05e-322
+      }
+    },
+    "independent_expected": {
+      "energy_density": 8.053329776699101e-12,
+      "field_energy": 8.05e-322
+    },
+    "passed": true
+  }
+]

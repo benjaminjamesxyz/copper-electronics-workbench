@@ -113,6 +113,8 @@ Relative tolerance: `1e-6`; these values are the independently derived research 
 
 Collect terms: `G = 1/R1+1/R2+1/Rl`, `Vnode = (V1/R1+V2/R2)/G`; then `I1 = (V1-Vnode)/R1`, `I2 = (V2-Vnode)/R2`, `Il = Vnode/Rl`. This is Millman's conductance-weighted node solution with the load treated as a zero-volt branch. Sources: S7's nodal method and S5's directly relevant two-source/three-resistor circuit. This is **passive summing**, not an op-amp summing amplifier or virtual-ground circuit.
 
+The executable source currents eliminate the rounded node-voltage subtraction: `I1=[(V1−V2)/R2+V1/Rl]/(R1 G)` and symmetrically `I2=[(V2−V1)/R1+V2/Rl]/(R2 G)`. These are the same KCL solution, but retain small currents when a very stiff source rounds `Vnode` to its own voltage. For `V1=524288`, `R1=2^-29`, `V2=0`, `R2=Rl=2^27`, the rounded outputs are `I1=0.0078125`, `I2=-0.00390625`, `Il=0.00390625` A.
+
 **Inputs:** `v_1`, `v_2` (V); `r_1`, `r_2`, `r_load` (ohm). **Outputs:** `g_total` (S), `v_node` (V), `i_source_1`, `i_source_2`, `i_load` (A).
 
 **Domain and limitations:** Positive finite branch/load resistances guarantee `G > 0`. Signed source voltages and signed source currents are necessary: an opposing source can sink current. Ideal-source assumptions are only applicable if the actual sources can support those calculated sink currents; diode-isolated supplies or non-sinking regulators need different models. Node-voltage cancellation is allowed but can lose relative floating-point accuracy near zero. No active amplifier, transients or current limits are included.

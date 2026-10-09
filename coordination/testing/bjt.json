@@ -1,0 +1,104 @@
+{
+  "lane": "bjt",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "165e7ba1c8f96f115c351d32984884d9a0d0b337"
+  ],
+  "file": "backend/tests/bjt.rs",
+  "authored_tests": 25,
+  "behaviors_covered": [
+    "All eight researched nominal examples specify every input and assert every output through mod common.",
+    "divider_bias: finite-beta loading, independent low-beta vector, KCL, tiny positive near-cutoff current, cutoff/saturation equality and invalid-parameter rejection.",
+    "saturated_switch_drive: fractional forced beta, zero driver resistance, exact driver-current capability, tiny positive external resistance, overload/headroom/domain rejection.",
+    "hybrid_pi_parameters: exact SI thermal voltage, independently expected current scaling, gm*rpi identity, inclusive 200/450 K endpoints and invalid bias/beta/temperature rejection.",
+    "emitter_degeneration_gain: negative gains, source attenuation, independent gm=1 S/low-beta vector, zero source resistance, exact ro validity boundary and all input/model guards.",
+    "terminal_dissipation: both terminal powers, reference-voltage-independent conservation, saturation acceptance, base-only/collector-only/all-zero boundaries and negative/nonfinite rejection.",
+    "early_output_resistance: full affine Early correction, conductance reciprocity, large approximation error, one-ulp forward-active boundary and active-region/domain rejection.",
+    "differential_pair_steering: emitter-to-collector conversion, current conservation, sign swap, zero balance, signed +/-1e-20 V signals retaining approximately 3.83e-22 A differences, inward-rounded +/-40 VT edges retaining tiny branch currents, temperature endpoints and all guards.",
+    "emitter_follower_loading: finite-beta input loading, positive subunity gains, exchanged unequal emitter/load resistors, zero source resistance, exact ro boundary and all guards."
+  ],
+  "verification": {
+    "executed": false,
+    "review": "Static syntax/API consistency review only; independent high-precision numerical derivation, no engine execution.",
+    "not_run": [
+      "builds",
+      "tests",
+      "linters",
+      "formatters",
+      "process smokes",
+      "desktop checks"
+    ]
+  },
+  "untested_gaps": [
+    "Parent must execute the authored integration tests and complete suite.",
+    "JSON-lines transport, UI rendering/error recovery and native desktop execution remain parent-owned.",
+    "Actual device SOA/compliance, leakage/mismatch, finite-frequency behavior and omitted nonlinear physics are not established by these arithmetic tests."
+  ],
+  "suspected_defects": [],
+  "parent_json_lines_scenarios": [
+    {
+      "scenario": "Run all eight explicit nominal vectors and compare every output against the committed tests."
+    },
+    {
+      "scenario": "Preserve tiny signed differential-pair imbalance in consecutive positive/negative requests.",
+      "id": "bjt.differential_pair_steering",
+      "inputs": {
+        "i_tail": 0.002,
+        "beta": 100,
+        "temperature": 300,
+        "v_differential": 1e-20
+      },
+      "expected": {
+        "i_difference": 3.829873967508278e-22
+      },
+      "negative_variant": {
+        "v_differential": -1e-20,
+        "expected_i_difference": -3.829873967508278e-22
+      }
+    },
+    {
+      "scenario": "Reject saturated divider without emitting a clipped operating point; then recover on the next valid request.",
+      "id": "bjt.divider_bias",
+      "inputs": {
+        "vcc": 4,
+        "r_top": 2,
+        "r_bottom": 2,
+        "r_collector": 7,
+        "r_emitter": 1,
+        "beta": 1,
+        "vbe": 1
+      },
+      "expected": "error",
+      "recovery_change": {
+        "r_collector": 6
+      },
+      "recovery_expected": {
+        "v_ce": 1.3333333333333333
+      }
+    },
+    {
+      "scenario": "Accept exact driver capacity and zero driver resistance.",
+      "id": "bjt.saturated_switch_drive",
+      "inputs": {
+        "i_collector": 0.25,
+        "beta_forced": 2.5,
+        "v_drive_min": 5,
+        "vbe_sat_max": 1,
+        "r_driver": 0,
+        "i_driver_max": 0.1
+      },
+      "expected": {
+        "i_base_required": 0.1,
+        "r_base_max": 40,
+        "p_base_resistor": 0.4
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Inspect all eight nominal models: every output, SI unit, formula, source and model limitation is visible.",
+    "Display negative common-emitter gains as successful signed results and positive subunity follower gains distinctly.",
+    "Show exact zero differential imbalance and tiny signed imbalance/current outputs without formatting them into misleading zero.",
+    "Trigger divider saturation, driver overload, out-of-envelope temperature and inadequate amplifier ro; clear stale results and recover after correction.",
+    "Accept zero terminal currents/voltages and Vce<Vbe terminal-power calculations without incorrectly applying forward-active-only restrictions."
+  ]
+}

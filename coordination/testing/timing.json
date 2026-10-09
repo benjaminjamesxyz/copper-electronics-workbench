@@ -1,0 +1,53 @@
+{
+  "lane": "timing",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "921e57905396b38d1e3a3e7af9719724e37af1c1",
+    "1d230a64130080333ffcb2ceed6d4553d7e482a7"
+  ],
+  "file": "backend/tests/timing.rs",
+  "behaviors_covered": "All previously handed-off eight complete numerical examples, independent alternates, admissible endpoints and guards remain; added explicit-error crosstalk overflow regression.",
+  "suspected_defects": [
+    {
+      "id": "timing.capacitive_crosstalk_peak",
+      "severity": "P2",
+      "inputs": {
+        "r_victim": 1e-200,
+        "c_mutual": 1e-100,
+        "c_victim": 1e-100,
+        "voltage_swing": 1,
+        "edge_time": 10000000000,
+        "segment_delay": 0
+      },
+      "evidence": "ReviewTiming static finding independently confirmed arithmetically: finite tau\u22482e-300, overflowing x\u22485e309; expm1(-infinity)=-1 can mask invalid intermediate as zero peak.",
+      "expected": "Explicit arithmetic rejection per documented finite-intermediate policy; analytic peak is approximately 1e-310 V, not a physical zero.",
+      "executed": false
+    }
+  ],
+  "untested_gaps": [
+    "Compilation/test execution remains parent-owned and unperformed.",
+    "JSON-lines and desktop scenarios from original handoff remain unexecuted."
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "timing.capacitive_crosstalk_peak",
+        "inputs": {
+          "r_victim": 1e-200,
+          "c_mutual": 1e-100,
+          "c_victim": 1e-100,
+          "voltage_swing": 1,
+          "edge_time": 10000000000,
+          "segment_delay": 0
+        }
+      },
+      "expected": "ok=false rather than successful zero peak; follow immediately with original nominal crosstalk vector to verify recovery."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Execute new extreme-ratio vector: show arithmetic error and no stale valid-zero output, then restore nominal values and recover.",
+    "Other scenarios unchanged from original complete handoff."
+  ],
+  "communication": "Finding sent to Main and ReviewTiming and appended to root COMMUNICATION.md; supersedes original no-defect statement. No production edits or verification commands."
+}

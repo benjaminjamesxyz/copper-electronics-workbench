@@ -1,4 +1,6 @@
+mod checked;
 mod numerics;
+use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use meval::{Context, Expr};
 use serde::{Deserialize, Serialize};
@@ -33,6 +35,7 @@ struct Compiled { outputs: Vec<Expr>, constraints: Vec<(Expr, Expr)> }
 pub struct Engine {
     definitions: Vec<Calculation>, compiled: Vec<Compiled>,
     by_id: HashMap<String, usize>, context: Context<'static>,
+    stack: RefCell<Vec<f64>>,
 }
 fn identifier(key: &str) -> bool {
     let mut chars = key.chars();
@@ -68,10 +71,20 @@ impl Engine {
         context.func("log10", f64::log10);
         context.func("expm1", f64::exp_m1);
         context.func("log1p", f64::ln_1p);
-        context.func("expm1mx", numerics::expm1mx);
-        context.func3("step_overdamped", numerics::step_overdamped);
-        context.func2("step_underdamped", numerics::step_underdamped);
-        let engine = Self { definitions, compiled, by_id, context };
+        context.func2("hypot", f64::hypot);
+        context.func("exprel", numerics::exprel);
+        context.func("log1prel", numerics::log1prel);
+        context.func2("pf_tangent_difference", numerics::pf_tangent_difference);
+        context.func("expm1mx_ratio", numerics::expm1mx_ratio);
+        context.funcn("step_overdamped_scaled",
+            |args| numerics::step_overdamped_scaled(args[0], args[1], args[2], args[3]), 4);
+        context.func3("step_underdamped_scaled", numerics::step_underdamped_scaled);
+        context.func3("parallel_heat", numerics::parallel_heat);
+        let stack_capacity = compiled.iter().flat_map(|c|
+            c.outputs.iter().chain(c.constraints.iter().flat_map(|(left, right)| [left, right])))
+            .map(|expression| expression.len()).max().unwrap_or(0);
+        let engine = Self { definitions, compiled, by_id, context,
+            stack: RefCell::new(Vec::with_capacity(stack_capacity)) };
         for calc in &engine.definitions {
             let defaults = calc.inputs.iter().map(|i| (i.key.clone(), i.default)).collect();
             engine.calculate(&calc.id, &defaults).map_err(|e| format!("Invalid default {}: {e}", calc.id))?;
@@ -96,9 +109,9 @@ impl Engine {
             }
             values.insert(&input.key, value);
         }
-        let evaluate = |expr: &Expr, values: &HashMap<&str, f64>| -> Result<f64, String> {
-            let value = expr.eval_with_context((values, &self.context)).map_err(|e| e.to_string())?;
-            if value.is_finite() { Ok(value) } else { Err("Model produced a non-finite value; check its assumptions".into()) }
+        let mut stack = self.stack.borrow_mut();
+        let mut evaluate = |expr: &Expr, values: &HashMap<&str, f64>| {
+            checked::evaluate(expr, values, &self.context, &mut stack)
         };
         for (constraint, (left, right)) in calc.constraints.iter().zip(&compiled.constraints) {
             let a = evaluate(left, &values)?; let b = evaluate(right, &values)?;

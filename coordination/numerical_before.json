@@ -1,0 +1,533 @@
+[
+  {
+    "request": {
+      "command": "calculate",
+      "id": "dc.two_source_node",
+      "inputs": {
+        "v_1": 524288.0,
+        "r_1": 1.862645149230957e-09,
+        "v_2": 0.0,
+        "r_2": 134217728.0,
+        "r_load": 134217728.0
+      }
+    },
+    "response": {
+      "id": "dc.two_source_node",
+      "ok": true,
+      "outputs": {
+        "g_total": 536870912.0,
+        "i_load": 0.00390625,
+        "i_source_1": 0.0,
+        "i_source_2": -0.00390625,
+        "v_node": 524288.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "ac.shunt_power_factor_correction",
+      "inputs": {
+        "real_power": 1000000000000.0,
+        "voltage_rms": 230.0,
+        "frequency": 50.0,
+        "initial_pf": 0.5,
+        "target_pf": 0.5000000000000002
+      }
+    },
+    "response": {
+      "id": "ac.shunt_power_factor_correction",
+      "ok": true,
+      "outputs": {
+        "capacitor_current_rms": 3.861645303044023e-06,
+        "capacitor_reactive_power": 0.0008881784197001252,
+        "corrected_source_current": 8695652173.913038,
+        "initial_source_current": 8695652173.913044,
+        "required_capacitance": 5.344347290843968e-11
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "diodes.parallel_led_ballast",
+      "inputs": {
+        "total_current": 0.5000000000000001,
+        "forward_one": 0.5,
+        "forward_two": 1.0,
+        "allowed_difference": 0.5,
+        "ballast_resistance": 1.0,
+        "supply": 5.0,
+        "sink_headroom_min": 0.3
+      }
+    },
+    "response": {
+      "id": "diodes.parallel_led_ballast",
+      "ok": true,
+      "outputs": {
+        "ballast_min": 1.0,
+        "ballast_power_total": 0.25,
+        "branch_voltage": 1.0,
+        "current_difference": 0.5,
+        "current_one": 0.5,
+        "current_two": 1.1102230246251565e-16,
+        "sink_headroom": 4.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "opamps.noninverting_stage",
+      "inputs": {
+        "r_ground": 10000.0,
+        "r_feedback": 0.0,
+        "v_in": 1e-17,
+        "v_reference": 1.0,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_cm_max": 10.0
+      }
+    },
+    "response": {
+      "id": "opamps.noninverting_stage",
+      "ok": true,
+      "outputs": {
+        "gain": 1.0,
+        "v_out": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "opamps.difference_ratio_error",
+      "inputs": {
+        "r_one": 10000.0,
+        "r_two": 10000.0,
+        "r_three": 10000.0,
+        "r_four": 10000.0,
+        "v_one": 1.0,
+        "v_two": 1.0,
+        "v_reference": 1e-17,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_cm_max": 10.0
+      }
+    },
+    "response": {
+      "id": "opamps.difference_ratio_error",
+      "ok": true,
+      "outputs": {
+        "common_mode_gain": 0.0,
+        "differential_gain": 1.0,
+        "pin_voltage": 0.5,
+        "v_out": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "power.buck_input_capacitor_rms",
+      "inputs": {
+        "vin": 12.0,
+        "vout": 5.0,
+        "iout": 1e-200,
+        "delta_i": 0.0
+      }
+    },
+    "response": {
+      "id": "power.buck_input_capacitor_rms",
+      "ok": true,
+      "outputs": {
+        "duty": 0.4166666666666667,
+        "i_cin_rms": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "power.boost_rhp_zero",
+      "inputs": {
+        "vin": 1e-100,
+        "vout": 1e+100,
+        "iout": 1e-100,
+        "inductance": 1e-100,
+        "fs": 1e+100
+      }
+    },
+    "response": {
+      "id": "power.boost_rhp_zero",
+      "ok": true,
+      "outputs": {
+        "duty": 1.0,
+        "f_crossover_guideline": 0.0,
+        "f_rhp_zero": 0.0,
+        "r_load": 1e+200
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "signals.load_reflection",
+      "inputs": {
+        "line_impedance": 50.0,
+        "load_resistance": 50.00000000000001,
+        "incident_voltage": 1.0
+      }
+    },
+    "response": {
+      "id": "signals.load_reflection",
+      "ok": true,
+      "outputs": {
+        "load_voltage": 1.0,
+        "reflected_fraction": 3.0814879110195774e-33,
+        "reflected_voltage": 5.551115123125783e-17,
+        "reflection_coefficient": 5.551115123125783e-17,
+        "transmitted_fraction": 0.9999999999999999
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "magnetics.rectangular_toroid_inductance",
+      "inputs": {
+        "inner_radius": 3.0,
+        "outer_radius": 3.0000000000000004,
+        "height": 0.005,
+        "relative_permeability": 100.0,
+        "turns": 50.0,
+        "peak_current": 0.0,
+        "linear_flux_limit": 0.2
+      }
+    },
+    "response": {
+      "id": "magnetics.rectangular_toroid_inductance",
+      "ok": true,
+      "outputs": {
+        "inductance": 5.551115123125783e-20,
+        "inner_flux_density": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "magnetics.conductor_skin_depth",
+      "inputs": {
+        "frequency": 1e-310,
+        "conductivity": 1.0,
+        "relative_permeability": 1.0,
+        "relative_permittivity": 1.0
+      }
+    },
+    "response": {
+      "error": "Model produced a non-finite value; check its assumptions",
+      "ok": false
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "magnetics.field_energy_density",
+      "inputs": {
+        "flux_density": 1e-162,
+        "relative_permeability": 1.0,
+        "volume": 1e+300,
+        "linear_flux_limit": 0.3
+      }
+    },
+    "response": {
+      "id": "magnetics.field_energy_density",
+      "ok": true,
+      "outputs": {
+        "energy_density": 0.0,
+        "field_energy": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.figure_equivalent_temperature",
+      "inputs": {
+        "noise_figure_db": 1e-323
+      }
+    },
+    "response": {
+      "id": "noise.figure_equivalent_temperature",
+      "ok": true,
+      "outputs": {
+        "equivalent_noise_temperature": 0.0,
+        "noise_factor": 1.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.friis_three_stage",
+      "inputs": {
+        "first_noise_figure_db": 1e-323,
+        "second_noise_figure_db": 0.0,
+        "third_noise_figure_db": 0.0,
+        "first_gain_db": 0.0,
+        "second_gain_db": 0.0
+      }
+    },
+    "response": {
+      "id": "noise.friis_three_stage",
+      "ok": true,
+      "outputs": {
+        "cascade_noise_factor": 1.0,
+        "cascade_noise_figure_db": 0.0,
+        "cascade_noise_temperature": 0.0,
+        "first_noise_factor": 1.0,
+        "first_power_gain": 1.0,
+        "second_noise_factor": 1.0,
+        "second_power_gain": 1.0,
+        "third_noise_factor": 1.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.johnson_resistor",
+      "inputs": {
+        "resistance": 1e-310,
+        "temperature": 300.0,
+        "bandwidth": 1.0
+      }
+    },
+    "response": {
+      "id": "noise.johnson_resistor",
+      "ok": true,
+      "outputs": {
+        "voltage_noise_density": 0.0,
+        "voltage_noise_rms": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.junction_shot",
+      "inputs": {
+        "dc_current": 1e-310,
+        "bandwidth": 1.0
+      }
+    },
+    "response": {
+      "id": "noise.junction_shot",
+      "ok": true,
+      "outputs": {
+        "current_noise_density": 0.0,
+        "current_noise_rms": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.noninverting_amplifier_budget",
+      "inputs": {
+        "source_resistance": 0.0,
+        "feedback_resistance": 1e-310,
+        "ground_resistance": 1.0,
+        "voltage_density": 0.0,
+        "plus_current_density": 0.0,
+        "minus_current_density": 0.0,
+        "temperature": 300.0,
+        "bandwidth": 1.0
+      }
+    },
+    "response": {
+      "id": "noise.noninverting_amplifier_budget",
+      "ok": true,
+      "outputs": {
+        "input_referred_noise_rms": 0.0,
+        "noise_gain": 1.0,
+        "output_noise_density": 0.0,
+        "output_noise_rms": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "noise.uncorrelated_rms_sum",
+      "inputs": {
+        "noise_one": 1e-200,
+        "noise_two": 0.0,
+        "noise_three": 0.0
+      }
+    },
+    "response": {
+      "id": "noise.uncorrelated_rms_sum",
+      "ok": true,
+      "outputs": {
+        "total_noise_rms": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "magnetics.coupled_coil_inductance",
+      "inputs": {
+        "inductance_one": 1e-200,
+        "inductance_two": 1e+200,
+        "coupling": 1e-300
+      }
+    },
+    "response": {
+      "id": "magnetics.coupled_coil_inductance",
+      "ok": true,
+      "outputs": {
+        "mutual_inductance": 0.0,
+        "series_aiding": 1e+200,
+        "series_opposing": 1e+200
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "thermal.parallel_conduction_paths",
+      "inputs": {
+        "path_one_length": 1e-309,
+        "path_one_area": 1.0,
+        "path_one_conductivity": 1.0,
+        "path_two_length": 1.0,
+        "path_two_area": 1.0,
+        "path_two_conductivity": 1.0,
+        "sink_temperature": 300.0,
+        "source_power": 1.0
+      }
+    },
+    "response": {
+      "id": "thermal.parallel_conduction_paths",
+      "ok": true,
+      "outputs": {
+        "equivalent_resistance": 0.0,
+        "hot_temperature": 300.0,
+        "path_one_heat": 0.0,
+        "path_one_resistance": 1e-309,
+        "path_two_heat": 0.0,
+        "path_two_resistance": 1.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "transients.rc_ramp_source",
+      "inputs": {
+        "r": 1000000000.0,
+        "c": 1.0,
+        "v_source_initial": 0.0,
+        "v_initial": 0.0,
+        "slope": 1000000000.0,
+        "time": 1e-155
+      }
+    },
+    "response": {
+      "id": "transients.rc_ramp_source",
+      "ok": true,
+      "outputs": {
+        "capacitor_current": 1e-155,
+        "capacitor_voltage": 0.0,
+        "source_voltage": 1e-146,
+        "tau": 1000000000.0,
+        "tracking_error": 9.999999999999999e-147
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "transients.rlc_underdamped_step",
+      "inputs": {
+        "r": 0.001,
+        "l": 1000000.0,
+        "c": 1.0,
+        "v_step": 1000000.0,
+        "time": 1e-161,
+        "error_fraction": 0.01
+      }
+    },
+    "response": {
+      "id": "transients.rlc_underdamped_step",
+      "ok": true,
+      "outputs": {
+        "alpha": 5e-10,
+        "capacitor_voltage": 0.0,
+        "damping_ratio": 5e-07,
+        "envelope_settling_bound": 9210340371.97643,
+        "omega_d": 0.000999999999999875,
+        "omega_n": 0.001,
+        "overshoot_fraction": 0.9999984292049069,
+        "peak_time": 3141.5926535901863,
+        "peak_voltage": 1999998.4292049068,
+        "series_current": 9.999999999999998e-162
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "transients.rc_ladder_step",
+      "inputs": {
+        "r_one": 1000000000.0,
+        "r_two": 1000000000.0,
+        "c_one": 1.0,
+        "c_two": 1.0,
+        "v_step": 1000000.0,
+        "time": 1e-155
+      }
+    },
+    "response": {
+      "id": "transients.rc_ladder_step",
+      "ok": true,
+      "outputs": {
+        "capacitor_two_current": 9.999999999999998e-168,
+        "linear_coefficient": 3000000000.0,
+        "quadratic_coefficient": 1e+18,
+        "tau_fast": 381966011.25010514,
+        "tau_slow": 2618033988.749895,
+        "voltage_one": 9.999999999999999e-159,
+        "voltage_two": 0.0
+      }
+    }
+  },
+  {
+    "request": {
+      "command": "calculate",
+      "id": "timing.capacitive_crosstalk_peak",
+      "inputs": {
+        "r_victim": 1e-200,
+        "c_mutual": 1e-100,
+        "c_victim": 1e-100,
+        "voltage_swing": 1.0,
+        "edge_time": 10000000000.0,
+        "segment_delay": 0.0
+      }
+    },
+    "response": {
+      "id": "timing.capacitive_crosstalk_peak",
+      "ok": true,
+      "outputs": {
+        "fast_edge_limit": 0.5,
+        "peak_excursion": 0.0,
+        "victim_time_constant": 2e-300
+      }
+    }
+  }
+]

@@ -39,6 +39,7 @@ class _WorkbenchState extends State<Workbench> {
   Map<String, double>? _results;
   bool _loading = true, _calculating = false;
   int _revision = 0;
+  Object? _activeCalculation;
 
   @override
   void initState() { super.initState(); unawaited(_connect()); }
@@ -63,7 +64,7 @@ class _WorkbenchState extends State<Workbench> {
     for (final input in calculator.inputs) { _inputs[input.key] = TextEditingController(text: input.defaultValue.toString()); }
     setState(() {
       _selected = calculator; _results = null; _calculationError = null;
-      _calculating = false; _revision++;
+      _calculating = false; _activeCalculation = null; _revision++;
     });
   }
   void _invalidate() => setState(() { _revision++; _results = null; _calculationError = null; });
@@ -75,8 +76,9 @@ class _WorkbenchState extends State<Workbench> {
     if (!_form.currentState!.validate()) { _invalidate(); return; }
     final calculator = _selected!;
     final revision = _revision;
+    final requestToken = Object();
     final values = _inputs.map((key, controller) => MapEntry(key, double.parse(controller.text.trim())));
-    setState(() { _calculating = true; _calculationError = null; _results = null; });
+    setState(() { _activeCalculation = requestToken; _calculating = true; _calculationError = null; _results = null; });
     try {
       final response = await _backend!.request({'command': 'calculate', 'id': calculator.id, 'inputs': values});
       if (mounted && revision == _revision) {
@@ -85,7 +87,9 @@ class _WorkbenchState extends State<Workbench> {
     } catch (error) {
       if (mounted && revision == _revision) setState(() { _calculationError = error.toString(); });
     } finally {
-      if (mounted && calculator.id == _selected?.id) setState(() { _calculating = false; });
+      if (mounted && identical(_activeCalculation, requestToken)) {
+        setState(() { _activeCalculation = null; _calculating = false; });
+      }
     }
   }
   @override
@@ -126,7 +130,7 @@ class _WorkbenchState extends State<Workbench> {
   Widget _catalogPanel() {
     final categories = ['All domains', ...(_catalog.map((c) => c.category).toSet().toList()..sort())];
     final filtered = _filtered;
-    return Container(color: const Color(0xffeeeee7), child: Column(children: [
+    return Material(color: const Color(0xffeeeee7), child: Column(children: [
       Padding(padding: const EdgeInsets.all(20), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('CALCULATION LIBRARY', style: TextStyle(fontSize: 11, letterSpacing: 1.5, fontWeight: FontWeight.bold, color: copper)), const SizedBox(height: 14),
         TextField(key: const ValueKey('catalog-search'), decoration: const InputDecoration(labelText: 'Search calculations', prefixIcon: Icon(Icons.search), isDense: true), onChanged: (value) => setState(() { _query = value; })),

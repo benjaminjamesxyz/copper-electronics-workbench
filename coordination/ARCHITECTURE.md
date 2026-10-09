@@ -6,6 +6,8 @@ A local electronics design workbench. Search/filter the complete researched cata
 ## Rust engine
 `backend` embeds all `backend/catalog/*.json` at compile time. Formula expressions are parsed once at startup; definitions retain source metadata. The same generic numerical engine implements every catalog feature, including sequential derived outputs and cross-input model constraints. Inputs must exactly match the definition; nonfinite values, invalid ranges, invalid model domains, unknown calculators and malformed requests produce explicit errors. No floating-point failure is coerced into a plausible result.
 
+`meval` supplies parsing and compiled RPN; `checked.rs` evaluates those tokens with the same registered functions and rejects nonfinite intermediate values before later operations conceal them. Each engine reuses a preallocated operand stack. Native conditioning primitives preserve analytic models at short times, near-equal values and extreme scales; derived dimensional outputs are not calculated from already rounded subnormal intermediates where that loses representable precision.
+
 JSON-lines protocol on stdin/stdout:
 - `{"command":"catalog"}` → `{"ok":true,"calculations":[...]}`.
 - `{"command":"calculate","id":"domain.slug","inputs":{"key":1.0}}` → `{"ok":true,"id":"domain.slug","outputs":{"key":2.0}}` or `{"ok":false,"error":"..."}`.
@@ -15,6 +17,8 @@ JSON-lines protocol on stdin/stdout:
 A managed child process launches the Rust executable without a shell. Requests are serialized, errors surfaced, process streams drained, process disposed when the client closes. Packaged builds carry the native executable beside the Flutter binary (inside `Contents/MacOS` on macOS). Development may specify `PCB_CALCULATOR_BACKEND` as an explicit binary path. The frontend derives all forms, outputs, reference text and example controls from the backend catalog; no duplicate numerical implementation.
 
 Desktop composition: searchable domain/level catalog on the left; input workbench centrally; result cards and formula/assumption/source detail in the selected calculator panel. Scrollable and keyboard-operable. Finite scientific notation accepted; units explicit rather than implicit conversions. Edited inputs invalidate displayed results.
+
+Input/selection revisions suppress stale results; a distinct active-request token owns busy-state cleanup, including switching away and back during a pending request. Native integration tests explicitly register synthetic keyboard injection to prevent platform IME updates from overwriting test text; the calculation process and rendered desktop surface remain real.
 
 ## Git pipeline
 Root branch `integration/electronics-calculators` is integration-owner-only. Research and architecture are committed before worktree fanout. Sixteen developer branches `feat/<lane>` use isolated worktrees and own only their domain catalog and feature documentation, with one commit per completed calculator. Parent cherry-picks explicit commit lists into integration; no shared branch switching, force pushes, or remote assumptions.

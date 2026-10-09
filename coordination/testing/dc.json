@@ -1,0 +1,140 @@
+{
+  "lane": "dc",
+  "base": "7f12f45",
+  "commits": [
+    "0d162a6f700b2833cd6b0009994e9300b7330164"
+  ],
+  "file": "backend/tests/dc.rs",
+  "authored_tests": 14,
+  "behaviors_covered": {
+    "dc.ohm_current": "Complete nominal; signed reversal, exact zero, inclusive voltage/resistance bounds and 1e-24 A.",
+    "dc.resistor_dissipation": "Complete nominal; current-sign invariance, exact zero, inclusive bounds and 1e-33 W.",
+    "dc.series_parallel_branches": "Complete nominal; branch permutation, signed currents, KCL, zero and symmetric endpoint reductions.",
+    "dc.loaded_divider": "Complete nominal; independent grounded-node KCL, negative/zero excitation, finite zero-excitation loading error and endpoint reductions.",
+    "dc.resistive_source_matching": "Complete nominal; matched maximum power, signed/zero excitation, energy conservation, reciprocal load-ratio identity and endpoint reductions.",
+    "dc.loaded_wheatstone_bridge": "Complete nominal; midpoint KCL, differential/common-mode identities, arm swap, excitation reversal, balanced unequal arms, zero excitation, independently solved near balance and finite detector endpoints.",
+    "dc.delta_to_star": "Complete nominal; all three terminal-pair equivalences, cyclic relabeling, equal-arm identity and resistance endpoints.",
+    "dc.two_source_node": "Complete nominal; backfeed, source swap, polarity reversal, opposing-source cancellation, zero sources, inclusive endpoints and four strong-source numerical regressions.",
+    "all_features": "Every input individually rejects nonpositive/below-minimum/above-maximum resistance, signed-range violations, NaN/infinities, missing/extra inputs; subsequent valid recovery."
+  },
+  "verification": "Static syntax/API review only. No builds, tests, linters, formatters, backend evaluations, smokes or desktop runs executed; no pass claim.",
+  "untested_gaps": [
+    "Parent execution of authored Rust regressions and real-process scenarios.",
+    "Linux/macOS/Windows desktop behavior and packaging.",
+    "Real resistor ratings, thermal behavior, nonideal sources and hardware accuracy are outside these ideal models."
+  ],
+  "suspected_defects": [
+    {
+      "id": "dc.two_source_node",
+      "severity": "P2",
+      "evidence": "Static binary64 analysis corroborated independently from reviewer counterexample; persisted on COMMUNICATION.md.",
+      "inputs": {
+        "v_1": 524288,
+        "r_1": 1.862645149230957e-09,
+        "v_2": 0,
+        "r_2": 134217728,
+        "r_load": 134217728
+      },
+      "expected": {
+        "g_total": 536870912,
+        "v_node": 524288,
+        "i_source_1": 0.0078125,
+        "i_source_2": -0.00390625,
+        "i_load": 0.00390625
+      },
+      "problem": "Rounded node equals strong source; subtraction-based source current becomes zero instead of approximately 0.0078125 A. Exact expressions include common denominator 1+2^-55; shown values are correctly rounded approximations.",
+      "regressions": "Original/swapped sources with both excitation polarities; strict relative-only current checks.",
+      "status": "Reported to parent and bus; production not edited."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "dc.two_source_node",
+        "inputs": {
+          "v_1": 524288,
+          "r_1": 1.862645149230957e-09,
+          "v_2": 0,
+          "r_2": 134217728,
+          "r_load": 134217728
+        }
+      },
+      "expected_outputs": {
+        "g_total": 536870912,
+        "v_node": 524288,
+        "i_source_1": 0.0078125,
+        "i_source_2": -0.00390625,
+        "i_load": 0.00390625
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "dc.loaded_wheatstone_bridge",
+        "inputs": {
+          "v_excitation": 8,
+          "r_1": 3000,
+          "r_2": 1000,
+          "r_3": 6000,
+          "r_4": 2000,
+          "r_detector": 1e-09
+        }
+      },
+      "expected_outputs": {
+        "v_open": 0,
+        "r_output": 2250,
+        "i_detector": 0,
+        "v_loaded": 0,
+        "v_left": 2,
+        "v_right": 2,
+        "v_common": 2
+      }
+    },
+    {
+      "sequence": [
+        {
+          "command": "calculate",
+          "id": "dc.loaded_divider",
+          "inputs": {
+            "v_in": -9,
+            "r_top": 2,
+            "r_bottom": 2,
+            "r_load": 0
+          }
+        },
+        {
+          "command": "calculate",
+          "id": "dc.loaded_divider",
+          "inputs": {
+            "v_in": -9,
+            "r_top": 2,
+            "r_bottom": 2,
+            "r_load": 2
+          }
+        }
+      ],
+      "expected": "First explicit error; second success with v_open=-4.5, r_output=1, v_loaded=-3, i_load=-1.5, loading_error=1/3. One correlated response per line."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "dc.resistor_dissipation",
+        "inputs": {
+          "current": 1e-12,
+          "resistance": 1e-09
+        }
+      },
+      "expected_outputs": {
+        "power": 1e-33
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select all eight DC features and calculate every complete researched example; inspect every output, topology, sign and SI unit.",
+    "Balanced unequal-arm bridge: display exact zero differential/current alongside 2 V common mode; invalid detector resistance clears stale results and correcting it recovers.",
+    "Two-source nominal shows negative backfeed; strong-source regression preserves milliamp source currents despite equal displayed source/node voltage.",
+    "Display 1e-24 A Ohm current and 1e-33 W dissipation in readable scientific notation.",
+    "Source matching: compare actual/matched load powers and source dissipation without implying maximum efficiency."
+  ]
+}

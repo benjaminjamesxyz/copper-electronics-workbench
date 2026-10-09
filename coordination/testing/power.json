@@ -1,0 +1,138 @@
+{
+  "lane": "power",
+  "base": "7f12f45",
+  "ordered_actual_commits": [
+    "330cda7cc545c8d9fe6724e8b755b898edd54d2c"
+  ],
+  "file": "backend/tests/power.rs",
+  "authored_tests": 33,
+  "behaviors_covered": {
+    "power.buck_inductor_design": "Complete nominal outputs; independent volt-second/current identities; tiny positive valley at ripple_ratio immediately below two; all scalar/topology rejections.",
+    "power.boost_inductor_design": "Complete nominal outputs; independently derived input-current/power balance; near-two CCM boundary; high and near-unity conversion ratios; all guards.",
+    "power.buck_output_capacitor": "Complete nominal outputs; charge/ESR allocation; zero ESR and inclusive ripple ceiling; next-f64 positive residual budget; CCM/exhausted-budget/range rejections.",
+    "power.boost_output_capacitor": "Complete nominal outputs; full rectifier-current ESR step; independent switch-on charge; monotonic-charge equality; still-CCM but invalid charging rejection; zero ESR/ripple ceiling/high-ratio tiny capacitance; all guards.",
+    "power.buck_input_capacitor_rms": "Complete nominal outputs; independent waveform variance; zero-ripple/complementary-duty identities; near-equal rails; tiny/huge current scales with zero and 60% ripple; all guards.",
+    "power.ldo_dissipation": "Complete nominal outputs; loaded ground-current power and conservation; dropout equality; zero load/ground current/equal rails; all guards.",
+    "power.converter_input_budget": "Complete nominal outputs; independent step-up power budget; unity efficiency; tiny positive near-unity loss; all guards.",
+    "power.boost_rhp_zero": "Complete nominal outputs; independent Hz conversion/inductance scaling; positive-valley neighbor; high-ratio finite zero frequency; switching-frequency/inductance CCM failures; all guards."
+  },
+  "suspected_defects": [
+    {
+      "id": "POWER-R1",
+      "severity": "P2",
+      "calculator": "power.buck_input_capacitor_rms",
+      "evidence": "Static baseline current-square underflow/overflow; corroborates independent reviewer finding. Not an observed test failure.",
+      "inputs": {
+        "vin": 12,
+        "vout": 5,
+        "iout": 1e-200,
+        "delta_i": 0
+      },
+      "expected": "duty=5/12; i_cin_rms=sqrt(35)/12*1e-200 A, representable and positive.",
+      "additional_regressions": "iout=1e200 with zero ripple; both scales with delta_i=0.6*iout and independent RMS coefficient sqrt(23/90).",
+      "reported_on": "COMMUNICATION.md and direct parent message",
+      "required_owner": "Parent/DevPower: stable factoring without narrowing domains or relaxing assertions."
+    }
+  ],
+  "verification": "Syntax/API consistency reviewed statically. No builds, tests, linters, formatters, backend evaluations, smokes or desktop checks executed; no pass claim.",
+  "untested_gaps": [
+    "All authored tests require parent execution after integration/remediation.",
+    "Real JSON-lines and native desktop behavior remain parent-owned and unexecuted by this worker.",
+    "Actual controller/device validity, parasitics, ratings, compensation, nonlinear derating and hardware measurement are outside these closed-form regressions."
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "requests": [
+        {
+          "command": "calculate",
+          "id": "power.boost_output_capacitor",
+          "inputs": {
+            "vin": 6,
+            "vout": 12,
+            "iout": 1,
+            "delta_i": 2,
+            "fs": 100000,
+            "ripple_budget": 1.2,
+            "esr": 0
+          }
+        }
+      ],
+      "expected_outputs": {
+        "duty": 0.5,
+        "i_peak": 3,
+        "ripple_esr": 0,
+        "ripple_cap_budget": 1.2,
+        "c_min": 4.166666666666667e-06
+      }
+    },
+    {
+      "requests": [
+        {
+          "command": "calculate",
+          "id": "power.boost_output_capacitor",
+          "inputs": {
+            "vin": 6,
+            "vout": 12,
+            "iout": 1,
+            "delta_i": 2.000001,
+            "fs": 100000,
+            "ripple_budget": 0.1,
+            "esr": 0.02
+          }
+        },
+        {
+          "command": "calculate",
+          "id": "power.converter_input_budget",
+          "inputs": {
+            "vin": 5,
+            "vout": 12,
+            "iout": 0.5,
+            "efficiency": 1
+          }
+        }
+      ],
+      "expected": "First response ok=false despite positive CCM valley; second response recovers with p_out=6,p_in=6,i_in=1.2,p_loss=0."
+    },
+    {
+      "requests": [
+        {
+          "command": "calculate",
+          "id": "power.buck_input_capacitor_rms",
+          "inputs": {
+            "vin": 12,
+            "vout": 5,
+            "iout": 1e-200,
+            "delta_i": 0
+          }
+        }
+      ],
+      "expected": "After POWER-R1 remediation: ok=true, duty=5/12, finite positive RMS=sqrt(35)/12*1e-200; strict relative comparison."
+    },
+    {
+      "requests": [
+        {
+          "command": "calculate",
+          "id": "power.converter_input_budget",
+          "inputs": {
+            "vin": 12,
+            "vout": 5,
+            "iout": 2,
+            "efficiency": 0.9999999999999999
+          }
+        }
+      ],
+      "expected_outputs": {
+        "p_out": 10,
+        "p_in": 10.000000000000002,
+        "i_in": 0.8333333333333335,
+        "p_loss": 1.1102230246251567e-15
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Select all eight power IDs and execute each complete nominal vector from the committed tests; compare every output and inspect units/model assumptions.",
+    "Boost capacitor: accept valley=load and zero ESR; change delta_i to 2.000001 A in the supplied 6\u219212 V case, ensure error clears stale results, then restore valid input and recover.",
+    "Inspect scientific notation for tiny buck valley, high-ratio boost capacitance, near-unity positive converter loss and remedied tiny RMS; nonzero values must not be displayed as fabricated exact zeros.",
+    "LDO: verify dropout equality and zero-load ground-only dissipation; insufficient headroom must reject and recover after correction."
+  ]
+}

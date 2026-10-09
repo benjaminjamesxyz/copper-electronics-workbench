@@ -1,0 +1,9 @@
+{
+  "lane": "diodes",
+  "base": "7f12f45",
+  "commits": [
+    "0ef46f15b5e4ffc08a9a42a930fc49b66c923a8b"
+  ],
+  "handoff_recovery": "Tester authored and committed tests; provider transport failed before final response. Parent recovered committed SHA from isolated branch.",
+  "verification": "No checks executed by agent; parent runs integrated suite."
+}

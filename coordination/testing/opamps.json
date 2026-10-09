@@ -1,0 +1,142 @@
+{
+  "lane": "opamps",
+  "base": "7f12f45",
+  "commits": [
+    "16b25b6"
+  ],
+  "file": "backend/tests/opamps.rs",
+  "behaviors_covered": [
+    "All eight complete independent researched examples assert every output using explicit SI inputs and shared common helpers.",
+    "Inverting/noninverting reference bias, signed output, zero cancellation, unity follower, actual pin-versus-source common-mode semantics, both inclusive pin/output boundaries.",
+    "Difference amplifier noninteger matched ratios with exact zero leakage, both mismatch signs, differential convention, pin-voltage limits, balanced-source cancellation.",
+    "Weighted summer independent signed weights, reference-centered superposition, cancellation, zero source-current identity.",
+    "Integrator positive/negative/zero slopes, zero duration, initial-charge preservation, both initial/final swing guards.",
+    "Differentiator ascending/descending/flat ramps, zero output, reference bias, both operating limits, strictly positive duration.",
+    "Sinusoidal peak rather than RMS/peak-to-peak, frequency/amplitude scaling, signed centers, both exact swing peaks, design-margin equality, retained insufficient slew diagnostic, small positive frequency.",
+    "Dominant-pole finite-loop-gain algebra, noise rather than inverting signal gain, asymptotic GBW definition, exact gain-bandwidth identity, stability equality, unity feedback, high-loop-gain tiny positive error.",
+    "Every declared scalar and relational model guard; nonfinite rejection for every input of every model with valid-request recovery."
+  ],
+  "verification": "Authored and manually reviewed against shared API; no builds, tests, linters, formatters, smoke runs, or engine evaluations executed.",
+  "untested_gaps": [
+    "Parent must execute integrated Rust tests and JSON-lines scenarios after remediation.",
+    "Actual desktop interaction, device-specific bandwidth/stability/distortion/loading, and physical hardware remain unexercised."
+  ],
+  "suspected_defects": [
+    {
+      "id": "opamps.noninverting_stage",
+      "evidence": "Static binary64 cancellation in reference-centered output expression for Rf=0, Vin=\u00b11e-17, Vref=1; exact follower output is Vin, not zero. Also includes Vin=1e-12 strict relative regression.",
+      "status": "Reported to Main and root COMMUNICATION.md; production unchanged."
+    },
+    {
+      "id": "opamps.difference_ratio_error",
+      "evidence": "Static cancellation for all four resistors=10000, V1=V2=1, Vref=\u00b11e-17. Matched identity requires output=Vref; absolute pin computation/subtraction loses it.",
+      "status": "Reported to Main and root COMMUNICATION.md; strict relative signed regressions committed."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "request": {
+        "command": "calculate",
+        "id": "opamps.noninverting_stage",
+        "inputs": {
+          "r_ground": 10000,
+          "r_feedback": 0,
+          "v_in": 1e-17,
+          "v_reference": 1,
+          "v_out_min": -10,
+          "v_out_max": 10,
+          "v_cm_min": -10,
+          "v_cm_max": 10
+        }
+      },
+      "expected": {
+        "ok": true,
+        "outputs": {
+          "gain": 1,
+          "v_out": 1e-17
+        }
+      },
+      "tolerance": "1e-6 relative, zero absolute; repeat with negative Vin."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "opamps.difference_ratio_error",
+        "inputs": {
+          "r_one": 10000,
+          "r_two": 10000,
+          "r_three": 10000,
+          "r_four": 10000,
+          "v_one": 1,
+          "v_two": 1,
+          "v_reference": 1e-17,
+          "v_out_min": -10,
+          "v_out_max": 10,
+          "v_cm_min": -10,
+          "v_cm_max": 10
+        }
+      },
+      "expected": {
+        "ok": true,
+        "outputs": {
+          "differential_gain": 1,
+          "common_mode_gain": 0,
+          "pin_voltage": 0.5,
+          "v_out": 1e-17
+        }
+      },
+      "tolerance": "1e-6 relative, zero absolute; repeat with negative reference."
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "opamps.sinusoidal_slew_requirement",
+        "inputs": {
+          "frequency": 1,
+          "v_peak": 1,
+          "v_center": 2,
+          "slew_available": 3.141592653589793,
+          "design_margin": 1,
+          "v_out_min": 1,
+          "v_out_max": 3
+        }
+      },
+      "expected": {
+        "ok": true,
+        "outputs": {
+          "required_slew": 6.283185307179586,
+          "design_slew": 6.283185307179586,
+          "slew_margin": 0.5
+        }
+      }
+    },
+    {
+      "request": {
+        "command": "calculate",
+        "id": "opamps.noninverting_stage",
+        "inputs": {
+          "r_ground": 10000,
+          "r_feedback": 90000,
+          "v_in": 2,
+          "v_reference": 0.1,
+          "v_out_min": -10,
+          "v_out_max": 10,
+          "v_cm_min": -10,
+          "v_cm_max": 10
+        }
+      },
+      "expected": {
+        "ok": false
+      },
+      "recovery": "Then send the valid tiny unity-follower request; require a correlated successful response without restarting."
+    }
+  ],
+  "parent_desktop_scenarios": [
+    "Search each of the eight opamp IDs, load its researched example, calculate, and inspect every output plus units/model limitations.",
+    "Unity follower: set Rf=0 and nonzero reference; enter signed tiny Vin and confirm scientific-format nonzero output.",
+    "Matched difference stage: equal source voltages and tiny signed reference must preserve reference output while common-mode gain remains zero.",
+    "Slew calculator: enter the explicit 0.5-margin scenario; show diagnostic result rather than rejecting it or claiming low-distortion certification.",
+    "Integrator: compare zero duration, zero current, and signed ramps; reject initial or final saturation. Differentiator: compare ascending/descending/flat ramps and reject zero duration.",
+    "Reject a saturated stage, repair the input, and calculate successfully without stale outputs or process restart."
+  ]
+}
