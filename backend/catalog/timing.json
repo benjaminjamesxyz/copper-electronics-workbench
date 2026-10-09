@@ -383,5 +383,130 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "timing.plate_displacement_current",
+    "title": "Parallel-plate displacement current",
+    "category": "EMC coupling",
+    "level": "expert",
+    "description": "Estimate edge-driven common-mode displacement current through a rectangular dielectric overlap to a chassis or reference plane.",
+    "formula": "C = epsilon_0 epsilon_r width length/gap; slew = DeltaV/t_edge; I_displacement = C slew; J_displacement = I/(width length)",
+    "assumptions": [
+      "Rectangular parallel conducting surfaces separated by a homogeneous linear, nonmagnetic dielectric; zero conductive leakage.",
+      "Gap must be at most one tenth of both plate dimensions to neglect fringing; this is a model-selection approximation, not a guaranteed error bound.",
+      "Longest plate dimension must be at most one tenth of the distance light travels in the dielectric during the full ramp, a conservative quasistatic criterion.",
+      "Use relative permittivity appropriate to the edge spectrum. Signed voltage change sets current direction; return-network impedance and radiation are not solved.",
+      "Does not certify EMC emissions, safety leakage, isolation withstand or dielectric breakdown."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.013 Electromagnetics and Applications: chapter 3, equations 3.1.10-3.1.12 and displacement-current term in 3.2.1",
+        "url": "https://ocw.mit.edu/courses/6-013-electromagnetics-and-applications-spring-2009/be09fe40701d8ba037ddc18fea301449_MIT6_013S09_chap03.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "width",
+        "label": "Conductive overlap width",
+        "unit": "m",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "length",
+        "label": "Conductive overlap length",
+        "unit": "m",
+        "default": 0.03,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gap",
+        "label": "Uniform dielectric separation",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "epsilon_r",
+        "label": "Relative dielectric permittivity",
+        "unit": "1",
+        "default": 4,
+        "min": 1
+      },
+      {
+        "key": "voltage_change",
+        "label": "Signed voltage change across the overlap",
+        "unit": "V",
+        "default": 100
+      },
+      {
+        "key": "edge_time",
+        "label": "Full linear-ramp duration",
+        "unit": "s",
+        "default": 2e-08,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "overlap_capacitance",
+        "label": "Estimated overlap capacitance",
+        "unit": "F",
+        "expression": "8.8541878128e-12*epsilon_r*width*length/gap"
+      },
+      {
+        "key": "voltage_slew",
+        "label": "Signed voltage slew",
+        "unit": "V/s",
+        "expression": "voltage_change/edge_time"
+      },
+      {
+        "key": "displacement_current",
+        "label": "Signed displacement current",
+        "unit": "A",
+        "expression": "overlap_capacitance*voltage_slew"
+      },
+      {
+        "key": "current_density",
+        "label": "Signed displacement current density",
+        "unit": "A/m^2",
+        "expression": "displacement_current/(width*length)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "gap",
+        "op": "<=",
+        "right": "min(width,length)/10",
+        "message": "Gap must be at most one tenth of each plate dimension for the no-fringing approximation."
+      },
+      {
+        "left": "max(width,length)",
+        "op": "<=",
+        "right": "299792458*edge_time/(10*sqrt(epsilon_r))",
+        "message": "Plate dimensions must be electrically short for the quasistatic estimate."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "width": 0.02,
+        "length": 0.03,
+        "gap": 0.0005,
+        "epsilon_r": 4,
+        "voltage_change": 100,
+        "edge_time": 2e-08
+      },
+      "expected": {
+        "overlap_capacitance": 4.250010150144e-11,
+        "voltage_slew": 5000000000,
+        "displacement_current": 0.2125005075072,
+        "current_density": 354.167512512
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

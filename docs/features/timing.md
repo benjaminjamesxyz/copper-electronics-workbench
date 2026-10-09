@@ -178,3 +178,55 @@ Cross-input/model constraints (evaluated before outputs):
 | `late_margin` | Worst margin before stop-bit ending | s | `5.5841924398625466e-05` | `(2+data_bits+parity_bits)/baud_tx-stop_center_time-sync_quantization-guard_time` |
 | `minimum_margin` | Minimum stop-sample margin (negative means risk) | s | `4.188144329896905e-05` | `min(early_margin,late_margin)` |
 
+## 8. Parallel-plate displacement current — expert
+
+**ID:** `timing.plate_displacement_current`
+
+**Purpose:** Estimate electric-field current during an edge through a dielectric overlap between a switching surface and chassis/reference plane, without a DC conductive connection.
+
+**Derivation:** For homogeneous dielectric between parallel plates, `E = V/gap`, `D = epsilon E` and Maxwell's displacement-current density is `J_d = dD/dt = epsilon/gap × dV/dt`. Integrating over rectangular overlap area A = width × length gives:
+
+- `C_overlap = epsilon_0 epsilon_r width length/gap`.
+- `voltage_slew = voltage_change/edge_time`.
+- `displacement_current = C_overlap voltage_slew`.
+- `current_density = displacement_current/(width length)`.
+
+Use `epsilon_0 = 8.8541878128e-12 F/m` as the fixed numerical engineering constant and `c = 299792458 m/s`. Signed voltage change gives signed current in the chosen positive plate-normal direction.
+
+**Dimensions/domain:** Width/length/gap in positive m; epsilon_r dimensionless >= 1; signed change in V; positive full ramp time in s; capacitance F, slew V/s, current A, current density A/m². Require `gap <= min(width,length)/10` to select the no-fringing approximation. Also require `max(width,length) <= c edge_time/[10 sqrt(epsilon_r)]`, so dielectric propagation time is at most one tenth of edge duration for nonmagnetic material. Both are conservative model-selection conditions, not guaranteed percentage-error bounds. Dielectric must be linear, homogeneous and effectively insulating; use edge-spectrum permittivity. This computes edge current, not AC reactance, breakdown rating, leakage current certification or emitted field strength. Chassis return impedance and external common-mode network are excluded.
+
+**Independent example:** Width 20 mm, length 30 mm, gap 0.5 mm, epsilon_r = 4, change +100 V over full ramp 20 ns:
+
+- Area `= 0.02 × 0.03 = 0.0006 m²`.
+- Capacitance `= 8.8541878128e-12 × 4 × 0.0006/0.0005 = 4.250010150144e-11 F = 42.50010150144 pF`.
+- Slew `= 100/20e-9 = 5e9 V/s`.
+- Displacement current `= 42.50010150144e-12 × 5e9 = +0.2125005075072 A`.
+- Density `= 0.2125005075072/0.0006 = +354.167512512 A/m²`.
+- Geometry condition: gap 0.0005 m <= 0.002 m. Quasistatic size bound is `299792458 × 20e-9/(10 × 2) = 0.299792458 m`, above the 0.03 m longest side.
+
+**Primary source:** [MIT 6.013 Electromagnetics and Applications, chapter 3: Electromagnetic Fields in Simple Devices and Circuits](https://ocw.mit.edu/courses/6-013-electromagnetics-and-applications-spring-2009/be09fe40701d8ba037ddc18fea301449_MIT6_013S09_chap03.pdf), section 3.1.3 equations 3.1.10–3.1.12 for parallel-plate capacitance/current and equation 3.2.1 for the displacement-current term in Ampere's law. The introductory discussion explicitly distinguishes quasistatic from dynamic structures.
+
+
+### Catalog inputs and complete worked outputs
+
+| Input key | Label | Unit | Example/default | Admissible range |
+|---|---|---|---|---|
+| `width` | Conductive overlap width | m | `0.02` | > 0 |
+| `length` | Conductive overlap length | m | `0.03` | > 0 |
+| `gap` | Uniform dielectric separation | m | `0.0005` | > 0 |
+| `epsilon_r` | Relative dielectric permittivity | 1 | `4` | >= 1 |
+| `voltage_change` | Signed voltage change across the overlap | V | `100` | Any finite signed value |
+| `edge_time` | Full linear-ramp duration | s | `2e-08` | > 0 |
+
+Cross-input/model constraints (evaluated before outputs):
+
+- `gap <= min(width,length)/10` — Gap must be at most one tenth of each plate dimension for the no-fringing approximation.
+- `max(width,length) <= 299792458*edge_time/(10*sqrt(epsilon_r))` — Plate dimensions must be electrically short for the quasistatic estimate.
+
+| Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
+|---|---|---|---|---|
+| `overlap_capacitance` | Estimated overlap capacitance | F | `4.250010150144e-11` | `8.8541878128e-12*epsilon_r*width*length/gap` |
+| `voltage_slew` | Signed voltage slew | V/s | `5000000000` | `voltage_change/edge_time` |
+| `displacement_current` | Signed displacement current | A | `0.2125005075072` | `overlap_capacitance*voltage_slew` |
+| `current_density` | Signed displacement current density | A/m^2 | `354.167512512` | `displacement_current/(width*length)` |
+
