@@ -395,5 +395,110 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "sensors.amr_angular_resistance",
+    "title": "Anisotropic magnetoresistive angular resistance",
+    "category": "Sensor transduction",
+    "level": "basic",
+    "description": "Predict longitudinal AMR resistance from the magnetization-to-current angle without a bridge or amplifier.",
+    "formula": "R=Rperp+DeltaR cos(theta)^2; V=I R; dR/dtheta=-2 DeltaR sin(theta)cos(theta)",
+    "assumptions": [
+      "Theta is the internal magnetization angle relative to longitudinal current, not automatically the applied-field angle.",
+      "Single-domain uniform thin film, fixed temperature, quasi-static known magnetization; hysteresis and the field-to-magnetization rotation model are excluded.",
+      "DeltaR is the measured signed difference Rparallel-Rperp, not an assumed universal percentage.",
+      "180-degree periodic response cannot distinguish opposite magnetization directions; no bridge solver or amplifier stage."
+    ],
+    "references": [
+      {
+        "title": "Philips Semiconductors, Magnetoresistive sensors for magnetic field measurement, 2000, appendix 1 page 15 equation 2 (manufacturer document mirror)",
+        "url": "https://manualsdump.com/en/manuals/philips-magnetoresistive_sensor/271677/15"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "perpendicular_resistance",
+        "label": "Resistance with perpendicular magnetization",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistance_anisotropy",
+        "label": "Parallel-minus-perpendicular resistance",
+        "unit": "ohm",
+        "default": 20
+      },
+      {
+        "key": "magnetization_angle",
+        "label": "Magnetization angle from current direction",
+        "unit": "rad",
+        "default": 1.0471975511965976
+      },
+      {
+        "key": "bias_current",
+        "label": "Signed sensing current",
+        "unit": "A",
+        "default": 0.001
+      },
+      {
+        "key": "current_limit",
+        "label": "Maximum calibrated sensing-current magnitude",
+        "unit": "A",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resistance",
+        "label": "Longitudinal AMR resistance",
+        "unit": "ohm",
+        "expression": "perpendicular_resistance+resistance_anisotropy*cos(magnetization_angle)^2"
+      },
+      {
+        "key": "voltage_drop",
+        "label": "Longitudinal passive-sign voltage",
+        "unit": "V",
+        "expression": "bias_current*resistance"
+      },
+      {
+        "key": "angular_resistance_sensitivity",
+        "label": "Local angular resistance sensitivity",
+        "unit": "ohm/rad",
+        "expression": "-2*resistance_anisotropy*sin(magnetization_angle)*cos(magnetization_angle)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "perpendicular_resistance+min(resistance_anisotropy,0)",
+        "op": ">",
+        "right": "0",
+        "message": "AMR resistance must remain positive at every angle"
+      },
+      {
+        "left": "abs(bias_current)",
+        "op": "<=",
+        "right": "current_limit",
+        "message": "Sensing current exceeds calibrated AMR range"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "perpendicular_resistance": 1000,
+        "resistance_anisotropy": 20,
+        "magnetization_angle": 1.0471975511965976,
+        "bias_current": 0.001,
+        "current_limit": 0.005
+      },
+      "expected": {
+        "resistance": 1005.0,
+        "voltage_drop": 1.0050000000000001,
+        "angular_resistance_sensitivity": -17.320508075688775
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

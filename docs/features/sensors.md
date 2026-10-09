@@ -129,3 +129,31 @@ The two values stored as 0.02500000000000001 in JSON differ only by binary64 eva
 
 **Mandatory diagram.** Draw an oblique Hall plate occupying x=110–380,y=100–200. Current arrow crosses it longitudinally left-to-right and binds `bias_current`. Distinct transverse voltage contacts on the other two sides connect to open “+” and “−” sense terminals labeled `hall_voltage`; they must not short the bias contacts. From the plate center draw an outward normal arrow and a tilted B arrow with theta arc; bind `field_magnitude`, `field_angle` and `normal_field` to B, theta and “B normal” respectively. A thickness bracket binds `plate_thickness`. Caption: “Transverse Hall response follows the component normal to the plate. Contact signs use the entered signed Hall coefficient; geometry is schematic, not a calibrated device drawing.”
 
+
+## 5. sensors.amr_angular_resistance
+
+**Level:** basic.
+
+- [Philips Semiconductors, Magnetoresistive sensors for magnetic field measurement, 2000, appendix 1 page 15 equation 2 (manufacturer document mirror)](https://manualsdump.com/en/manuals/philips-magnetoresistive_sensor/271677/15)
+
+
+**Purpose and novelty.** Predict the longitudinal angular resistance of a ferromagnetic thin-film strip. Closest baseline `thermal.resistor_tcr_drift` responds to temperature, not magnetization orientation. `dc.loaded_wheatstone_bridge` cannot supply the material response. Hall voltage is transverse and odd under field reversal; this AMR resistance is longitudinal and pi-periodic. These are physically distinct sensors, not renamed angle calculations.
+
+**Model.** `R=Rperp+DeltaR cos²(theta)`, `V=I R`, `dR/dtheta=-2 DeltaR sin(theta)cos(theta)`. Define `DeltaR=Rparallel−Rperp` from calibration; it may be signed. The constraint `Rperp+min(DeltaR,0)>0` ensures positive resistance at every orientation without incorrectly rejecting negative AMR materials. Input angle is internal magnetization relative to current, not automatically the external magnetic-field angle.
+
+**Validity.** Uniform single-domain thin film, known quasi-static magnetization, fixed temperature and negligible self-heating. Field-to-magnetization rotation, hysteresis, domain switching, barber-pole bias structures and bridges are outside this model. `abs(I)<=current_limit` uses the actual calibrated sensing-current limit. A saturated applied field can align magnetization, but no such alignment is silently assumed.
+
+**Complete example inputs.** `perpendicular_resistance=1000 ohm`, `resistance_anisotropy=20 ohm`, `magnetization_angle=1.0471975511965976 rad`, `bias_current=0.001 A`, `current_limit=0.005 A`. At pi/3, cos²=1/4 and `-2 DeltaR sin cos=-10 sqrt(3)`.
+
+| Output key | Independent expected value |
+|---|---:|
+| `resistance` | 1005 ohm |
+| `voltage_drop` | 1.005 V |
+| `angular_resistance_sensitivity` | -17.320508075688775 ohm/rad |
+
+**Tester cases.** theta=0 gives `(1020 ohm,1.02 V,0 ohm/rad)`; theta=pi/2 approaches `(1000,1,0)` with trigonometric roundoff. Adding pi leaves resistance unchanged. Reversing sensing current changes only voltage sign. DeltaR=0 is a valid isotropic limiting case. DeltaR=-20 gives positive resistance and reversed angular sensitivity; DeltaR=-1000 is rejected because one orientation reaches zero. Reject nonpositive Rperp/current limit and excessive current; limits are inclusive.
+
+**Mandatory diagram.** Draw a long thin-film strip x=80–430,y=110–180 with two end contacts. Longitudinal I arrow points right and binds `bias_current`; voltage-drop polarity is “+” at the left and “−” at the right, binding `voltage_drop`. Inside the strip draw internal magnetization M at theta from the rightward current direction; bind `magnetization_angle` to that arc. Right-side legend binds `perpendicular_resistance` to “R perpendicular”, `resistance_anisotropy` to “R parallel − R perpendicular” and `resistance` to “R(theta)”. Caption: “AMR changes longitudinal resistance as internal magnetization rotates. The response repeats every 180 degrees; theta is not necessarily the external-field angle. No Wheatstone bridge is included.”
+
+
+**Source provenance.** Research read the Philips application note through a third-party mirror, including the equation image. No authenticated NXP-hosted replacement was obtained; the usermanual.wiki PDF route returned a 403 page. Ambiguous resistivity notation does not define the sign: calibrated perpendicular resistance and signed parallel-minus-perpendicular resistance explicitly determine both endpoints.
