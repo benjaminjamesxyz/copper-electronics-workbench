@@ -334,3 +334,48 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 | `p_base` | `0.00014` | W |
 | `p_total` | `0.10014` | W |
 
+
+## 8. `bjt.emitter_follower_loading` — finite-beta noninverting buffer
+
+**Level:** intermediate. **Purpose:** determine how an emitter load reflects into the base and how source resistance reduces an emitter follower's voltage gain. This is not the inverting collector-output stage in calculation 4.
+
+### Derivation and units
+
+With the collector AC grounded, an emitter bias resistor Re and an AC-coupled load RL give `REeff=Re||RL`. The hybrid-pi base loop is
+
+`vbase=ib*rpi+(beta_ac+1)*ib*REeff`.
+
+Thus `Rin=rpi+(beta_ac+1)*REeff`, and emitter output is `vout=(beta_ac+1)*ib*REeff`. Therefore
+
+`Av_base=(beta_ac+1)*REeff/Rin`,
+
+`Av_source=(beta_ac+1)*REeff/(Rin+Rs)`.
+
+Rin is in ohm and both gains are dimensionless V/V. S1 slide 44 explicitly includes source resistance; S2 provides common-collector input resistance and high-ro assumptions. This retains finite beta rather than simply declaring unity gain.
+
+### Domain and limitations
+
+Ic, beta_ac, Re and RL are positive; Rs nonnegative, T within the stated envelope. Require intrinsic ro>=10*REeff, then neglect it in this approximate topology. Because the collector is AC grounded, a finite ro would directly load the emitter, but this calculator deliberately remains the cited high-ro model. Load is AC coupled; DC bias and headroom are separately established. Bias-divider input loading, large-signal current limits, frequency response and crossover behavior of complementary output stages are excluded.
+
+### Independent worked example
+
+Inputs: Ic=0.002 A, beta_ac=100, T=300 K, Re=RL=1000 ohm, Rs=600 ohm, intrinsic ro=100000 ohm.
+
+- `REeff=500 ohm`; `rpi=1292.59998932178 ohm`.
+- Reflected emitter term is `101*500=50500 ohm`.
+- `Rin=51792.5999893218 ohm`.
+- `Av_base=50500/51792.5999893218=0.975042766928320 V/V`.
+- `Av_source=50500/52392.5999893218=0.963876578186471 V/V`.
+- High-ro screening: 100000 ohm >= 5000 ohm. Both gains are positive and below unity, as required for this resistively loaded follower model.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `r_emitter_effective` | `500` | ohm |
+| `r_input` | `51792.599989321774` | ohm |
+| `gain_base` | `0.9750427669283204` | V/V |
+| `gain_source` | `0.9638765781864708` | V/V |
+

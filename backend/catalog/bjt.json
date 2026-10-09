@@ -827,5 +827,139 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.emitter_follower_loading",
+    "title": "Loaded emitter-follower gain and input resistance",
+    "category": "Bipolar transistor design",
+    "level": "intermediate",
+    "description": "Calculate noninverting buffer gain and reflected load resistance of a finite-beta emitter follower driven through source resistance.",
+    "formula": "REeff=RE||RL; Rin=rpi+(beta+1)REeff; Av_base=(beta+1)REeff/Rin; Av_source=(beta+1)REeff/(Rin+Rs)",
+    "assumptions": [
+      "Forward-active midband NPN; collector is AC grounded and output is at emitter.",
+      "Load is AC coupled so the supplied quiescent collector current is independently established.",
+      "No extra base-bias-network loading; junction capacitances and base spreading resistance are ignored.",
+      "Intrinsic output resistance is at least ten times RE||RL; ro is neglected and gains are approximate.",
+      "Small signal at the base-emitter junction; 200-450 K model envelope, not a device temperature rating."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.101 Lecture 3, slide 44: emitter-follower finite-beta gain including source resistance",
+        "url": "https://web.mit.edu/6.101/www/s2019/handouts/L03_4.pdf"
+      },
+      {
+        "title": "MIT Low Frequency Hybrid-pi Equation Chart: common-collector input resistance",
+        "url": "https://ocw.mit.edu/courses/6-101-introductory-analog-electronics-laboratory-spring-2007/1bc47ee7271866912a6eb9d2d1596ff5_hybrid_pi.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "i_collector",
+        "label": "Quiescent collector current",
+        "unit": "A",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta_ac",
+        "label": "Incremental current gain",
+        "unit": "1",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature",
+        "label": "Junction temperature",
+        "unit": "K",
+        "default": 300,
+        "min": 200,
+        "max": 450
+      },
+      {
+        "key": "r_emitter",
+        "label": "Emitter bias resistance",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_load",
+        "label": "AC-coupled emitter load resistance",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_source",
+        "label": "Signal source resistance",
+        "unit": "ohm",
+        "default": 600,
+        "min": 0
+      },
+      {
+        "key": "r_intrinsic_output",
+        "label": "Estimated intrinsic Early output resistance",
+        "unit": "ohm",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_emitter_effective",
+        "label": "Effective AC emitter load",
+        "unit": "ohm",
+        "expression": "r_emitter*r_load/(r_emitter+r_load)"
+      },
+      {
+        "key": "r_input",
+        "label": "Resistance looking into base",
+        "unit": "ohm",
+        "expression": "beta_ac*1.380649e-23*temperature/(1.602176634e-19*i_collector)+(beta_ac+1)*r_emitter_effective"
+      },
+      {
+        "key": "gain_base",
+        "label": "Emitter voltage gain from base",
+        "unit": "V/V",
+        "expression": "(beta_ac+1)*r_emitter_effective/r_input"
+      },
+      {
+        "key": "gain_source",
+        "label": "Emitter voltage gain from source",
+        "unit": "V/V",
+        "expression": "(beta_ac+1)*r_emitter_effective/(r_input+r_source)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "r_intrinsic_output",
+        "op": ">=",
+        "right": "10*r_emitter*r_load/(r_emitter+r_load)",
+        "message": "Neglected intrinsic output resistance must be at least ten times the emitter AC load."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "i_collector": 0.002,
+        "beta_ac": 100,
+        "temperature": 300,
+        "r_emitter": 1000,
+        "r_load": 1000,
+        "r_source": 600,
+        "r_intrinsic_output": 100000
+      },
+      "expected": {
+        "r_emitter_effective": 500,
+        "r_input": 51792.599989321774,
+        "gain_base": 0.9750427669283204,
+        "gain_source": 0.9638765781864708
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
