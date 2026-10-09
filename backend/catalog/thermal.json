@@ -638,5 +638,179 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "thermal.lumped_thermal_step",
+    "title": "Lumped body temperature after a power step",
+    "category": "Thermal and reliability design",
+    "level": "intermediate",
+    "description": "Calculate a uniform body's thermal response to constant heat generation and convection, with an explicit Biot-number applicability guard.",
+    "formula": "C_th=rho V c_p; R_th=1/(h A_s); tau=R_th C_th; Bi=h V/(A_s k); T_inf=Ta+P R_th; T(t)=T_inf+(T_initial-T_inf) exp(-t/tau)",
+    "assumptions": [
+      "Spatially uniform body temperature, uniform internal heat generation, constant ambient, convection coefficient, conductivity, density and specific heat.",
+      "The input area is the complete surface exchanging heat with the ambient; L_c=V/A_s and Bi<0.1 are required for the lumped approximation.",
+      "Radiation, contact resistance and multiple thermal masses are neglected. For localized junction heat, a distributed or manufacturer transient-impedance model may be necessary.",
+      "Power is applied constantly from time zero; P=0 also describes cooling from an initially hot body.",
+      "The transient uses complementary exp and -expm1 weights to preserve the initial temperature at zero time and avoid subtractive cancellation for a small heating fraction."
+    ],
+    "references": [
+      {
+        "title": "University of South Carolina ECHE 460: lumped energy balance, time constant and Biot criterion, equations 5-15",
+        "url": "https://cse.sc.edu/~gatzke/460/F-Heat%20Conduction.pdf"
+      },
+      {
+        "title": "Brigham Young University ME340: lumped capacitance method",
+        "url": "https://www.et.byu.edu/~vps/ME340/TABLES/5.1.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "volume",
+        "label": "Body volume",
+        "unit": "m^3",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "density",
+        "label": "Body density",
+        "unit": "kg/m^3",
+        "default": 2700,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "specific_heat",
+        "label": "Specific heat capacity",
+        "unit": "J/(kg*K)",
+        "default": 900,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "surface_area",
+        "label": "Convecting surface area",
+        "unit": "m^2",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "convection_coefficient",
+        "label": "Convection heat-transfer coefficient",
+        "unit": "W/(m^2*K)",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "thermal_conductivity",
+        "label": "Body thermal conductivity",
+        "unit": "W/(m*K)",
+        "default": 200,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "ambient_temperature",
+        "label": "Ambient temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_temperature",
+        "label": "Initial uniform body temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "power",
+        "label": "Constant internal heating power",
+        "unit": "W",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "elapsed_time",
+        "label": "Time after power application",
+        "unit": "s",
+        "default": 243,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "thermal_capacitance",
+        "label": "Lumped heat capacity",
+        "unit": "J/K",
+        "expression": "density*volume*specific_heat"
+      },
+      {
+        "key": "convection_resistance",
+        "label": "Convection thermal resistance",
+        "unit": "K/W",
+        "expression": "1/(convection_coefficient*surface_area)"
+      },
+      {
+        "key": "time_constant",
+        "label": "Thermal time constant",
+        "unit": "s",
+        "expression": "convection_resistance*thermal_capacitance"
+      },
+      {
+        "key": "biot_number",
+        "label": "Biot number using V/A",
+        "unit": "1",
+        "expression": "convection_coefficient*volume/(surface_area*thermal_conductivity)"
+      },
+      {
+        "key": "steady_temperature",
+        "label": "Asymptotic body temperature",
+        "unit": "K",
+        "expression": "ambient_temperature+power*convection_resistance"
+      },
+      {
+        "key": "body_temperature",
+        "label": "Body temperature at elapsed time",
+        "unit": "K",
+        "expression": "initial_temperature*exp(-elapsed_time/time_constant)+steady_temperature*(-expm1(-elapsed_time/time_constant))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "convection_coefficient*volume/(surface_area*thermal_conductivity)",
+        "op": "<",
+        "right": "0.1",
+        "message": "Biot number must be below 0.1 for this uniform-temperature lumped model."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "volume": 1e-05,
+        "density": 2700,
+        "specific_heat": 900,
+        "surface_area": 0.01,
+        "convection_coefficient": 10,
+        "thermal_conductivity": 200,
+        "ambient_temperature": 298.15,
+        "initial_temperature": 298.15,
+        "power": 2,
+        "elapsed_time": 243
+      },
+      "expected": {
+        "thermal_capacitance": 24.3,
+        "convection_resistance": 10,
+        "time_constant": 243,
+        "biot_number": 5e-05,
+        "steady_temperature": 318.15,
+        "body_temperature": 310.7924111765712
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

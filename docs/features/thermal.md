@@ -342,3 +342,81 @@ Complete independent example input vector (relative tolerance `1e-6`):
 }
 ```
 
+## `thermal.lumped_thermal_step` — Lumped body temperature after a power step
+
+**ID:** `thermal.lumped_thermal_step`; **level:** intermediate. **References:** 4–5.
+
+### Model and derivation
+
+For a spatially uniform body, stored heat is characterized by `C_th=rho V cp`. Convection removes `h A_s(T−Ta)` watts. Adding constant uniform internal heating `P` to the university energy balance gives
+
+`C_th dT/dt = P − h A_s(T−Ta)`.
+
+Define `R_th=1/(h A_s)`, `tau=R_th C_th` and `T_inf=Ta+P R_th`. Solving the first-order balance from `T(0)=T_initial` yields
+
+`T(t)=T_inf+(T_initial−T_inf) exp(−t/tau)`.
+
+Applicability is screened using `L_c=V/A_s` and **Bi=h V/(A_s k)<0.1**.
+
+### Units, domain and limitations
+
+Volume m³, density kg/m³, specific heat J/(kg K), area m², convection coefficient W/(m² K), conductivity W/(m K), time s, power W, temperatures K. Heat capacity output is J/K, convection resistance K/W, time constant s and Bi dimensionless. Volume, density, specific heat, area, convection and conductivity are strictly positive. Temperatures are positive, power/time nonnegative. The expanded input-only Biot expression is constrained below 0.1.
+
+An initially hot body with `P=0` cools; an initially colder body warms. At `t=0` the initial temperature is recovered, and at long time the asymptote is recovered. Material properties, ambient and convection remain constant. Radiation, contacts and multiple thermal masses are excluded. A small global Biot number is not proof that localized semiconductor junction heating is uniform; use manufacturer transient thermal impedance or a distributed model when appropriate.
+
+### Independent worked example
+
+Inputs: `V=10^-5 m³`, `rho=2700 kg/m³`, `cp=900 J/(kg K)`, `A_s=0.01 m²`, `h=10 W/(m² K)`, `k=200 W/(m K)`, `Ta=T_initial=298.15 K`, `P=2 W`, `t=243 s`.
+
+Mass is 0.027 kg. **C_th=24.3 J/K**, **R_th=10 K/W**, **tau=243 s**, **Bi=10×10^-5/(0.01×200)=0.00005** and **T_inf=318.15 K**. At one time constant,
+
+`T=318.15−20 exp(−1)` with `exp(−1)=0.3678794411714423`, giving **T(243)=310.7924111765712 K**. Rise is 63.2120559% of its ultimate 20 K value.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `volume` | Body volume | m^3 | 1e-05 | > 0 |
+| `density` | Body density | kg/m^3 | 2700 | > 0 |
+| `specific_heat` | Specific heat capacity | J/(kg*K) | 900 | > 0 |
+| `surface_area` | Convecting surface area | m^2 | 0.01 | > 0 |
+| `convection_coefficient` | Convection heat-transfer coefficient | W/(m^2*K) | 10 | > 0 |
+| `thermal_conductivity` | Body thermal conductivity | W/(m*K) | 200 | > 0 |
+| `ambient_temperature` | Ambient temperature | K | 298.15 | > 0 |
+| `initial_temperature` | Initial uniform body temperature | K | 298.15 | > 0 |
+| `power` | Constant internal heating power | W | 2 | >= 0 |
+| `elapsed_time` | Time after power application | s | 243 | >= 0 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `thermal_capacitance` | J/K | `density*volume*specific_heat` | 24.3 |
+| `convection_resistance` | K/W | `1/(convection_coefficient*surface_area)` | 10 |
+| `time_constant` | s | `convection_resistance*thermal_capacitance` | 243 |
+| `biot_number` | 1 | `convection_coefficient*volume/(surface_area*thermal_conductivity)` | 5e-05 |
+| `steady_temperature` | K | `ambient_temperature+power*convection_resistance` | 318.15 |
+| `body_temperature` | K | `initial_temperature*exp(-elapsed_time/time_constant)+steady_temperature*(-expm1(-elapsed_time/time_constant))` | 310.7924111765712 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "volume": 1e-05,
+  "density": 2700,
+  "specific_heat": 900,
+  "surface_area": 0.01,
+  "convection_coefficient": 10,
+  "thermal_conductivity": 200,
+  "ambient_temperature": 298.15,
+  "initial_temperature": 298.15,
+  "power": 2,
+  "elapsed_time": 243
+}
+```
+
+### Numerical implementation
+
+Implementation uses `T_initial exp(-t/tau) + T_inf[-expm1(-t/tau)]`. The complementary weights preserve `T(0)=T_initial` without subtracting a potentially much larger steady temperature and accurately retain the small heating fraction for short times. This is the same closed-form solution, not another model or output.
+
