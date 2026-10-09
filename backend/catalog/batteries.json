@@ -140,5 +140,132 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "batteries.coulomb_state_cycle",
+    "title": "Coulomb-counted discharge and recharge state",
+    "category": "Battery design",
+    "level": "basic",
+    "description": "Track an initial battery state through a constant-current discharge followed by a charge interval with coulombic loss.",
+    "formula": "sd = s0-Id td/(3600 C); Qstored = eta Ic tc/3600; sf = sd+Qstored/C",
+    "assumptions": [
+      "The discharge interval occurs first, then the charge interval; both currents are nonnegative magnitudes.",
+      "Charge efficiency is a coulombic Ah retention fraction, not converter power efficiency.",
+      "Capacity, current and charge efficiency are constant over each interval; no self-discharge, Peukert correction, temperature drift or aging is included.",
+      "The initial SOC must be synchronized independently. Current-sensor offset accumulates into state error.",
+      "Reject overdischarge or overcharge instead of clamping SOC. This state accounting does not define a safe charger profile."
+    ],
+    "references": [
+      {
+        "title": "Victron BMV-712 Smart manual, sections 7.2.1, 7.2.7, 7.2.8 and 7.2.10-13",
+        "url": "https://www.victronenergy.com/media/pg/BMV-712_Smart/en/all-features-and-settings.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "full_capacity",
+        "label": "Usable full-charge capacity",
+        "unit": "Ah",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_soc",
+        "label": "Initial state of charge",
+        "unit": "1",
+        "default": 0.4,
+        "min": 0,
+        "max": 1
+      },
+      {
+        "key": "discharge_current",
+        "label": "Discharge current magnitude",
+        "unit": "A",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "discharge_time",
+        "label": "Discharge interval",
+        "unit": "s",
+        "default": 1800,
+        "min": 0
+      },
+      {
+        "key": "charge_current",
+        "label": "Charge current magnitude",
+        "unit": "A",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "charge_time",
+        "label": "Charge interval",
+        "unit": "s",
+        "default": 3600,
+        "min": 0
+      },
+      {
+        "key": "charge_efficiency",
+        "label": "Coulombic charge retention",
+        "unit": "1",
+        "default": 0.95,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "discharged_soc",
+        "label": "SOC after discharge",
+        "unit": "1",
+        "expression": "initial_soc-discharge_current*(discharge_time/3600)/full_capacity"
+      },
+      {
+        "key": "stored_charge",
+        "label": "Charge retained on recharge",
+        "unit": "Ah",
+        "expression": "charge_efficiency*charge_current*(charge_time/3600)"
+      },
+      {
+        "key": "final_soc",
+        "label": "SOC after recharge",
+        "unit": "1",
+        "expression": "discharged_soc+stored_charge/full_capacity"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "discharge_current*(discharge_time/3600)/full_capacity",
+        "op": "<=",
+        "right": "initial_soc",
+        "message": "Discharge interval would exhaust the initial stored charge"
+      },
+      {
+        "left": "initial_soc-discharge_current*(discharge_time/3600)/full_capacity+charge_efficiency*charge_current*(charge_time/3600)/full_capacity",
+        "op": "<=",
+        "right": "1",
+        "message": "Charge interval would exceed full charge"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "full_capacity": 5,
+        "initial_soc": 0.4,
+        "discharge_current": 1,
+        "discharge_time": 1800,
+        "charge_current": 2,
+        "charge_time": 3600,
+        "charge_efficiency": 0.95
+      },
+      "expected": {
+        "discharged_soc": 0.3,
+        "stored_charge": 1.9,
+        "final_soc": 0.68
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
