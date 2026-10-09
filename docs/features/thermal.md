@@ -213,3 +213,62 @@ Complete independent example input vector (relative tolerance `1e-6`):
 
 Implementation computes the exponent as `(Ea/k_B)*((T_test-T_use)/T_test)/T_use`, algebraically identical to the reciprocal difference. This avoids cancellation between nearly equal reciprocals and retains exact unity at equal temperatures. The input-only overflow guard uses the same expression. No model domain or example oracle changes.
 
+## `thermal.heatsink_resistance_budget` — Maximum heatsink thermal resistance
+
+**ID:** `thermal.heatsink_resistance_budget`; **level:** intermediate. **References:** 1–2.
+
+### Model and derivation
+
+For a dominant series heat-flow path,
+
+`Tj = Ta + P (R_jc + R_cs + R_sa)`.
+
+Applying a chosen design junction ceiling gives
+
+- `R_total,max=(Tj_limit−Ta)/P`;
+- `R_sa,max=R_total,max−R_jc−R_cs`.
+
+A selected heatsink must have actual `R_sa <= R_sa,max` under the installation's cooling conditions.
+
+### Units, domain and limitations
+
+Temperature K, dissipation W, all thermal resistances K/W. Power and junction-to-case resistance are strictly positive; interface resistance is nonnegative. The junction limit must exceed ambient and the remaining heatsink budget must be **strictly positive**. A zero/negative budget is an infeasible design request, not a negative resistance to display.
+
+Use the specified top or bottom case face and ensure nearly all heat exits through it. TI warns against applying `R_theta_JC` to ordinary package-top measurements without this condition. Do not add datasheet `R_theta_JA` to the chain. Use worst-case steady dissipation after any required electrical temperature correction; this calculator itself assumes supplied power is constant. Interface pressure, spreading, airflow, orientation, enclosure and heatsink radiation affect actual performance.
+
+### Independent worked example
+
+Inputs: `Ta=313.15 K`, ceiling `393.15 K`, `P=10 W`, `R_jc=1.5 K/W`, `R_cs=0.5 K/W`.
+
+Available rise is 80 K, so **total budget=8 K/W** and **maximum sink resistance=8−1.5−0.5=6 K/W**. At that bound the sink rises 60 K, interface 5 K and package 15 K, totaling exactly 80 K.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `ambient_temperature` | Ambient temperature | K | 313.15 | > 0 |
+| `junction_limit` | Design junction-temperature limit | K | 393.15 | > 0 |
+| `dissipated_power` | Device dissipated power | W | 10 | > 0 |
+| `junction_case_resistance` | Junction-to-case thermal resistance | K/W | 1.5 | > 0 |
+| `case_sink_resistance` | Case-to-sink interface resistance | K/W | 0.5 | >= 0 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `total_resistance_budget` | K/W | `(junction_limit-ambient_temperature)/dissipated_power` | 8 |
+| `maximum_sink_resistance` | K/W | `total_resistance_budget-junction_case_resistance-case_sink_resistance` | 6 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "ambient_temperature": 313.15,
+  "junction_limit": 393.15,
+  "dissipated_power": 10,
+  "junction_case_resistance": 1.5,
+  "case_sink_resistance": 0.5
+}
+```
+

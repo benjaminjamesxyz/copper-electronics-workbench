@@ -382,5 +382,112 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "thermal.heatsink_resistance_budget",
+    "title": "Maximum heatsink thermal resistance",
+    "category": "Thermal and reliability design",
+    "level": "intermediate",
+    "description": "Allocate a junction-temperature budget to a package, interface and heatsink in a dominant series cooling path.",
+    "formula": "R_total,max=(Tj_limit-Ta)/P; R_sa,max=R_total,max-R_jc-R_cs",
+    "assumptions": [
+      "Steady, temperature-independent dissipation supplied by an electrical loss calculation.",
+      "Almost all heat flows through the specified case face, interface and heatsink; do not mix datasheet R_theta_JA with this chain.",
+      "Heatsink resistance must be characterized at actual airflow, orientation, enclosure and mounting conditions. Smaller resistance is better.",
+      "Positive sink resistance headroom is required; a nonpositive budget means the package/interface already consume the temperature allowance."
+    ],
+    "references": [
+      {
+        "title": "TI SLVA462: heatsink design, equations 3-4 and airflow caveats",
+        "url": "https://www.ti.com/lit/an/slva462/slva462.pdf"
+      },
+      {
+        "title": "TI SLUA844B: junction-to-case single-surface applicability, page 5",
+        "url": "https://www.ti.com/lit/an/slua844b/slua844b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "ambient_temperature",
+        "label": "Ambient temperature",
+        "unit": "K",
+        "default": 313.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "junction_limit",
+        "label": "Design junction-temperature limit",
+        "unit": "K",
+        "default": 393.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "dissipated_power",
+        "label": "Device dissipated power",
+        "unit": "W",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "junction_case_resistance",
+        "label": "Junction-to-case thermal resistance",
+        "unit": "K/W",
+        "default": 1.5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "case_sink_resistance",
+        "label": "Case-to-sink interface resistance",
+        "unit": "K/W",
+        "default": 0.5,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "total_resistance_budget",
+        "label": "Total junction-to-ambient budget",
+        "unit": "K/W",
+        "expression": "(junction_limit-ambient_temperature)/dissipated_power"
+      },
+      {
+        "key": "maximum_sink_resistance",
+        "label": "Maximum heatsink-to-ambient resistance",
+        "unit": "K/W",
+        "expression": "total_resistance_budget-junction_case_resistance-case_sink_resistance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "junction_limit",
+        "op": ">",
+        "right": "ambient_temperature",
+        "message": "Design junction limit must exceed ambient temperature."
+      },
+      {
+        "left": "(junction_limit-ambient_temperature)/dissipated_power-junction_case_resistance-case_sink_resistance",
+        "op": ">",
+        "right": "0",
+        "message": "No positive heatsink resistance allowance remains after package and interface losses."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "ambient_temperature": 313.15,
+        "junction_limit": 393.15,
+        "dissipated_power": 10,
+        "junction_case_resistance": 1.5,
+        "case_sink_resistance": 0.5
+      },
+      "expected": {
+        "total_resistance_budget": 8,
+        "maximum_sink_resistance": 6
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
