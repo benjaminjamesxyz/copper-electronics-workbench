@@ -11,9 +11,9 @@
     "control.peak_current_slope_compensation": "Complete comparator event-time oracle; unstable/marginal/deadbeat/positive contraction; zero ramp below and at half duty; volt-second identity; signed/zero/tiny perturbations; independent period scaling; all scalar/nonfinite recovery; common-slope overflow and representable tiny-duty regressions.",
     "control.integral_two_lag_stability": "Complete non-default cubic/Routh oracle; stable/marginal/unstable signed reserve; marginal imaginary mode; plant/sensor exchange; equal poles and fast-sensor limit; adjacent-f64 signed reserve; extreme time-product avoidance; reciprocal-sum overflow; positive-domain/nonfinite recovery."
   },
-  "verification": "Not executed: no build, test, lint, formatter, backend/process or native launch. Authored against source snapshot 4c46fa1 and existing common helper. Python arithmetic used only to transcribe independent parent-scenario oracles, never to run production code.",
+  "verification": "Not executed: no build, test, lint, formatter, backend/process or native launch. Authored against source snapshot 4c46fa1 and existing common helper. Python arithmetic used only to transcribe independent parent-scenario oracles, never to run production code. Resumption re-verification: all 26 authored test vectors and all 32 parent scenarios were re-simulated independently against the fixed catalog at integration cbe1b2b lineage (root HEAD 73714f8) by transcribing the committed output expressions with left-associative f64 semantics and non-finite-intermediate rejection; every oracle matched, so the five CTRL-N regressions now verify the fix instead of reproducing an open defect.",
   "untested_gaps": [
-    "Main must run cargo test --test control and integrated suite after cherry-pick. Five source-inferred numerical defects are intentionally represented by success expectations and unignored regression tests.",
+    "Main must run cargo test --test control and integrated suite after cherry-pick. The five CTRL-N conditioning defects were confirmed at base 4c46fa1 and resolved by Main commit cbe1b2b; their success-expectation regressions (ctrl-n1..n5 and the matching Rust tests) must pass at integration HEAD and guard the fix.",
     "Main must execute flat parent_json_lines_scenarios in order on one real process, including error/recovery adjacency. No process pass is claimed.",
     "Native diagrams, keyboard entry, error presentation, quantity legends, clipping, narrow window and large text remain Main/V2ControlRun acceptance work. No pixel approval is claimed by tester.",
     "No hardware calibration, nonlinear/sampled outer-loop stability, saturation or exhaustive binary64-space validation. Primary-source retrieval is inherited from research; independent algebra is newly authored."
@@ -22,6 +22,7 @@
     {
       "finding": "CTRL-N1",
       "severity": "medium",
+      "status": "resolved_by_main_cbe1b2b",
       "id": "control.delay_phase_budget",
       "location": "backend/catalog/control.json:61",
       "evidence": "Source-inferred against snapshot 4c46fa1; not executed. 360*frequency overflows before multiplication by a reciprocal-scale delay. One full period must still give 360 degrees.",
@@ -43,6 +44,7 @@
     {
       "finding": "CTRL-N2",
       "severity": "medium",
+      "status": "resolved_by_main_cbe1b2b",
       "id": "control.pi_pole_placement",
       "location": "backend/catalog/control.json:382",
       "evidence": "Source-inferred against snapshot 4c46fa1; not executed. 2*zeta*wn overflows in both constraint line 405 and proportional-gain expression, although wn*tau=1 and all outputs are finite.",
@@ -64,6 +66,7 @@
     {
       "finding": "CTRL-N3",
       "severity": "medium",
+      "status": "resolved_by_main_cbe1b2b",
       "id": "control.peak_current_slope_compensation",
       "location": "backend/catalog/control.json:493",
       "evidence": "Source-inferred against snapshot 4c46fa1; not executed. rising_slope+ramp_slope overflows; common scaling cannot change a .25 contraction into zero or an error.",
@@ -88,6 +91,7 @@
     {
       "finding": "CTRL-N4",
       "severity": "medium",
+      "status": "resolved_by_main_cbe1b2b",
       "id": "control.peak_current_slope_compensation",
       "location": "backend/catalog/control.json:523",
       "evidence": "Source-inferred against snapshot 4c46fa1; not executed. rising_slope/falling_slope overflows although duty and signed multiplier remain representable subnormal numbers.",
@@ -112,6 +116,7 @@
     {
       "finding": "CTRL-N5",
       "severity": "medium",
+      "status": "resolved_by_main_cbe1b2b",
       "id": "control.integral_two_lag_stability",
       "location": "backend/catalog/control.json:609",
       "evidence": "Source-inferred against snapshot 4c46fa1; not executed. Sum of two 1e308 reciprocals overflows before division by gain 4, although equal-pole critical gain is 2/(K*tau)=5e307.",
