@@ -240,3 +240,66 @@ Draw one increasing portion of a sinusoid with a nominal sample dot. Place a hor
 
 Caption: “Sampling-time variation converts sinusoidal slope into voltage noise. Brackets illustrate uncertainty, not bounded worst-case jitter; the SNR excludes other ADC errors and requires small phase error.”
 
+
+## `measurement.correlated_voltage_ratio`
+
+### Purpose, evidence and stable propagation
+
+[NIST TN 1297 Appendix A](https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-appendix-law-propagation-uncertainty), equations A-1 through A-3, defines a measurement process and first-order covariance propagation. [NIST section 6](https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-6-expanded-uncertainty), 6.1–6.3, defines `U=k uc` and explains why k alone does not guarantee coverage. The section 6 web page is marked no longer updated; these algebraic definitions are used, not a claim of current certification policy.
+
+For positive voltage estimates Va and Vb and ratio `r=Va/Vb`, sensitivities are `∂r/∂Va=1/Vb` and `∂r/∂Vb=−Va/Vb²`. With covariance `rho ua ub`, NIST A-3 gives:
+
+`u(r)²=(ua/Vb)²+(Va ub/Vb²)²−2 rho Va ua ub/Vb³`.
+
+Define `a=ua/Va`, `b=ub/Vb`. Then `u(r)/r=sqrt(a²+b²−2 rho a b)`. Direct subtraction is poorly conditioned for nearly common-mode uncertainty. Use the identical nonnegative form:
+
+`relative_standard_uncertainty = hypot(a−b, sqrt(2*(1−rho))*sqrt(a)*sqrt(b))`.
+
+Square roots are factored to avoid forming the product `a*b` prematurely. The allowed rho interval [−1,1] makes the covariance matrix positive semidefinite; ua and ub are nonnegative. Zero ua or ub is valid, with correlation then immaterial to the result. Positive voltages avoid denominator singularity and sign ambiguities in relative standard uncertainty.
+
+**Approximation scope:** both relative standard uncertainties are restricted to ≤1% as an explicit first-order engineering domain. This ceiling is not prescribed by NIST and is not a universal guarantee of accuracy for an arbitrary probability distribution. Ratio distributions with appreciable denominator probability near zero need a distribution-aware or Monte Carlo analysis, not this calculator. Even within the domain, systematic bias and higher-order terms can matter at stringent metrology targets. No claim of exact 95% coverage or standards compliance is made.
+
+### Complete independent example
+
+Inputs: `numerator_voltage=5 V`, `denominator_voltage=2.5 V`, `numerator_uncertainty=.002 V`, `denominator_uncertainty=.0015 V`, `correlation=.8`, `coverage_factor=2`.
+
+Thus a=.0004, b=.0006 and r=2. Direct covariance arithmetic, independent of the catalog's stable identity:
+
+`u_rel²=(.0004)²+(.0006)²−2*.8*.0004*.0006 = 1.36e-7`.
+
+| Output key | Expected |
+|---|---|
+| `voltage_ratio` | 2 V/V |
+| `relative_standard_uncertainty` | 0.00036878177829171557 |
+| `ratio_standard_uncertainty` | 0.0007375635565834311 V/V |
+| `expanded_uncertainty` | 0.0014751271131668623 V/V |
+
+Multiplying the first-order standard uncertainty by two does not itself establish a coverage probability.
+
+### Tester handoff
+
+- Nominal: assert all four outputs.
+- rho=0, other values nominal: r=2, relative u=.0007211102550927978, standard u=.0014422205101855955, expanded u=.002884441020371191.
+- rho=−1: r=2, relative u=.001, standard u=.002, expanded u=.004.
+- rho=+1: r=2, relative u=.0002, standard u=.0004, expanded u=.0008.
+- Exact common fractional uncertainty: ua=.002 V, ub=.001 V, rho=1, nominal voltage estimates and k. Ratio=2 and all three uncertainty outputs=0. This is genuine cancellation in the model, not a clamped negative radicand.
+- Near-perfect correlation with equal a=b: relative u equals `a*sqrt(2*(1−rho))` and must stay positive for rho<1. Test one representable step below 1 with high-precision independent arithmetic.
+- Both uncertainties zero are valid for any allowed rho and return zero uncertainty. k scales expanded uncertainty only.
+- Reject rho outside [−1,1], negative uncertainties, nonpositive voltages or k, and relative standard uncertainty above the declared 1% first-order scope. Test exactly 1% as accepted.
+
+### Mandatory diagram specification
+
+Two positive DC nodes feed separate ideal voltmeter/channel blocks labeled Va and Vb; their common return is explicit. Bind their values to `numerator_voltage` and `denominator_voltage`, and uncertainty brackets to `numerator_uncertainty` and `denominator_uncertainty`. Above both blocks, a shared calibration/reference influence branches into both measurement paths. This is a dashed influence arrow, not a physical short; bind it to `correlation` with the label “error correlation ρ.” Channel outputs feed a ratio block labeled `Va/Vb`, bound to `voltage_ratio`.
+
+A lower annotation shows the negative covariance term `−2ρab` and a result bracket bound to `ratio_standard_uncertainty`. Follow it by a separate multiplication arrow `× k`, with `coverage_factor`, terminating at `expanded_uncertainty`. Keep `relative_standard_uncertainty` in the legend if needed. Do not depict the uncertainty brackets as a known probability distribution.
+
+Caption: “Shared reference errors can cancel in a ratio because numerator and denominator sensitivities have opposite signs. Correlation is a property of the measurement errors, not a wire. Expanded uncertainty needs separately justified coverage.”
+
+
+## Integration and evidence limits
+
+All six catalog objects preserve the researched schemas, defaults, constraints, formulas, references and complete example maps. The `measurementDiagrams` map provides one static, exact-ID illustration per model. Main owns shared registration, independent test execution, actual Rust-process examples, native Flutter journeys and image acceptance. No checks were run in this worktree.
+
+Research source-access limits remain applicable: Analog Devices MT-007 and related timing routes timed out; the Keysight DMM blog returned HTTP 403. Neither supports these models. Cincinnati's equations are embedded images; the research read its textual topology and derived the finite-source transfer function independently. The boxcar response likewise follows the stated integral rather than an attributed proprietary DMM filter.
+
+Exercise all nominal outputs and the per-model limiting/invalid cases above. In particular, retain signed and zero-input DMM bounds, reversal invariance and curved-drift bias, unmatched probe response and finite source loading, aperture DC/zero-time/null/negative lobes, arbitrarily small positive jitter with log-sum SNR, and near-perfect covariance cancellation. Ratio domain ceilings apply separately to each input's relative standard uncertainty, not to the propagated ratio result. The existing zero-safe `sinc` primitive supplies the aperture's analytic limit.

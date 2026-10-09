@@ -402,4 +402,135 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "measurement.correlated_voltage_ratio",
+  "title": "Correlated voltage-ratio measurement uncertainty",
+  "category": "Hardware measurement and metrology",
+  "level": "expert",
+  "description": "Propagate correlated standard uncertainties through a positive voltage-ratio measurement, retaining common-reference cancellation and a user-chosen expansion factor.",
+  "formula": "r=Va/Vb; a=ua/Va; b=ub/Vb; ur_rel=sqrt(a^2+b^2-2 rho a b)=hypot(a-b,sqrt(2(1-rho))*sqrt(a)*sqrt(b)); ur=r ur_rel; U=k ur",
+  "assumptions": [
+    "Voltages are positive corrected estimates; their uncertainties are standard uncertainties, not manufacturer worst-case accuracy limits.",
+    "First-order Taylor propagation is restricted here to standard uncertainties at most 1 percent of each estimate. This is an explicit small-uncertainty engineering approximation, not an exact ratio-distribution result.",
+    "Correlation coefficient describes the same pair of estimates, including common reference or calibration effects. Its allowed interval [-1,1] makes the two-input covariance matrix positive semidefinite.",
+    "Coverage factor is supplied by the user. Expanded uncertainty is not automatically a 95 percent confidence interval; distributions and effective degrees of freedom must justify any coverage claim.",
+    "Perfectly correlated equal fractional uncertainties cancel within this measurement model. Omitted independent errors cannot be inferred to vanish."
+  ],
+  "references": [
+    {
+      "title": "NIST Technical Note 1297 Appendix A, Law of Propagation of Uncertainty, equation A-3",
+      "url": "https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-appendix-law-propagation-uncertainty"
+    },
+    {
+      "title": "NIST Technical Note 1297 section 6, Expanded Uncertainty, sections 6.1-6.3",
+      "url": "https://www.nist.gov/pml/nist-technical-note-1297/nist-tn-1297-6-expanded-uncertainty"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "numerator_voltage",
+      "label": "Numerator voltage estimate",
+      "unit": "V",
+      "default": 5.0,
+      "min": 0.0,
+      "exclusive_min": true
+    },
+    {
+      "key": "denominator_voltage",
+      "label": "Denominator voltage estimate",
+      "unit": "V",
+      "default": 2.5,
+      "min": 0.0,
+      "exclusive_min": true
+    },
+    {
+      "key": "numerator_uncertainty",
+      "label": "Numerator standard uncertainty",
+      "unit": "V",
+      "default": 0.002,
+      "min": 0.0
+    },
+    {
+      "key": "denominator_uncertainty",
+      "label": "Denominator standard uncertainty",
+      "unit": "V",
+      "default": 0.0015,
+      "min": 0.0
+    },
+    {
+      "key": "correlation",
+      "label": "Correlation coefficient",
+      "unit": "1",
+      "default": 0.8,
+      "min": -1.0,
+      "max": 1.0
+    },
+    {
+      "key": "coverage_factor",
+      "label": "Chosen coverage factor",
+      "unit": "1",
+      "default": 2.0,
+      "min": 0.0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "voltage_ratio",
+      "label": "Voltage ratio estimate",
+      "unit": "V/V",
+      "expression": "numerator_voltage/denominator_voltage"
+    },
+    {
+      "key": "relative_standard_uncertainty",
+      "label": "Relative standard uncertainty of ratio",
+      "unit": "1",
+      "expression": "hypot(numerator_uncertainty/numerator_voltage-denominator_uncertainty/denominator_voltage,sqrt(2*(1-correlation))*sqrt(numerator_uncertainty/numerator_voltage)*sqrt(denominator_uncertainty/denominator_voltage))"
+    },
+    {
+      "key": "ratio_standard_uncertainty",
+      "label": "Standard uncertainty of ratio",
+      "unit": "V/V",
+      "expression": "voltage_ratio*relative_standard_uncertainty"
+    },
+    {
+      "key": "expanded_uncertainty",
+      "label": "Expanded uncertainty of ratio",
+      "unit": "V/V",
+      "expression": "coverage_factor*ratio_standard_uncertainty"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "numerator_uncertainty/numerator_voltage",
+      "op": "<=",
+      "right": "0.01",
+      "message": "First-order ratio model is restricted to numerator standard uncertainty at most 1 percent"
+    },
+    {
+      "left": "denominator_uncertainty/denominator_voltage",
+      "op": "<=",
+      "right": "0.01",
+      "message": "First-order ratio model is restricted to denominator standard uncertainty at most 1 percent"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "numerator_voltage": 5.0,
+      "denominator_voltage": 2.5,
+      "numerator_uncertainty": 0.002,
+      "denominator_uncertainty": 0.0015,
+      "correlation": 0.8,
+      "coverage_factor": 2.0
+    },
+    "expected": {
+      "voltage_ratio": 2.0,
+      "relative_standard_uncertainty": 0.00036878177829171557,
+      "ratio_standard_uncertainty": 0.0007375635565834311,
+      "expanded_uncertainty": 0.0014751271131668623
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]
