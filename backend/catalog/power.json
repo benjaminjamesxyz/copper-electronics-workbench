@@ -1,0 +1,26 @@
+[
+  {
+    "id": "power.ldo_dissipation",
+    "title": "LDO dissipation including ground current",
+    "category": "Power conversion and regulation",
+    "level": "basic",
+    "description": "Calculate electrical heat in an enabled single-supply LDO from pass-path and operating ground-current losses.",
+    "formula": "Ppass = (Vin-Vout) Iout; Pgnd = Vin Ignd; Pdiss = Ppass+Pgnd",
+    "assumptions": ["Enabled single-input-rail LDO in regulation; use ground current at the actual load, voltage and temperature, not necessarily no-load IQ.", "Input headroom must meet the entered operating-point dropout requirement. Check device current/voltage ratings and thermal viability separately.", "Separate bias supplies, reverse current, shutdown and external divider losses are excluded. Electrical heat power is not junction temperature."],
+    "references": [{"title": "TI SLYY206, Understanding the Foundations of Quiescent Current in Linear Power Systems, equation 1 and dropout discussion", "url": "https://www.ti.com/lit/wp/slyy206/slyy206.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Regulated output voltage", "unit": "V", "default": 3.3, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 0.2, "min": 0},
+      {"key": "i_gnd", "label": "Operating ground current", "unit": "A", "default": 0.00005, "min": 0},
+      {"key": "v_dropout", "label": "Required dropout headroom at this load", "unit": "V", "default": 0.2, "min": 0}
+    ],
+    "outputs": [
+      {"key": "p_pass", "label": "Pass-path dissipation", "unit": "W", "expression": "(vin-vout)*iout"},
+      {"key": "p_ground", "label": "Ground-current dissipation", "unit": "W", "expression": "vin*i_gnd"},
+      {"key": "p_diss", "label": "Total LDO dissipation", "unit": "W", "expression": "p_pass+p_ground"}
+    ],
+    "constraints": [{"left": "vin-vout", "op": ">=", "right": "v_dropout", "message": "Input-output headroom must meet the operating-point dropout requirement."}],
+    "example": {"inputs": {"vin": 5, "vout": 3.3, "iout": 0.2, "i_gnd": 0.00005, "v_dropout": 0.2}, "expected": {"p_pass": 0.34, "p_ground": 0.00025, "p_diss": 0.34025}, "relative_tolerance": 0.000001}
+  }
+]
