@@ -174,3 +174,41 @@ Ordered voltage/load/current bounds precede the corner/window calculations. The 
 - `resistance >= (input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))` — Selected resistor permits excessive maximum zener current.
 - `resistance <= (input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))` — Selected resistor cannot sustain minimum regulation current.
 
+## 8. `diodes.reverse_recovery_charge_budget` — expert
+
+**Purpose:** Estimate stored-charge recovery from a fitted diode reverse-current waveform and identify a commutation-cell charge-transport contribution. This is not MOSFET overlap energy, Coss energy or diode-only dissipation.
+
+By definition Qrr = integral |iR(t)| dt over the recovery event. Approximating that waveform as a triangle gives Qrr ≈ Ireverse,peak·ttriangle/2, irrespective of where its peak sits within the base. Define a cell-level charge-transport energy budget EQ = Vreverse·Qrr; repeated recovery at frequency fcomm gives PQ = fcomm·EQ and average recovered-charge current magnitude IQ,avg = fcomm·Qrr.
+
+**Units:** peak reverse-current magnitude A, zero-to-zero triangle duration s, reverse bus voltage V, events/s Hz, charge C, energy J, average contribution W and charge-current magnitude A. **Domain:** nonnegative reverse current/voltage, positive duration and frequency, fcomm·ttriangle ≤ 0.1 so recovery events are short relative to their interval. The 10% rule is an application-model restriction, not a diode standard. Zero recovery peak gives zero charge and energy.
+
+**Critical limitations:** A manufacturer trr commonly ends at 10% or another percentage of peak, not zero (S11 expressly uses 10%). Enter a **full fitted triangular base**, not blindly the datasheet trr. Actual softness/tail shape makes a triangle imperfect; use measured charge for precision. Peak/time must be from matching IF, di/dt, VR and junction-temperature conditions. EQ/PQ are explicitly the **VR·Qrr cell charge-transport component**, not total turn-on loss, exact energy dissipated inside the diode, or a thermal prediction. ST's more complete cell treatment includes a forward-current/commutation contribution; this calculator does not claim to model it. Do not double-count recovery when measured switching energy already includes it. Sources S10–S11; triangular area and repeated-event arithmetic derived here.
+
+**Independent example (also defaults):** fitted reverse peak 4 A, triangle base 100 ns = 10⁻⁷ s, reverse bus 400 V, events 100000/s. Triangle area = 4·10⁻⁷/2 = **2×10⁻⁷ C** (200 nC). **EQ = 8×10⁻⁵ J** (80 microjoules), **PQ = 8 W**, and **IQ,avg = 0.020 A**. Occupancy is 100000·10⁻⁷ = 0.01, below 0.1. None of these assign all 8 W to the diode.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `reverse_peak_current` | Peak reverse-recovery current magnitude | A | 4 | [0, 10000] |
+| `triangle_duration` | Full triangular recovery duration | s | 1e-07 | [1e-12, 1] |
+| `reverse_voltage` | Reverse bus voltage during commutation | V | 400 | [0, 10000] |
+| `commutation_frequency` | Recovery events per second | Hz | 100000 | [1e-06, 1000000000.0] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `recovery_charge` | Triangular reverse-recovery charge estimate | C | `reverse_peak_current*triangle_duration/2` | 2e-07 |
+| `charge_energy_budget` | Cell charge-transport energy per event | J | `reverse_voltage*recovery_charge` | 8e-05 |
+| `charge_power_budget` | Cell charge-transport average power budget | W | `commutation_frequency*charge_energy_budget` | 8 |
+| `reverse_charge_current_avg` | Average reverse charge-transport current magnitude | A | `commutation_frequency*recovery_charge` | 0.02 |
+
+### Constraint/error rationale and implementation limits
+
+The readable formula uses ttriangle consistently with input `triangle_duration`; it must not be interpreted as the common percentage-threshold trr. Positive duration and event rate make occupancy meaningful, while nonnegative current/voltage allow real zero-charge or zero-energy boundaries. The 0.1 occupancy limit is inclusive. Peak current zero makes all four outputs zero; reverse voltage zero leaves charge and average recovered-charge current unchanged while making energy and power zero.
+
+- `commutation_frequency*triangle_duration <= 0.1` — Recovery duration exceeds 10 percent of the commutation interval.
+
