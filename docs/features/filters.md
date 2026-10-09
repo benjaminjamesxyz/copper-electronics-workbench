@@ -56,6 +56,8 @@ f_c=\frac1{2\pi RC},\quad |H|=\frac1{\sqrt{1+x^2}},\quad
 
 **Source:** Colorado PHYS 3330 Lab 3 §5.4, linked in the evidence register.
 
+**Numerical implementation:** Insertion loss uses the equivalent `(10/ln(10))*log1p(x^2)`. For x≈1e-12 the original `1+x^2` rounds to one and loses a real loss of approximately 4.342944819·1e-24 dB; log1p preserves it. The magnitude itself can necessarily round to unity, but no fake zero attenuation is substituted.
+
 ## `filters.deliyannis_bandpass_design` — Modified Deliyannis band-pass component design (expert)
 
 **Purpose/topology:** Synthesize TI SLOA096 Figure 11's modified Deliyannis resistor network, not a bare RLC resonator. C1=C2=C0; R1=R4=R0; R5 is shorted and R6 open. Without the optional input attenuator, peak gain magnitude equals Q; inversion sign is not reported.
@@ -218,3 +220,30 @@ These exact edges have fLfH=f0², but unlike band-pass the central region is rej
 | upper_edge_hz | 167.31150974073802 | Hz |
 
 **Sources/limits:** TI SLOA096 §5.1/Fig.21/Eqs.4–5 and SNOA224A §1.2 notch numerator/Q, linked above. Exact component matching, ideal amplifiers and unity symmetric passbands are assumptions. Real mismatch, parasitics and finite loop gain limit notch depth; ideal zero is not a hardware hum-rejection guarantee.
+
+## `filters.rc_highpass_response` — First-order RC high-pass response (basic)
+
+**Purpose/topology:** Series coupling C and shunt R to ground, output across R. Ideal components, negligible source resistance and no additional output loading; this reverses the actual physical output element, not a previous formula.
+
+\[
+H(j\omega)=\frac{R}{R+1/(j\omega C)}
+=\frac{j\omega RC}{1+j\omega RC},\quad x=2\pi fRC,\quad f_c=\frac1{2\pi RC}.
+\]
+
+Then |H|=x/√(1+x²), phase=π/2−atan(x)=atan(1/x) for x>0, and A=10log10(1+x^−2). Sequential outputs are cutoff_hz, frequency_ratio, voltage_gain, phase_rad and attenuation_db.
+
+**Conditioning correction:** Use `atan(1/x)` to preserve tiny high-frequency phase lead: π/2−atan(x) can round to zero while the true lead is ≈1/x. Use `(10/ln(10))*log1p(1/x^2)` for insertion loss: adding tiny x^−2 to unity would lose it. These are equivalent formulas, not frequency-dependent special cases. The matching low-pass insertion loss likewise uses log1p(x²).
+
+**Inputs/domain/error rationale:** `r` (ohm) 0.001…1e9; `c` (F) 1e-15…1; `f` (Hz) 1e-12…1e12. Positive component/frequency bounds give strictly positive x and finite inverse/log arguments; no cross-input constraint is needed. At DC the linear gain is zero, phase is undefined and attenuation is infinite, so f=0 is rejected rather than assigned invented finite values. At fc, gain=1/√2 and phase=π/4. R is the effective shunt resistance; extra loading changes the model.
+
+**Independent worked substitution/default:** r=10000 ohm, c=1e-8 F, f=1000 Hz; x=0.6283185307179586. Direct complex evaluation of jx/(1+jx) gives:
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| cutoff_hz | 1591.5494309189535 | Hz |
+| frequency_ratio | 0.6283185307179586 | 1 |
+| voltage_gain | 0.532018044501408 | V/V |
+| phase_rad | 1.0098142106862729 | rad |
+| attenuation_db | 5.481472749042987 | dB |
+
+**Source:** Colorado PHYS 3330 Lab 3 §5.5, linked above. Real coupling capacitors/source/load impedances and parasitics require separate circuit analysis.

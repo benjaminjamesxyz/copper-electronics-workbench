@@ -18,7 +18,7 @@
       {"key": "frequency_ratio", "label": "Frequency / cutoff", "unit": "1", "expression": "2*pi*f*r*c"},
       {"key": "voltage_gain", "label": "Voltage transmission magnitude", "unit": "V/V", "expression": "1/sqrt(1+frequency_ratio^2)"},
       {"key": "phase_rad", "label": "Output phase relative to input", "unit": "rad", "expression": "-atan(frequency_ratio)"},
-      {"key": "attenuation_db", "label": "Voltage insertion loss", "unit": "dB", "expression": "10*log10(1+frequency_ratio^2)"}
+      {"key": "attenuation_db", "label": "Voltage insertion loss", "unit": "dB", "expression": "10/ln(10)*log1p(frequency_ratio^2)"}
     ],
     "constraints": [],
     "example": {"inputs": {"r": 10000.0, "c": 1e-8, "f": 1000.0}, "expected": {"cutoff_hz": 1591.5494309189535, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.8467330159648303, "phase_rad": -0.5609821161086238, "attenuation_db": 1.4450701162052881}, "relative_tolerance": 1e-6}
@@ -152,5 +152,30 @@
       {"left": "rq/(2*r0)", "op": "<=", "right": "50", "message": "Notch Q must not exceed 50."}
     ],
     "example": {"inputs": {"r0": 10000.0, "c0": 1e-7, "rq": 200000.0, "f": 160.0}, "expected": {"notch_hz": 159.15494309189535, "section_q": 10.0, "frequency_ratio": 1.0053096491487337, "voltage_gain": 0.10532346435527205, "bandwidth_hz": 15.915494309189535, "lower_edge_hz": 151.3960154315485, "upper_edge_hz": 167.31150974073802}, "relative_tolerance": 1e-6}
+  }
+  ,
+  {
+    "id": "filters.rc_highpass_response",
+    "title": "First-order RC high-pass response",
+    "category": "Analog filters",
+    "level": "basic",
+    "description": "Evaluate a capacitive AC-coupling section with a resistor to ground and the output across the resistor.",
+    "formula": "H(jw)=jwRC/(1+jwRC); fc=1/(2*pi*R*C); |H|=x/sqrt(1+x^2); phase=atan(1/x); attenuation=(10/ln(10))*log1p(1/x^2)",
+    "assumptions": ["Ideal series C and shunt R, negligible source resistance and no additional output load.", "Positive frequency is required because DC gain is zero, DC phase is undefined and DC attenuation in dB is infinite.", "Output is across R; this is a different circuit and frequency-selection task from the RC low-pass section.", "Equivalent atan(1/x) and log1p attenuation preserve very small high-frequency phase lead and insertion loss without subtractive cancellation."],
+    "references": [{"title": "University of Colorado Boulder, PHYS 3330 Lab 3, section 5.5", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab3/"}],
+    "inputs": [
+      {"key": "r", "label": "Shunt resistance", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Series coupling capacitance", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 1e-12, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "cutoff_hz", "label": "Half-power cutoff", "unit": "Hz", "expression": "1/(2*pi*r*c)"},
+      {"key": "frequency_ratio", "label": "Frequency / cutoff", "unit": "1", "expression": "2*pi*f*r*c"},
+      {"key": "voltage_gain", "label": "Voltage transmission magnitude", "unit": "V/V", "expression": "frequency_ratio/sqrt(1+frequency_ratio^2)"},
+      {"key": "phase_rad", "label": "Output phase lead", "unit": "rad", "expression": "atan(1/frequency_ratio)"},
+      {"key": "attenuation_db", "label": "Voltage insertion loss", "unit": "dB", "expression": "10/ln(10)*log1p(1/frequency_ratio^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"r": 10000.0, "c": 1e-8, "f": 1000.0}, "expected": {"cutoff_hz": 1591.5494309189535, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.532018044501408, "phase_rad": 1.0098142106862729, "attenuation_db": 5.481472749042987}, "relative_tolerance": 1e-6}
   }
 ]
