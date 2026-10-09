@@ -396,6 +396,19 @@ fn crosstalk_rejects_invalid_loading_edges_and_distributed_segments() {
 }
 
 #[test]
+fn crosstalk_rejects_overflowed_edge_ratio_instead_of_masking_it_as_zero() {
+    // tau=2e-300 s is finite, but edge/tau=5e309 overflows binary64.
+    // expm1(-infinity)=-1 can mask that invalid intermediate as peak=0.
+    // The analytic slow-ramp peak is R*Cm*DeltaV/t_edge ~= 1e-310 V.
+    // Per the documented finite-intermediate contract, this realization must
+    // explicitly reject the exhausted ratio rather than report a valid zero.
+    assert!(calculate("timing.capacitive_crosstalk_peak", &[
+        ("r_victim", 1e-200), ("c_mutual", 1e-100), ("c_victim", 1e-100),
+        ("voltage_swing", 1.0), ("edge_time", 1e10), ("segment_delay", 0.0),
+    ]).is_err());
+}
+
+#[test]
 fn spike_complete_researched_example() {
     let out = calculate("timing.inductive_turnoff_spike", &SPIKE).unwrap();
     assert_close(out["current_fall_rate"], 400_000_000.0, 1e-6, 0.0);
