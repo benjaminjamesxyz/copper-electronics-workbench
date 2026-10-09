@@ -143,3 +143,70 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `external_current` | 3.319943975951099 | A |
 | `internal_current` | 1.6599719879755492 | A |
 
+
+## pcb.via_barrel_resistance — Plated via-barrel DC resistance
+
+**Level:** expert
+
+**Purpose:** Estimate the axial DC resistance of a cylindrical plated through-hole and an ideal equal-current bank of identical vias.
+
+**Reference:** [TI-R](https://www.ti.com/lit/pdf/slup224), Topic 4, section II, Table 1 and Figure 3.
+
+Let d be the **finished inside diameter**, p the radial copper wall thickness and L the traversed axial barrel length. The outside copper diameter is d + 2p. Subtracting the inside disk from the outside disk gives the axial metal area:
+
+A = `(pi/4)[(d+2p)^2-d^2] = pi p(d+p)`.
+
+This retains the p² term that is dropped by the thin-wall approximation pi dp. Hence:
+
+- `barrel_copper_area = pi*plating_thickness*(finished_diameter+plating_thickness)`, m²;
+- `single_resistance = plated_resistivity*barrel_length/barrel_copper_area`, ohms;
+- `bank_resistance = single_resistance/via_count`, ohms.
+
+L, d and p are metres, rho_plated is ohm·m, and N is an integer count. Units match the straight-conductor resistance derivation, but the barrel's physical geometry and process resistivity are different.
+
+**Domain and limitations.** Positive L, d, p and rho are required; N >= 1 and `N == floor(N)` reject fractional via counts. The cross-section constraint guards the denominator. The traversed length may be less than board thickness for a connection between internal layers. Holes must be circular and plating uniform; no copper filling, pad spreading, contact resistance or barrel defects are included. Equal parallel sharing requires symmetric connections and negligible unequal trace resistance. A resistance estimate does **not** specify current capacity.
+
+TI's historical illustrative plated-copper value is 6.0 µohm·cm = 6e-8 ohm·m, substantially above its bulk-copper table value. This is exposed as an editable input, not presented as a universal plating property. Modern supplier/measured values should replace it when available.
+
+**Independent worked example.** L = 1.6 mm, d = 0.30 mm, p = 25 µm, rho_plated = 6e-8 ohm·m, N = 4:
+
+1. Outside diameter = 0.30 + 2(0.025) = 0.350 mm.
+2. A = `(pi/4)(0.350² - 0.300²)` = 0.02552544031041707 mm² = 2.552544031041707e-8 m².
+3. R_single = (6e-8)(0.0016)/A = 0.003760953732140788 ohm.
+4. R_bank = R_single/4 = 0.0009402384330351971 ohm.
+
+The example uses the disk-difference geometry rather than evaluating the catalog's area expression, providing an independent arithmetic path.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `barrel_length` | Electrically traversed barrel length | m | 0.0016 | > 0.0 |
+| `finished_diameter` | Finished inside hole diameter | m | 0.0003 | > 0.0 |
+| `plating_thickness` | Radial copper plating thickness | m | 2.5e-05 | > 0.0 |
+| `plated_resistivity` | Plated copper resistivity | ohm m | 6e-08 | > 0.0 |
+| `via_count` | Identical parallel via count | 1 | 1.0 | >= 1.0 |
+
+**Input-only guards and error rationale:**
+
+- `via_count == floor(via_count)`: The parallel via count must be a positive integer.
+- `plating_thickness*(finished_diameter+plating_thickness) > 0`: The plated barrel must have a positive copper cross-section.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `barrel_length` | 0.0016 | m |
+| `finished_diameter` | 0.0003 | m |
+| `plating_thickness` | 2.5e-05 | m |
+| `plated_resistivity` | 6e-08 | ohm m |
+| `via_count` | 4.0 | 1 |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `barrel_copper_area` | 2.552544031041707e-08 | m^2 |
+| `single_resistance` | 0.003760953732140788 | ohm |
+| `bank_resistance` | 0.0009402384330351971 | ohm |
+

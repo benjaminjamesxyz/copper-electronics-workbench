@@ -195,5 +195,116 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.via_barrel_resistance",
+    "title": "Plated via-barrel DC resistance",
+    "category": "PCB interconnect and manufacturing",
+    "level": "expert",
+    "description": "Estimate the axial DC resistance of a cylindrical plated through-hole and an ideal equal-current bank of identical vias.",
+    "formula": "A = pi p (d + p); R_single = rho L / A; R_bank = R_single / N",
+    "assumptions": [
+      "d is the FINISHED inside hole diameter, p is radial copper plating thickness, and L is the electrically traversed barrel length.",
+      "The exact ideal annular copper area is used, not the thin-wall pi d p approximation; no copper-filled via is modeled.",
+      "Uniform circular plating, axial current flow, and known plated-copper resistivity at operating temperature; pad spreading, contacts and barrel defects are excluded.",
+      "The 6e-8 ohm m plated-copper default is the illustrative value in TI's 2004 table, not a universal modern process property; substitute manufacturer or measured data.",
+      "N identical parallel vias share equally only with symmetric low-resistance connections; this calculator provides no via ampacity rating."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments, Constructing Your Power Supply - Layout Considerations, section II, Table 1 and Figure 3",
+        "url": "https://www.ti.com/lit/pdf/slup224"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "barrel_length",
+        "label": "Electrically traversed barrel length",
+        "unit": "m",
+        "default": 0.0016,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "finished_diameter",
+        "label": "Finished inside hole diameter",
+        "unit": "m",
+        "default": 0.0003,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plating_thickness",
+        "label": "Radial copper plating thickness",
+        "unit": "m",
+        "default": 2.5e-05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plated_resistivity",
+        "label": "Plated copper resistivity",
+        "unit": "ohm m",
+        "default": 6e-08,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "via_count",
+        "label": "Identical parallel via count",
+        "unit": "1",
+        "default": 1.0,
+        "min": 1.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "barrel_copper_area",
+        "label": "Axial copper cross-sectional area",
+        "unit": "m^2",
+        "expression": "pi*plating_thickness*(finished_diameter+plating_thickness)"
+      },
+      {
+        "key": "single_resistance",
+        "label": "Single via resistance",
+        "unit": "ohm",
+        "expression": "plated_resistivity*barrel_length/barrel_copper_area"
+      },
+      {
+        "key": "bank_resistance",
+        "label": "Ideal parallel bank resistance",
+        "unit": "ohm",
+        "expression": "single_resistance/via_count"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "via_count",
+        "op": "==",
+        "right": "floor(via_count)",
+        "message": "The parallel via count must be a positive integer."
+      },
+      {
+        "left": "plating_thickness*(finished_diameter+plating_thickness)",
+        "op": ">",
+        "right": "0",
+        "message": "The plated barrel must have a positive copper cross-section."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "barrel_length": 0.0016,
+        "finished_diameter": 0.0003,
+        "plating_thickness": 2.5e-05,
+        "plated_resistivity": 6e-08,
+        "via_count": 4.0
+      },
+      "expected": {
+        "barrel_copper_area": 2.552544031041707e-08,
+        "single_resistance": 0.003760953732140788,
+        "bank_resistance": 0.0009402384330351971
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
