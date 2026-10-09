@@ -255,6 +255,50 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 **Feature sources:**
 - [Steven W. Ellingson, Quarter-Wavelength Transmission Line, impedance inversion and matching derivation](https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line)
 
+## 3. Homogeneous coaxial line impedance — intermediate
+
+**ID:** `signals.coax_impedance`. **Source:** S3.
+
+For inner-conductor **outer radius** a and outer-conductor **inner radius** b, the homogeneous nonmagnetic coax has L' = mu0 ln(b/a)/(2 pi) and C' = 2 pi epsilon0 epsilon_r/ln(b/a). Applying Z0 = sqrt(L'/C') gives:
+
+**Z0 = 60 ln(b/a)/sqrt(epsilon_r) ohm**, using the customary rounded coefficient.
+
+**Domain guards:** b > a > 0; epsilon_r >= 1. Ratios are dimensionless and the logarithm is positive. The model presumes concentric conductors, uniform filler and a low-loss TEM mode: R' << omega L' and G' << omega C'. The catalog does not infer these inequalities without conductor/dielectric-loss inputs. Skin-dependent loss, dielectric attenuation, higher modes and braid effects are excluded; the shield's exterior radius or jacket diameter must not be substituted for b.
+
+**Independent example/default:** a = 0.5 mm, b = 1.5 mm, epsilon_r = 2.25. b/a = 3, sqrt(epsilon_r) = 1.5, ln(3) = 1.0986122886681098, giving **Z0 = 40 ln(3) = 43.94449154672439 ohm**.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `inner_radius` | Inner conductor outer radius | m | 0.0005 | > 0 |
+| `shield_radius` | Shield inner radius | m | 0.0015 | > 0 |
+| `relative_permittivity` | Filler relative permittivity | 1 | 2.25 | >= 1 |
+
+**Input-only model guards:**
+- `shield_radius > inner_radius` — Shield inner radius must exceed inner conductor outer radius.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "inner_radius": 0.0005,
+  "shield_radius": 0.0015,
+  "relative_permittivity": 2.25
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `impedance` | Coax characteristic impedance | ohm | `60*ln(shield_radius/inner_radius)/sqrt(relative_permittivity)` | `43.94449154672439` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Steven W. Ellingson, Coaxial Line, derivation from per-unit-length inductance and capacitance](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.

@@ -454,5 +454,76 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.coax_impedance",
+    "title": "Homogeneous coaxial line impedance",
+    "category": "Signal integrity and transmission lines",
+    "level": "intermediate",
+    "description": "Estimate low-loss coax impedance from the radii of the conductor surfaces enclosing the dielectric.",
+    "formula": "Z0=(60/sqrt(er))*ln(b/a)",
+    "assumptions": [
+      "Concentric coax, inner-conductor outer radius a and shield inner radius b, uniform homogeneous nonmagnetic dielectric; b > a > 0.",
+      "Low-loss TEM approximation requires R' << omega*L' and G' << omega*C'; higher-order modes, braid geometry and losses are not modeled.",
+      "60 ohm is the textbook rounded free-space-impedance coefficient, used consistently in the example."
+    ],
+    "references": [
+      {
+        "title": "Steven W. Ellingson, Coaxial Line, derivation from per-unit-length inductance and capacitance",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "inner_radius",
+        "label": "Inner conductor outer radius",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "shield_radius",
+        "label": "Shield inner radius",
+        "unit": "m",
+        "default": 0.0015,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Filler relative permittivity",
+        "unit": "1",
+        "default": 2.25,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "impedance",
+        "label": "Coax characteristic impedance",
+        "unit": "ohm",
+        "expression": "60*ln(shield_radius/inner_radius)/sqrt(relative_permittivity)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "shield_radius",
+        "op": ">",
+        "right": "inner_radius",
+        "message": "Shield inner radius must exceed inner conductor outer radius."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "inner_radius": 0.0005,
+        "shield_radius": 0.0015,
+        "relative_permittivity": 2.25
+      },
+      "expected": {
+        "impedance": 43.94449154672439
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
