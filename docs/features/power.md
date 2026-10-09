@@ -65,3 +65,24 @@ Sequential outputs: `duty=(vout-vin)/vout`; `i_peak=iout*vout/vin+delta_i/2`; `r
 | `c_min` | `(0.5*7/12)/(500000*0.0362)` | `0.000016114180478821363 F` |
 
 The charge deficit is 583.3333333333 nC. Valley is 1.02 A ≥ 0.5 A; 50 mV ≤ 1.2 V. The summed ripple bound at Cmin is exactly the requested 50 mV analytically; it is not a prediction of coincident extrema.
+
+## `power.buck_input_capacitor_rms` — expert
+
+**Purpose:** estimate switching-current stress in the entire local buck input-capacitor bank, not output capacitance or capacitor temperature. Source: S4 equation 2.
+
+The input switch current is the triangular inductor current during duty D and zero otherwise. Its mean is `D Iout`, mean square is `D(Iout^2+delta_i^2/12)`, and the AC variance is the mean square minus squared mean. Thus `ICin_rms^2=Iout^2 D(1-D)+D delta_i^2/12`. The `1/12` coefficient follows the variance of zero-mean triangular ripple.
+
+Sequential outputs are `duty=vout/vin` (unit `1`) and `i_cin_rms=sqrt(iout^2*duty*((vin-vout)/vin)+duty*delta_i^2/12)` (A). The direct off-fraction `(vin-vout)/vin` is algebraically `1-D` but avoids loss of a small valid off-time through ratio/subtraction cancellation. Terms inside sqrt have units A².
+
+**Inputs/defaults:** `vin=12 V`, `vout=5 V`, `iout=2 A`, `delta_i=0.6 A`. Voltages/load must be positive; zero ripple is admissible. Frequency is unnecessary once ripple is supplied.
+
+**Model-domain errors:** reject `vin<=vout` and `iout<=delta_i/2`; they invalidate the buck/positive-valley CCM assumptions. These guards make the square-root argument nonnegative. The source must supply only DC, with all switching AC in the local bank; source impedance/filter resonance, interleaving and individual-capacitor sharing remain outside the model.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `duty` | `5/12` | `0.4166666666666667` |
+| `i_cin_rms` | `sqrt(4*(5/12)*(7/12)+(5/12)*0.36/12)` | `0.9923317097736131 A` |
+
+Mean-square AC current is `35/36+1/80=0.9847222222222222 A²`; the independent DC mean is 5/6 A. At zero ripple, the formula reduces to `Iout*sqrt(D(1-D))` and peaks at D=1/2; no single-capacitor rating or temperature claim follows.

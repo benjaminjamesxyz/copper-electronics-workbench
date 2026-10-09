@@ -55,5 +55,30 @@
       {"left": "ripple_budget", "op": "<=", "right": "0.1*vout", "message": "This small-ripple model accepts ripple budgets at most 10% of output voltage."}
     ],
     "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "delta_i": 0.36, "fs": 500000, "ripple_budget": 0.05, "esr": 0.01}, "expected": {"duty": 0.5833333333333334, "i_peak": 1.38, "ripple_esr": 0.0138, "ripple_cap_budget": 0.0362, "c_min": 0.000016114180478821363}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.buck_input_capacitor_rms",
+    "title": "Buck input capacitor RMS current",
+    "category": "Power conversion and regulation",
+    "level": "expert",
+    "description": "Calculate total RMS ripple current in a buck input capacitor bank, including triangular inductor ripple.",
+    "formula": "D = Vout/Vin; ICin_rms = sqrt(Iout^2 D (Vin-Vout)/Vin + D delta_I^2/12)",
+    "assumptions": ["Ideal single-phase fixed-frequency buck in CCM with triangular ripple and approximately constant voltages.", "Source supplies only DC average current; the local input capacitor bank supplies all switching-frequency AC current.", "Result is for the total bank, not individual parallel capacitors. ESR/ESL, source impedance, interleaving and layout change sharing."],
+    "references": [{"title": "TI SSZTBI6, Power Tips: How to Select Ceramic Capacitors to Meet Ripple-Current Requirements, equation 2", "url": "https://www.ti.com/lit/ta/ssztbi6/ssztbi6.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "delta_i", "label": "Peak-to-peak inductor ripple", "unit": "A", "default": 0.6, "min": 0}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "vout/vin"},
+      {"key": "i_cin_rms", "label": "Total input capacitor RMS ripple current", "unit": "A", "expression": "sqrt(iout^2*duty*((vin-vout)/vin)+duty*delta_i^2/12)"}
+    ],
+    "constraints": [
+      {"left": "vin", "op": ">", "right": "vout", "message": "Buck operation requires input voltage above output voltage."},
+      {"left": "iout", "op": ">", "right": "delta_i/2", "message": "Positive inductor valley current is required for the CCM model."}
+    ],
+    "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "delta_i": 0.6}, "expected": {"duty": 0.4166666666666667, "i_cin_rms": 0.9923317097736131}, "relative_tolerance": 0.000001}
   }
 ]
