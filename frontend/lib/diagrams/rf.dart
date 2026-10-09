@@ -144,4 +144,32 @@ const rfDiagrams = <String, CalculatorDiagram>{
       Label(460, 243, 'Clearance margin', quantity: 'clearance_margin', ink: DiagramInk.output),
     ],
   ),
+  'rf.circular_aperture_gain': CalculatorDiagram(
+    title: 'Physical circular aperture and boresight collecting gain',
+    caption: 'Circular physical aperture with efficiency eta. Ae is an effective '
+        'collecting area, not a second physical opening. The smaller efficiency '
+        'annotation is conceptual; no inner metal disk is implied. Gain is '
+        'boresight, conjugate matched and polarization matched; drawing is not to scale.',
+    marks: [
+      Label(140, 20, 'Front view'),
+      Part(CircuitPart.circle, 200, 130, width: 160, height: 160),
+      Wire([90, 50, 90, 210], arrow: true, ink: DiagramInk.input),
+      Wire([82, 50, 124, 50], ink: DiagramInk.input),
+      Wire([82, 210, 124, 210], ink: DiagramInk.input),
+      Label(57, 119, 'D', quantity: 'diameter', ink: DiagramInk.input),
+      Label(157, 110, 'Physical'),
+      Label(157, 132, 'opening'),
+      Label(139, 233, 'Efficiency η', quantity: 'aperture_efficiency', ink: DiagramInk.input),
+      Label(316, 20, 'Boresight incidence'),
+      Label(374, 48, 'f', quantity: 'frequency', ink: DiagramInk.input),
+      Wire([450, 85, 305, 85], arrow: true, ink: DiagramInk.input),
+      Wire([450, 130, 305, 130], arrow: true, ink: DiagramInk.input),
+      Wire([450, 175, 305, 175], arrow: true, ink: DiagramInk.input),
+      Label(481, 78, 'Effective, not physical:', ink: DiagramInk.muted),
+      Label(481, 109, 'Ae = η × physical area', quantity: 'effective_aperture', ink: DiagramInk.output),
+      Label(481, 148, 'G (linear)', quantity: 'gain_linear', ink: DiagramInk.output),
+      Label(481, 184, 'G (dBi)', quantity: 'gain_dbi', ink: DiagramInk.output),
+      Label(338, 237, 'No beamwidth or field amplitude implied', ink: DiagramInk.muted),
+    ],
+  ),
 };

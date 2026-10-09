@@ -398,5 +398,98 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "rf.circular_aperture_gain",
+    "title": "Circular-aperture antenna gain",
+    "category": "RF networks, antennas and links",
+    "level": "intermediate",
+    "description": "Estimate boresight gain and effective collecting area of an electrically large circular-aperture antenna from diameter and aperture efficiency.",
+    "formula": "Ae=eta pi D^2/4; G=eta (pi D f/c)^2; GdBi=10 log10(eta)+20 log10(pi D f/c)",
+    "assumptions": [
+      "Circular aperture with diameter greater than two free-space wavelengths; boresight far-field operation.",
+      "Aperture efficiency is greater than zero and at most one; it accounts for illumination, spillover, blockage, phase and dissipative losses as applicable.",
+      "Efficiency must describe the actual antenna and frequency; a constant user value does not predict its frequency dependence.",
+      "The effective aperture and gain assume conjugate matching and polarization alignment; external feedline and mismatch losses are excluded.",
+      "Only the aperture-gain relation is used from the ITU recommendation, not its complete radiation-pattern model or compatibility procedure."
+    ],
+    "references": [
+      {
+        "title": "ITU-R RS.1813-1 (2011), recommends 1, Gmax and diameter-domain definitions",
+        "url": "https://www.itu.int/dms_pubrec/itu-r/rec/rs/R-REC-RS.1813-1-201102-S!!PDF-E.pdf"
+      },
+      {
+        "title": "MIT Lincoln Laboratory, The Radar Equation, slide 6: gain = 4 pi effective area / wavelength squared",
+        "url": "https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "diameter",
+        "label": "Circular aperture diameter",
+        "unit": "m",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "frequency",
+        "label": "Operating frequency",
+        "unit": "Hz",
+        "default": 10000000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "aperture_efficiency",
+        "label": "Aperture efficiency",
+        "unit": "1",
+        "default": 0.6,
+        "min": 0.0,
+        "exclusive_min": true,
+        "max": 1.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "effective_aperture",
+        "label": "Effective collecting area",
+        "unit": "m^2",
+        "expression": "(diameter*sqrt(aperture_efficiency*pi/4))^2"
+      },
+      {
+        "key": "gain_linear",
+        "label": "Boresight power gain over isotropic",
+        "unit": "1",
+        "expression": "(sqrt(aperture_efficiency)*pi*(diameter*frequency/299792458))^2"
+      },
+      {
+        "key": "gain_dbi",
+        "label": "Boresight antenna gain",
+        "unit": "dBi",
+        "expression": "10*log10(aperture_efficiency)+20*(log10(pi)+log10(diameter)+log10(frequency)-log10(299792458))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "diameter",
+        "op": ">",
+        "right": "2*299792458/frequency",
+        "message": "This electrically large circular-aperture model requires diameter greater than two wavelengths."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "diameter": 1.0,
+        "frequency": 10000000000.0,
+        "aperture_efficiency": 0.6
+      },
+      "expected": {
+        "effective_aperture": 0.47123889803846897,
+        "gain_linear": 6588.849534059469,
+        "gain_dbi": 38.188095899160565
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

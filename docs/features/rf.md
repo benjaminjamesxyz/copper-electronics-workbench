@@ -275,3 +275,68 @@ Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outpu
 
 The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
 
+## 5. `rf.circular_aperture_gain`
+
+### Purpose, novelty and evidence
+
+This model turns a physical aperture and efficiency into directional gain and collecting area. The baseline has no antenna-aperture synthesis. Its nearest neighbor `rf.free_space_link_budget` accepts gain and predicts propagation; it does not derive gain from geometry. `signals.coax_impedance` describes guided fields and is unrelated. S4 provides the circular-aperture gain relation; S7 provides the gain/effective-area identity.
+
+### Equations and limits
+
+For diameter `D`, aperture efficiency `eta`, and frequency `f`:
+
+`effective_aperture = eta pi D^2/4` m²;
+`gain_linear = eta (pi D f/c)^2`;
+`gain_dbi = 10 log10(eta) + 20 log10(pi D f/c)`.
+
+Require `D > 2c/f`, `f > 0` and `0 < eta <= 1`. The diameter criterion matches the large-aperture domain in S4. The general aperture relation is not restricted to S4's example service band, but it requires an actual efficiency appropriate to the operating frequency. Zero efficiency yields zero collecting power and negative-infinite dBi, so it is outside this finite-logarithmic model. Gains describe boresight, polarization-matched, conjugate-matched operation. No beamwidth, sidelobes, mismatch, radome or feedline behavior is inferred. This is not a patch/dipole antenna formula.
+
+### Complete independent example
+
+Inputs: `diameter=1 m`, `frequency=10000000000 Hz`, `aperture_efficiency=0.6`.
+
+`lambda=0.0299792458 m`; physical circular area=`pi/4 m²`; diameter is about 33.36 wavelengths.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `effective_aperture` | `0.6 * pi/4` | `0.47123889803846897 m^2` |
+| `gain_linear` | `4 pi * 0.47123889803846897 / 0.0299792458^2` | `6588.849534059469` |
+| `gain_dbi` | `10 log10(6588.849534059469)` | `38.188095899160565 dBi` |
+
+### Nominal, limiting and invalid cases
+
+- Double diameter: effective area and linear gain quadruple; gain becomes `44.20869581244019 dBi`.
+- Double frequency at fixed diameter/efficiency: area is unchanged and gain quadruples. This assumes the supplied efficiency remains applicable.
+- Efficiency=1 is accepted. Halving efficiency halves both area and gain, decreasing dBi by `3.010299956639812 dB`.
+- `D=2lambda` is excluded; a representably larger diameter is accepted. Reject efficiency<=0, efficiency>1, nonpositive diameter/frequency and nonfinite inputs.
+- As efficiency approaches zero from above, linear area/gain approach zero and logarithmic gain falls without an arbitrary dBi clamp.
+
+### Catalog inputs and bounds
+
+| Key | Meaning | Unit | Default | Bounds |
+|---|---|---|---|---|
+| `diameter` | Circular aperture diameter | m | 1.0 | > 0.0 |
+| `frequency` | Operating frequency | Hz | 10000000000.0 | > 0.0 |
+| `aperture_efficiency` | Aperture efficiency | 1 | 0.6 | > 0.0; <= 1.0 |
+
+All inputs must be finite. Constraints run before outputs; invalid domains return errors, not clamps.
+
+- `diameter > 2*299792458/frequency`: This electrically large circular-aperture model requires diameter greater than two wavelengths.
+
+### Executable output sequence
+
+| Key | Unit | Expression |
+|---|---|---|
+| `effective_aperture` | m^2 | `(diameter*sqrt(aperture_efficiency*pi/4))^2` |
+| `gain_linear` | 1 | `(sqrt(aperture_efficiency)*pi*(diameter*frequency/299792458))^2` |
+| `gain_dbi` | dBi | `10*log10(aperture_efficiency)+20*(log10(pi)+log10(diameter)+log10(frequency)-log10(299792458))` |
+
+Nominal relative tolerance is `1e-9`, not physical accuracy. Expected zero outputs require an absolute tolerance. All defaults equal the full worked-example inputs above.
+
+### Sources and illustration
+
+- [ITU-R RS.1813-1 (2011), recommends 1, Gmax and diameter-domain definitions](https://www.itu.int/dms_pubrec/itu-r/rec/rs/R-REC-RS.1813-1-201102-S!!PDF-E.pdf)
+- [MIT Lincoln Laboratory, The Radar Equation, slide 6: gain = 4 pi effective area / wavelength squared](https://www.ll.mit.edu/sites/default/files/outreach/doc/2018-07/lecture%202.pdf)
+
+The exact-ID diagram in [rf.dart](../../frontend/lib/diagrams/rf.dart) binds quantity keys to the accessible legend. Static geometry is explanatory, not a computed plot.
+
