@@ -1,0 +1,151 @@
+[
+  {
+    "id": "diodes.led_series_resistor",
+    "title": "LED series resistor and tolerance corners",
+    "category": "Diodes, LEDs and rectification",
+    "level": "basic",
+    "description": "Size a resistor for a series LED string and estimate maximum current and resistor dissipation at supply and LED-voltage corners.",
+    "formula": "R = (Vs - N Vf)/I; Imax = (Vs,max - N Vf,min)/R; PR,max = (Vs,max - N Vf,min)^2/R",
+    "assumptions": [
+      "Constant LED forward voltage at the target operating current; no internal resistor.",
+      "Supply and LED forward-voltage bounds include operating temperature; resistor tolerance is not modeled.",
+      "Choose a real preferred-value resistor and check its derated rating separately; nominal Vf is not a maximum-current guarantee."
+    ],
+    "references": [
+      {
+        "title": "Kingbright SA18-11SURKWA, circuit design notes and forward-voltage ratings",
+        "url": "https://www.kingbrightusa.com/images/catalog/SPEC/SA18-11SURKWA.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "supply",
+        "label": "Nominal supply voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1000
+      },
+      {
+        "key": "supply_max",
+        "label": "Maximum supply voltage",
+        "unit": "V",
+        "default": 5.5,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1000
+      },
+      {
+        "key": "forward_voltage",
+        "label": "Nominal forward voltage per LED",
+        "unit": "V",
+        "default": 2,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 100
+      },
+      {
+        "key": "forward_min",
+        "label": "Minimum forward voltage per LED",
+        "unit": "V",
+        "default": 1.8,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 100
+      },
+      {
+        "key": "led_count",
+        "label": "LEDs in series",
+        "unit": "count",
+        "default": 1,
+        "min": 1,
+        "max": 1000
+      },
+      {
+        "key": "target_current",
+        "label": "Target string current",
+        "unit": "A",
+        "default": 0.02,
+        "min": 1e-09,
+        "max": 100
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resistance",
+        "label": "Nominal calculated resistor",
+        "unit": "ohm",
+        "expression": "(supply-led_count*forward_voltage)/target_current"
+      },
+      {
+        "key": "resistor_power",
+        "label": "Nominal resistor dissipation",
+        "unit": "W",
+        "expression": "target_current^2*resistance"
+      },
+      {
+        "key": "led_power",
+        "label": "Nominal LED-string electrical power",
+        "unit": "W",
+        "expression": "led_count*forward_voltage*target_current"
+      },
+      {
+        "key": "current_max",
+        "label": "Maximum current corner",
+        "unit": "A",
+        "expression": "(supply_max-led_count*forward_min)/resistance"
+      },
+      {
+        "key": "resistor_power_max",
+        "label": "Maximum resistor dissipation corner",
+        "unit": "W",
+        "expression": "(supply_max-led_count*forward_min)^2/resistance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "led_count",
+        "op": "==",
+        "right": "floor(led_count)",
+        "message": "LED count must be an integer."
+      },
+      {
+        "left": "supply",
+        "op": ">",
+        "right": "led_count*forward_voltage",
+        "message": "Supply must exceed the nominal LED-string voltage."
+      },
+      {
+        "left": "supply_max",
+        "op": ">=",
+        "right": "supply",
+        "message": "Maximum supply must not be below nominal supply."
+      },
+      {
+        "left": "forward_min",
+        "op": "<=",
+        "right": "forward_voltage",
+        "message": "Minimum LED voltage must not exceed nominal voltage."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "supply": 5,
+        "supply_max": 5.5,
+        "forward_voltage": 2,
+        "forward_min": 1.8,
+        "led_count": 1,
+        "target_current": 0.02
+      },
+      "expected": {
+        "resistance": 150,
+        "resistor_power": 0.06,
+        "led_power": 0.04,
+        "current_max": 0.024666666666666667,
+        "resistor_power_max": 0.09126666666666668
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
