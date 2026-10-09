@@ -1,0 +1,65 @@
+[
+  {
+    "id": "dc.ohm_current",
+    "title": "Signed Ohm-law current",
+    "category": "DC circuits and resistor networks",
+    "level": "basic",
+    "description": "Find the signed current through an ideal ohmic resistor from its applied DC voltage.",
+    "formula": "I = V / R",
+    "assumptions": [
+      "Linear, constant positive resistance; no temperature, noise, parasitics or semiconductor behavior.",
+      "Voltage polarity and positive current direction follow the passive sign convention.",
+      "Numerical envelope: abs(V) <= 1e6 V and 1e-9 <= R <= 1e12 ohm; these are computation bounds, not component ratings."
+    ],
+    "references": [
+      {
+        "title": "OpenStax, University Physics Volume 2, 9.4 Ohm's Law",
+        "url": "https://openstax.org/books/university-physics-volume-2/pages/9-4-ohms-law"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "voltage",
+        "label": "Signed resistor voltage",
+        "unit": "V",
+        "default": -3.3,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "resistance",
+        "label": "Resistance",
+        "unit": "ohm",
+        "default": 2200.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "current",
+        "label": "Signed current",
+        "unit": "A",
+        "expression": "voltage/resistance"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "resistance",
+        "op": ">",
+        "right": "0",
+        "message": "Resistance must be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "voltage": -3.3,
+        "resistance": 2200.0
+      },
+      "expected": {
+        "current": -0.0015
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
