@@ -80,6 +80,71 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 - [Steven W. Ellingson, Coaxial Line, velocity and wavelength discussion](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line)
 - [Michael Steer, Microstrip Transmission Lines, equations 5–8 and guide wavelength](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines)
 
+## 1. Thin-conductor microstrip impedance — expert
+
+**ID:** `signals.microstrip_impedance`. **Source:** S1, sections 4.4.1–4.4.2, equations 9–14.
+
+An isolated microstrip lies on a homogeneous substrate with an air region above it. Its inhomogeneous electric field is represented by an effective relative permittivity, epsilon_eff = C'/C'_air. Because the nonmagnetic inductance is unaffected by replacing the dielectric with air, Z0 = Z_air/sqrt(epsilon_eff). Hammerstad–Jensen fits the electrostatic geometry as follows, with u = w/h:
+
+- a = 1 + ln[(u^4 + (u/52)^2)/(u^4 + 0.432)]/49 + ln[1 + (u/18.1)^3]/18.7.
+- b = 0.564[(epsilon_r - 0.9)/(epsilon_r + 3)]^0.053.
+- epsilon_eff = (epsilon_r + 1)/2 + (epsilon_r - 1)(1 + 10/u)^(-a b)/2.
+- F = 6 + (2 pi - 6) exp[-(30.666/u)^0.7528].
+- Z_air = 60 ln[F/u + sqrt(1 + (2/u)^2)] ohm.
+- Z0 = Z_air/sqrt(epsilon_eff).
+
+**Domain guards:** w,h,f > 0; t >= 0; 1 <= epsilon_r <= 128; 0.01 <= w/h <= 100. Positive geometry makes every logarithm/power/root argument valid. Source quotes effective-permittivity fit accuracy better than 0.2% within the preceding ratio/permittivity range; the air-impedance fit is quoted better than 0.1% for w/h < 1000. These numerical-fit claims exclude physical stackup errors.
+
+This is the **zero-thickness** fit. Supplied t is an applicability input, not a hidden finite-thickness correction. The catalog conservatively enforces t/h <= 0.01 and t/w <= 0.01. It also enforces f h sqrt(epsilon_r)/c <= 0.01, corresponding to a substrate height no more than 1% of the bulk-dielectric wavelength. These explicit engineering restrictions implement “thin conductor” and “electrically thin substrate”; they do not come with a new published error guarantee. Ordinary 35-micrometre PCB copper may not pass this deliberately thin-film model. No solder mask, neighboring conductor, roughness, dispersive material, finite plane or etched trapezoid is modeled.
+
+**Independent example/default:** w = 0.8 mm = 0.0008 m, h = 0.4 mm, t = 2 micrometres, epsilon_r = 3.66, f = 1 GHz. Then u = 2, a = 0.9995302713283848, b = 0.5382736881490864, F = 6.000115105754384, epsilon_eff = 2.8372126159506297, Z_air = 89.09056365708382 ohm and **Z0 = 52.89148559435723 ohm**. Thickness ratios are 0.005 and 0.0025; electrical thickness is approximately 0.0025526, below 0.01. Effective permittivity lies between air and substrate, as required physically.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `width` | Trace width | m | 0.0008 | > 0 |
+| `height` | Dielectric height above reference plane | m | 0.0004 | > 0 |
+| `thickness` | Conductor thickness (applicability only) | m | 2e-06 | >= 0 |
+| `relative_permittivity` | Substrate relative permittivity | 1 | 3.66 | >= 1; <= 128 |
+| `frequency` | Highest frequency for applicability check | Hz | 1000000000 | > 0 |
+
+**Input-only model guards:**
+- `width/height >= 0.01` — Width/height must be at least 0.01 for the fitted model.
+- `width/height <= 100` — Width/height must not exceed 100 for the effective-permittivity fit.
+- `thickness/height <= 0.01` — This zero-thickness model requires thickness <= 1% of dielectric height.
+- `thickness/width <= 0.01` — This zero-thickness model requires thickness <= 1% of trace width.
+- `height*frequency*sqrt(relative_permittivity)/299792458 <= 0.01` — Dielectric height must be <= 1% of the bulk wavelength for the conservative quasi-static restriction.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "width": 0.0008,
+  "height": 0.0004,
+  "thickness": 2e-06,
+  "relative_permittivity": 3.66,
+  "frequency": 1000000000
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `width_ratio` | Width to height ratio | 1 | `width/height` | `2` |
+| `fit_a` | Hammerstad geometry fit coefficient | 1 | `1+ln((width_ratio^4+(width_ratio/52)^2)/(width_ratio^4+0.432))/49+ln(1+(width_ratio/18.1)^3)/18.7` | `0.9995302713283848` |
+| `fit_b` | Hammerstad dielectric fit coefficient | 1 | `0.564*((relative_permittivity-0.9)/(relative_permittivity+3))^0.053` | `0.5382736881490864` |
+| `air_factor` | Air impedance shape factor | 1 | `6+(2*pi-6)*exp(-((30.666/width_ratio)^0.7528))` | `6.000115105754384` |
+| `effective_permittivity` | Effective relative permittivity | 1 | `(relative_permittivity+1)/2+(relative_permittivity-1)/2*(1+10/width_ratio)^(-fit_a*fit_b)` | `2.8372126159506297` |
+| `air_impedance` | Equivalent air-filled impedance | ohm | `60*ln(air_factor/width_ratio+sqrt(1+(2/width_ratio)^2))` | `89.09056365708382` |
+| `impedance` | Microstrip characteristic impedance | ohm | `air_impedance/sqrt(effective_permittivity)` | `52.89148559435723` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Michael Steer, Microstrip Transmission Lines, sections 4.4.1–4.4.2, equations 9–14](https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.

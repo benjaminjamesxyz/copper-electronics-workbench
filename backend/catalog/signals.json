@@ -94,5 +94,162 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.microstrip_impedance",
+    "title": "Thin-conductor microstrip impedance",
+    "category": "Signal integrity and transmission lines",
+    "level": "expert",
+    "description": "Estimate quasi-static single-ended microstrip impedance and effective permittivity using the Hammerstad\u2013Jensen fit.",
+    "formula": "u=w/h; a=1+ln((u^4+(u/52)^2)/(u^4+0.432))/49+ln(1+(u/18.1)^3)/18.7; b=0.564*((er-0.9)/(er+3))^0.053; ee=(er+1)/2+(er-1)/2*(1+10/u)^(-a*b); F=6+(2*pi-6)*exp(-(30.666/u)^0.7528); Z0=60*ln(F/u+sqrt(1+(2/u)^2))/sqrt(ee)",
+    "assumptions": [
+      "Zero-thickness Hammerstad\u2013Jensen quasi-static fit: the supplied thickness is an applicability check, not a finite-thickness correction.",
+      "Air above a homogeneous nonmagnetic dielectric, continuous sufficiently wide reference plane, isolated straight trace, no solder mask or nearby conductors.",
+      "Published fit domain: 0.01 <= width/height <= 100 and 1 <= relative permittivity <= 128.",
+      "Conservative thin-conductor guard: thickness <= 1% of both width and height; conservative electrical-thickness guard: height <= 1% of the bulk-dielectric wavelength at the supplied frequency. These are applicability restrictions, not accuracy guarantees.",
+      "Neglects roughness, etch shape, dielectric dispersion and loss; impedance estimates do not certify a manufactured stackup."
+    ],
+    "references": [
+      {
+        "title": "Michael Steer, Microstrip Transmission Lines, sections 4.4.1\u20134.4.2, equations 9\u201314",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "width",
+        "label": "Trace width",
+        "unit": "m",
+        "default": 0.0008,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "height",
+        "label": "Dielectric height above reference plane",
+        "unit": "m",
+        "default": 0.0004,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "thickness",
+        "label": "Conductor thickness (applicability only)",
+        "unit": "m",
+        "default": 2e-06,
+        "min": 0
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Substrate relative permittivity",
+        "unit": "1",
+        "default": 3.66,
+        "min": 1,
+        "max": 128
+      },
+      {
+        "key": "frequency",
+        "label": "Highest frequency for applicability check",
+        "unit": "Hz",
+        "default": 1000000000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "width_ratio",
+        "label": "Width to height ratio",
+        "unit": "1",
+        "expression": "width/height"
+      },
+      {
+        "key": "fit_a",
+        "label": "Hammerstad geometry fit coefficient",
+        "unit": "1",
+        "expression": "1+ln((width_ratio^4+(width_ratio/52)^2)/(width_ratio^4+0.432))/49+ln(1+(width_ratio/18.1)^3)/18.7"
+      },
+      {
+        "key": "fit_b",
+        "label": "Hammerstad dielectric fit coefficient",
+        "unit": "1",
+        "expression": "0.564*((relative_permittivity-0.9)/(relative_permittivity+3))^0.053"
+      },
+      {
+        "key": "air_factor",
+        "label": "Air impedance shape factor",
+        "unit": "1",
+        "expression": "6+(2*pi-6)*exp(-((30.666/width_ratio)^0.7528))"
+      },
+      {
+        "key": "effective_permittivity",
+        "label": "Effective relative permittivity",
+        "unit": "1",
+        "expression": "(relative_permittivity+1)/2+(relative_permittivity-1)/2*(1+10/width_ratio)^(-fit_a*fit_b)"
+      },
+      {
+        "key": "air_impedance",
+        "label": "Equivalent air-filled impedance",
+        "unit": "ohm",
+        "expression": "60*ln(air_factor/width_ratio+sqrt(1+(2/width_ratio)^2))"
+      },
+      {
+        "key": "impedance",
+        "label": "Microstrip characteristic impedance",
+        "unit": "ohm",
+        "expression": "air_impedance/sqrt(effective_permittivity)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "width/height",
+        "op": ">=",
+        "right": "0.01",
+        "message": "Width/height must be at least 0.01 for the fitted model."
+      },
+      {
+        "left": "width/height",
+        "op": "<=",
+        "right": "100",
+        "message": "Width/height must not exceed 100 for the effective-permittivity fit."
+      },
+      {
+        "left": "thickness/height",
+        "op": "<=",
+        "right": "0.01",
+        "message": "This zero-thickness model requires thickness <= 1% of dielectric height."
+      },
+      {
+        "left": "thickness/width",
+        "op": "<=",
+        "right": "0.01",
+        "message": "This zero-thickness model requires thickness <= 1% of trace width."
+      },
+      {
+        "left": "height*frequency*sqrt(relative_permittivity)/299792458",
+        "op": "<=",
+        "right": "0.01",
+        "message": "Dielectric height must be <= 1% of the bulk wavelength for the conservative quasi-static restriction."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "width": 0.0008,
+        "height": 0.0004,
+        "thickness": 2e-06,
+        "relative_permittivity": 3.66,
+        "frequency": 1000000000
+      },
+      "expected": {
+        "width_ratio": 2,
+        "fit_a": 0.9995302713283848,
+        "fit_b": 0.5382736881490864,
+        "air_factor": 6.000115105754384,
+        "effective_permittivity": 2.8372126159506297,
+        "air_impedance": 89.09056365708382,
+        "impedance": 52.89148559435723
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
