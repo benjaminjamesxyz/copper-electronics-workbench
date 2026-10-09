@@ -98,3 +98,43 @@ The rationalized lower edge avoids subtraction cancellation; fLfH=f0² and fH−
 | voltage_gain | 2.0 | V/V |
 
 **Sources/limits:** TI SLOA096 §4.1/Fig.11/Eqs.1–3 and SNOA224A band-pass Q/edges, linked above. Exact component ratios and ideal op amp only. Independent arbitrary gain selection needs the excluded input attenuator; no preferred-value synthesis or hardware qualification is claimed.
+
+## `filters.butterworth_spec_synthesis` — Butterworth order and cutoff from attenuation specifications (expert)
+
+**Purpose/model:** Choose the smallest integer analog all-pole low-pass order and a feasible cutoff interval, not circuit components or a digital/prewarped filter. Unity DC gain gives |H|²=1/[1+(f/fc)^(2N)] and A(f)=10log10[1+(f/fc)^(2N)].
+
+Passband A(fp)≤Ap and stopband A(fs)≥As imply
+
+\[
+N_*=\frac{\ln[(10^{A_s/10}-1)/(10^{A_p/10}-1)]}{2\ln(f_s/f_p)},\quad
+N=\lceil N_*\rceil,\quad
+\frac{f_p}{(10^{A_p/10}-1)^{1/(2N)}}\le f_c\le
+\frac{f_s}{(10^{A_s/10}-1)^{1/(2N)}}.
+\]
+
+Select fc_min: it meets passband loss with equality and maximizes stopband attenuation for that order. Actual attenuation outputs use that selected cutoff. The interval is nonempty for the required integer order.
+
+**Conditioning correction:** Put a=Ap·ln(10)/10 and δ=(As−Ap)·ln(10)/10. The order numerator is exactly
+
+\[
+\ln\frac{e^{a+\delta}-1}{e^a-1}
+=\operatorname{log1p}\left(\frac{\operatorname{expm1}(\delta)}
+{-\operatorname{expm1}(-a)}\right).
+\]
+
+Compute δ from the input difference before exponentiation; the original quotient can round to unity for adjacent positive loss inputs, yielding a false zero order and a division by zero. This stable form, also used by the input-only order-cap constraint, preserves a positive lower bound without epsilon clamping or discarding valid close specifications. The cutoff attenuation factors use expm1(a), and actual loss uses (10/ln10)·log1p((f/fc)^(2N)). Shared Rust log1p/expm1 supply these operations; no second evaluator is introduced. Floating-point ceil is still a discrete decision; independently check exact/near integer-order specification boundaries during QA.
+
+**Inputs/domain/error rationale:** `passband_edge`, `stopband_edge` (Hz) each 1e-6…1e12; `passband_loss` (dB) 0.001…100; `stopband_loss` (dB) 0.001…200. Before outputs require fs/fp≥1.001, As>Ap, and ceil(N*)≤32. Positive losses guard attenuation-factor roots/logs, separated frequencies guard the logarithmic denominator, and the pole cap bounds the supported design envelope. These are catalog limits, not physics or realizability certification.
+
+**Independent worked substitution/default:** fp=1000 Hz, fs=4000 Hz, Ap=1 dB, As=40 dB. The original analytic attenuation terms are 10^0.1−1 and 9999. Their log ratio divided by 2ln4 is 3.8092399086702753, so N=4:
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| order_bound | 3.8092399086702753 | 1 |
+| order | 4.0 | 1 |
+| cutoff_min_hz | 1184.003988964071 | Hz |
+| cutoff_max_hz | 1264.9268763451062 | Hz |
+| actual_passband_db | 1.0 | dB |
+| actual_stopband_db | 42.29680198990891 | dB |
+
+**Source/limits:** Gubner Wisconsin ECE431 §7.3/Eqs.7.7–7.10, linked above. Ideal continuous-time response only: no topology, tolerances, parasitics, elliptic zeros or digital prewarp. The stable transformations are algebraically derived implementation improvements, not claimed verbatim source equations.

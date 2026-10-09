@@ -55,4 +55,35 @@
     "constraints": [],
     "example": {"inputs": {"center_frequency": 1000.0, "q": 2.0, "c0": 1e-8, "f": 1000.0}, "expected": {"r0": 15915.494309189537, "r3": 47746.482927568606, "r2": 5305.164769729846, "peak_gain": 2.0, "bandwidth_hz": 500.0, "lower_edge_hz": 780.7764064044152, "upper_edge_hz": 1280.7764064044152, "voltage_gain": 2.0}, "relative_tolerance": 1e-6}
   }
+  ,
+  {
+    "id": "filters.butterworth_spec_synthesis",
+    "title": "Butterworth order and cutoff from attenuation specifications",
+    "category": "Analog filters",
+    "level": "expert",
+    "description": "Select the smallest integer analog Butterworth low-pass order and permissible cutoff interval from passband and stopband requirements.",
+    "formula": "N=ceil(ln((10^(As/10)-1)/(10^(Ap/10)-1))/(2*ln(fs/fp))); fc_min=fp/(10^(Ap/10)-1)^(1/(2*N)); fc_max=fs/(10^(As/10)-1)^(1/(2*N)); loss differences use equivalent log1p/expm1 forms",
+    "assumptions": ["Analog continuous-time Butterworth all-pole low-pass response with unity DC gain; no digital bilinear transformation or frequency prewarping.", "As > Ap > 0 and fs > fp; choose fc_min to make the passband-edge attenuation equal its specified maximum.", "Order is limited to 32 and stopband/passband frequency ratio to at least 1.001 for a bounded, numerically usable design envelope.", "This selects response specifications, not a complete component topology or guaranteed real-world attenuation.", "Stable log1p/expm1 expressions preserve the continuous order bound when the two attenuation specifications are nearly equal."],
+    "references": [{"title": "John A. Gubner, University of Wisconsin ECE431 notes, section 7.3, equations 7.7–7.10", "url": "https://gubner.ece.wisc.edu/ece431/ece431notesDir/ece431notes2007Dec26.pdf"}],
+    "inputs": [
+      {"key": "passband_edge", "label": "Passband edge frequency", "unit": "Hz", "default": 1000.0, "min": 1e-6, "max": 1e12},
+      {"key": "stopband_edge", "label": "Stopband edge frequency", "unit": "Hz", "default": 4000.0, "min": 1e-6, "max": 1e12},
+      {"key": "passband_loss", "label": "Maximum passband attenuation", "unit": "dB", "default": 1.0, "min": 0.001, "max": 100.0},
+      {"key": "stopband_loss", "label": "Minimum stopband attenuation", "unit": "dB", "default": 40.0, "min": 0.001, "max": 200.0}
+    ],
+    "outputs": [
+      {"key": "order_bound", "label": "Continuous lower bound on order", "unit": "1", "expression": "log1p(expm1((stopband_loss-passband_loss)*ln(10)/10)/(-expm1(-passband_loss*ln(10)/10)))/(2*ln(stopband_edge/passband_edge))"},
+      {"key": "order", "label": "Minimum integer filter order", "unit": "1", "expression": "ceil(order_bound)"},
+      {"key": "cutoff_min_hz", "label": "Minimum allowed cutoff; selected design", "unit": "Hz", "expression": "passband_edge/expm1(passband_loss*ln(10)/10)^(1/(2*order))"},
+      {"key": "cutoff_max_hz", "label": "Maximum allowed cutoff", "unit": "Hz", "expression": "stopband_edge/expm1(stopband_loss*ln(10)/10)^(1/(2*order))"},
+      {"key": "actual_passband_db", "label": "Passband attenuation at selected cutoff", "unit": "dB", "expression": "10/ln(10)*log1p((passband_edge/cutoff_min_hz)^(2*order))"},
+      {"key": "actual_stopband_db", "label": "Stopband attenuation at selected cutoff", "unit": "dB", "expression": "10/ln(10)*log1p((stopband_edge/cutoff_min_hz)^(2*order))"}
+    ],
+    "constraints": [
+      {"left": "stopband_edge/passband_edge", "op": ">=", "right": "1.001", "message": "Stopband frequency must be at least 1.001 times the passband frequency."},
+      {"left": "stopband_loss", "op": ">", "right": "passband_loss", "message": "Stopband attenuation must exceed passband attenuation."},
+      {"left": "ceil(log1p(expm1((stopband_loss-passband_loss)*ln(10)/10)/(-expm1(-passband_loss*ln(10)/10)))/(2*ln(stopband_edge/passband_edge)))", "op": "<=", "right": "32", "message": "Specification requires more than the supported 32 poles."}
+    ],
+    "example": {"inputs": {"passband_edge": 1000.0, "stopband_edge": 4000.0, "passband_loss": 1.0, "stopband_loss": 40.0}, "expected": {"order_bound": 3.8092399086702753, "order": 4.0, "cutoff_min_hz": 1184.003988964071, "cutoff_max_hz": 1264.9268763451062, "actual_passband_db": 1.0, "actual_stopband_db": 42.29680198990891}, "relative_tolerance": 1e-6}
+  }
 ]
