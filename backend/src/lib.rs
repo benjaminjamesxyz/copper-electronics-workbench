@@ -71,6 +71,7 @@ impl Engine {
         context.func("log10", f64::log10);
         context.func("expm1", f64::exp_m1);
         context.func("log1p", f64::ln_1p);
+        context.func("sinc", numerics::sinc);
         context.func2("hypot", f64::hypot);
         context.func("exprel", numerics::exprel);
         context.func("log1prel", numerics::log1prel);

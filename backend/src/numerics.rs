@@ -21,6 +21,11 @@ pub(crate) fn log1prel(x: f64) -> f64 {
     if x == 0.0 { 1.0 } else { x.ln_1p() / x }
 }
 
+/// sin(x) / x in radians, including the continuous DC limit.
+pub(crate) fn sinc(x: f64) -> f64 {
+    if x == 0.0 { 1.0 } else { x.sin() / x }
+}
+
 /// tan(acos(initial)) - tan(acos(target)), without subtracting near-equals.
 pub(crate) fn pf_tangent_difference(initial: f64, target: f64) -> f64 {
     if initial == target { return 0.0; }
@@ -97,6 +102,16 @@ pub(crate) fn step_underdamped_scaled(x: f64, zeta: f64, amplitude: f64) -> f64 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn sinc_preserves_dc_and_aperture_response() {
+        for x in [0.0, -0.0, 1e-12, f64::from_bits(1)] {
+            assert_eq!(sinc(x), 1.0);
+        }
+        let half_pi = std::f64::consts::FRAC_PI_2;
+        assert!((sinc(half_pi) - std::f64::consts::FRAC_2_PI).abs() < f64::EPSILON);
+        assert_eq!(sinc(-half_pi), sinc(half_pi));
+        assert!(sinc(std::f64::consts::PI).abs() < f64::EPSILON);
+    }
     #[test]
     fn startup_and_dimensional_scaling_survive_underflow() {
         let x = 1e-16;
