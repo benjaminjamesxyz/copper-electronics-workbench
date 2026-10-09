@@ -445,3 +445,94 @@ These guards execute before outputs, using only inputs/constants. Scalar bounds 
 - [TI SBOA092B: Handbook of Operational Amplifier Applications, p. 17](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
 - [TI SLOA011B: Understanding Operational Amplifier Specifications, section 2](https://www.ti.com/lit/an/sloa011b/sloa011b.pdf)
 
+## 4. `opamps.weighted_summing_stage` — intermediate
+
+### Physical problem and connections
+
+Find three independently adjustable voltage weights and their algebraic summed output. Each source has its own input resistor into the inverting node; `Rf` is feedback and the noninverting input is `Vref`. This is not a passive short between voltage sources.
+
+### Derivation
+
+The virtual summing node is `Vref`. Applying KCL,
+
+\[
+\sum_{i=1}^{3}\frac{V_i-V_{ref}}{R_i}+\frac{V_o-V_{ref}}{R_f}=0.
+\]
+
+Consequently,
+
+\[
+G_i=-R_f/R_i,\qquad
+V_o=V_{ref}+\sum_{i=1}^{3}G_i(V_i-V_{ref}).
+\]
+
+H pp. 23–24 explicitly derives the adder and scaling summer. The nonzero-reference form follows from the same node equation. Each source sees its own resistor while currents sum at a feedback-maintained potential.
+
+### Domain and limitations
+
+All resistances are positive. Source resistance belongs in the corresponding `Ri`. Validate `Vref` at the input pins and total `Vo` at the output, not each independent source against the op-amp pin common-mode range. The op amp must provide the net feedback/load current; that drive capability is not estimated here.
+
+### Independent example — all expected outputs
+
+`R1=10,000`, `R2=20,000`, `R3=40,000`, `Rf=40,000 ohm`; `V1=0.2`, `V2=-0.3`, `V3=0.4`, `Vref=0 V`; ranges ±10 V.
+
+- `gain_one = -4 V/V`.
+- `gain_two = -2 V/V`.
+- `gain_three = -1 V/V`.
+- Input currents are `20`, `-15`, and `10 microA`, totaling `15 microA`.
+- `v_out = -40000*(15e-6) = -0.6 V`.
+
+The independently weighted-voltage sum is `-0.8+0.6-0.4=-0.6 V`. Pin 0 V and output −0.6 V satisfy their domains.
+
+### Executable inputs and example vector
+
+All entries below are required and finite; defaults equal the complete independent example input vector. Bounds are inclusive unless shown with a strict inequality.
+
+| Key | Meaning | Unit | Default / example | Scalar model bounds |
+|---|---|---|---|---|
+| `r_one` | Input resistance R1 | ohm | `10000.0` | > 0.0 |
+| `r_two` | Input resistance R2 | ohm | `20000.0` | > 0.0 |
+| `r_three` | Input resistance R3 | ohm | `40000.0` | > 0.0 |
+| `r_feedback` | Feedback resistance | ohm | `40000.0` | > 0.0 |
+| `v_one` | Input voltage V1 | V | `0.2` | Any finite value, subject to relational guards |
+| `v_two` | Input voltage V2 | V | `-0.3` | Any finite value, subject to relational guards |
+| `v_three` | Input voltage V3 | V | `0.4` | Any finite value, subject to relational guards |
+| `v_reference` | Noninverting reference voltage | V | `0.0` | Any finite value, subject to relational guards |
+| `v_out_min` | Minimum linear output voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_out_max` | Maximum linear output voltage | V | `10.0` | Any finite value, subject to relational guards |
+| `v_cm_min` | Minimum input common-mode voltage | V | `-10.0` | Any finite value, subject to relational guards |
+| `v_cm_max` | Maximum input common-mode voltage | V | `10.0` | Any finite value, subject to relational guards |
+
+### Sequential program and complete expected outputs
+
+The shared Rust engine evaluates these expressions in the listed order; later outputs may reference earlier outputs. No frontend arithmetic or lane-specific evaluator is used. Every expected value is independently derived in the worked example above; relative tolerance is `1e-6`.
+
+| Output key | Unit | Executable expression | Independent expected value |
+|---|---|---|---|
+| `gain_one` | V/V | `-r_feedback/r_one` | `-4.0` |
+| `gain_two` | V/V | `-r_feedback/r_two` | `-2.0` |
+| `gain_three` | V/V | `-r_feedback/r_three` | `-1.0` |
+| `v_out` | V | `v_reference+gain_one*(v_one-v_reference)+gain_two*(v_two-v_reference)+gain_three*(v_three-v_reference)` | `-0.6` |
+
+### Input-only relational guards and error rationale
+
+These guards execute before outputs, using only inputs/constants. Scalar bounds above exclude invalid divisors or unsupported model cases. Violated device operating limits are errors, not clipped predictions. Nonfinite arithmetic is rejected by the shared engine rather than replaced with a plausible value.
+
+- Require `v_out_min < v_out_max`: Output limits must be ordered.
+- Require `v_cm_min < v_cm_max`: Input common-mode limits must be ordered.
+- Require `v_reference >= v_cm_min`: Reference is below the input common-mode range.
+- Require `v_reference <= v_cm_max`: Reference is above the input common-mode range.
+- Require `v_reference-r_feedback*((v_one-v_reference)/r_one+(v_two-v_reference)/r_two+(v_three-v_reference)/r_three) >= v_out_min`: Predicted output is below the linear output range.
+- Require `v_reference-r_feedback*((v_one-v_reference)/r_one+(v_two-v_reference)/r_two+(v_three-v_reference)/r_three) <= v_out_max`: Predicted output is above the linear output range.
+
+### Catalog model assumptions
+
+- Three independent low-impedance voltage sources drive individual resistors into the inverting summing node; the noninverting input is held at Vref.
+- Ideal stable negative feedback, negligible bias and offset, DC or slow signals; adequate output current capability.
+- Each source resistance is included in its respective input resistor; no shorting together of voltage sources is assumed.
+- Entered input common-mode limits apply to Vref, not the independent source voltages; output limits are actual device linear-swing limits.
+
+### Feature sources
+
+- [TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 23-24, Scaling Summer](https://www.ti.com/lit/an/sboa092b/sboa092b.pdf)
+

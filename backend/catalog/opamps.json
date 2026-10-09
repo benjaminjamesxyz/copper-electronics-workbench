@@ -605,5 +605,194 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opamps.weighted_summing_stage",
+    "title": "Three-input weighted summing amplifier",
+    "category": "Operational amplifier stages",
+    "level": "intermediate",
+    "description": "Calculate each source's weight and the signed output of a three-input inverting summing stage.",
+    "formula": "Gi = -Rf/Ri; Vo = Vref - Rf[(V1-Vref)/R1+(V2-Vref)/R2+(V3-Vref)/R3]",
+    "assumptions": [
+      "Three independent low-impedance voltage sources drive individual resistors into the inverting summing node; the noninverting input is held at Vref.",
+      "Ideal stable negative feedback, negligible bias and offset, DC or slow signals; adequate output current capability.",
+      "Each source resistance is included in its respective input resistor; no shorting together of voltage sources is assumed.",
+      "Entered input common-mode limits apply to Vref, not the independent source voltages; output limits are actual device linear-swing limits."
+    ],
+    "references": [
+      {
+        "title": "TI SBOA092B: Handbook of Operational Amplifier Applications, pp. 23-24, Scaling Summer",
+        "url": "https://www.ti.com/lit/an/sboa092b/sboa092b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "r_one",
+        "label": "Input resistance R1",
+        "unit": "ohm",
+        "default": 10000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_two",
+        "label": "Input resistance R2",
+        "unit": "ohm",
+        "default": 20000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_three",
+        "label": "Input resistance R3",
+        "unit": "ohm",
+        "default": 40000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_feedback",
+        "label": "Feedback resistance",
+        "unit": "ohm",
+        "default": 40000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_one",
+        "label": "Input voltage V1",
+        "unit": "V",
+        "default": 0.2
+      },
+      {
+        "key": "v_two",
+        "label": "Input voltage V2",
+        "unit": "V",
+        "default": -0.3
+      },
+      {
+        "key": "v_three",
+        "label": "Input voltage V3",
+        "unit": "V",
+        "default": 0.4
+      },
+      {
+        "key": "v_reference",
+        "label": "Noninverting reference voltage",
+        "unit": "V",
+        "default": 0.0
+      },
+      {
+        "key": "v_out_min",
+        "label": "Minimum linear output voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_out_max",
+        "label": "Maximum linear output voltage",
+        "unit": "V",
+        "default": 10.0
+      },
+      {
+        "key": "v_cm_min",
+        "label": "Minimum input common-mode voltage",
+        "unit": "V",
+        "default": -10.0
+      },
+      {
+        "key": "v_cm_max",
+        "label": "Maximum input common-mode voltage",
+        "unit": "V",
+        "default": 10.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "gain_one",
+        "label": "Source V1 gain",
+        "unit": "V/V",
+        "expression": "-r_feedback/r_one"
+      },
+      {
+        "key": "gain_two",
+        "label": "Source V2 gain",
+        "unit": "V/V",
+        "expression": "-r_feedback/r_two"
+      },
+      {
+        "key": "gain_three",
+        "label": "Source V3 gain",
+        "unit": "V/V",
+        "expression": "-r_feedback/r_three"
+      },
+      {
+        "key": "v_out",
+        "label": "Summed output voltage",
+        "unit": "V",
+        "expression": "v_reference+gain_one*(v_one-v_reference)+gain_two*(v_two-v_reference)+gain_three*(v_three-v_reference)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_out_min",
+        "op": "<",
+        "right": "v_out_max",
+        "message": "Output limits must be ordered."
+      },
+      {
+        "left": "v_cm_min",
+        "op": "<",
+        "right": "v_cm_max",
+        "message": "Input common-mode limits must be ordered."
+      },
+      {
+        "left": "v_reference",
+        "op": ">=",
+        "right": "v_cm_min",
+        "message": "Reference is below the input common-mode range."
+      },
+      {
+        "left": "v_reference",
+        "op": "<=",
+        "right": "v_cm_max",
+        "message": "Reference is above the input common-mode range."
+      },
+      {
+        "left": "v_reference-r_feedback*((v_one-v_reference)/r_one+(v_two-v_reference)/r_two+(v_three-v_reference)/r_three)",
+        "op": ">=",
+        "right": "v_out_min",
+        "message": "Predicted output is below the linear output range."
+      },
+      {
+        "left": "v_reference-r_feedback*((v_one-v_reference)/r_one+(v_two-v_reference)/r_two+(v_three-v_reference)/r_three)",
+        "op": "<=",
+        "right": "v_out_max",
+        "message": "Predicted output is above the linear output range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "r_one": 10000.0,
+        "r_two": 20000.0,
+        "r_three": 40000.0,
+        "r_feedback": 40000.0,
+        "v_one": 0.2,
+        "v_two": -0.3,
+        "v_three": 0.4,
+        "v_reference": 0.0,
+        "v_out_min": -10.0,
+        "v_out_max": 10.0,
+        "v_cm_min": -10.0,
+        "v_cm_max": 10.0
+      },
+      "expected": {
+        "gain_one": -4.0,
+        "gain_two": -2.0,
+        "gain_three": -1.0,
+        "v_out": -0.6
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
