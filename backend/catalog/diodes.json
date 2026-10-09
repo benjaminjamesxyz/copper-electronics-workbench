@@ -147,5 +147,128 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+{
+  "id": "diodes.shockley_forward_current",
+  "title": "Shockley diode current and incremental resistance",
+  "category": "Diodes, LEDs and rectification",
+  "level": "expert",
+  "description": "Evaluate a fitted forward-junction model at a specified junction temperature and calculate its local small-signal resistance.",
+  "formula": "VT = kT/q; ID = IS[exp(VD/(n VT))-1]; rd = n VT/(ID+IS)",
+  "assumptions": [
+    "Forward-bias junction model only; no series resistance, high injection, reverse breakdown or self-heating.",
+    "IS and ideality factor must be fitted at the entered junction temperature; changing T does not automatically temperature-correct IS.",
+    "The supplied model-current ceiling bounds the fit's validity, not a device absolute maximum; exponent is limited to 40 for a finite practical model range.",
+    "Boltzmann constant k = 1.380649e-23 J/K and elementary charge q = 1.602176634e-19 C.",
+    "The shared engine evaluates exp(x)-1 with expm1(x), preserving small positive forward currents without subtraction cancellation."
+  ],
+  "references": [
+    {
+      "title": "Auburn ELEC2210 diode basics, Shockley law and excluded physical effects",
+      "url": "https://www.eng.auburn.edu/~niuguof/2210labdev/html/diode.html"
+    },
+    {
+      "title": "Georgia Tech Physics Book, Shockley equation including ideality factor (student-authored teaching resource)",
+      "url": "https://physicsbook.gatech.edu/Semiconductor_Devices"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "diode_voltage",
+      "label": "Forward junction voltage",
+      "unit": "V",
+      "default": 0.6,
+      "min": 0,
+      "max": 5
+    },
+    {
+      "key": "saturation_current",
+      "label": "Saturation current at entered temperature",
+      "unit": "A",
+      "default": 1e-12,
+      "min": 1e-20,
+      "max": 0.001
+    },
+    {
+      "key": "ideality",
+      "label": "Ideality factor",
+      "unit": "1",
+      "default": 1,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "key": "temperature",
+      "label": "Junction temperature",
+      "unit": "K",
+      "default": 300,
+      "min": 200,
+      "max": 500
+    },
+    {
+      "key": "model_current_max",
+      "label": "Maximum current of fitted model",
+      "unit": "A",
+      "default": 0.1,
+      "min": 1e-12,
+      "max": 1000
+    }
+  ],
+  "outputs": [
+    {
+      "key": "thermal_voltage",
+      "label": "Thermal voltage",
+      "unit": "V",
+      "expression": "1.380649e-23*temperature/1.602176634e-19"
+    },
+    {
+      "key": "diode_current",
+      "label": "Forward diode current",
+      "unit": "A",
+      "expression": "saturation_current*expm1(diode_voltage/(ideality*thermal_voltage))"
+    },
+    {
+      "key": "junction_power",
+      "label": "Junction electrical dissipation",
+      "unit": "W",
+      "expression": "diode_voltage*diode_current"
+    },
+    {
+      "key": "incremental_resistance",
+      "label": "Incremental junction resistance",
+      "unit": "ohm",
+      "expression": "ideality*thermal_voltage/(diode_current+saturation_current)"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19))",
+      "op": "<=",
+      "right": "40",
+      "message": "Forward exponent exceeds the selected model range."
+    },
+    {
+      "left": "saturation_current*expm1(diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19)))",
+      "op": "<=",
+      "right": "model_current_max",
+      "message": "Predicted current exceeds the fitted model-current ceiling."
+    }
+  ],
+  "example": {
+    "inputs": {
+      "diode_voltage": 0.6,
+      "saturation_current": 1e-12,
+      "ideality": 1,
+      "temperature": 300,
+      "model_current_max": 0.1
+    },
+    "expected": {
+      "thermal_voltage": 0.025851999786435535,
+      "diode_current": 0.01201036955312849,
+      "junction_power": 0.007206221731877094,
+      "incremental_resistance": 2.1524732998368954
+    },
+    "relative_tolerance": 1e-06
   }
+}
 ]

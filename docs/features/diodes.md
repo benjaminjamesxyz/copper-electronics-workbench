@@ -73,3 +73,43 @@ Nominal headroom must be strictly positive, making the calculated resistor a val
 - `supply_max >= supply` — Maximum supply must not be below nominal supply.
 - `forward_min <= forward_voltage` — Minimum LED voltage must not exceed nominal voltage.
 
+## 2. `diodes.shockley_forward_current` — expert
+
+**Purpose:** Predict junction current from a fitted forward model and obtain local incremental resistance, not generic resistor current or BJT transconductance.
+
+Thermal voltage VT = kT/q. With k = 1.380649×10⁻²³ J/K and q = 1.602176634×10⁻¹⁹ C, ID = IS[exp(VD/(nVT)) − 1]. Differentiate at fixed T: dID/dVD = (ID + IS)/(nVT); invert to get rd = nVT/(ID + IS). Junction electrical power is VD·ID. The −1 term is retained near zero bias.
+
+**Units:** T in K, VD and VT in V, IS and ID in A, rd in ohm and dissipation W. **Domain:** VD ≥ 0, 1 ≤ n ≤ 2, positive IS, temperature 200–500 K, exponent ≤ 40 and predicted current ≤ a user-supplied fitted-model ceiling. Zero bias is valid: ID = 0 and rd = nVT/IS is finite. Constraints expand VT and ID in terms of inputs because they run before outputs.
+
+**Limits:** The temperature input is junction temperature, not ambient. IS must already be correct at that temperature. A fixed IS cannot model actual thermal drift. No series resistance, high injection, reverse breakdown or self-heating. The exponent guard is a bounded model range, not a semiconductor fundamental limit; the model ceiling must come from the characterized fit. Sources: S2 and S3.
+
+**Independent example (also defaults):** VD = 0.6 V, IS = 10⁻¹² A, n = 1, T = 300 K, model ceiling = 0.1 A. Constants give **VT = 0.025851999786435535 V**. The exponent is about 23.209, below 40. Direct exponential arithmetic yields **ID = 0.01201036955312849 A**, below the ceiling; **junction power = 0.007206221731877094 W**, and **rd = 2.1524732998368954 ohm**. Values were computed independently of the catalog evaluator.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `diode_voltage` | Forward junction voltage | V | 0.6 | [0, 5] |
+| `saturation_current` | Saturation current at entered temperature | A | 1e-12 | [1e-20, 0.001] |
+| `ideality` | Ideality factor | 1 | 1 | [1, 2] |
+| `temperature` | Junction temperature | K | 300 | [200, 500] |
+| `model_current_max` | Maximum current of fitted model | A | 0.1 | [1e-12, 1000] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `thermal_voltage` | Thermal voltage | V | `1.380649e-23*temperature/1.602176634e-19` | 0.025851999786435535 |
+| `diode_current` | Forward diode current | A | `saturation_current*expm1(diode_voltage/(ideality*thermal_voltage))` | 0.01201036955312849 |
+| `junction_power` | Junction electrical dissipation | W | `diode_voltage*diode_current` | 0.007206221731877094 |
+| `incremental_resistance` | Incremental junction resistance | ohm | `ideality*thermal_voltage/(diode_current+saturation_current)` | 2.1524732998368954 |
+
+### Constraint/error rationale and implementation limits
+
+Implementation uses `expm1(x)` for both forward-current output and the input-only fitted-current guard, with x = VD/(n VT). This is algebraically the full Shockley law, but avoids rounding exp(x) to 1 at very small positive x. At zero bias the current and power are exactly zero; incremental resistance remains n VT/IS. For x much smaller than one, ID ≈ IS·x. The input ranges give positive thermal voltage and a nonzero incremental-resistance denominator, while the exponent/model-current constraints bound the fitted model.
+
+- `diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19)) <= 40` — Forward exponent exceeds the selected model range.
+- `saturation_current*expm1(diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19))) <= model_current_max` — Predicted current exceeds the fitted model-current ceiling.
+
