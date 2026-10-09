@@ -112,3 +112,53 @@ Substitution: `a=4*10e-6+3*10e-6=70e-6 m`; `di=300e-6-140e-6=160e-6 m`; `davg=23
 
 Draw one continuous four-turn square spiral in x=70–330, y=35–225, with visible central opening. Outer lead exits left; inner lead exits via an explicitly dashed, electrically separate underpass representation labeled “underpass omitted from L model,” never a false same-layer crossing. Top dimension binds `outer_side`; central-opening bracket binds `inner_side`. Right-side enlarged adjacent trace pair shows `trace_width` across copper and `spacing` across dielectric. Lower right labels bind `turns`, `fill_ratio`, and `inductance`; `average_side` may remain in the accessible legend. A conceptual current arrow follows the spiral clockwise. Caption: “Square current-sheet estimate; thin isolated spiral, no ground plane. Underpass, loss and self resonance are excluded; drawing is not to scale.”
 
+## `cores.bobbin_layer_fit`
+
+**Purpose and novelty.** Determine whether a specified winding physically fits. Closest old item, transformer VA budget, sizes apparent-power capacity but cannot predict winding construction. This model adds integer packing, insulation, partial-layer rounding and radial clearance. It is not an electrical resistance or turns-ratio calculation.
+
+**Equation and units.** From TI's net-width/finished-diameter construction definition, let `Wu=W-2m`, `q=floor(Wu/do)`, `n=ceil(N/q)`. The radial build is `h=n*do+(n-1)*t`, remaining height `H-h`, and copper fill `N*pi*dc²/(4*Wu*H)`. Fill uses the entire available net rectangular window, not only the occupied winding rectangle. Turns and layers are exact integers; all lengths are metres. Positive margin means unused radial space.
+
+**Validity.** Square-packed circular insulated wire, no wire nesting/compression, one uniform gauge, layer tape only between occupied layers. Width/height are already net of bobbin walls and base insulation. Both end margins are reserved separately. Partial last layers consume full radial height. Reject zero available turns, copper diameter exceeding finished diameter, noninteger requested turns or excessive build. Maximum finished-wire dimensions and minimum manufactured bobbin clearances belong in a real design. Crossovers, lead exits and electrical safety margins are not automatically designed.
+
+### Complete independent numerical example
+
+Inputs:
+
+```json
+{
+  "window_width": 0.02,
+  "window_height": 0.004,
+  "end_margin": 0.001,
+  "wire_diameter": 0.0006,
+  "copper_diameter": 0.0005,
+  "tape_thickness": 0.0001,
+  "turns": 100
+}
+```
+
+Expected outputs:
+
+```json
+{
+  "turns_per_layer": 30,
+  "layers_required": 4,
+  "radial_build": 0.0026999999999999997,
+  "height_margin": 0.0013000000000000004,
+  "copper_fill": 0.2727076956241139
+}
+```
+
+Substitution: `Wu=0.020-2*0.001=0.018 m`; `q=floor(0.018/0.0006)=30`; `n=ceil(100/30)=4`. Then `h=4*0.0006+3*0.0001=0.0027 m`, clearance `0.004-0.0027=0.0013 m`. Bare copper area is `100*pi*(0.0005)^2/4=1.963495408493621e-5 m²`; usable window is `0.018*0.004=7.2e-5 m²`; fill is `0.2727076956241139`.
+
+### Independent test scenarios
+
+- Nominal: complete vector above.
+- Discrete boundary with the other nominal inputs: `turns=90` gives three layers and build `0.002 m`; `turns=91` jumps to four layers and build `0.0027 m`. No interpolation across the jump.
+- With `turns=30`, one layer has build exactly `0.0006 m` even when tape thickness is nonzero: no tape lies before the first or after the last layer.
+- Exact radial fit is accepted (`window_height=0.0027`, otherwise nominal), with zero clearance. Zero end margin or zero interlayer tape is geometrically allowed; this does not certify electrical safety.
+- Invalid: only `window_width=0.001` with nominal margins, zero diameter, copper diameter above finished diameter, fractional turns, or `window_height=0.0026` with the nominal 100 turns.
+
+### Mandatory physical-geometry diagram
+
+Draw the bobbin window cross-section in x=70–430,y=55–220: flange margins shaded left/right, four square-packed rows of circular insulated-wire cross sections, final row visibly partial. Copper cores and insulation rings must be visually distinct. Thin tape bands occur only between occupied rows. Bind full axial bracket to `window_width`, two identical margin brackets each to `end_margin`, vertical available bracket to `window_height`, occupied bracket to `radial_build`, and remaining clear strip to `height_margin`. Right inset binds outer circle diameter `wire_diameter` and inner copper diameter `copper_diameter`; tape callout binds `tape_thickness`. `turns_per_layer`, `layers_required` and `copper_fill` get short right-hand labels or accessible legend entries. Caption: “Ordered square packing; incomplete last layer still consumes full height. Dimensions are net of bobbin/base insulation; lead and crossover space must be reserved separately.”
+

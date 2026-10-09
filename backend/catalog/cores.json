@@ -222,5 +222,157 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "cores.bobbin_layer_fit",
+    "title": "Insulated round-wire bobbin layer fit",
+    "category": "Winding and magnetic design",
+    "level": "basic",
+    "description": "Check discrete turns and radial build of a square-packed winding with end margins and interlayer tape.",
+    "formula": "q=floor((W-2m)/do); layers=ceil(N/q); build=layers*do+(layers-1)t; fill=N*pi*dc^2/[4(W-2m)H]",
+    "assumptions": [
+      "Ordered square-packed circular wire with uniform finished diameter; no orthocyclic nesting, random winding, litz bundle or compression.",
+      "Window width and height are already net of bobbin wall and base insulation. End margin is reserved independently at each flange.",
+      "Tape lies only between occupied layers. Last partial layer consumes a full radial layer. Crossovers and leads require additional clearance outside this model.",
+      "Geometric fit does not establish creepage, dielectric withstand, thermal rating or safety compliance. Use maximum finished wire diameter and minimum available dimensions."
+    ],
+    "references": [
+      {
+        "title": "TI SLUP126: Window Utilization and winding design Step 14",
+        "url": "https://www.ti.com/lit/ml/slup126/slup126.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "window_width",
+        "label": "Net bobbin width",
+        "unit": "m",
+        "default": 0.02,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "window_height",
+        "label": "Available radial height",
+        "unit": "m",
+        "default": 0.004,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "end_margin",
+        "label": "Margin at each flange",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0
+      },
+      {
+        "key": "wire_diameter",
+        "label": "Finished wire diameter",
+        "unit": "m",
+        "default": 0.0006,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "copper_diameter",
+        "label": "Bare copper diameter",
+        "unit": "m",
+        "default": 0.0005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "tape_thickness",
+        "label": "Interlayer tape thickness",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0
+      },
+      {
+        "key": "turns",
+        "label": "Required complete turns",
+        "unit": "turn",
+        "default": 100,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "turns_per_layer",
+        "label": "Complete turns per layer",
+        "unit": "turn",
+        "expression": "floor((window_width-2*end_margin)/wire_diameter)"
+      },
+      {
+        "key": "layers_required",
+        "label": "Occupied layers",
+        "unit": "layer",
+        "expression": "ceil(turns/turns_per_layer)"
+      },
+      {
+        "key": "radial_build",
+        "label": "Winding radial build",
+        "unit": "m",
+        "expression": "layers_required*wire_diameter+(layers_required-1)*tape_thickness"
+      },
+      {
+        "key": "height_margin",
+        "label": "Remaining radial clearance",
+        "unit": "m",
+        "expression": "window_height-radial_build"
+      },
+      {
+        "key": "copper_fill",
+        "label": "Copper fraction of usable window",
+        "unit": "1",
+        "expression": "turns*pi*copper_diameter^2/(4*(window_width-2*end_margin)*window_height)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "turns",
+        "op": "==",
+        "right": "floor(turns)",
+        "message": "Turns must be an integer."
+      },
+      {
+        "left": "window_width-2*end_margin",
+        "op": ">=",
+        "right": "wire_diameter",
+        "message": "At least one finished wire must fit between margins."
+      },
+      {
+        "left": "copper_diameter",
+        "op": "<=",
+        "right": "wire_diameter",
+        "message": "Copper diameter cannot exceed finished diameter."
+      },
+      {
+        "left": "ceil(turns/floor((window_width-2*end_margin)/wire_diameter))*wire_diameter+(ceil(turns/floor((window_width-2*end_margin)/wire_diameter))-1)*tape_thickness",
+        "op": "<=",
+        "right": "window_height",
+        "message": "Requested winding does not fit the available radial height."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "window_width": 0.02,
+        "window_height": 0.004,
+        "end_margin": 0.001,
+        "wire_diameter": 0.0006,
+        "copper_diameter": 0.0005,
+        "tape_thickness": 0.0001,
+        "turns": 100
+      },
+      "expected": {
+        "turns_per_layer": 30,
+        "layers_required": 4,
+        "radial_build": 0.0026999999999999997,
+        "height_margin": 0.0013000000000000004,
+        "copper_fill": 0.2727076956241139
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
