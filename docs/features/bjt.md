@@ -110,3 +110,60 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 | `r_output_approx` | `100000` | ohm |
 | `approximation_relative_error` | `0.047619047619047616` | 1 |
 
+
+## 7. `bjt.differential_pair_steering` — large-signal matched-pair currents
+
+**Level:** expert. **Purpose:** model static nonlinear current splitting in a matched discrete emitter-coupled pair, rather than generic op-amp gain.
+
+### Derivation and units
+
+Matched devices at equal temperature have the same saturation-current factor. Since their emitters share a node,
+
+`Vbe1-Vbe2=Vbase1-Vbase2=Vdiff` and `Ic1/Ic2=exp(Vdiff/VT)`.
+
+The tail current here is total **emitter** current, as in S7 slides 10–11. For equal constant beta, `alpha=beta/(beta+1)` and `Ic1+Ic2=alpha*Itail`. Define `a=exp(Vdiff/VT)`. Solving current conservation gives
+
+`Ic1=alpha*Itail*a/(1+a)`, `Ic2=alpha*Itail/(1+a)` in A.
+
+Then `Idiff=Ic1-Ic2`. Differentiating the current difference gives local large-signal transfer slope
+
+`gdiff=2*alpha*Itail*a/(VT*(1+a)^2)` in S.
+
+This is equivalent to the source's tanh relation, but implemented with the permitted `exp` function because `tanh` is not in the contract. Finite beta prevents incorrectly treating an emitter tail current as an equal collector-current sum.
+
+### Domain and limitations
+
+Tail current and beta are positive; T is 200–450 K. Enforce `abs(Vdiff)/VT<=40` before exponentiation. The bound is a numerical/model envelope, not a measured cutoff boundary; leakage and mismatch dominate sufficiently small branch currents in real devices. Equal devices, equal constant beta, ideal tail source, no emitter degeneration and adequate collector/tail-source compliance are explicit physical preconditions. The inputs do not include collector supplies or common-mode voltage, so compliance must be established externally, not inferred. The pair is a large-signal circuit calculator and is not constrained to Vdiff<<VT.
+
+### Independent worked example
+
+Inputs: total emitter tail=0.002 A, matched beta=100, T=300 K, Vdiff=0.02 V.
+
+- `alpha=100/101=0.990099009900990`.
+- `a=exp(0.02/0.0258519997864355)=2.16763029616484`.
+- Total collector current is `0.002*(100/101)=0.00198019801980198 A`.
+- Allocate this sum in the ratio `2.16763029616484:1`: `Ic1=0.001355062560591518 A`, `Ic2=0.000625135459210462308 A`.
+- `Idiff=0.000729927101381055582 A`.
+- Independent slope calculation using `2*Ic1*Ic2/(VT*(Ic1+Ic2))` gives `gdiff=0.0330948723388099594 S`.
+
+Useful physical identities for parent validation: changing Vdiff's sign swaps the two collector currents; zero differential input gives equal currents `alpha*Itail/2`; the collector-current sum remains `alpha*Itail`, not Itail.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `v_thermal` | `0.02585199978643553` | V |
+| `alpha` | `0.9900990099009901` | 1 |
+| `current_ratio` | `2.1676302961648406` | 1 |
+| `i_collector_one` | `0.001355062560591518` | A |
+| `i_collector_two` | `0.0006251354592104623` | A |
+| `i_difference` | `0.0007299271013810556` | A |
+| `g_differential` | `0.03309487233880996` | S |
+
+
+### Near-balance numerical conditioning
+
+The executable difference uses `alpha*Itail*expm1(Vdiff/VT)/(1+current_ratio)` rather than subtracting two nearly equal collector currents. From the preceding conservation equations, `Idiff=alpha*Itail*(exp(x)-1)/(1+exp(x))`; native `expm1` preserves the small signed difference when `x` is near zero, without narrowing the physical domain. At zero input it is exactly zero. Its independent limiting slope is `alpha*Itail/(2*VT)`; at the nominal tail/beta/temperature this is approximately `0.0382987396750828 S`. The individual collector outputs retain their original formulas and all researched expected values are unchanged. Parent QA should cover very small positive/negative Vdiff, zero, sign symmetry and the +/-40 VT endpoints.
+

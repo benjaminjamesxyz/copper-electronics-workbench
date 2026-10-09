@@ -224,5 +224,128 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.differential_pair_steering",
+    "title": "Matched BJT differential-pair current steering",
+    "category": "Bipolar transistor design",
+    "level": "expert",
+    "description": "Predict large-signal collector-current division in a matched discrete differential pair, including finite-beta conversion of emitter tail current.",
+    "formula": "VT=kT/q; alpha=beta/(beta+1); x=Vdiff/VT; Ic1=alpha Itail exp(x)/(1+exp(x)); Ic2=alpha Itail/(1+exp(x)); d(Ic1-Ic2)/dVdiff=2 alpha Itail exp(x)/(VT(1+exp(x))^2); Idiff=alpha Itail expm1(x)/(1+exp(x))",
+    "assumptions": [
+      "Identical forward-active NPN devices at the same junction temperature; equal saturation currents and equal constant beta.",
+      "Ideal tail source supplies the sum of emitter currents; collectors and tail source have sufficient compliance.",
+      "No emitter degeneration; ignores Early effect, mismatch, leakage, high injection and source resistance.",
+      "Vdiff=Vbase1-Vbase2; input thermal-voltage ratio is restricted to magnitude at most 40 to keep exponentials bounded and avoid claiming leakage-free extreme steering.",
+      "200-450 K model envelope is not a junction-temperature rating; this is large-signal static steering, not small-signal-only op-amp gain."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.012 Lecture 19, slides 10-11: emitter-coupled-pair large-signal analysis with alpha_F",
+        "url": "https://ocw.mit.edu/courses/6-012-microelectronic-devices-and-circuits-fall-2009/9932f87a7b5ec3d088d0e0836a05c622_MIT6_012F09_lec19.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "i_tail",
+        "label": "Total emitter tail current",
+        "unit": "A",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta",
+        "label": "Matched DC current gain",
+        "unit": "1",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature",
+        "label": "Matched junction temperature",
+        "unit": "K",
+        "default": 300,
+        "min": 200,
+        "max": 450
+      },
+      {
+        "key": "v_differential",
+        "label": "Base 1 minus base 2 voltage",
+        "unit": "V",
+        "default": 0.02
+      }
+    ],
+    "outputs": [
+      {
+        "key": "v_thermal",
+        "label": "Thermal voltage",
+        "unit": "V",
+        "expression": "1.380649e-23*temperature/1.602176634e-19"
+      },
+      {
+        "key": "alpha",
+        "label": "Collector-to-emitter current ratio",
+        "unit": "1",
+        "expression": "beta/(beta+1)"
+      },
+      {
+        "key": "current_ratio",
+        "label": "Collector current ratio Ic1/Ic2",
+        "unit": "1",
+        "expression": "exp(v_differential/v_thermal)"
+      },
+      {
+        "key": "i_collector_one",
+        "label": "Collector 1 current",
+        "unit": "A",
+        "expression": "alpha*i_tail*current_ratio/(1+current_ratio)"
+      },
+      {
+        "key": "i_collector_two",
+        "label": "Collector 2 current",
+        "unit": "A",
+        "expression": "alpha*i_tail/(1+current_ratio)"
+      },
+      {
+        "key": "i_difference",
+        "label": "Collector 1 minus collector 2 current",
+        "unit": "A",
+        "expression": "alpha*i_tail*expm1(v_differential/v_thermal)/(1+current_ratio)"
+      },
+      {
+        "key": "g_differential",
+        "label": "Local differential-current transconductance",
+        "unit": "S",
+        "expression": "2*alpha*i_tail*current_ratio/(v_thermal*(1+current_ratio)^2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "abs(v_differential)*1.602176634e-19/(1.380649e-23*temperature)",
+        "op": "<=",
+        "right": "40",
+        "message": "Differential voltage must be within forty thermal voltages for the bounded ideal matched-pair model."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "i_tail": 0.002,
+        "beta": 100,
+        "temperature": 300,
+        "v_differential": 0.02
+      },
+      "expected": {
+        "v_thermal": 0.02585199978643553,
+        "alpha": 0.9900990099009901,
+        "current_ratio": 2.1676302961648406,
+        "i_collector_one": 0.001355062560591518,
+        "i_collector_two": 0.0006251354592104623,
+        "i_difference": 0.0007299271013810556,
+        "g_differential": 0.03309487233880996
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
