@@ -205,3 +205,50 @@ Inputs: switching_frequency=100000 Hz; peak_deviation=10000 Hz; modulation_frequ
 
 Frequency axis x=65..635 at y=205. Draw two static shaded/outlined bands centered at n fs and (n+1)fs; identify their centers with descriptive text, not incorrectly bound live numbers. Dimension the first band's full width with `occupied_bandwidth`. Dimension the separation between adjacent band edges with `next_harmonic_gap`, noting signed overlap in caption. Add a top-left inset showing sinusoidal instantaneous frequency around fs; label its center `switching_frequency`, peak vertical deviation `peak_deviation`, and modulation rate `modulation_frequency`. Label selected order `harmonic_order` and index `harmonic_modulation_index` in a clear legend. Caption: “Illustrative Carson intervals for sinusoidal dither; negative gap denotes overlap. No detector reduction or hard spectral boundary is predicted.” The static bands are not dynamically fitted to outputs.
 
+
+## 5. `emc.ringing_rc_snubber` — expert
+
+### Purpose and novelty
+
+Infer physical switch-node parasitics from an added-capacitor experiment, then select a shunt series-RC suppression network and budget charge/discharge loss. Closest baselines: `transients.rlc_underdamped_step` predicts a known series RLC circuit, and `mosfet.gate_loop_damping_resistor` inserts a resistor in a gate loop. This model identifies unknown node parasitics and designs a different topology with a DC-blocking snubber capacitor. It is not another RLC inverse mode: two independent frequency measurements plus a known perturbation identify both L and C, then constrain the practical suppression network.
+
+### Derivation and source qualification
+
+Let f0 be original ringing frequency, f1 the lower frequency with known Ctest shunting the same nodes. For the same lightly damped mode:
+
+f0²=1/(4π² Lp Cp), f1²=1/[4π² Lp(Cp+Ctest)]. Therefore:
+
+- parasitic_capacitance Cp=Ctest/[(f0/f1)²−1]
+- parasitic_inductance Lp=1/[(2πf0)² Cp]
+- snubber_resistance Rs=sqrt(Lp/Cp)/(2ζ)
+- snubber_capacitance Cs=k Cp
+- snubber_power P=Cs V² fs
+
+The Cp expression uses ((f0−f1)/f1)((f0+f1)/f1), retaining the small measured difference instead of subtracting two nearly equal squared ratios. Lp is evaluated with factored square roots; power squares V sqrt(Cs) sqrt(fs). SI units: Hz, F, H, ohm, V and W.
+
+TI directly describes the half-frequency experiment, where Ctest=3Cp. The general two-frequency identification is its algebraic extension. ζ is a **first-pass design target** in TI's shunt-snubber approximation; 0.5<=ζ<=1. It is not an asserted exact damping ratio of the full third-order RC network. Use 3<=k<=4, then tune on hardware. f0>f1>fs is enforced; it is necessary but not sufficient to establish a clean separated ringing mode. Measurement uncertainty explodes when f0 and f1 are close; the catalog does not invent a minimum frequency shift. Both switch states must be long enough for complete snubber capacitor charge/discharge through V. P is the ordinary capacitive cycle loss, not a complete measured thermal-loss prediction including ringing energy.
+
+### Complete independent example
+
+Inputs: original_frequency=30000000 Hz; loaded_frequency=15000000 Hz; test_capacitance=3e-9 F; damping_target=0.75; capacitance_multiplier=3; voltage_swing=12 V; switching_frequency=500000 Hz.
+
+- Ratio f0/f1=2, so parasitic_capacitance = 3e-9/(4−1) = **1e-9 F**.
+- parasitic_inductance = 1/[(2π×30e6)²×1e-9] = **2.8144773233982716e-8 H**.
+- sqrt(Lp/Cp)=5.305164769729845 ohm.
+- snubber_resistance = 5.305164769729845/(2×0.75) = **3.53677651315323 ohm**.
+- snubber_capacitance = 3×1e-9 = **3e-9 F**.
+- snubber_power = 3e-9×12²×500000 = **0.216 W**.
+
+### Independent tester cases
+
+- Nominal: all five outputs above at 1e-6 relative tolerance.
+- Set ζ=1 and k=4: Cp and Lp unchanged; Rs=**2.6525823848649224 ohm**, Cs=**4e-9 F**, P=**0.288 W**. Both endpoints are valid.
+- V=0 leaves all inferred/design parameters unchanged and P=0.
+- Double Ctest at unchanged measured frequencies: Cp/Cs/P double, Lp/Rs halve. Reconstruct both frequency identities independently.
+- f1 approaching f0 from below is ill-conditioned but mathematically admissible if the arithmetic remains representable. Test that Cp remains positive and the actual small frequency difference is retained.
+- Reject f1>=f0, f1<=0, Ctest<=0, fs<=0 or fs>=f1, ζ outside [0.5,1], k outside [3,4], and negative V. Reject nonfinite arithmetic rather than fabricate a zero component.
+
+### Mandatory diagram
+
+Draw a switch node with parasitic Cp to power return and a separate shunt branch **Rs in series with Cs** to the same return. Show Lp upstream in the ringing loop, not accidentally in series with the snubber alone. Bind component labels to `parasitic_inductance`, `parasitic_capacitance`, `snubber_resistance`, and `snubber_capacitance`. Place a small left inset showing the temporary Ctest connected across Cp during identification, clearly marked “test only; remove before fitting Rs–Cs.” Bind `test_capacitance`. Add two static ringing sketches labeled `original_frequency` and `loaded_frequency`, with the latter visibly slower and captioned illustrative. Bind voltage swing and cycle-loss labels to `voltage_swing` and `snubber_power`. Caption: “Two-frequency identification of one LC mode; temporary test capacitor is replaced by a series-RC shunt snubber. Component values and loss are starting estimates.” No extra count is assigned to identification versus sizing.
+

@@ -461,5 +461,149 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "emc.ringing_rc_snubber",
+  "title": "Measured-ringing RC snubber design",
+  "category": "EMC design",
+  "level": "expert",
+  "description": "Identify switch-node parasitics from two ringing frequencies, then estimate a shunt series-RC snubber and its cycle loss. Bench-tuned estimate, not compliance.",
+  "formula": "Cp=Ctest/[(f0/f1)^2-1]; Lp=1/[(2 pi f0)^2 Cp]; Rs=sqrt(Lp/Cp)/(2 zeta); Cs=k Cp; P=Cs V^2 fs",
+  "assumptions": [
+    "Measure the same lightly damped LC mode before and after adding a known low-ESL capacitance directly across the switch-node return.",
+    "Added capacitance changes only C; inductance and voltage-dependent device capacitance remain effectively constant at the measured operating point.",
+    "Rs is TI's first-pass shunt-snubber damping guideline, not the series gate-loop critical-resistance formula and not an exact third-order pole solution.",
+    "Use damping target 0.5 to 1 and Cs/Cp ratio 3 to 4 per the cited note. Confirm ringing and resistor temperature on hardware.",
+    "Cs charges and discharges fully through voltage swing V once per switching cycle; loss omits parasitic ringing energy and switching-device interaction.",
+    "Engineering estimate only; component pulse ratings, layout and actual EMC testing remain mandatory."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments SLVA790A, Reducing Radiated EMI in TPS61088 Boost Converter, section 2.4 equations 4-5",
+      "url": "https://www.ti.com/lit/pdf/slva790"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "original_frequency",
+      "label": "Original ringing frequency",
+      "unit": "Hz",
+      "default": 30000000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "loaded_frequency",
+      "label": "Ringing frequency with test capacitor",
+      "unit": "Hz",
+      "default": 15000000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "test_capacitance",
+      "label": "Added test capacitance",
+      "unit": "F",
+      "default": 3e-09,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "damping_target",
+      "label": "First-pass damping target",
+      "unit": "1",
+      "default": 0.75,
+      "min": 0.5,
+      "max": 1
+    },
+    {
+      "key": "capacitance_multiplier",
+      "label": "Snubber-to-parasitic capacitance ratio",
+      "unit": "1",
+      "default": 3,
+      "min": 3,
+      "max": 4
+    },
+    {
+      "key": "voltage_swing",
+      "label": "Full snubber capacitor voltage swing",
+      "unit": "V",
+      "default": 12,
+      "min": 0
+    },
+    {
+      "key": "switching_frequency",
+      "label": "Charge-discharge cycle frequency",
+      "unit": "Hz",
+      "default": 500000,
+      "min": 0,
+      "exclusive_min": true
+    }
+  ],
+  "outputs": [
+    {
+      "key": "parasitic_capacitance",
+      "label": "Identified parasitic capacitance",
+      "unit": "F",
+      "expression": "test_capacitance/(((original_frequency-loaded_frequency)/loaded_frequency)*((original_frequency+loaded_frequency)/loaded_frequency))"
+    },
+    {
+      "key": "parasitic_inductance",
+      "label": "Identified parasitic inductance",
+      "unit": "H",
+      "expression": "(1/(2*pi*original_frequency*sqrt(parasitic_capacitance)))^2"
+    },
+    {
+      "key": "snubber_resistance",
+      "label": "Starting snubber resistance",
+      "unit": "ohm",
+      "expression": "sqrt(parasitic_inductance)/sqrt(parasitic_capacitance)/(2*damping_target)"
+    },
+    {
+      "key": "snubber_capacitance",
+      "label": "Starting snubber capacitance",
+      "unit": "F",
+      "expression": "capacitance_multiplier*parasitic_capacitance"
+    },
+    {
+      "key": "snubber_power",
+      "label": "Capacitive charge-discharge loss",
+      "unit": "W",
+      "expression": "(voltage_swing*sqrt(snubber_capacitance)*sqrt(switching_frequency))^2"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "loaded_frequency",
+      "op": "<",
+      "right": "original_frequency",
+      "message": "Added positive capacitance must reduce the same ringing frequency."
+    },
+    {
+      "left": "switching_frequency",
+      "op": "<",
+      "right": "loaded_frequency",
+      "message": "The ringing mode must be faster than the switching repetition rate."
+    }
+  ],
+  "example": {
+    "inputs": {
+      "original_frequency": 30000000,
+      "loaded_frequency": 15000000,
+      "test_capacitance": 3e-09,
+      "damping_target": 0.75,
+      "capacitance_multiplier": 3,
+      "voltage_swing": 12,
+      "switching_frequency": 500000
+    },
+    "expected": {
+      "parasitic_capacitance": 1e-09,
+      "parasitic_inductance": 2.8144773233982716e-08,
+      "snubber_resistance": 3.53677651315323,
+      "snubber_capacitance": 3e-09,
+      "snubber_power": 0.216
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]
