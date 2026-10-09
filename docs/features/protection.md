@@ -107,3 +107,49 @@ Inputs: `surge_voltage=100 V`, `source_resistance=2 ohm`, `breakdown_intercept=3
 ### Mandatory diagram
 
 Left x=24–390: source `surge_voltage`, series `source_resistance`, protected-node dot, and shunt block “TVS avalanche” to common return. Mark cathode K at positive node, anode A at return; do not draw the ordinary forward diode in the wrong direction. Draw downward arrow `surge_current`; bracket protected-node-to-return `clamp_voltage`. Right x=430–674: conceptual V-horizontal/I-vertical graph with descending source line and ascending avalanche line; label its voltage intercept `breakdown_intercept` and slope relation `dV/dI = rd` bound to `dynamic_resistance`. Intersection is explanatory, not a live computed plot. Caption identifies negligible load and inductance, positive avalanche operation and waveform-specific affine fit.
+
+## 3. `protection.mov_power_law_pulse` — intermediate
+
+### Purpose and novelty
+
+Estimate a metal-oxide varistor's nonlinear protection-region clamp, incremental resistance and absorption using two measured/datasheet points. Unlike the TVS affine intercept-plus-slope model, grain-boundary conduction uses `I=K V^alpha` and has a current-dependent incremental resistance. Unlike `diodes.shockley_forward_current`, this is a bulk MOV empirical power law, not a forward PN-junction exponential or thermal-voltage calculation. Pulse absorption is a supporting output, not a separately counted energy calculator.
+
+### Derivation and limits
+
+P3 gives `V=C I^beta`, `beta=1/alpha`. Divide the two calibration equations and take logarithms:
+
+`beta=ln(V2/V1)/ln(I2/I1)`; `alpha=1/beta`.
+
+Interpolation gives `V=V1 exp[beta ln(I/I1)]`. Differentiation gives `rd=beta V/I`, which is not the static ratio `V/I`. An imposed rectangular pulse gives `E=V I duration`; margin is allowance minus E.
+
+Require `I2>I1>0`, `V2>V1>0`, `0<beta<1`, and `I1<=Ipulse<=I2`. These bounds keep the fit in the declared protection region. The stable `log1p((x2−x1)/x1)` form preserves close-point differences. No low-current extrapolation to zero is allowed. Current and voltage inputs are positive magnitudes; the model may describe either MOV polarity only when the chosen measured branch supports it.
+
+Pulse energy applies only to the flat current interval with ideal zero-time edges. Actual repetitive life, heating-induced fit changes, pulse shape, thermal disconnection and failure modes are not inferred from an energy margin.
+
+### Complete independent example
+
+Inputs: `current_one=1 A`, `voltage_one=320 V`, `current_two=100 A`, `voltage_two=400 V`, `pulse_current=10 A`, `pulse_duration=0.0001 s`, `energy_allowance=1 J`.
+
+`beta=ln(1.25)/ln(100)=0.0484550065040282`. The pulse current is the geometric mean of the two endpoints, so the voltage is independently `sqrt(320×400)=357.77087639996637 V`.
+
+| Output key | Independent result |
+|---|---:|
+| `voltage_exponent` | `0.0484550065040282` |
+| `current_exponent` | `20.637702317032343` |
+| `clamp_voltage` | `357.77087639996637 V` |
+| `differential_resistance` | `beta×357.77087639996637/10 = 1.7335790142912242 ohm` |
+| `absorbed_energy` | `357.77087639996637×10×0.0001 = 0.35777087639996635 J` |
+| `energy_margin` | `0.6422291236000337 J` |
+
+### Tester cases
+
+- Nominal above, including the geometric-mean identity.
+- At `pulse_current=1`, voltage equals exactly the first fitted value `320 V`; at `100 A`, equals `400 V`.
+- Double pulse duration: exponent, clamp and differential resistance unchanged; energy doubles.
+- Set allowance below absorbed energy: return a negative margin, not a fabricated safe result.
+- Reject equal/reversed currents, equal/decreasing voltages, `beta>=1`, pulse current outside either endpoint, zero pulse duration or nonpositive allowance.
+- Close-point oracle: choose `I2=2`, `V2=320×2^0.05`; fitted beta is `0.05`. The tester should calculate this independently at high precision rather than snapshot implementation output.
+
+### Mandatory diagram
+
+Left x=24–340: current-pulse source feeding a two-terminal block “MOV”, positive top node and return below. Bind imposed pulse arrow to `pulse_current`, pulse-width bracket to `pulse_duration`, and MOV voltage bracket to `clamp_voltage`. Right x=390–674: logarithmic-current/logarithmic-voltage conceptual graph, straight fit segment between `(current_one,voltage_one)` and `(current_two,voltage_two)`. Bind endpoint labels to all four exact keys; identify slope as `voltage_exponent` on log axes. Place an energy annotation `integral v i dt` bound to `absorbed_energy` outside the geometry. Caption: “Power-law interpolation only between characterized MOV points; energy assumes an imposed rectangular current pulse. Static log-log sketch, not a live trace.”

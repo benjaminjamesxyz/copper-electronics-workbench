@@ -311,5 +311,174 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "protection.mov_power_law_pulse",
+    "title": "MOV nonlinear pulse clamp and absorption",
+    "category": "Protection",
+    "level": "intermediate",
+    "description": "Fit a metal-oxide varistor power law between two characterized points and predict clamp voltage, differential resistance and rectangular-pulse absorption within that interval.",
+    "formula": "beta = ln(V2/V1)/ln(I2/I1); V = V1(I/I1)^beta; rd = beta V/I; E = V I t",
+    "assumptions": [
+      "The two V-I points and pulse belong to the same polarity magnitude, temperature and waveform family in the MOV protection region; 0<beta<1.",
+      "Only interpolation between the characterized current endpoints is supported. Do not extrapolate into leakage or high-current bulk-resistance regions.",
+      "An imposed constant-current rectangular pulse is used; ideal zero-duration edges contribute no energy. Real edge energy must be included separately or the waveform integrated separately.",
+      "The energy allowance is supplied for the same duration, temperature, repetition count and aging condition. Equal joules from different waveforms do not imply equal survival.",
+      "The fit neglects self-heating during the pulse, parasitic inductance/capacitance and long-term degradation; it is not a safety certification or thermal-disconnector design."
+    ],
+    "references": [
+      {
+        "title": "Vishay, Varistors: Ideal Solution to Surge Protection, Varistor Operation and Selection Criteria",
+        "url": "https://www.vishay.com/docs/49305/49305.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "current_one",
+        "label": "Lower characterized current",
+        "unit": "A",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "voltage_one",
+        "label": "Voltage at lower current",
+        "unit": "V",
+        "default": 320,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "current_two",
+        "label": "Upper characterized current",
+        "unit": "A",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "voltage_two",
+        "label": "Voltage at upper current",
+        "unit": "V",
+        "default": 400,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "pulse_current",
+        "label": "Rectangular pulse current",
+        "unit": "A",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "pulse_duration",
+        "label": "Rectangular pulse duration",
+        "unit": "s",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "energy_allowance",
+        "label": "Applicable derated pulse-energy allowance",
+        "unit": "J",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "voltage_exponent",
+        "label": "Voltage-law exponent beta",
+        "unit": "1",
+        "expression": "log1p((voltage_two-voltage_one)/voltage_one)/log1p((current_two-current_one)/current_one)"
+      },
+      {
+        "key": "current_exponent",
+        "label": "Current-law exponent alpha",
+        "unit": "1",
+        "expression": "1/voltage_exponent"
+      },
+      {
+        "key": "clamp_voltage",
+        "label": "MOV pulse clamp voltage",
+        "unit": "V",
+        "expression": "voltage_one*exp(voltage_exponent*log1p((pulse_current-current_one)/current_one))"
+      },
+      {
+        "key": "differential_resistance",
+        "label": "MOV local differential resistance",
+        "unit": "ohm",
+        "expression": "voltage_exponent*clamp_voltage/pulse_current"
+      },
+      {
+        "key": "absorbed_energy",
+        "label": "Rectangular pulse absorbed energy",
+        "unit": "J",
+        "expression": "clamp_voltage*pulse_current*pulse_duration"
+      },
+      {
+        "key": "energy_margin",
+        "label": "Applicable energy headroom",
+        "unit": "J",
+        "expression": "energy_allowance-absorbed_energy"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "current_two",
+        "op": ">",
+        "right": "current_one",
+        "message": "Upper characterized current must exceed lower current"
+      },
+      {
+        "left": "voltage_two",
+        "op": ">",
+        "right": "voltage_one",
+        "message": "MOV voltage must rise between characterized points"
+      },
+      {
+        "left": "log1p((voltage_two-voltage_one)/voltage_one)",
+        "op": "<",
+        "right": "log1p((current_two-current_one)/current_one)",
+        "message": "The MOV protection-region fit requires a sublinear voltage exponent"
+      },
+      {
+        "left": "pulse_current",
+        "op": ">=",
+        "right": "current_one",
+        "message": "Pulse current is below the characterized fit interval"
+      },
+      {
+        "left": "pulse_current",
+        "op": "<=",
+        "right": "current_two",
+        "message": "Pulse current exceeds the characterized fit interval"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "current_one": 1,
+        "voltage_one": 320,
+        "current_two": 100,
+        "voltage_two": 400,
+        "pulse_current": 10,
+        "pulse_duration": 0.0001,
+        "energy_allowance": 1
+      },
+      "expected": {
+        "voltage_exponent": 0.0484550065040282,
+        "current_exponent": 20.637702317032343,
+        "clamp_voltage": 357.77087639996637,
+        "differential_resistance": 1.7335790142912242,
+        "absorbed_energy": 0.35777087639996635,
+        "energy_margin": 0.6422291236000337
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
