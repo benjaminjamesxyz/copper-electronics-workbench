@@ -1,0 +1,105 @@
+[
+  {
+    "id": "magnetics.turns_ratio",
+    "title": "Ideal transformer turns ratio and reflected load",
+    "category": "Magnetics and transformers",
+    "level": "basic",
+    "description": "Predict secondary RMS voltage and the primary-referred resistive load from winding turns.",
+    "formula": "a = Ns/Np; Vs = a Vp; Rprimary = Rload/a²",
+    "assumptions": [
+      "Ideal, lossless, perfectly coupled transformer in steady alternating excitation; no DC operation.",
+      "Neglect magnetizing current, leakage, winding resistance, regulation and saturation.",
+      "Voltages are RMS magnitudes; winding polarity is not represented. Load is purely resistive.",
+      "Reflected resistance uses sequential division by the turns ratio to avoid premature overflow or underflow of its square; this does not change the ideal model."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.014 Lecture 11, section B: Transformers",
+        "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"
+      },
+      {
+        "title": "Stanford EE102 exercises, static-circuit exercise 10: Reflected resistance",
+        "url": "https://stanford.edu/~boyd/ee102/101exercises.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "primary_turns",
+        "label": "Primary turns",
+        "unit": "turn",
+        "default": 1000.0,
+        "min": 1.0
+      },
+      {
+        "key": "secondary_turns",
+        "label": "Secondary turns",
+        "unit": "turn",
+        "default": 100.0,
+        "min": 1.0
+      },
+      {
+        "key": "primary_voltage",
+        "label": "Primary RMS voltage",
+        "unit": "V",
+        "default": 230.0,
+        "min": 0.0
+      },
+      {
+        "key": "load_resistance",
+        "label": "Secondary load resistance",
+        "unit": "ohm",
+        "default": 24.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "voltage_ratio",
+        "label": "Secondary / primary voltage ratio",
+        "unit": "1",
+        "expression": "secondary_turns/primary_turns"
+      },
+      {
+        "key": "secondary_voltage",
+        "label": "Secondary RMS voltage",
+        "unit": "V",
+        "expression": "primary_voltage*voltage_ratio"
+      },
+      {
+        "key": "reflected_resistance",
+        "label": "Primary-referred load resistance",
+        "unit": "ohm",
+        "expression": "load_resistance/voltage_ratio/voltage_ratio"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "floor(primary_turns)",
+        "op": "==",
+        "right": "primary_turns",
+        "message": "Primary turns must be a positive integer"
+      },
+      {
+        "left": "floor(secondary_turns)",
+        "op": "==",
+        "right": "secondary_turns",
+        "message": "Secondary turns must be a positive integer"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "primary_turns": 1000.0,
+        "secondary_turns": 100.0,
+        "primary_voltage": 230.0,
+        "load_resistance": 24.0
+      },
+      "expected": {
+        "voltage_ratio": 0.1,
+        "secondary_voltage": 23.0,
+        "reflected_resistance": 2400.0
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
