@@ -55,3 +55,46 @@ f_c=\frac1{2\pi RC},\quad |H|=\frac1{\sqrt{1+x^2}},\quad
 | attenuation_db | 1.4450701162052881 | dB |
 
 **Source:** Colorado PHYS 3330 Lab 3 §5.4, linked in the evidence register.
+
+## `filters.deliyannis_bandpass_design` — Modified Deliyannis band-pass component design (expert)
+
+**Purpose/topology:** Synthesize TI SLOA096 Figure 11's modified Deliyannis resistor network, not a bare RLC resonator. C1=C2=C0; R1=R4=R0; R5 is shorted and R6 open. Without the optional input attenuator, peak gain magnitude equals Q; inversion sign is not reported.
+
+The source relationships f0=1/(2πR0C0), Q=(R3+R4)/(2R1) and R2R3=R0² imply
+
+\[
+R_0=\frac1{2\pi f_0C_0},\quad R_3=R_0(2Q-1),\quad R_2=\frac{R_0}{2Q-1}.
+\]
+
+For x=f/f0 and peak G=Q, the canonical band-pass transfer is
+
+\[
+H(s)=\frac{G s/(Q\omega_0)}{(s/\omega_0)^2+s/(Q\omega_0)+1},\quad
+|H|=\frac{x}{\sqrt{(1-x^2)^2+(x/Q)^2}}.
+\]
+
+Half-power relative to the peak solves |1−x²|=x/Q, yielding exact, not narrow-band, edges:
+
+\[
+f_L=f_0\frac{2Q}{\sqrt{4Q^2+1}+1},\quad
+f_H=f_0\frac{\sqrt{4Q^2+1}+1}{2Q},\quad BW=f_0/Q.
+\]
+
+The rationalized lower edge avoids subtraction cancellation; fLfH=f0² and fH−fL=BW. Output order is r0, r3, r2, peak_gain, bandwidth_hz, lower_edge_hz, upper_edge_hz, voltage_gain.
+
+**Inputs/domain/error rationale:** `center_frequency` (Hz) 1e-6…1e12; `q` (1) strictly greater than 0.5 through 50 inclusive; `c0` (F) 1e-15…1; `f` (Hz) 0…1e12. These guard positive finite resistance sizing and stable damping. At Q=0.5, R3=0 and R2 diverges, so this endpoint is rejected. DC has zero linear transmission without a logarithm and is valid. High-Q practical GBW, slew rate and tolerance requirements are qualitative assumptions, not guarantees.
+
+**Independent worked substitution/default:** center_frequency=1000 Hz, q=2, c0=1e-8 F, f=1000 Hz. R0=1/(2π·1000·1e-8); R3=3R0; R2=R0/3. Edge factors are (√17∓1)/4 and x=1 gives peak gain 2.
+
+| Output | Expected value | Unit |
+|---|---:|---|
+| r0 (R1 and R4 each) | 15915.494309189537 | ohm |
+| r3 | 47746.482927568606 | ohm |
+| r2 | 5305.164769729846 | ohm |
+| peak_gain | 2.0 | V/V |
+| bandwidth_hz | 500.0 | Hz |
+| lower_edge_hz | 780.7764064044152 | Hz |
+| upper_edge_hz | 1280.7764064044152 | Hz |
+| voltage_gain | 2.0 | V/V |
+
+**Sources/limits:** TI SLOA096 §4.1/Fig.11/Eqs.1–3 and SNOA224A band-pass Q/edges, linked above. Exact component ratios and ideal op amp only. Independent arbitrary gain selection needs the excluded input attenuator; no preferred-value synthesis or hardware qualification is claimed.

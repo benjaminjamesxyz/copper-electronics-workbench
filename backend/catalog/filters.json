@@ -23,4 +23,36 @@
     "constraints": [],
     "example": {"inputs": {"r": 10000.0, "c": 1e-8, "f": 1000.0}, "expected": {"cutoff_hz": 1591.5494309189535, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.8467330159648303, "phase_rad": -0.5609821161086238, "attenuation_db": 1.4450701162052881}, "relative_tolerance": 1e-6}
   }
+  ,
+  {
+    "id": "filters.deliyannis_bandpass_design",
+    "title": "Modified Deliyannis band-pass component design",
+    "category": "Analog filters",
+    "level": "expert",
+    "description": "Size the resistor set of TI's modified Deliyannis band-pass topology and predict its exact half-power edges and transmission.",
+    "formula": "R0=1/(2*pi*f0*C0); R1=R4=R0; R3=R0*(2*Q-1); R2=R0/(2*Q-1); peak gain=Q; BW=f0/Q",
+    "assumptions": ["Use the circuit and resistor labels in TI SLOA096 Figure 11: C1=C2=C0 and R1=R4=R0.", "R5 is shorted and R6 open, so there is no input gain-attenuating divider; peak voltage-gain magnitude equals Q.", "Q must exceed 0.5; at Q=0.5 R3 is zero and R2 becomes infinite.", "Ideal op amp and exact component ratios; high-Q designs require adequate gain-bandwidth, slew rate and tolerance analysis.", "Response sign is not reported; magnitude is independent of circuit inversion."],
+    "references": [
+      {"title": "Texas Instruments SLOA096, section 4.1, Figure 11 and equations 1–3", "url": "https://www.ti.com/lit/an/sloa096/sloa096.pdf"},
+      {"title": "Texas Instruments AN-779 / SNOA224A, second-order band-pass Q and edges", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"}
+    ],
+    "inputs": [
+      {"key": "center_frequency", "label": "Band-pass center frequency", "unit": "Hz", "default": 1000.0, "min": 1e-6, "max": 1e12},
+      {"key": "q", "label": "Desired section Q", "unit": "1", "default": 2.0, "min": 0.5, "exclusive_min": true, "max": 50.0},
+      {"key": "c0", "label": "Each equal capacitor C1 and C2", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "r0", "label": "R1 and R4, each", "unit": "ohm", "expression": "1/(2*pi*center_frequency*c0)"},
+      {"key": "r3", "label": "Feedback resistor R3", "unit": "ohm", "expression": "r0*(2*q-1)"},
+      {"key": "r2", "label": "Shunt resistor R2", "unit": "ohm", "expression": "r0/(2*q-1)"},
+      {"key": "peak_gain", "label": "Center-frequency gain magnitude", "unit": "V/V", "expression": "q"},
+      {"key": "bandwidth_hz", "label": "Half-power bandwidth", "unit": "Hz", "expression": "center_frequency/q"},
+      {"key": "lower_edge_hz", "label": "Lower half-power edge", "unit": "Hz", "expression": "center_frequency*2*q/(sqrt(4*q^2+1)+1)"},
+      {"key": "upper_edge_hz", "label": "Upper half-power edge", "unit": "Hz", "expression": "center_frequency*(sqrt(4*q^2+1)+1)/(2*q)"},
+      {"key": "voltage_gain", "label": "Signal-frequency gain magnitude", "unit": "V/V", "expression": "(f/center_frequency)/sqrt((1-(f/center_frequency)^2)^2+(f/(center_frequency*q))^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"center_frequency": 1000.0, "q": 2.0, "c0": 1e-8, "f": 1000.0}, "expected": {"r0": 15915.494309189537, "r3": 47746.482927568606, "r2": 5305.164769729846, "peak_gain": 2.0, "bandwidth_hz": 500.0, "lower_edge_hz": 780.7764064044152, "upper_edge_hz": 1280.7764064044152, "voltage_gain": 2.0}, "relative_tolerance": 1e-6}
+  }
 ]
