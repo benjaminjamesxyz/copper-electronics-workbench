@@ -407,5 +407,155 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "converters.flyback_dcm_demagnetization",
+    "title": "DCM flyback energy and demagnetization budget",
+    "category": "Additional power converters",
+    "level": "expert",
+    "description": "Determine the peak current, conduction intervals, RMS winding currents and ideal device stress needed to deliver a specified load with complete flyback demagnetization.",
+    "formula": "Ipk = sqrt(2 Vo Io/(Lm fs)); D = Lm fs Ipk/Vi; Ddemag = Lm fs Ipk/(n Vo); idle = 1-D-Ddemag; Ipri,rms = Ipk sqrt(D/3); Isec,rms = n Ipk sqrt(Ddemag/3)",
+    "assumptions": [
+      "Ideal fixed-frequency isolated flyback, one output, magnetizing inductance referred to primary, n = Np/Ns, positive input/output/load.",
+      "Primary current starts at zero every cycle; stored energy transfers fully to the output. Efficiency is exactly unity in this model, avoiding inconsistent mixing of loss budgets and ideal demagnetization waveforms.",
+      "DCM requires D+Ddemag < 1, leaving a nonzero idle interval. Boundary-conduction and CCM inputs are rejected.",
+      "Output capacitor keeps voltage approximately constant. Winding RMS currents refer to full switching periods, including zero-current intervals.",
+      "Flat-top blocking voltages omit diode drops, parasitic capacitance, leakage ringing, clamp action and core/copper loss. Core saturation, current limits, control behavior and isolation ratings remain external design checks."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments John Betten, Designing a DCM flyback converter, SSZTCW6, equations 4-10 and 23-27",
+        "url": "https://www.ti.com/lit/ta/ssztcw6/ssztcw6.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "vin",
+        "label": "Input voltage",
+        "unit": "V",
+        "default": 48.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "vout",
+        "label": "Output voltage",
+        "unit": "V",
+        "default": 12.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_current",
+        "label": "Output load current",
+        "unit": "A",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "magnetizing_inductance",
+        "label": "Primary-referred magnetizing inductance",
+        "unit": "H",
+        "default": 0.0001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "switching_frequency",
+        "label": "Switching frequency",
+        "unit": "Hz",
+        "default": 100000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "primary_secondary_ratio",
+        "label": "Primary-to-secondary turns ratio Np/Ns",
+        "unit": "1",
+        "default": 2.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "primary_peak_current",
+        "label": "Peak primary and switch current",
+        "unit": "A",
+        "expression": "sqrt(2)*sqrt(vout)*sqrt(load_current)/sqrt(magnetizing_inductance)/sqrt(switching_frequency)"
+      },
+      {
+        "key": "duty",
+        "label": "Primary conduction fraction",
+        "unit": "1",
+        "expression": "magnetizing_inductance*switching_frequency*(primary_peak_current/vin)"
+      },
+      {
+        "key": "demagnetization_fraction",
+        "label": "Secondary conduction fraction",
+        "unit": "1",
+        "expression": "magnetizing_inductance*switching_frequency*(primary_peak_current/vout)/primary_secondary_ratio"
+      },
+      {
+        "key": "idle_fraction",
+        "label": "Zero-current idle fraction",
+        "unit": "1",
+        "expression": "1-(duty+demagnetization_fraction)"
+      },
+      {
+        "key": "primary_rms_current",
+        "label": "Full-period primary RMS current",
+        "unit": "A",
+        "expression": "primary_peak_current*sqrt(duty/3)"
+      },
+      {
+        "key": "secondary_rms_current",
+        "label": "Full-period secondary RMS current",
+        "unit": "A",
+        "expression": "primary_secondary_ratio*primary_peak_current*sqrt(demagnetization_fraction/3)"
+      },
+      {
+        "key": "switch_blocking_voltage",
+        "label": "Ideal switch flat-top blocking voltage",
+        "unit": "V",
+        "expression": "vin+primary_secondary_ratio*vout"
+      },
+      {
+        "key": "diode_reverse_voltage",
+        "label": "Ideal secondary diode reverse voltage",
+        "unit": "V",
+        "expression": "vout+vin/primary_secondary_ratio"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "sqrt(2)*sqrt(vout)*sqrt(load_current)*sqrt(magnetizing_inductance)*sqrt(switching_frequency)*(1/vin+1/vout/primary_secondary_ratio)",
+        "op": "<",
+        "right": "1",
+        "message": "Primary plus demagnetization intervals must be shorter than one switching period for DCM."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "vin": 48.0,
+        "vout": 12.0,
+        "load_current": 1.0,
+        "magnetizing_inductance": 0.0001,
+        "switching_frequency": 100000.0,
+        "primary_secondary_ratio": 2.0
+      },
+      "expected": {
+        "primary_peak_current": 1.5491933384829668,
+        "duty": 0.3227486121839514,
+        "demagnetization_fraction": 0.6454972243679028,
+        "idle_fraction": 0.031754163448145856,
+        "primary_rms_current": 0.5081327481546147,
+        "secondary_rms_current": 1.4372164478523368,
+        "switch_blocking_voltage": 72.0,
+        "diode_reverse_voltage": 36.0
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

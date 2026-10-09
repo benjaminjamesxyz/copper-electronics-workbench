@@ -161,3 +161,51 @@ Draw a three-winding, single-switch forward circuit, not a flyback. The reset co
 - Bind `Vin` → `vin`, `Vo` → `vout`, `Np/Ns` → `primary_secondary_ratio`, `Nr/Np` → `reset_primary_ratio`, `D` → `duty`, `Dreset` → `reset_fraction`, `idle` → `idle_fraction`, `VDS` → `switch_blocking_voltage`. If timing labels crowd, retain ratios and reset diode in the main circuit and put computed fractions in the legend.
 - Caption: “Reset winding returns magnetizing energy to the input while the freewheel diode feeds the CCM output choke. Reset must finish before the next on-time. Ideal stress excludes leakage spikes.”
 
+
+## 4. `converters.flyback_dcm_demagnetization`
+
+### Purpose, equations and physical domain
+
+S4 distinguishes three intervals: primary ramp from zero, secondary ramp to zero, and idle. Let `Lm` be primary magnetizing inductance, `fs` fixed switching frequency and `n=Np/Ns`.
+
+With ideal unity efficiency, output power is `Po=Vo Io = Lm Ipk² fs/2`. Thus `Ipk=sqrt(2VoIo/(Lm fs))`. Primary current slope is `Vin/Lm`, giving `D=Lm fs Ipk/Vin`. During energy delivery, primary-referred reset voltage is `nVo`, giving `Ddemag=Lm fs Ipk/(nVo)`. DCM requires `D+Ddemag<1`; idle is the remainder.
+
+Integrating triangular pulses over a **full** period gives `Ipri,rms=Ipk sqrt(D/3)` and `Isec,rms=n Ipk sqrt(Ddemag/3)`. The secondary pulse peak is `nIpk`. Its average `n Ipk Ddemag/2` must equal `Io`. Ideal switch flat-top stress is `Vin+nVo`; diode reverse stress is `Vo+Vin/n`.
+
+Do not insert an efficiency factor only into energy while retaining ideal output-current balance. This handoff uses the internally consistent ideal limit. Losses need a separate detailed design, not hidden corrections. Core saturation, leakage energy, valley switching, clamps, diode drop and transformer/IC ratings are not predicted. The output capacitor must hold voltage nearly constant.
+
+### Complete independent example
+
+Inputs: `vin=48 V`, `vout=12 V`, `load_current=1 A`, `magnetizing_inductance=100e-6 H`, `switching_frequency=100000 Hz`, `primary_secondary_ratio=2`.
+
+1. `Po=12 W`; energy per cycle `Po/fs=120e-6 J`.
+2. `primary_peak_current = sqrt(2×12/(100e-6×100000)) = sqrt(2.4) = 1.5491933384829668 A`.
+3. `duty = 100e-6×100000×1.5491933384829668/48 = 0.3227486121839514`.
+4. `demagnetization_fraction = 100e-6×100000×1.5491933384829668/(2×12) = 0.6454972243679028`.
+5. `idle_fraction = 1-0.3227486121839514-0.6454972243679028 = 0.031754163448145856`.
+6. `primary_rms_current = 1.5491933384829668×sqrt(0.3227486121839514/3) = 0.5081327481546147 A`.
+7. `secondary_rms_current = 2×1.5491933384829668×sqrt(0.6454972243679028/3) = 1.4372164478523368 A`.
+8. `switch_blocking_voltage = 48+2×12 = 72 V`.
+9. `diode_reverse_voltage = 12+48/2 = 36 V`.
+
+The energy-per-cycle step is a derivation, not an additional catalog output. The eight actual output keys are steps 2–9. Output-current cross-check: `2×1.5491933384829668×0.6454972243679028/2 = 1 A`.
+
+### Nominal, limiting and invalid cases
+
+- Nominal: above complete map. Its nonzero idle is small; the calculation does not represent a production margin recommendation.
+- Clean alternate: `vin=vout=10 V`, `n=1`, `Lm=100e-6 H`, `fs=100000 Hz`, `Io=.03125 A` gives Ipk=.25 A, D=.25, Ddemag=.25, idle=.5, both RMS currents `.25/sqrt(12) = .07216878364870322 A`, both blocking voltages 20 V.
+- Physical boundary: same alternate inputs except `Io=.125 A` give Ipk=.5 A and D=Ddemag=.5. Equality must reject, not become a zero-idle DCM success. Slightly lower current admits; slightly higher rejects.
+- Decreasing positive load sends current and conduction fractions toward zero and idle toward one. Exact no-load operation is excluded because a regulating converter may pulse-skip or stop rather than maintain this fixed-frequency loaded model.
+- Reject nonpositive load, voltage, frequency, turns ratio or magnetizing inductance. An efficiency input is intentionally absent rather than treated as a free inconsistent correction.
+
+### Mandatory diagram specification
+
+Show an isolated flyback power circuit in the upper/middle band and a compact three-interval explanatory current sketch below it.
+
+- Vin positive → primary dotted upper terminal; primary undotted lower terminal → Q drain; Q source → primary ground.
+- Secondary **undotted** upper terminal → diode anode; diode cathode → positive output O. Secondary **dotted** lower terminal → isolated output ground. Cout and load connect O to output ground. The reversed winding dots make the diode off during Q on-time.
+- Mark `Lm, primary` at the primary winding and an energy arrow “store” during on-time, then “deliver” toward the secondary during demagnetization. These arrows are explanatory, not copper connections.
+- Current sketch: primary current rises from zero during D and is zero afterward; secondary current starts at `n Ipk` after turn-off, falls to zero over Ddemag, and remains zero during idle. Align switching boundaries. Use “illustrative, not to scale”; never draw overlapping primary/secondary conduction in this ideal model.
+- Bind `Vi` → `vin`, `Vo` → `vout`, `Lm` → `magnetizing_inductance`, `Np/Ns` → `primary_secondary_ratio`, `Ipk` → `primary_peak_current`, `D` → `duty`, `Ddemag` → `demagnetization_fraction`, `idle` → `idle_fraction`. The secondary peak label must read `n × Ipk`, not bind `primary_peak_current` under an unqualified secondary `Ipk` label.
+- Caption: “Primary storage, secondary delivery, then zero-current idle. Opposite winding-dot orientation blocks the secondary diode during storage. Ideal DCM; ringing and leakage spikes are omitted.”
+
