@@ -56,3 +56,50 @@ Inputs: `capacitance_one_hour=10e−6 F`, `aging_percent_decade=2 %/decade`, `ag
 
 Use a semilog material-aging plot. Plot area x=70…520, y=55…205; horizontal axis “time since deaging, logarithmic”, vertical axis “C”. Draw a descending straight conceptual line in semilog coordinates; mark the one-hour anchor on the left and a generic later observation on the right. At x=545 place a small capacitor symbol and “ferroelectric dielectric”. Bound labels: initial `C₁h` → `capacitance_one_hour`; clock label `t` → `age`; rate `A` → `aging_percent_decade`; result `C(t)` → `aged_capacitance`. Do not bind a marker coordinate to an actual numerical age. Caption: “Conceptual semilog aging law; heating above the Curie point resets the clock. Fixed temperature and DC bias.”
 
+
+## 2. `passives.dielectric_absorption_recovery` — expert
+
+### Purpose and novelty
+
+A capacitor can recover terminal voltage after being shorted because slow polarization retains charge. Closest baseline: `transients.capacitor_charge_sharing`. That baseline starts from two externally specified capacitor voltages and models their connection through a resistor. Here the hidden state is established by a finite-duration charge, depleted during a short, then released after short removal. The same conservation laws apply, but the design problem is a nonideal single component's history-dependent dielectric memory, not another ideal RC delay or a renamed redistribution output. The finite charge/short preparation is essential; do not replace it with an arbitrary initial hidden voltage.
+
+### Topology, derivation and validity
+
+Across terminal A and reference B, connect fast `main_capacitance=C_m` directly in parallel with the SERIES branch `absorption_resistance=R_a` followed by `absorption_capacitance=C_a`. The internal node between R_a and C_a is the polarization node. Start with both capacitors uncharged.
+
+1. Clamp A to `charge_voltage=V_ch` for `charge_time=t_ch`. Internal voltage becomes `V_ch[1−exp(−t_ch/(R_a C_a))]`.
+2. Clamp A to B for `short_time=t_s`. C_m becomes zero immediately; the internal voltage decays to `memory_voltage=V_a0` through R_a.
+3. Disconnect the source and short. The A terminal is open except for the modeled capacitor. Charge conservation gives `V_inf=V_a0 C_a/(C_m+C_a)`. The difference between internal and terminal voltages decays with `tau=R_a C_a C_m/(C_m+C_a)`.
+4. At `recovery_time=t`, `recovered_voltage=V_inf[1−exp(−t/tau)]`.
+
+All capacitances are F, resistance Ω, times s, voltages V. A positive charge voltage means A and the internal node become positive relative to B; signed voltage is supported for nonpolar dielectric models. TI SBOA597 §4.5 provides the polarization-branch model and physical sequence. Reducing many time constants to one is a fit, not a material identity. Infinite input resistance is essential; finite meter leakage ultimately changes recovery. ESR and the impulsive current of ideal clamps are not calculated. Zero short time denotes the limiting instantaneous reset of C_m with no time for C_a discharge; zero charge time gives no stored polarization.
+
+Use `-expm1(-x)` for charging and recovery. Do not infer that the asymptotic voltage equals the specified absorption percentage for an arbitrary timing protocol. The TI text's standardized timings are context only, not a compliance claim.
+
+### Complete independent example
+
+Inputs: `main_capacitance=1e−6 F`, `absorption_capacitance=1e−8 F`, `absorption_resistance=1e9 Ω`, `charge_voltage=10 V`, `charge_time=20 s`, `short_time=1 s`, `recovery_time=10 s`.
+
+First, R_a C_a=10 s. The internal voltage after charging is `10(1−exp(−2))`; after shorting it is multiplied by `exp(−0.1)`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `memory_voltage` | 10(1−exp(−2))exp(−0.1) | 7.823809897829776 V |
+| `recovery_time_constant` | 1e9/(1/1e−8+1/1e−6) | 9.900990099009901 s |
+| `final_recovery_voltage` | memory_voltage/101 | 0.07746346433494829 V |
+| `recovered_voltage` | final_recovery_voltage×(1−exp(−1.01)) | 0.04924980040079833 V |
+
+### Independent tester cases
+
+- Nominal: complete table.
+- At recovery_time=0, recovered_voltage=0 while the other outputs are unchanged.
+- At charge_time=0 or charge_voltage=0, all voltage outputs are zero, but tau remains positive.
+- Negating charge_voltage negates all three voltages and leaves tau unchanged.
+- Long charge with short_time=0: V_inf tends to V_ch C_a/(C_m+C_a). Long short forces both recovery voltages toward zero. Long recovery approaches V_inf, never above it for positive excitation.
+- Small positive recovery time has slope `V_a0/(R_a C_m)`; nominal values at 1e−12 s give approximately 7.82380989783e−15 V, not zero from subtractive cancellation.
+- Reject nonpositive capacitances/resistance and negative times. A finite instrument input resistance is outside this model, not an extra input silently ignored.
+
+### Mandatory diagram
+
+Left two-thirds: terminals A at (120,65) and B at (120,220). Draw C_m vertically on the x=230 branch. On x=400 draw R_a above C_a, with explicit internal junction between them. Top and bottom rails connect the branches; the internal node must not connect to the C_m branch. Show a detached “charge → short → open” three-phase timing strip at x=35…650, y=245; no switch is electrically closed in the recovery picture. Label the A terminal positive and B reference. Bound labels: C_m → `main_capacitance`, R_a → `absorption_resistance`, C_a → `absorption_capacitance`, internal V_a0 → `memory_voltage`, terminal V_rec → `recovered_voltage`. Put timing labels in the legend if cramped. Caption: “After finite charging and shorting, the open terminal recovers voltage from retained polarization. One fitted absorption branch; no leakage or meter loading.”
+

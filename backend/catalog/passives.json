@@ -83,5 +83,123 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "passives.dielectric_absorption_recovery",
+    "title": "Capacitor dielectric-memory voltage recovery",
+    "category": "Nonideal passive components",
+    "level": "expert",
+    "description": "Predict reappearing terminal voltage after finite charging, ideal shorting and open-circuit recovery of a one-branch dielectric-absorption model.",
+    "formula": "V_a0 = V_ch [1-exp(-t_ch/(R_a C_a))] exp(-t_short/(R_a C_a)); tau = R_a C_a C_m/(C_a+C_m); V_inf = V_a0 C_a/(C_a+C_m); V_rec = V_inf [1-exp(-t_rec/tau)]",
+    "assumptions": [
+      "Main capacitance C_m is in parallel with a SERIES R_a-C_a polarization branch. Both capacitors start uncharged.",
+      "An ideal voltage source clamps the terminals during charge; an ideal short clamps them during discharge; both are disconnected during recovery.",
+      "No terminal leakage, measurement loading, ESR, ESL or additional absorption branches. Parameters must be fitted to the relevant time and temperature range.",
+      "This is a reduced dielectric-polarization memory model, not the full IEC dielectric-absorption test or a safety guarantee that a discharged capacitor remains safe."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SBOA597, section 4.5 Dielectric Absorption and Relaxation, Figure 4-15",
+        "url": "https://www.ti.com/lit/pdf/sboa597"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "main_capacitance",
+        "label": "Fast terminal capacitance",
+        "unit": "F",
+        "default": 1e-06,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "absorption_capacitance",
+        "label": "Polarization branch capacitance",
+        "unit": "F",
+        "default": 1e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "absorption_resistance",
+        "label": "Polarization relaxation resistance",
+        "unit": "ohm",
+        "default": 1000000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "charge_voltage",
+        "label": "Applied charge voltage",
+        "unit": "V",
+        "default": 10
+      },
+      {
+        "key": "charge_time",
+        "label": "Voltage-clamped charging time",
+        "unit": "s",
+        "default": 20,
+        "min": 0
+      },
+      {
+        "key": "short_time",
+        "label": "Terminal shorting time",
+        "unit": "s",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "recovery_time",
+        "label": "Time after removing short",
+        "unit": "s",
+        "default": 10,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "memory_voltage",
+        "label": "Hidden polarization voltage after short",
+        "unit": "V",
+        "expression": "charge_voltage*(-expm1(-charge_time/absorption_resistance/absorption_capacitance))*exp(-short_time/absorption_resistance/absorption_capacitance)"
+      },
+      {
+        "key": "recovery_time_constant",
+        "label": "Open-terminal recovery time constant",
+        "unit": "s",
+        "expression": "absorption_resistance*absorption_capacitance/(1+absorption_capacitance/main_capacitance)"
+      },
+      {
+        "key": "final_recovery_voltage",
+        "label": "Asymptotic recovered terminal voltage",
+        "unit": "V",
+        "expression": "memory_voltage/(1+main_capacitance/absorption_capacitance)"
+      },
+      {
+        "key": "recovered_voltage",
+        "label": "Recovered terminal voltage at observation",
+        "unit": "V",
+        "expression": "final_recovery_voltage*(-expm1(-recovery_time/recovery_time_constant))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "main_capacitance": 1e-06,
+        "absorption_capacitance": 1e-08,
+        "absorption_resistance": 1000000000,
+        "charge_voltage": 10,
+        "charge_time": 20,
+        "short_time": 1,
+        "recovery_time": 10
+      },
+      "expected": {
+        "memory_voltage": 7.823809897829776,
+        "recovery_time_constant": 9.900990099009901,
+        "final_recovery_voltage": 0.07746346433494829,
+        "recovered_voltage": 0.04924980040079833
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
