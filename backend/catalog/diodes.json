@@ -986,5 +986,179 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "diodes.parallel_led_ballast",
+    "title": "Two-branch LED ballast and current sharing",
+    "category": "Diodes, LEDs and rectification",
+    "level": "intermediate",
+    "description": "Size equal individual ballast resistors and calculate current imbalance in two parallel LEDs supplied by a common constant-current sink.",
+    "formula": "Rmin = abs(VF2-VF1)/DeltaIallow; I1 = [Itotal+(VF2-VF1)/R]/2; I2 = Itotal-I1",
+    "assumptions": [
+      "Exactly two LED branches, each with its own equal ballast resistor, and one common regulated total-current sink.",
+      "Forward voltages are bounded values evaluated near the resulting operating currents, not universal constant LED characteristics.",
+      "No resistor mismatch or thermal feedback; minimum resistance must be revisited with actual LED I-V and temperature envelopes.",
+      "Checks sink voltage headroom; ballast matching is a different physical problem from voltage-fed series LED resistor sizing.",
+      "Current difference is evaluated directly from the forward-voltage mismatch divided by ballast resistance to avoid subtracting nearly equal branch currents."
+    ],
+    "references": [
+      {
+        "title": "TI SLVA325 Ballast Resistor Calculation \u2013 Current Matching in Parallel LEDs, pages 3\u20137",
+        "url": "https://e2echina.ti.com/cfs-file/__key/telligent-evolution-components-attachments/13-107-00-00-00-01-00-92/slva325.pdf"
+      },
+      {
+        "title": "Kingbright circuit design notes, separate resistor per parallel LED",
+        "url": "https://www.kingbrightusa.com/images/catalog/SPEC/SA18-11SURKWA.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "total_current",
+        "label": "Regulated total sink current",
+        "unit": "A",
+        "default": 0.04,
+        "min": 1e-09,
+        "max": 100
+      },
+      {
+        "key": "forward_one",
+        "label": "LED 1 forward voltage",
+        "unit": "V",
+        "default": 3,
+        "min": 1e-06,
+        "max": 100
+      },
+      {
+        "key": "forward_two",
+        "label": "LED 2 forward voltage",
+        "unit": "V",
+        "default": 3.2,
+        "min": 1e-06,
+        "max": 100
+      },
+      {
+        "key": "allowed_difference",
+        "label": "Allowed branch-current difference",
+        "unit": "A",
+        "default": 0.004,
+        "min": 1e-12,
+        "max": 100
+      },
+      {
+        "key": "ballast_resistance",
+        "label": "Selected resistor per branch",
+        "unit": "ohm",
+        "default": 68,
+        "min": 1e-06,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "supply",
+        "label": "LED supply voltage",
+        "unit": "V",
+        "default": 5,
+        "min": 1e-06,
+        "max": 10000
+      },
+      {
+        "key": "sink_headroom_min",
+        "label": "Required current-sink headroom",
+        "unit": "V",
+        "default": 0.3,
+        "min": 0,
+        "max": 1000
+      }
+    ],
+    "outputs": [
+      {
+        "key": "ballast_min",
+        "label": "Minimum ballast resistance for matching",
+        "unit": "ohm",
+        "expression": "abs(forward_two-forward_one)/allowed_difference"
+      },
+      {
+        "key": "current_one",
+        "label": "LED 1 branch current",
+        "unit": "A",
+        "expression": "(total_current+(forward_two-forward_one)/ballast_resistance)/2"
+      },
+      {
+        "key": "current_two",
+        "label": "LED 2 branch current",
+        "unit": "A",
+        "expression": "total_current-current_one"
+      },
+      {
+        "key": "current_difference",
+        "label": "Absolute branch-current difference",
+        "unit": "A",
+        "expression": "abs(forward_two-forward_one)/ballast_resistance"
+      },
+      {
+        "key": "branch_voltage",
+        "label": "Common LED plus ballast branch voltage",
+        "unit": "V",
+        "expression": "forward_one+ballast_resistance*current_one"
+      },
+      {
+        "key": "ballast_power_total",
+        "label": "Combined ballast-resistor dissipation",
+        "unit": "W",
+        "expression": "ballast_resistance*(current_one^2+current_two^2)"
+      },
+      {
+        "key": "sink_headroom",
+        "label": "Available sink voltage headroom",
+        "unit": "V",
+        "expression": "supply-branch_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "allowed_difference",
+        "op": "<",
+        "right": "total_current",
+        "message": "Allowed branch difference must be smaller than total current."
+      },
+      {
+        "left": "ballast_resistance",
+        "op": ">=",
+        "right": "abs(forward_two-forward_one)/allowed_difference",
+        "message": "Ballast is too small for the specified current matching."
+      },
+      {
+        "left": "abs(forward_two-forward_one)",
+        "op": "<",
+        "right": "total_current*ballast_resistance",
+        "message": "Both LED branches must have positive predicted current."
+      },
+      {
+        "left": "supply",
+        "op": ">=",
+        "right": "(forward_one+forward_two+ballast_resistance*total_current)/2+sink_headroom_min",
+        "message": "Supply cannot provide the required branch voltage and sink headroom."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "total_current": 0.04,
+        "forward_one": 3,
+        "forward_two": 3.2,
+        "allowed_difference": 0.004,
+        "ballast_resistance": 68,
+        "supply": 5,
+        "sink_headroom_min": 0.3
+      },
+      "expected": {
+        "ballast_min": 50,
+        "current_one": 0.021470588235294116,
+        "current_two": 0.018529411764705885,
+        "current_difference": 0.002941176470588232,
+        "branch_voltage": 4.46,
+        "ballast_power_total": 0.054694117647058824,
+        "sink_headroom": 0.54
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

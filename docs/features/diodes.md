@@ -334,3 +334,50 @@ The ordered references plus nonnegative diode drops guarantee VL ≤ VH. The pos
 
 - `upper_reference >= lower_reference` — Upper reference must not be below lower reference.
 
+## 7. `diodes.parallel_led_ballast` — intermediate
+
+**Purpose/topology:** Two individual LED-plus-ballast branches connect between a voltage supply and one common constant-current sink. Each branch has the same resistor R. Total current is regulated independently of LED branch impedance; this is distinct from calculator 1's voltage-source string.
+
+Equal branch voltages imply Vf1 + RI1 = Vf2 + RI2, while KCL gives I1 + I2 = Itotal. Solve jointly: I1 = [Itotal + (Vf2−Vf1)/R]/2, I2 = Itotal−I1, and |I1−I2| = |Vf2−Vf1|/R. Thus Rmin = |Vf2−Vf1|/ΔIallow. Branch voltage is Vf1 + RI1 = (Vf1+Vf2+R·Itotal)/2. Ballast power is R(I1²+I2²); current-sink headroom is Vsupply−Vbranch.
+
+**Units:** Vf and supply/headroom V, currents and allowed difference A, ballast ohm, loss W. **Domain:** Itotal > 0, 0 < ΔIallow < Itotal, R > 0 and R ≥ Rmin, |Vf2−Vf1| < R·Itotal (both branches forward-conducting), and available sink headroom ≥ entered sink minimum. Equal Vf is permitted and yields Rmin = 0, but the selected ballast remains positive.
+
+**Limits:** Vf1/Vf2 must bound the actual operating-point and temperature mismatch; fixed Vf and identical resistors are an approximation. Resistor tolerances, electrothermal feedback and unregulated sink current are not included. Never substitute one shared resistor for the two ballasts. Sources S1 and S9. TI's multi-LED derivation supports the general principle, but this fixed-size implementation intentionally solves exactly two branches rather than faking arbitrary branch arrays.
+
+**Independent example (also defaults):** Itotal = 0.040 A, Vf1 = 3 V, Vf2 = 3.2 V, ΔIallow = 0.004 A, selected R = 68 ohm, Vsupply = 5 V and sink requirement = 0.3 V. **Rmin = 50 ohm**. Difference = 0.2/68 = **0.002941176470588232 A**. **I1 = 0.021470588235294116 A**, **I2 = 0.018529411764705885 A**, summing to 0.040 A. **Branch voltage = 4.46 V**; **combined ballast power = 0.054694117647058824 W**; **sink headroom = 0.54 V**, above its minimum.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `total_current` | Regulated total sink current | A | 0.04 | [1e-09, 100] |
+| `forward_one` | LED 1 forward voltage | V | 3 | [1e-06, 100] |
+| `forward_two` | LED 2 forward voltage | V | 3.2 | [1e-06, 100] |
+| `allowed_difference` | Allowed branch-current difference | A | 0.004 | [1e-12, 100] |
+| `ballast_resistance` | Selected resistor per branch | ohm | 68 | [1e-06, 1000000000000.0] |
+| `supply` | LED supply voltage | V | 5 | [1e-06, 10000] |
+| `sink_headroom_min` | Required current-sink headroom | V | 0.3 | [0, 1000] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `ballast_min` | Minimum ballast resistance for matching | ohm | `abs(forward_two-forward_one)/allowed_difference` | 50 |
+| `current_one` | LED 1 branch current | A | `(total_current+(forward_two-forward_one)/ballast_resistance)/2` | 0.021470588235294116 |
+| `current_two` | LED 2 branch current | A | `total_current-current_one` | 0.018529411764705885 |
+| `current_difference` | Absolute branch-current difference | A | `abs(forward_two-forward_one)/ballast_resistance` | 0.002941176470588232 |
+| `branch_voltage` | Common LED plus ballast branch voltage | V | `forward_one+ballast_resistance*current_one` | 4.46 |
+| `ballast_power_total` | Combined ballast-resistor dissipation | W | `ballast_resistance*(current_one^2+current_two^2)` | 0.054694117647058824 |
+| `sink_headroom` | Available sink voltage headroom | V | `supply-branch_voltage` | 0.54 |
+
+### Constraint/error rationale and implementation limits
+
+Implementation evaluates `current_difference` directly as abs(VF2−VF1)/R instead of subtracting the computed branch currents. This retains small nonzero imbalance when currents are nearly equal and is exactly the derived matching equation. Other supporting outputs retain their sequential branch-current dependencies. Positive R and allowed difference guard division; allowed difference < total current and the strict two-branch condition prohibit an extinguished branch. Equality at the matching and sink-compliance limits is valid; equal forward voltages give ballast_min = 0 and current_difference = 0 without allowing a zero selected resistor.
+
+- `allowed_difference < total_current` — Allowed branch difference must be smaller than total current.
+- `ballast_resistance >= abs(forward_two-forward_one)/allowed_difference` — Ballast is too small for the specified current matching.
+- `abs(forward_two-forward_one) < total_current*ballast_resistance` — Both LED branches must have positive predicted current.
+- `supply >= (forward_one+forward_two+ballast_resistance*total_current)/2+sink_headroom_min` — Supply cannot provide the required branch voltage and sink headroom.
+
