@@ -1,0 +1,73 @@
+[
+  {
+    "id": "rf.matched_t_attenuator",
+    "title": "Symmetric matched T attenuator",
+    "category": "RF networks, antennas and links",
+    "level": "basic",
+    "description": "Synthesize an equal-impedance resistive T pad with a specified positive insertion loss while matching both ports.",
+    "formula": "a=ln(10) A/20; Rs=Z0 (1-exp(-a))/(1+exp(-a)); Rp=2 Z0 exp(-a)/(1-exp(-2a)); Pout/Pin=exp(-2a)",
+    "assumptions": [
+      "Both ports use the same positive real reference impedance and the output is terminated in that impedance.",
+      "The two series arms have identical resistance; the shunt arm connects their junction to the common return.",
+      "Ideal lumped resistors; package parasitics, layout, temperature, tolerances and power ratings must be checked separately.",
+      "Attenuation is strictly positive. The zero-loss bypass requires an open shunt and is not a finite-resistor T pad."
+    ],
+    "references": [
+      {
+        "title": "Michael Steer, Microwave and RF Design III, section 5.5.2, equations 2, 7 and 8",
+        "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_III_-_Networks_(Steer)/05%3A_Chapter_5/5.5%3A_Terminations_and_Attenuators"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "reference_impedance",
+        "label": "Equal port reference impedance",
+        "unit": "ohm",
+        "default": 50.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "attenuation_db",
+        "label": "Matched insertion loss",
+        "unit": "dB",
+        "default": 20.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "series_resistance",
+        "label": "Each series-arm resistance",
+        "unit": "ohm",
+        "expression": "reference_impedance*(-expm1(-ln(10)*attenuation_db/20))/(1+exp(-ln(10)*attenuation_db/20))"
+      },
+      {
+        "key": "shunt_resistance",
+        "label": "Center shunt resistance",
+        "unit": "ohm",
+        "expression": "reference_impedance*exp(-ln(10)*attenuation_db/20)*2/(-expm1(-ln(10)*attenuation_db/10))"
+      },
+      {
+        "key": "power_transmission",
+        "label": "Matched transmitted power fraction",
+        "unit": "1",
+        "expression": "exp(-ln(10)*attenuation_db/10)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "reference_impedance": 50.0,
+        "attenuation_db": 20.0
+      },
+      "expected": {
+        "series_resistance": 40.90909090909091,
+        "shunt_resistance": 10.1010101010101,
+        "power_transmission": 0.01
+      },
+      "relative_tolerance": 1e-09
+    }
+  }
+]
