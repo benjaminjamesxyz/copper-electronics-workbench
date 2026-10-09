@@ -600,5 +600,131 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "cores.lamination_eddy_loss",
+    "title": "Thin-lamination classical eddy loss",
+    "category": "Winding and magnetic design",
+    "level": "expert",
+    "description": "Estimate classical eddy-current heating of electrically isolated steel sheets under parallel sinusoidal flux.",
+    "formula": "pv=(pi*f*Bpk*t)^2/(6*rho); P=pv*Vmetal; penetration_ratio=t*sqrt(pi*f*mu0*mur/rho)",
+    "assumptions": [
+      "Uniform sinusoidal flux parallel to thin, mutually insulated laminations; no transport current or normal flux component.",
+      "Constant effective permeability and resistivity at operating temperature, unsaturated material; eddy reaction must be small.",
+      "Thickness/skin-depth <= 0.3 is a conservative complete-penetration screening criterion, not a manufacturer accuracy guarantee.",
+      "Volume means metal only, excluding insulation/voids. Classical eddy loss excludes hysteresis, excess/domain-wall loss, cut-edge damage, burr shorts and joints."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.685, Kirtley: sections 3.4 and 4",
+        "url": "https://ocw.mit.edu/courses/6-685-electric-machines-fall-2013/73ce73e3a02b085d00df37882e7636fe_MIT6_685F13_chapter3.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Flux frequency",
+        "unit": "Hz",
+        "default": 50,
+        "min": 0
+      },
+      {
+        "key": "flux_peak",
+        "label": "Peak parallel flux density",
+        "unit": "T",
+        "default": 0.8,
+        "min": 0
+      },
+      {
+        "key": "lamination_thickness",
+        "label": "Metal sheet thickness",
+        "unit": "m",
+        "default": 0.0002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Lamination resistivity",
+        "unit": "ohm m",
+        "default": 5e-07,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permeability",
+        "label": "Effective relative permeability",
+        "unit": "1",
+        "default": 1000,
+        "min": 1
+      },
+      {
+        "key": "metal_volume",
+        "label": "Total metal volume",
+        "unit": "m^3",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "linear_flux_limit",
+        "label": "Material linear-model flux limit",
+        "unit": "T",
+        "default": 1.2,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "penetration_ratio",
+        "label": "Thickness to penetration-depth ratio",
+        "unit": "1",
+        "expression": "lamination_thickness*sqrt(pi*frequency*4*pi*1e-7*relative_permeability/resistivity)"
+      },
+      {
+        "key": "eddy_loss_density",
+        "label": "Classical eddy-loss density",
+        "unit": "W/m^3",
+        "expression": "(pi*frequency*flux_peak*lamination_thickness/sqrt(6*resistivity))^2"
+      },
+      {
+        "key": "eddy_loss",
+        "label": "Classical eddy heat",
+        "unit": "W",
+        "expression": "eddy_loss_density*metal_volume"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "flux_peak",
+        "op": "<=",
+        "right": "linear_flux_limit",
+        "message": "Peak flux exceeds the supplied linear-material limit."
+      },
+      {
+        "left": "lamination_thickness*sqrt(pi*frequency*4*pi*1e-7*relative_permeability/resistivity)",
+        "op": "<=",
+        "right": "0.3",
+        "message": "Complete-penetration approximation requires thickness/depth <= 0.3."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 50,
+        "flux_peak": 0.8,
+        "lamination_thickness": 0.0002,
+        "resistivity": 5e-07,
+        "relative_permeability": 1000,
+        "metal_volume": 0.0001,
+        "linear_flux_limit": 1.2
+      },
+      "expected": {
+        "penetration_ratio": 0.12566370614359174,
+        "eddy_loss_density": 210.55156055657307,
+        "eddy_loss": 0.021055156055657307
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

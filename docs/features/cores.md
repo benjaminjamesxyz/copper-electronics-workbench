@@ -215,3 +215,51 @@ Substitution: frequency multiplier `(150000/100000)^1.5=1.8371173070873836`; flu
 
 Left x=50–290,y=70–210: an ungapped closed rectangular core with a schematic winding and a shaded volume callout `core_volume`. Draw a clockwise conceptual circulating-flux arrow entirely within the core, with a magnitude label `flux_peak`. Right x=360–620,y=55–165: a sinusoidal flux sketch centred on zero, with positive peak label `flux_peak` and period bracket labeled “T=1/f” bound to `frequency` only through that explicit relation. Add an outward heat arrow from the core bound to `core_loss`; a small cycle-area label binds `energy_per_cycle`. Reference fit labels `reference_loss_density`, `reference_frequency`, `reference_flux_peak` belong to a calibration callout, not to the live sinusoid. Caption: “Sinusoidal zero-bias flux at calibration temperature; empirical total core heat, not a computed B–H loop. Reference data are supplied, and the sketch is illustrative.”
 
+## `cores.lamination_eddy_loss`
+
+**Purpose and novelty.** Select electrical-steel lamination thickness from classical eddy heating. Closest old item is `magnetics.conductor_skin_depth`: that gives field penetration but no induced-current distribution or dissipated power. Here penetration only screens the complete-penetration approximation. This is distinct from copper winding transport-current loss and measured total Steinmetz loss.
+
+**Equation and units.** MIT section 3.4 assumes a sheet-centred coordinate `y`, uniform parallel sinusoidal flux and no net transport current. In RMS phasors, `Jx=-j*omega*B_rms*y/rho`. Averaging `rho*|J|²` across `-t/2<=y<=t/2` gives `pv=omega²*B_rms²*t²/(12*rho)`. With `B_rms=Bpk/sqrt(2)`, this is `pv=(pi*f*Bpk*t)²/(6*rho)`. `P=pv*Vmetal`. The dimensionless screening ratio is `t*sqrt(pi*f*mu0*mur/rho)`. Resistance is bulk resistivity in ohm metres, not sheet resistance. Volume excludes insulation and voids.
+
+**Validity.** Thin, mutually electrically isolated sheets; flux lies in the sheet plane and is uniform through thickness; no transport current, saturation, normal flux or edge effects. Effective permeability/resistivity belong to the operating temperature and excitation. The complete-penetration premise is source-backed; `t/depth<=0.3` is the explicit conservative engineering screen selected here, not a published accuracy certification. Also enforce a user-supplied linear-material flux limit. Classical loss excludes hysteresis, excess/domain-wall effects, edge damage, burr shorts and joints. Zero frequency/flux gives zero heat. No standalone skin-depth output is added.
+
+### Complete independent numerical example
+
+Inputs:
+
+```json
+{
+  "frequency": 50,
+  "flux_peak": 0.8,
+  "lamination_thickness": 0.0002,
+  "resistivity": 5e-07,
+  "relative_permeability": 1000,
+  "metal_volume": 0.0001,
+  "linear_flux_limit": 1.2
+}
+```
+
+Expected outputs:
+
+```json
+{
+  "penetration_ratio": 0.12566370614359174,
+  "eddy_loss_density": 210.55156055657307,
+  "eddy_loss": 0.021055156055657307
+}
+```
+
+Substitution: `x=0.0002*sqrt(pi*50*4*pi*1e-7*1000/5e-7)=0.12566370614359174`, safely below 0.3. `pv=(pi*50*0.8*0.0002)^2/(6*5e-7)=210.55156055657307 W/m³`; `P=pv*1e-4=0.021055156055657307 W`. The `0.8 T` input is peak; using it as RMS would double the answer incorrectly.
+
+### Independent test scenarios
+
+- Nominal: complete vector above.
+- Halve only metal thickness: penetration ratio halves to `0.06283185307179587`; density/heat quarter to `52.63789013914327 W/m³` and `0.005263789013914327 W`.
+- Zero frequency with otherwise nominal inputs: penetration ratio and both losses are zero. Zero flux at nominal frequency: penetration ratio stays nominal, both losses zero.
+- The default geometry reaches `x=0.3` at about `284.965828994075 Hz`; use the defining expression rather than a rounded boundary when testing inclusive acceptance. A frequency of `400 Hz` violates the thin-sheet screen.
+- Invalid: zero/negative resistivity or thickness; negative frequency or flux; flux above `linear_flux_limit`; effective relative permeability below one. A thickness large enough to violate penetration must reject, not return the optimistic thin-sheet heat.
+
+### Mandatory physical-geometry diagram
+
+Show a three-sheet insulated lamination stack in perspective at x=45–370,y=60–205. Bind a metal-only thickness bracket to `lamination_thickness`; insulation gaps are shown but never included in that bracket. In-plane sinusoidal B arrow binds `flux_peak`; use two opposite induced-current arrows at positive/negative sheet-depth positions to demonstrate circulating eddies with zero transport current. Right inset is one sheet thickness section with centre coordinate y=0, faces y=±t/2, and qualitative antisymmetric J arrows. A heat arrow binds `eddy_loss`; labels bind `penetration_ratio` and `eddy_loss_density`. A stack-metal-only callout binds `metal_volume`. Caption: “Parallel flux penetrates each electrically isolated thin sheet. Current density changes sign across its midplane; only classical eddy heat is estimated. Insulation volume is excluded.”
+
