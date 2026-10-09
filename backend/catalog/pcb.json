@@ -534,5 +534,129 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.trace_joule_heat_density",
+    "title": "Trace volumetric Joule heating and deposited energy",
+    "category": "PCB interconnect and manufacturing",
+    "level": "intermediate",
+    "description": "Compute uniform copper current density, local heat-generation density and integrated pulse energy; no trace temperature is predicted.",
+    "formula": "J = I/(w t); q_volume = rho J^2; P = q_volume L w t; E = P duration",
+    "assumptions": [
+      "Uniform rectangular copper section, DC rectangular current pulse and spatially uniform current density.",
+      "Use resistivity at the relevant conductor temperature; constant resistivity is assumed over the pulse, so strong electrothermal feedback is not modeled.",
+      "Energy is heat generated inside the conductor, not retained heat; conductive, convective and radiative heat removal are not modeled.",
+      "No inferred temperature rise, fuse opening, melting, steady thermal rating, skin effect, pad bottleneck or via heating.",
+      "A zero current or zero duration is valid and gives zero generated power or energy respectively."
+    ],
+    "references": [
+      {
+        "title": "Michigan Technological University, Multiphysics Learning and Networking: Thermoelectromagnetics, Joule Heating",
+        "url": "https://multiphysics.geo.mtu.edu/thermoelectromagnetics.html"
+      },
+      {
+        "title": "Texas Instruments, Constructing Your Power Supply - Layout Considerations, section II and copper resistivity table",
+        "url": "https://www.ti.com/lit/pdf/slup224"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "length",
+        "label": "Uniform heated trace length",
+        "unit": "m",
+        "default": 0.05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "width",
+        "label": "Finished trace width",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "thickness",
+        "label": "Finished copper thickness",
+        "unit": "m",
+        "default": 3.5e-05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resistivity",
+        "label": "Copper resistivity during pulse",
+        "unit": "ohm m",
+        "default": 1.7e-08,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "pulse_current",
+        "label": "Constant pulse-current magnitude",
+        "unit": "A",
+        "default": 2.0,
+        "min": 0.0
+      },
+      {
+        "key": "duration",
+        "label": "Rectangular pulse duration",
+        "unit": "s",
+        "default": 0.1,
+        "min": 0.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "current_density",
+        "label": "Uniform copper current density",
+        "unit": "A/m^2",
+        "expression": "pulse_current/(width*thickness)"
+      },
+      {
+        "key": "volumetric_heat_rate",
+        "label": "Volumetric Joule heat generation",
+        "unit": "W/m^3",
+        "expression": "resistivity*current_density^2"
+      },
+      {
+        "key": "generated_power",
+        "label": "Integrated trace heat generation",
+        "unit": "W",
+        "expression": "volumetric_heat_rate*length*width*thickness"
+      },
+      {
+        "key": "deposited_energy",
+        "label": "Heat energy generated during pulse",
+        "unit": "J",
+        "expression": "generated_power*duration"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "width*thickness",
+        "op": ">",
+        "right": "0",
+        "message": "Current-density calculation requires a positive copper cross-section."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "length": 0.05,
+        "width": 0.001,
+        "thickness": 3.5e-05,
+        "resistivity": 1.7e-08,
+        "pulse_current": 3.0,
+        "duration": 0.2
+      },
+      "expected": {
+        "current_density": 85714285.71428572,
+        "volumetric_heat_rate": 124897959.18367347,
+        "generated_power": 0.21857142857142858,
+        "deposited_energy": 0.04371428571428571
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

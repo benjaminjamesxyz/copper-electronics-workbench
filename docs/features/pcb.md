@@ -367,3 +367,69 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `signed_skew` | 1.71e-11 | s |
 | `skew_magnitude` | 1.71e-11 | s |
 
+
+## pcb.trace_joule_heat_density — Trace volumetric Joule heating and deposited energy
+
+**Level:** intermediate
+
+**Purpose:** Compute uniform copper current density, local heat-generation density and integrated pulse energy; no trace temperature is predicted.
+
+**References:** [MTU-J](https://multiphysics.geo.mtu.edu/thermoelectromagnetics.html), Joule Heating; [TI-R](https://www.ti.com/lit/pdf/slup224), copper resistivity and geometry.
+
+The university source derives the local electrical-to-thermal conversion density as J·E. For isotropic ohmic copper, E = rho J; therefore q_v = rho J². For a uniform trace A = wt, current density J = I/A. Integrating q_v over volume Lwt and a constant-current pulse duration tau gives:
+
+- `current_density = pulse_current/(width*thickness)`, A/m²;
+- `volumetric_heat_rate = resistivity*current_density^2`, W/m³;
+- `generated_power = volumetric_heat_rate*length*width*thickness`, W;
+- `deposited_energy = generated_power*duration`, J.
+
+Unit check: `(ohm m)*(A/m²)² = W/m³`. Integration over volume gives W, and over time gives J. Although the total power reduces algebraically to I²R, the physical output is the **local volumetric heat-generation source**, followed by its spatial/time integral, not another generic resistor-power task.
+
+**Domain and limitations.** Positive L, w, t and rho; nonnegative constant pulse current and pulse duration. The cross-section guard protects division. Zero current yields zero density/power/energy; zero duration yields zero integrated energy. Constant rho and uniform current are assumptions. Strong temperature-dependent resistivity, skin/proximity effect, neck-downs and contact/via losses are excluded. The energy is **generated** in the conductor, not necessarily retained there. No heat capacity, cooling model, temperature rise, melting, fusing or steady-current rating is claimed. This stays outside the thermal lane's temperature-response models.
+
+**Independent worked example.** L = 50 mm, w = 1 mm, t = 35 µm, rho = 1.7e-8 ohm·m, I = 3 A for 0.2 s:
+
+1. A = 1 mm × 0.035 mm = 0.035 mm² = 3.5e-8 m².
+2. J = 3/0.035 = 85.7142857143 A/mm² = 85,714,285.71428572 A/m².
+3. q_v = (1.7e-8)J² = 124,897,959.18367347 W/m³.
+4. V_copper = 50 × 1 × 0.035 = 1.75 mm³ = 1.75e-9 m³.
+5. P = q_v V_copper = 0.21857142857142858 W.
+6. E = P(0.2) = 0.04371428571428571 J.
+
+As an independent integrated check, R = (1.7e-8)(0.05)/(3.5e-8) = 0.0242857142857 ohm, and 3²R gives the same total power. This does not provide a temperature answer.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `length` | Uniform heated trace length | m | 0.05 | > 0.0 |
+| `width` | Finished trace width | m | 0.001 | > 0.0 |
+| `thickness` | Finished copper thickness | m | 3.5e-05 | > 0.0 |
+| `resistivity` | Copper resistivity during pulse | ohm m | 1.7e-08 | > 0.0 |
+| `pulse_current` | Constant pulse-current magnitude | A | 2.0 | >= 0.0 |
+| `duration` | Rectangular pulse duration | s | 0.1 | >= 0.0 |
+
+**Input-only guards and error rationale:**
+
+- `width*thickness > 0`: Current-density calculation requires a positive copper cross-section.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `length` | 0.05 | m |
+| `width` | 0.001 | m |
+| `thickness` | 3.5e-05 | m |
+| `resistivity` | 1.7e-08 | ohm m |
+| `pulse_current` | 3.0 | A |
+| `duration` | 0.2 | s |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `current_density` | 85714285.71428572 | A/m^2 |
+| `volumetric_heat_rate` | 124897959.18367347 | W/m^3 |
+| `generated_power` | 0.21857142857142858 | W |
+| `deposited_energy` | 0.04371428571428571 | J |
+
