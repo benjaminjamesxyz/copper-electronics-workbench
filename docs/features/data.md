@@ -89,3 +89,27 @@ Equivalently SNR [dB] is `N*20 log10(2)+10 log10(1.5)+20 log10(a)+10 log10(OSR)`
 At a=1 and B=f_s/2 the equation reduces to ideal full-Nyquist sine SNR. The example's full-scale/unfiltered 12-bit SNR is about 74.0081 dB; amplitude backoff contributes −1.9382 dB and filtering +13.9794 dB.
 
 **Parent verification scenarios (not exercised here):** example; OSR=1/full-scale identity; doubled sample rate at fixed B gives +10 log10(2) dB; amplitude halving gives −20 log10(2) dB where the 16-LSB screen permits it; fractional bits, B>Nyquist and <16-LSB rejection; exact 16-LSB boundary.
+
+## `data.sar_acquisition_settling` — SAR ADC half-LSB acquisition settling
+
+**Level/purpose:** Expert. Find the theoretical positive acquisition time for a SAR sampling capacitor's initial error to fall to half an N-bit LSB. This converter-specific error target is not a generic RC waveform or digital logic threshold delay.
+
+**Derivation/units:** S7 §5 equations 5–10 model source resistance R_source [ohm] plus sampling-switch resistance R_switch [ohm] charging effective C_sample [F]. The initial error magnitude deltaV [V] decays as `deltaV exp(−t/tau)`, where `time_constant_s=tau=(R_source+R_switch)C_sample` [s]. Half-LSB is `V_span/2^(N+1)`. With `step_fraction=alpha=deltaV/V_span` [1], division and logarithms give `required_time_constants=ln(alpha*2^(N+1))` [1], then `minimum_acquisition_s=tau*required_time_constants` [s]. Outputs retain this sequential order.
+
+**Assumptions:** Input constant during acquisition; one linear time-invariant R/C pole; alpha is a magnitude with 0<alpha≤1. R_switch and C_sample must come from the selected ADC. Amplifier slew/recovery, charge buckets, charge kickback, switch nonlinearity, multiple poles, parasitics and tolerances are excluded. Add device/datasheet margin. The result excludes conversion time, is not maximum throughput, and does not certify accuracy.
+
+**Initial-condition distinction:** Full-scale alpha=1 needs `(N+1)ln(2)` time constants; half-scale alpha=1/2 needs `N ln(2)`. S7's 12-bit ADS7864 example starts the capacitor at midscale and yields about 8.32 tau; that factor must not be reused for a full-scale step. S7 recommends additional time-constant margin for its specific device/application.
+
+**Domain/error rationale:** Integer `bits` ∈ [1,32]; source/switch resistances each ∈ [0,1e9] ohm but their sum must be >0. `sample_capacitance` ∈ [1e-15,1e-3] F; `step_fraction` ∈ [1e-12,1]. Require `step_fraction*2^(bits+1)>1`: already-within-half-LSB errors are intentionally outside this positive-time model, not silently clamped to zero. Zero total R invalidates the acquisition RC representation. All logarithm arguments are greater than one and engineering bounds keep multiplication finite.
+
+**Independent example/default:** `bits=12`, `source_resistance=1000 ohm`, `switch_resistance=20 ohm`, `sample_capacitance=1.5e-11 F` (15 pF), `step_fraction=1`.
+
+| Output | Worked substitution | Expected |
+|---|---|---|
+| `time_constant_s` | (1000+20)×15e-12 | 1.53e-8 s (15.3 ns) |
+| `required_time_constants` | ln(1×2^13)=ln(8192) | 9.010913347279288 |
+| `minimum_acquisition_s` | 1.53e-8×9.010913347279288 | 1.3786697421337312e-7 s (137.86697421337312 ns) |
+
+At this time the remaining full-scale error fraction is exp(−ln(8192))=1/8192, exactly the 12-bit half-LSB target.
+
+**Parent verification scenarios (not exercised here):** example; half-scale/full-scale logarithmic factors; either resistance zero with the other positive; capacitance/resistance scaling; initial-error ratio equal/below one rejection; zero total R and fractional bits rejection.

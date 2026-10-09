@@ -115,5 +115,46 @@
       "expected": {"oversampling_ratio": 25, "snr_linear": 20066.219972879797, "process_gain_db": 13.979400086720377, "snr_db": 86.04931137647155},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.sar_acquisition_settling",
+    "title": "SAR ADC half-LSB acquisition settling",
+    "category": "ADC DAC and sampled systems",
+    "level": "expert",
+    "description": "Estimate acquisition time for the SAR sampling capacitor to settle an input step to half an N-bit LSB through source and sampling-switch resistance.",
+    "formula": "tau = (R_source + R_switch) C_sample; alpha = abs(step)/V_span; t_min = tau ln(alpha * 2^(N+1))",
+    "assumptions": [
+      "Single-pole switched-capacitor acquisition model; the input stays constant during acquisition and source/switch resistances are linear and time-invariant.",
+      "Step fraction is the magnitude of the initial capacitor-to-input voltage difference divided by full-scale span, with 0 < alpha <= 1.",
+      "The initial error must exceed half an LSB; already-settled inputs are outside this positive-time model.",
+      "Alpha = 1 represents a worst-case full-scale step; alpha = 1/2 represents a half-scale initial error, giving N ln(2) time constants.",
+      "Sampling capacitance and switch resistance must come from the selected ADC. Charge buckets, amplifier nonlinear settling, multiple poles, kickback, parasitics and tolerances are not modeled; add datasheet-based margin.",
+      "This is acquisition time only, not conversion time or maximum throughput, and it does not certify converter accuracy."
+    ],
+    "references": [
+      {"title": "Texas Instruments SBAA081A, Using a SAR Analog-to-Digital Converter for Current Measurement in Motor Control Applications, section 5, equations 5-10", "url": "https://www.ti.com/lit/an/sbaa081a/sbaa081a.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "ADC resolution", "unit": "bit", "default": 12, "min": 1, "max": 32},
+      {"key": "source_resistance", "label": "Source resistance", "unit": "ohm", "default": 1000, "min": 0, "max": 1e9},
+      {"key": "switch_resistance", "label": "Sampling-switch resistance", "unit": "ohm", "default": 20, "min": 0, "max": 1e9},
+      {"key": "sample_capacitance", "label": "Effective sampling capacitance", "unit": "F", "default": 1.5e-11, "min": 1e-15, "max": 0.001},
+      {"key": "step_fraction", "label": "Initial-error fraction of full scale", "unit": "1", "default": 1, "min": 1e-12, "max": 1}
+    ],
+    "outputs": [
+      {"key": "time_constant_s", "label": "Acquisition RC time constant", "unit": "s", "expression": "(source_resistance+switch_resistance)*sample_capacitance"},
+      {"key": "required_time_constants", "label": "Half-LSB settling time constants", "unit": "1", "expression": "ln(step_fraction*2^(bits+1))"},
+      {"key": "minimum_acquisition_s", "label": "Minimum modeled acquisition time", "unit": "s", "expression": "time_constant_s*required_time_constants"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "source_resistance+switch_resistance", "op": ">", "right": "0", "message": "Total acquisition resistance must be positive."},
+      {"left": "step_fraction*2^(bits+1)", "op": ">", "right": "1", "message": "Initial error must exceed half an LSB for this positive acquisition-time model."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "source_resistance": 1000, "switch_resistance": 20, "sample_capacitance": 1.5e-11, "step_fraction": 1},
+      "expected": {"time_constant_s": 1.53e-8, "required_time_constants": 9.010913347279288, "minimum_acquisition_s": 1.3786697421337312e-7},
+      "relative_tolerance": 0.000001
+    }
   }
 ]
