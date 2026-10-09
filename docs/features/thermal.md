@@ -288,7 +288,7 @@ At common isothermal endpoints both paths share the same temperature drop and en
 - `T_hot=T_sink+P R_eq`;
 - `Q_i=P R_eq/R_i`.
 
-The power-based expression for `Q_i` avoids subtracting nearly equal absolute temperatures.
+The executable equivalent resistance is `min(R1,R2)/(1+min(R1,R2)/max(R1,R2))`, avoiding reciprocal overflow for representable very small resistances. Let `M=max(R1,R2)`. Heat sharing is evaluated as `Q1=P[(R2/M)/(R1/M+R2/M)]` and `Q2=P[(R1/M)/(R1/M+R2/M)]`; each fraction is formed before multiplication by power. These algebraically equivalent bounded ratios avoid both reciprocal overflow and loss of a small heat flow through an underflowed total temperature rise. They never subtract nearly equal absolute temperatures and leave the physical domain unchanged.
 
 ### Units, domain and limitations
 
@@ -322,10 +322,10 @@ Outputs are evaluated in the following order and may use earlier outputs.
 |---|---|---|---|
 | `path_one_resistance` | K/W | `path_one_length/(path_one_conductivity*path_one_area)` | 0.25 |
 | `path_two_resistance` | K/W | `path_two_length/(path_two_conductivity*path_two_area)` | 5 |
-| `equivalent_resistance` | K/W | `1/(1/path_one_resistance+1/path_two_resistance)` | 0.2380952380952381 |
+| `equivalent_resistance` | K/W | `min(path_one_resistance,path_two_resistance)/(1+min(path_one_resistance,path_two_resistance)/max(path_one_resistance,path_two_resistance))` | 0.2380952380952381 |
 | `hot_temperature` | K | `sink_temperature+source_power*equivalent_resistance` | 303.15 |
-| `path_one_heat` | W | `source_power*equivalent_resistance/path_one_resistance` | 20 |
-| `path_two_heat` | W | `source_power*equivalent_resistance/path_two_resistance` | 1 |
+| `path_one_heat` | W | `source_power*((path_two_resistance/max(path_one_resistance,path_two_resistance))/(path_one_resistance/max(path_one_resistance,path_two_resistance)+path_two_resistance/max(path_one_resistance,path_two_resistance)))` | 20 |
+| `path_two_heat` | W | `source_power*((path_one_resistance/max(path_one_resistance,path_two_resistance))/(path_one_resistance/max(path_one_resistance,path_two_resistance)+path_two_resistance/max(path_one_resistance,path_two_resistance)))` | 1 |
 
 Complete independent example input vector (relative tolerance `1e-6`):
 
@@ -341,6 +341,8 @@ Complete independent example input vector (relative tolerance `1e-6`):
   "source_power": 21
 }
 ```
+
+Independent numerical-conditioning vector: `L1=1e-309 m`, `L2=1 m`, `A1=A2=1 m²`, `k1=k2=1 W/(m K)`, `P=1 W`, and `T_sink=298.15 K` give `R1=1e-309 K/W`, `R2=1 K/W`, `R_eq≈1e-309 K/W`, `Q1≈1 W` and `Q2≈1e-309 W`. The source-temperature rise is below the representable spacing of the absolute sink temperature, so the displayed hot temperature rounds to 298.15 K without losing the separately evaluated heat flows. This vector illustrates arithmetic conditioning, not practical solid dimensions.
 
 ## `thermal.lumped_thermal_step` — Lumped body temperature after a power step
 
