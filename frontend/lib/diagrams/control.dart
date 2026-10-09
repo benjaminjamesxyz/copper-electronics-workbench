@@ -1,0 +1,36 @@
+import 'primitives.dart';
+
+const controlDiagrams = <String, CalculatorDiagram>{
+  'control.delay_phase_budget': CalculatorDiagram(
+    title: 'Pure-delay phase budget at crossover',
+    caption: 'A pure delay changes phase but not gain. Feedback picks off after the delay. The budget applies at the stated crossover; the strip is illustrative, not a plotted loop response.',
+    marks: [
+      Wire([25, 80, 84, 80], arrow: true),
+      Label(25, 50, 'r'),
+      Part(CircuitPart.circle, 100, 80, width: 32, height: 32),
+      Label(88, 60, '+'),
+      Label(107, 100, '−'),
+      Wire([116, 80, 170, 80], arrow: true),
+      Part(CircuitPart.block, 237.5, 80, width: 135, height: 60),
+      Label(208, 20, 'L0(s)'),
+      Wire([305, 80, 370, 80], arrow: true),
+      Part(CircuitPart.block, 445, 80, width: 150, height: 60),
+      Label(387, 20, 'exp(−s td)'),
+      Label(395, 115, 'td', quantity: 'added_delay'),
+      Wire([520, 80, 650, 80], arrow: true),
+      Label(640, 50, 'y'),
+      Dot(600, 80),
+      Wire([600, 80, 600, 145, 100, 145, 100, 96], arrow: true),
+      Label(25, 167, 'fc', quantity: 'crossover_frequency'),
+      Label(155, 167, 'Original PM', quantity: 'initial_phase_margin'),
+      Wire([155, 196, 155, 188, 630, 188, 630, 196]),
+      Wire([155, 200, 155, 208, 300, 208, 300, 200]),
+      Wire([310, 200, 310, 208, 630, 208, 630, 200]),
+      Label(160, 214, 'Lag', quantity: 'added_phase_lag'),
+      Label(330, 214, 'Remaining PM', quantity: 'remaining_phase_margin'),
+      Wire([465, 197, 465, 211], dashed: true),
+      Label(485, 240, 'Target PM', quantity: 'target_phase_margin'),
+      Label(25, 240, 'Delay budget', quantity: 'maximum_delay'),
+    ],
+  ),
+};

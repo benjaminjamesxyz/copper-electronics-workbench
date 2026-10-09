@@ -1,0 +1,106 @@
+[
+  {
+    "id": "control.delay_phase_budget",
+    "title": "Feedback transport-delay phase-margin budget",
+    "category": "Feedback and control design",
+    "level": "basic",
+    "description": "Allocate additional pure transport delay at an existing unity-gain crossover while retaining a requested phase margin.",
+    "formula": "phase_loss = 360 f_c t_d; PM_remaining = PM_initial - phase_loss; t_max = (PM_initial - PM_target)/(360 f_c)",
+    "assumptions": [
+      "Continuous-time SISO negative feedback; the undelayed closed loop is stable and has one relevant unity-gain crossover.",
+      "The added element is a pure time delay, with unit magnitude and phase -360 f t degrees; crossover frequency does not move.",
+      "Input phase margin already includes all existing plant, sensor and controller lag. Delay input is additional delay only.",
+      "A negative remaining margin or delay headroom is a failed design indication, not an invalid input. Multiple crossovers require checking every crossover separately; this calculator is not a global stability certificate.",
+      "Sampling, zero-order-hold magnitude, jitter, time variation and actuator saturation are not represented by a pure delay."
+    ],
+    "references": [
+      {
+        "title": "NASA NTRS: Time Domain Stability Margin Assessment, slides 4-6 and 12",
+        "url": "https://ntrs.nasa.gov/api/citations/20160013363/downloads/20160013363.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "crossover_frequency",
+        "label": "Undelayed unity-gain crossover",
+        "unit": "Hz",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_phase_margin",
+        "label": "Undelayed phase margin",
+        "unit": "deg",
+        "default": 60,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 180
+      },
+      {
+        "key": "target_phase_margin",
+        "label": "Required retained phase margin",
+        "unit": "deg",
+        "default": 45,
+        "min": 0,
+        "max": 180
+      },
+      {
+        "key": "added_delay",
+        "label": "Additional transport delay",
+        "unit": "s",
+        "default": 2e-05,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "added_phase_lag",
+        "label": "Added lag magnitude",
+        "unit": "deg",
+        "expression": "360*crossover_frequency*added_delay"
+      },
+      {
+        "key": "remaining_phase_margin",
+        "label": "Remaining phase margin",
+        "unit": "deg",
+        "expression": "initial_phase_margin-added_phase_lag"
+      },
+      {
+        "key": "maximum_delay",
+        "label": "Maximum added delay for target",
+        "unit": "s",
+        "expression": "(initial_phase_margin-target_phase_margin)/360/crossover_frequency"
+      },
+      {
+        "key": "delay_headroom",
+        "label": "Delay headroom relative to target",
+        "unit": "s",
+        "expression": "maximum_delay-added_delay"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "target_phase_margin",
+        "op": "<=",
+        "right": "initial_phase_margin",
+        "message": "A pure added delay cannot increase the original phase margin"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "crossover_frequency": 1000,
+        "initial_phase_margin": 60,
+        "target_phase_margin": 45,
+        "added_delay": 2e-05
+      },
+      "expected": {
+        "added_phase_lag": 7.2,
+        "remaining_phase_margin": 52.8,
+        "maximum_delay": 4.1666666666666665e-05,
+        "delay_headroom": 2.1666666666666664e-05
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
