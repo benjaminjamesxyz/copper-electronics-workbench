@@ -1,0 +1,297 @@
+[
+  {
+    "id": "pcb.trace_resistance_drop",
+    "title": "PCB trace DC resistance and voltage drop",
+    "category": "PCB interconnect and manufacturing",
+    "level": "basic",
+    "description": "Estimate the DC resistance and voltage-drop magnitude of one uniform rectangular copper trace from its finished geometry.",
+    "formula": "A = w t; R = rho L / A; V_drop = I R",
+    "assumptions": [
+      "Uniform rectangular finished copper cross-section; resistivity is supplied at the actual conductor temperature.",
+      "DC or sufficiently low frequency for nearly uniform current density; no skin/proximity effect, neck-down, contact, via or spreading resistance.",
+      "Bulk copper example resistivity 1.7e-8 ohm m is taken from the TI 25-degree-C table; plated copper can differ materially.",
+      "One-way conductor resistance, not a complete supply-and-return loop; add the return path separately."
+    ],
+    "references": [
+      {"title": "Texas Instruments, Constructing Your Power Supply - Layout Considerations, Topic 4, section II and Table 1", "url": "https://www.ti.com/lit/pdf/slup224"}
+    ],
+    "inputs": [
+      {"key": "length", "label": "Finished trace length", "unit": "m", "default": 0.1, "min": 0.0, "exclusive_min": true},
+      {"key": "width", "label": "Finished trace width", "unit": "m", "default": 0.001, "min": 0.0, "exclusive_min": true},
+      {"key": "thickness", "label": "Finished copper thickness", "unit": "m", "default": 0.000035, "min": 0.0, "exclusive_min": true},
+      {"key": "resistivity", "label": "Copper resistivity at operating temperature", "unit": "ohm m", "default": 0.000000017, "min": 0.0, "exclusive_min": true},
+      {"key": "current", "label": "DC current magnitude", "unit": "A", "default": 1.0, "min": 0.0}
+    ],
+    "outputs": [
+      {"key": "cross_section", "label": "Copper cross-sectional area", "unit": "m^2", "expression": "width*thickness"},
+      {"key": "resistance", "label": "Trace resistance", "unit": "ohm", "expression": "resistivity*length/cross_section"},
+      {"key": "voltage_drop", "label": "One-way voltage drop", "unit": "V", "expression": "current*resistance"}
+    ],
+    "constraints": [
+      {"left": "width*thickness", "op": ">", "right": "0", "message": "The finished trace must have a positive copper cross-section."}
+    ],
+    "example": {
+      "inputs": {"length": 0.06, "width": 0.002, "thickness": 0.00007, "resistivity": 0.000000017, "current": 4.0},
+      "expected": {"cross_section": 0.00000014, "resistance": 0.007285714285714286, "voltage_drop": 0.029142857142857144},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.ipc2221_current_estimate",
+    "title": "Legacy IPC-2221 trace current screening estimate",
+    "category": "PCB interconnect and manufacturing",
+    "level": "expert",
+    "description": "Compute both legacy external- and internal-layer current estimates for a specified trace cross-section and selected temperature rise; this is not a certified current rating.",
+    "formula": "A_mil2 = w_mil t_mil; I_external = 0.048 DeltaT^0.44 A_mil2^0.725; I_internal = 0.024 DeltaT^0.44 A_mil2^0.725",
+    "assumptions": [
+      "Legacy empirical IPC-2221 curve-fit as reproduced by TI, not an IPC-2152 implementation or standards-compliance check.",
+      "Width and thickness are explicitly in mil, area in mil^2, and temperature rise in degrees C; coefficients cannot be applied directly to SI area.",
+      "Screening policy restricts selected temperature rise to 1 through 100 degrees C; this is not a source-certified model validity interval.",
+      "Continuous steady current in a uniform trace; no transient/fault-current, via or connector rating is computed.",
+      "Board stackup, planes, laminate properties, airflow and local hot spots are absent from the equation; the estimate may be inaccurate and is not guaranteed conservative.",
+      "Use finished copper dimensions and verify the actual board thermal environment and voltage-drop requirements separately."
+    ],
+    "references": [
+      {"title": "Texas Instruments TIDA-01232, High-Current Low-Noise Parallel LDO Reference Design, section 3.1.1, Equation 7", "url": "https://www.ti.com/lit/ug/tiducs7/tiducs7.pdf"},
+      {"title": "IPC-2152 public scope and table of contents: Standard for Determining Current Carrying Capacity in Printed Board Design", "url": "https://www.ipc.org/TOC/IPC-2152.pdf"}
+    ],
+    "inputs": [
+      {"key": "width_mil", "label": "Finished trace width", "unit": "mil", "default": 20.0, "min": 0.0, "exclusive_min": true},
+      {"key": "thickness_mil", "label": "Finished copper thickness", "unit": "mil", "default": 1.4, "min": 0.0, "exclusive_min": true},
+      {"key": "temperature_rise", "label": "Selected conductor temperature rise", "unit": "degC", "default": 10.0, "min": 1.0, "max": 100.0}
+    ],
+    "outputs": [
+      {"key": "area_mil2", "label": "Copper cross-section", "unit": "mil^2", "expression": "width_mil*thickness_mil"},
+      {"key": "external_current", "label": "External-layer current estimate", "unit": "A", "expression": "0.048*temperature_rise^0.44*area_mil2^0.725"},
+      {"key": "internal_current", "label": "Internal-layer current estimate", "unit": "A", "expression": "0.024*temperature_rise^0.44*area_mil2^0.725"}
+    ],
+    "constraints": [
+      {"left": "width_mil*thickness_mil", "op": ">", "right": "0", "message": "Legacy empirical powers require a positive cross-sectional area."}
+    ],
+    "example": {
+      "inputs": {"width_mil": 40.0, "thickness_mil": 1.4, "temperature_rise": 20.0},
+      "expected": {"area_mil2": 56.0, "external_current": 3.3199439759510987, "internal_current": 1.6599719879755493},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.via_barrel_resistance",
+    "title": "Plated via-barrel DC resistance",
+    "category": "PCB interconnect and manufacturing",
+    "level": "expert",
+    "description": "Estimate the axial DC resistance of a cylindrical plated through-hole and an ideal equal-current bank of identical vias.",
+    "formula": "A = pi p (d + p); R_single = rho L / A; R_bank = R_single / N",
+    "assumptions": [
+      "d is the FINISHED inside hole diameter, p is radial copper plating thickness, and L is the electrically traversed barrel length.",
+      "The exact ideal annular copper area is used, not the thin-wall pi d p approximation; no copper-filled via is modeled.",
+      "Uniform circular plating, axial current flow, and known plated-copper resistivity at operating temperature; pad spreading, contacts and barrel defects are excluded.",
+      "The 6e-8 ohm m plated-copper default is the illustrative value in TI's 2004 table, not a universal modern process property; substitute manufacturer or measured data.",
+      "N identical parallel vias share equally only with symmetric low-resistance connections; this calculator provides no via ampacity rating."
+    ],
+    "references": [
+      {"title": "Texas Instruments, Constructing Your Power Supply - Layout Considerations, section II, Table 1 and Figure 3", "url": "https://www.ti.com/lit/pdf/slup224"}
+    ],
+    "inputs": [
+      {"key": "barrel_length", "label": "Electrically traversed barrel length", "unit": "m", "default": 0.0016, "min": 0.0, "exclusive_min": true},
+      {"key": "finished_diameter", "label": "Finished inside hole diameter", "unit": "m", "default": 0.0003, "min": 0.0, "exclusive_min": true},
+      {"key": "plating_thickness", "label": "Radial copper plating thickness", "unit": "m", "default": 0.000025, "min": 0.0, "exclusive_min": true},
+      {"key": "plated_resistivity", "label": "Plated copper resistivity", "unit": "ohm m", "default": 0.00000006, "min": 0.0, "exclusive_min": true},
+      {"key": "via_count", "label": "Identical parallel via count", "unit": "1", "default": 1.0, "min": 1.0}
+    ],
+    "outputs": [
+      {"key": "barrel_copper_area", "label": "Axial copper cross-sectional area", "unit": "m^2", "expression": "pi*plating_thickness*(finished_diameter+plating_thickness)"},
+      {"key": "single_resistance", "label": "Single via resistance", "unit": "ohm", "expression": "plated_resistivity*barrel_length/barrel_copper_area"},
+      {"key": "bank_resistance", "label": "Ideal parallel bank resistance", "unit": "ohm", "expression": "single_resistance/via_count"}
+    ],
+    "constraints": [
+      {"left": "via_count", "op": "==", "right": "floor(via_count)", "message": "The parallel via count must be a positive integer."},
+      {"left": "plating_thickness*(finished_diameter+plating_thickness)", "op": ">", "right": "0", "message": "The plated barrel must have a positive copper cross-section."}
+    ],
+    "example": {
+      "inputs": {"barrel_length": 0.0016, "finished_diameter": 0.0003, "plating_thickness": 0.000025, "plated_resistivity": 0.00000006, "via_count": 4.0},
+      "expected": {"barrel_copper_area": 0.00000002552544031041707, "single_resistance": 0.003760953732140788, "bank_resistance": 0.0009402384330351971},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.nominal_copper_thickness",
+    "title": "Nominal PCB copper weight to thickness",
+    "category": "PCB interconnect and manufacturing",
+    "level": "basic",
+    "description": "Convert a PCB manufacturing copper-weight designation to nominal thickness using the explicit 35 micrometres per ounce convention.",
+    "formula": "t_nominal = copper_weight * 35e-6 m; t_mil = t_nominal / 25.4e-6 m",
+    "assumptions": [
+      "Copper weight denotes the PCB manufacturing oz/ft^2 convention; this is not a fluid ounce, troy ounce or component mass.",
+      "The 35 micrometres per 1 oz factor is the JLCPCB nominal manufacturing convention, not an exact mass-density SI conversion.",
+      "For resistance, current or manufacturing-limit analysis use the fabricator's actual finished copper thickness and tolerance, not this nominal result.",
+      "Outer-layer plating and etching can change finished thickness; the result does not specify starting foil versus finished plating automatically."
+    ],
+    "references": [
+      {"title": "JLCPCB Copper Weight (Thickness) Guide, definition of 1 oz copper", "url": "https://jlcpcb.com/help/article/jlcpcb-copper-weight"},
+      {"title": "NIST Handbook 133 (2026), Appendix E, general tables of units, international inch", "url": "https://www.nist.gov/document/2026-hb-133-appendix-e"}
+    ],
+    "inputs": [
+      {"key": "copper_weight", "label": "Nominal copper-weight designation", "unit": "oz/ft^2", "default": 1.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "nominal_thickness", "label": "Nominal copper thickness", "unit": "m", "expression": "copper_weight*35e-6"},
+      {"key": "nominal_thickness_mil", "label": "Nominal copper thickness in mil", "unit": "mil", "expression": "nominal_thickness/25.4e-6"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"copper_weight": 2.0},
+      "expected": {"nominal_thickness": 0.00007, "nominal_thickness_mil": 2.7559055118110236},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.differential_length_skew",
+    "title": "Differential-pair routed length-mismatch skew",
+    "category": "PCB interconnect and manufacturing",
+    "level": "intermediate",
+    "description": "Calculate signed and magnitude intra-pair timing skew from the two routed lengths and a supplied stackup propagation-delay density.",
+    "formula": "DeltaL = L_positive - L_negative; Delta_t = DeltaL * delay_per_length; skew = abs(Delta_t)",
+    "assumptions": [
+      "Both conductors have the same propagation-delay density, layer structure and reference environment; the supplied density should come from the stackup or extraction.",
+      "Positive signed skew means the positive leg arrives later than the negative leg.",
+      "Default 6.84e-9 s/m is TI's approximate FR-4 scale of 6.84 ps/mm, not a universal FR-4 specification.",
+      "Only routed-length mismatch is modeled; package/connector/via asymmetry, weave-induced dielectric skew, dispersion and tightly coupled serpentine effects are excluded.",
+      "This is not an absolute transmission-line delay or RF-impedance solver; an interface-specific permissible skew is not assumed."
+    ],
+    "references": [
+      {"title": "Texas Instruments, Clock Conditioner Owner's Manual SNAA103, Chapter 6, Minimizing Skew", "url": "https://www.ti.com/lit/pdf/snaa103"},
+      {"title": "Texas Instruments SPRACP4A, High-Speed Interface Design Guidelines, section 2.3 Differential Signal Length Matching", "url": "https://www.ti.com/lit/an/spracp4a/spracp4a.pdf"}
+    ],
+    "inputs": [
+      {"key": "positive_length", "label": "Positive-leg routed length", "unit": "m", "default": 0.1, "min": 0.0},
+      {"key": "negative_length", "label": "Negative-leg routed length", "unit": "m", "default": 0.099, "min": 0.0},
+      {"key": "delay_per_length", "label": "Common stackup propagation-delay density", "unit": "s/m", "default": 0.00000000684, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "signed_length_mismatch", "label": "Positive-minus-negative length", "unit": "m", "expression": "positive_length-negative_length"},
+      {"key": "signed_skew", "label": "Positive-minus-negative arrival delay", "unit": "s", "expression": "signed_length_mismatch*delay_per_length"},
+      {"key": "skew_magnitude", "label": "Intra-pair skew magnitude", "unit": "s", "expression": "abs(signed_skew)"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"positive_length": 0.08, "negative_length": 0.0775, "delay_per_length": 0.00000000684},
+      "expected": {"signed_length_mismatch": 0.0025, "signed_skew": 0.0000000000171, "skew_magnitude": 0.0000000000171},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.annular_ring_registration",
+    "title": "Annular ring with hole-registration allowance",
+    "category": "PCB interconnect and manufacturing",
+    "level": "expert",
+    "description": "Compute the nominal and narrowest residual inner annular ring for a circular copper pad, production drill diameter and radial hole-center displacement.",
+    "formula": "r_nominal = (D_pad - D_tool)/2; r_min = r_nominal - offset",
+    "assumptions": [
+      "Circular pad and production hole; tool_diameter is the production drill size, not an uncorrected finished plated-hole diameter.",
+      "The fabricator determines drill allowance; Eurocircuits' example adds 0.10 mm to finished PTH diameter, but this calculator does not assume that allowance universally.",
+      "registration_offset is a worst-case radial center displacement; copper-pad size and drill tolerances must already be included in the supplied worst-case diameters.",
+      "The supported geometry retains the complete hole within the copper pad; breakout is rejected rather than reported as a valid intact ring.",
+      "Geometric result only; required minimum ring depends on process, layer, product class and supplier rules, so no IPC compliance claim is made."
+    ],
+    "references": [
+      {"title": "Eurocircuits, What is the Inner Annular Ring (IAR)? Tool-size definition and off-centre finished-hole discussion", "url": "https://www.eurocircuits.com/iar-inner-annular-ring/"}
+    ],
+    "inputs": [
+      {"key": "pad_diameter", "label": "Worst-case copper pad diameter", "unit": "m", "default": 0.0006, "min": 0.0, "exclusive_min": true},
+      {"key": "tool_diameter", "label": "Worst-case production drill diameter", "unit": "m", "default": 0.00035, "min": 0.0, "exclusive_min": true},
+      {"key": "registration_offset", "label": "Maximum radial center displacement", "unit": "m", "default": 0.00005, "min": 0.0}
+    ],
+    "outputs": [
+      {"key": "nominal_ring", "label": "Concentric annular ring", "unit": "m", "expression": "(pad_diameter-tool_diameter)/2"},
+      {"key": "minimum_ring", "label": "Narrowest residual annular ring", "unit": "m", "expression": "nominal_ring-registration_offset"}
+    ],
+    "constraints": [
+      {"left": "pad_diameter", "op": ">", "right": "tool_diameter", "message": "Copper pad diameter must exceed production drill diameter."},
+      {"left": "2*registration_offset", "op": "<=", "right": "pad_diameter-tool_diameter", "message": "The specified offset causes hole breakout; intact-ring geometry requires offset no larger than the nominal ring."}
+    ],
+    "example": {
+      "inputs": {"pad_diameter": 0.0008, "tool_diameter": 0.0004, "registration_offset": 0.00005},
+      "expected": {"nominal_ring": 0.0002, "minimum_ring": 0.00015},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.trace_joule_heat_density",
+    "title": "Trace volumetric Joule heating and deposited energy",
+    "category": "PCB interconnect and manufacturing",
+    "level": "intermediate",
+    "description": "Compute uniform copper current density, local heat-generation density and integrated pulse energy; no trace temperature is predicted.",
+    "formula": "J = I/(w t); q_volume = rho J^2; P = q_volume L w t; E = P duration",
+    "assumptions": [
+      "Uniform rectangular copper section, DC rectangular current pulse and spatially uniform current density.",
+      "Use resistivity at the relevant conductor temperature; constant resistivity is assumed over the pulse, so strong electrothermal feedback is not modeled.",
+      "Energy is heat generated inside the conductor, not retained heat; conductive, convective and radiative heat removal are not modeled.",
+      "No inferred temperature rise, fuse opening, melting, steady thermal rating, skin effect, pad bottleneck or via heating.",
+      "A zero current or zero duration is valid and gives zero generated power or energy respectively."
+    ],
+    "references": [
+      {"title": "Michigan Technological University, Multiphysics Learning and Networking: Thermoelectromagnetics, Joule Heating", "url": "https://multiphysics.geo.mtu.edu/thermoelectromagnetics.html"},
+      {"title": "Texas Instruments, Constructing Your Power Supply - Layout Considerations, section II and copper resistivity table", "url": "https://www.ti.com/lit/pdf/slup224"}
+    ],
+    "inputs": [
+      {"key": "length", "label": "Uniform heated trace length", "unit": "m", "default": 0.05, "min": 0.0, "exclusive_min": true},
+      {"key": "width", "label": "Finished trace width", "unit": "m", "default": 0.001, "min": 0.0, "exclusive_min": true},
+      {"key": "thickness", "label": "Finished copper thickness", "unit": "m", "default": 0.000035, "min": 0.0, "exclusive_min": true},
+      {"key": "resistivity", "label": "Copper resistivity during pulse", "unit": "ohm m", "default": 0.000000017, "min": 0.0, "exclusive_min": true},
+      {"key": "pulse_current", "label": "Constant pulse-current magnitude", "unit": "A", "default": 2.0, "min": 0.0},
+      {"key": "duration", "label": "Rectangular pulse duration", "unit": "s", "default": 0.1, "min": 0.0}
+    ],
+    "outputs": [
+      {"key": "current_density", "label": "Uniform copper current density", "unit": "A/m^2", "expression": "pulse_current/(width*thickness)"},
+      {"key": "volumetric_heat_rate", "label": "Volumetric Joule heat generation", "unit": "W/m^3", "expression": "resistivity*current_density^2"},
+      {"key": "generated_power", "label": "Integrated trace heat generation", "unit": "W", "expression": "volumetric_heat_rate*length*width*thickness"},
+      {"key": "deposited_energy", "label": "Heat energy generated during pulse", "unit": "J", "expression": "generated_power*duration"}
+    ],
+    "constraints": [
+      {"left": "width*thickness", "op": ">", "right": "0", "message": "Current-density calculation requires a positive copper cross-section."}
+    ],
+    "example": {
+      "inputs": {"length": 0.05, "width": 0.001, "thickness": 0.000035, "resistivity": 0.000000017, "pulse_current": 3.0, "duration": 0.2},
+      "expected": {"current_density": 85714285.71428572, "volumetric_heat_rate": 124897959.18367347, "generated_power": 0.21857142857142858, "deposited_energy": 0.04371428571428571},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "pcb.stencil_aperture_area_ratio",
+    "title": "Rectangular solder-stencil aperture area ratio",
+    "category": "PCB interconnect and manufacturing",
+    "level": "intermediate",
+    "description": "Calculate opening-to-wall area ratio and its signed margin against a selected assembly-process guideline for a rectangular stencil aperture.",
+    "formula": "A_open = L W; A_wall = 2 (L+W) T; AR = A_open/A_wall; margin = AR - target",
+    "assumptions": [
+      "Single rectangular opening with straight vertical walls and uniform stencil thickness; rounded-corner, tapered and stepped apertures require different areas.",
+      "Area ratio is a geometric release-screening metric, not a prediction of actual solder-paste transfer efficiency or deposited solder volume.",
+      "Default target 0.66 is TI's cited area-ratio guideline for fine-pitch round BGA apertures; applying it to rectangular openings is an explicit screening extrapolation requiring assembler approval.",
+      "Paste particle size/rheology, wall finish/coatings, aperture aspect ratio, printing settings and substrate spacing also affect release.",
+      "Below-target apertures remain valid calculations and return a negative margin; they are not silently rejected or called compliant."
+    ],
+    "references": [
+      {"title": "Texas Instruments SPRAAV2A, PCB Assembly Guidelines for 0.4mm PoP Packages Part II, section 6.1 Area Ratio", "url": "https://www.ti.com/lit/an/spraav2a/spraav2a.pdf"}
+    ],
+    "inputs": [
+      {"key": "aperture_length", "label": "Rectangular aperture length", "unit": "m", "default": 0.0005, "min": 0.0, "exclusive_min": true},
+      {"key": "aperture_width", "label": "Rectangular aperture width", "unit": "m", "default": 0.00025, "min": 0.0, "exclusive_min": true},
+      {"key": "stencil_thickness", "label": "Uniform stencil thickness", "unit": "m", "default": 0.0001, "min": 0.0, "exclusive_min": true},
+      {"key": "target_area_ratio", "label": "Selected assembly screening target", "unit": "1", "default": 0.66, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "opening_area", "label": "Aperture opening area", "unit": "m^2", "expression": "aperture_length*aperture_width"},
+      {"key": "wall_area", "label": "Total vertical aperture-wall area", "unit": "m^2", "expression": "2*(aperture_length+aperture_width)*stencil_thickness"},
+      {"key": "area_ratio", "label": "Opening-to-wall area ratio", "unit": "1", "expression": "opening_area/wall_area"},
+      {"key": "ratio_margin", "label": "Signed area-ratio margin", "unit": "1", "expression": "area_ratio-target_area_ratio"}
+    ],
+    "constraints": [
+      {"left": "2*(aperture_length+aperture_width)*stencil_thickness", "op": ">", "right": "0", "message": "Aperture wall area must be positive."}
+    ],
+    "example": {
+      "inputs": {"aperture_length": 0.0005, "aperture_width": 0.0003, "stencil_thickness": 0.0001, "target_area_ratio": 0.66},
+      "expected": {"opening_area": 0.00000015, "wall_area": 0.00000016, "area_ratio": 0.9375, "ratio_margin": 0.2775},
+      "relative_tolerance": 0.000001
+    }
+  }
+]

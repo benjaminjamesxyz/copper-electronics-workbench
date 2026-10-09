@@ -1,0 +1,248 @@
+[
+  {
+    "id": "diodes.led_series_resistor",
+    "title": "LED series resistor and tolerance corners",
+    "category": "Diodes, LEDs and rectification",
+    "level": "basic",
+    "description": "Size a resistor for a series LED string and estimate maximum current and resistor dissipation at supply and LED-voltage corners.",
+    "formula": "R = (Vs - N Vf)/I; Imax = (Vs,max - N Vf,min)/R; PR,max = (Vs,max - N Vf,min)^2/R",
+    "assumptions": ["Constant LED forward voltage at the target operating current; no internal resistor.", "Supply and LED forward-voltage bounds include operating temperature; resistor tolerance is not modeled.", "Choose a real preferred-value resistor and check its derated rating separately; nominal Vf is not a maximum-current guarantee."],
+    "references": [{"title": "Kingbright SA18-11SURKWA, circuit design notes and forward-voltage ratings", "url": "https://www.kingbrightusa.com/images/catalog/SPEC/SA18-11SURKWA.pdf"}],
+    "inputs": [
+      {"key":"supply","label":"Nominal supply voltage","unit":"V","default":5,"min":0,"exclusive_min":true,"max":1000},
+      {"key":"supply_max","label":"Maximum supply voltage","unit":"V","default":5.5,"min":0,"exclusive_min":true,"max":1000},
+      {"key":"forward_voltage","label":"Nominal forward voltage per LED","unit":"V","default":2,"min":0,"exclusive_min":true,"max":100},
+      {"key":"forward_min","label":"Minimum forward voltage per LED","unit":"V","default":1.8,"min":0,"exclusive_min":true,"max":100},
+      {"key":"led_count","label":"LEDs in series","unit":"count","default":1,"min":1,"max":1000},
+      {"key":"target_current","label":"Target string current","unit":"A","default":0.02,"min":1e-9,"max":100}
+    ],
+    "outputs": [
+      {"key":"resistance","label":"Nominal calculated resistor","unit":"ohm","expression":"(supply-led_count*forward_voltage)/target_current"},
+      {"key":"resistor_power","label":"Nominal resistor dissipation","unit":"W","expression":"target_current^2*resistance"},
+      {"key":"led_power","label":"Nominal LED-string electrical power","unit":"W","expression":"led_count*forward_voltage*target_current"},
+      {"key":"current_max","label":"Maximum current corner","unit":"A","expression":"(supply_max-led_count*forward_min)/resistance"},
+      {"key":"resistor_power_max","label":"Maximum resistor dissipation corner","unit":"W","expression":"(supply_max-led_count*forward_min)^2/resistance"}
+    ],
+    "constraints": [
+      {"left":"led_count","op":"==","right":"floor(led_count)","message":"LED count must be an integer."},
+      {"left":"supply","op":">","right":"led_count*forward_voltage","message":"Supply must exceed the nominal LED-string voltage."},
+      {"left":"supply_max","op":">=","right":"supply","message":"Maximum supply must not be below nominal supply."},
+      {"left":"forward_min","op":"<=","right":"forward_voltage","message":"Minimum LED voltage must not exceed nominal voltage."}
+    ],
+    "example":{"inputs":{"supply":5,"supply_max":5.5,"forward_voltage":2,"forward_min":1.8,"led_count":1,"target_current":0.02},"expected":{"resistance":150,"resistor_power":0.06,"led_power":0.04,"current_max":0.024666666666666667,"resistor_power_max":0.09126666666666668},"relative_tolerance":1e-6}
+  },
+  {
+    "id": "diodes.shockley_forward_current",
+    "title": "Shockley diode current and incremental resistance",
+    "category": "Diodes, LEDs and rectification",
+    "level": "expert",
+    "description": "Evaluate a fitted forward-junction model at a specified junction temperature and calculate its local small-signal resistance.",
+    "formula": "VT = kT/q; ID = IS[exp(VD/(n VT))-1]; rd = n VT/(ID+IS)",
+    "assumptions": ["Forward-bias junction model only; no series resistance, high injection, reverse breakdown or self-heating.", "IS and ideality factor must be fitted at the entered junction temperature; changing T does not automatically temperature-correct IS.", "The supplied model-current ceiling bounds the fit's validity, not a device absolute maximum; exponent is limited to 40 for a finite practical model range.", "Boltzmann constant k = 1.380649e-23 J/K and elementary charge q = 1.602176634e-19 C."],
+    "references": [{"title":"Auburn ELEC2210 diode basics, Shockley law and excluded physical effects","url":"https://www.eng.auburn.edu/~niuguof/2210labdev/html/diode.html"},{"title":"Georgia Tech Physics Book, Shockley equation including ideality factor (student-authored teaching resource)","url":"https://physicsbook.gatech.edu/Semiconductor_Devices"}],
+    "inputs": [
+      {"key":"diode_voltage","label":"Forward junction voltage","unit":"V","default":0.6,"min":0,"max":5},
+      {"key":"saturation_current","label":"Saturation current at entered temperature","unit":"A","default":1e-12,"min":1e-20,"max":0.001},
+      {"key":"ideality","label":"Ideality factor","unit":"1","default":1,"min":1,"max":2},
+      {"key":"temperature","label":"Junction temperature","unit":"K","default":300,"min":200,"max":500},
+      {"key":"model_current_max","label":"Maximum current of fitted model","unit":"A","default":0.1,"min":1e-12,"max":1000}
+    ],
+    "outputs": [
+      {"key":"thermal_voltage","label":"Thermal voltage","unit":"V","expression":"1.380649e-23*temperature/1.602176634e-19"},
+      {"key":"diode_current","label":"Forward diode current","unit":"A","expression":"saturation_current*(exp(diode_voltage/(ideality*thermal_voltage))-1)"},
+      {"key":"junction_power","label":"Junction electrical dissipation","unit":"W","expression":"diode_voltage*diode_current"},
+      {"key":"incremental_resistance","label":"Incremental junction resistance","unit":"ohm","expression":"ideality*thermal_voltage/(diode_current+saturation_current)"}
+    ],
+    "constraints": [
+      {"left":"diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19))","op":"<=","right":"40","message":"Forward exponent exceeds the selected model range."},
+      {"left":"saturation_current*(exp(diode_voltage/(ideality*(1.380649e-23*temperature/1.602176634e-19)))-1)","op":"<=","right":"model_current_max","message":"Predicted current exceeds the fitted model-current ceiling."}
+    ],
+    "example":{"inputs":{"diode_voltage":0.6,"saturation_current":1e-12,"ideality":1,"temperature":300,"model_current_max":0.1},"expected":{"thermal_voltage":0.025851999786435535,"diode_current":0.01201036955312849,"junction_power":0.007206221731877094,"incremental_resistance":2.1524732998368954},"relative_tolerance":1e-6}
+  },
+  {
+    "id":"diodes.bridge_conduction_loss",
+    "title":"Bridge rectifier waveform-dependent conduction loss",
+    "category":"Diodes, LEDs and rectification",
+    "level":"intermediate",
+    "description":"Estimate loss in a four-diode bridge using average and RMS rectified-path current and an affine diode forward model.",
+    "formula":"VF(i) = V0 + rd i; Pbridge = 2(V0 Iavg + rd Irms^2); Pdiode = Pbridge/4",
+    "assumptions":["Two diodes carry rectified-path current at a time; positive and negative half-cycles are symmetric.","Iavg and Irms refer to the complete rectified conducting-path waveform over a full period, not a single diode or only its on-time.","V0 and rd are fitted at operating junction temperature and current range; use charging-pulse RMS current for a capacitor-input bridge.","Excludes reverse leakage, reverse recovery, thermal resistance and transformer losses; equal per-diode loss assumes symmetry."],
+    "references":[{"title":"Vishay VS-KBPC1/VS-KBPC6 full-bridge configuration and per-diode forward voltage","url":"https://www.vishay.com/docs/93585/vs-kbpc1series.pdf"},{"title":"Vishay How to Calculate Power Losses in Gen 5 Diodes (affine conduction-loss model)","url":"https://www.vishay.com/docs/98280/howtocalculatepowerlossesingen5diodes.pdf"}],
+    "inputs":[
+      {"key":"threshold_voltage","label":"Fitted diode threshold voltage","unit":"V","default":0.7,"min":0,"max":10},
+      {"key":"slope_resistance","label":"Fitted diode slope resistance","unit":"ohm","default":0.08,"min":0,"max":1000},
+      {"key":"path_current_avg","label":"Average rectified-path current","unit":"A","default":1,"min":0,"max":10000},
+      {"key":"path_current_rms","label":"RMS rectified-path current","unit":"A","default":1.5,"min":0,"max":10000},
+      {"key":"path_current_peak","label":"Peak rectified-path current","unit":"A","default":3,"min":0,"max":10000}
+    ],
+    "outputs":[
+      {"key":"bridge_power","label":"Total bridge conduction loss","unit":"W","expression":"2*(threshold_voltage*path_current_avg+slope_resistance*path_current_rms^2)"},
+      {"key":"power_per_diode","label":"Average loss per diode under symmetry","unit":"W","expression":"bridge_power/4"},
+      {"key":"peak_path_drop","label":"Peak two-diode conducting-path drop","unit":"V","expression":"2*(threshold_voltage+slope_resistance*path_current_peak)"}
+    ],
+    "constraints":[
+      {"left":"path_current_rms","op":">=","right":"path_current_avg","message":"RMS current cannot be less than average nonnegative current."},
+      {"left":"path_current_peak","op":">=","right":"path_current_rms","message":"Peak current cannot be less than RMS current."},
+      {"left":"path_current_rms^2","op":"<=","right":"path_current_peak*path_current_avg","message":"For a nonnegative waveform, RMS squared cannot exceed peak times average current."}
+    ],
+    "example":{"inputs":{"threshold_voltage":0.7,"slope_resistance":0.08,"path_current_avg":1,"path_current_rms":1.5,"path_current_peak":3},"expected":{"bridge_power":1.76,"power_per_diode":0.44,"peak_path_drop":1.88},"relative_tolerance":1e-6}
+  },
+  {
+    "id":"diodes.full_wave_capacitor_ripple",
+    "title":"Full-wave capacitor-input rectifier ripple",
+    "category":"Diodes, LEDs and rectification",
+    "level":"intermediate",
+    "description":"Estimate bridge output peak, trough, average and ripple for a sinusoidal source and a near-constant-current load.",
+    "formula":"fr = 2 fline; Vpk = sqrt(2) Vac,rms - 2 VF; Vr,pp = IL/(fr C); Vdc ≈ Vpk - Vr,pp/2; Vr,rms ≈ Vr,pp/sqrt(12)",
+    "assumptions":["Sinusoidal source; bridge recharges capacitor near every half-cycle peak; constant load current between peaks.","Small-ripple model restricted to ripple at most 10 percent of available capacitor peak voltage.","Ignores source impedance, charging-time reduction, ESR, leakage and diode-drop variation; ripple RMS uses a sawtooth approximation.","Not the passive RC transient calculator and not switch-mode output-capacitor sizing; no capacitor RMS charging-current or surge-rating claim."],
+    "references":[{"title":"Purdue ECE255 September 5 lecture, peak rectifier and small-ripple approximation","url":"https://engineering.purdue.edu/wcchew/ece255f17/ECE%20255%20f17%20latex%20pdf%20files/ece255LectureSep5.pdf"},{"title":"Auburn ELEC2210 designing filters for rectifiers, full-wave recharge interval and two-diode drop","url":"https://www.eng.auburn.edu/~niuguof/2210labdev/html/diode.html"}],
+    "inputs":[
+      {"key":"source_rms","label":"Sinusoidal input RMS voltage","unit":"V","default":12,"min":1e-6,"max":10000},
+      {"key":"line_frequency","label":"Input line frequency","unit":"Hz","default":50,"min":1e-3,"max":100000},
+      {"key":"forward_drop","label":"Forward drop per bridge diode","unit":"V","default":0.8,"min":0,"max":10},
+      {"key":"load_current","label":"Constant load current","unit":"A","default":0.1,"min":0,"max":10000},
+      {"key":"capacitance","label":"Reservoir capacitance","unit":"F","default":0.0022,"min":1e-12,"max":100}
+    ],
+    "outputs":[
+      {"key":"ripple_frequency","label":"Recharge and ripple frequency","unit":"Hz","expression":"2*line_frequency"},
+      {"key":"capacitor_peak","label":"Available capacitor peak voltage","unit":"V","expression":"sqrt(2)*source_rms-2*forward_drop"},
+      {"key":"ripple_pp","label":"Peak-to-peak ripple","unit":"V","expression":"load_current/(ripple_frequency*capacitance)"},
+      {"key":"capacitor_trough","label":"Approximate minimum output voltage","unit":"V","expression":"capacitor_peak-ripple_pp"},
+      {"key":"output_dc","label":"Approximate mean output voltage","unit":"V","expression":"capacitor_peak-ripple_pp/2"},
+      {"key":"ripple_rms","label":"Approximate AC ripple RMS voltage","unit":"V","expression":"ripple_pp/sqrt(12)"}
+    ],
+    "constraints":[
+      {"left":"sqrt(2)*source_rms","op":">","right":"2*forward_drop","message":"Source peak must exceed the two-diode bridge drop."},
+      {"left":"load_current/(2*line_frequency*capacitance)","op":"<=","right":"0.1*(sqrt(2)*source_rms-2*forward_drop)","message":"Ripple exceeds the 10-percent small-ripple model limit."}
+    ],
+    "example":{"inputs":{"source_rms":12,"line_frequency":50,"forward_drop":0.8,"load_current":0.1,"capacitance":0.0022},"expected":{"ripple_frequency":100,"capacitor_peak":15.370562748477143,"ripple_pp":0.4545454545454546,"capacitor_trough":14.916017293931688,"output_dc":15.143290021204416,"ripple_rms":0.13121597027036952},"relative_tolerance":1e-6}
+  },
+  {
+    "id":"diodes.zener_shunt_resistor_window",
+    "title":"Zener shunt-regulator resistor design window",
+    "category":"Diodes, LEDs and rectification",
+    "level":"expert",
+    "description":"Find feasible nominal series-resistance bounds and worst-case stresses across supply, load, zener-voltage and resistor-tolerance corners.",
+    "formula":"Rnom,min = (Vin,max - Vz,min)/[(Iz,max + IL,min)(1-t)]; Rnom,max = (Vin,min - Vz,max)/[(Iz,min + IL,max)(1+t)]",
+    "assumptions":["Piecewise-constant zener voltage within the specified voltage envelope; envelope must include current and temperature dependence.","Zener current limits refer to useful regulated operation and derated current allowance, not just the nominal datasheet test current.","Zener power bound multiplies independently conservative maximum voltage and maximum current; these corners need not occur together.","No junction-temperature calculation or standards-compliance claim; reject designs with no feasible resistance interval."],
+    "references":[{"title":"Texas Instruments SLVAG00 Zener Diodes Introduction, section 6.1.1 voltage regulation","url":"https://www.ti.com/lit/pdf/slvag00"}],
+    "inputs":[
+      {"key":"input_min","label":"Minimum input voltage","unit":"V","default":12,"min":1e-6,"max":10000},
+      {"key":"input_max","label":"Maximum input voltage","unit":"V","default":15,"min":1e-6,"max":10000},
+      {"key":"zener_min","label":"Minimum regulated zener voltage","unit":"V","default":4.9,"min":1e-6,"max":1000},
+      {"key":"zener_max","label":"Maximum regulated zener voltage","unit":"V","default":5.1,"min":1e-6,"max":1000},
+      {"key":"load_min","label":"Minimum load current","unit":"A","default":0,"min":0,"max":1000},
+      {"key":"load_max","label":"Maximum load current","unit":"A","default":0.01,"min":0,"max":1000},
+      {"key":"zener_current_min","label":"Minimum regulating zener current","unit":"A","default":0.005,"min":1e-12,"max":1000},
+      {"key":"zener_current_limit","label":"Allowed maximum zener current","unit":"A","default":0.05,"min":1e-12,"max":1000},
+      {"key":"resistor_tolerance","label":"Resistor fractional tolerance","unit":"1","default":0.05,"min":0,"max":0.5},
+      {"key":"resistance","label":"Selected nominal series resistance","unit":"ohm","default":390,"min":1e-6,"max":1e12}
+    ],
+    "outputs":[
+      {"key":"resistance_min","label":"Minimum feasible nominal resistance","unit":"ohm","expression":"(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))"},
+      {"key":"resistance_max","label":"Maximum feasible nominal resistance","unit":"ohm","expression":"(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))"},
+      {"key":"zener_current_low","label":"Minimum zener-current corner","unit":"A","expression":"(input_min-zener_max)/(resistance*(1+resistor_tolerance))-load_max"},
+      {"key":"zener_current_high","label":"Maximum zener-current corner","unit":"A","expression":"(input_max-zener_min)/(resistance*(1-resistor_tolerance))-load_min"},
+      {"key":"zener_power_bound","label":"Conservative zener-power bound","unit":"W","expression":"zener_max*zener_current_high"},
+      {"key":"resistor_power_bound","label":"Maximum resistor-power corner","unit":"W","expression":"(input_max-zener_min)^2/(resistance*(1-resistor_tolerance))"}
+    ],
+    "constraints":[
+      {"left":"input_max","op":">=","right":"input_min","message":"Input voltage bounds are reversed."},
+      {"left":"zener_max","op":">=","right":"zener_min","message":"Zener voltage bounds are reversed."},
+      {"left":"input_min","op":">","right":"zener_max","message":"Minimum input must exceed maximum zener voltage."},
+      {"left":"load_max","op":">=","right":"load_min","message":"Load current bounds are reversed."},
+      {"left":"zener_current_limit","op":">=","right":"zener_current_min","message":"Allowed maximum zener current is below the regulating minimum."},
+      {"left":"(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))","op":"<=","right":"(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))","message":"No feasible nominal resistance window exists."},
+      {"left":"resistance","op":">=","right":"(input_max-zener_min)/((zener_current_limit+load_min)*(1-resistor_tolerance))","message":"Selected resistor permits excessive maximum zener current."},
+      {"left":"resistance","op":"<=","right":"(input_min-zener_max)/((zener_current_min+load_max)*(1+resistor_tolerance))","message":"Selected resistor cannot sustain minimum regulation current."}
+    ],
+    "example":{"inputs":{"input_min":12,"input_max":15,"zener_min":4.9,"zener_max":5.1,"load_min":0,"load_max":0.01,"zener_current_min":0.005,"zener_current_limit":0.05,"resistor_tolerance":0.05,"resistance":390},"expected":{"resistance_min":212.63157894736844,"resistance_max":438.0952380952381,"zener_current_low":0.006849816849816852,"zener_current_high":0.027260458839406206,"zener_power_bound":0.13902834008097165,"resistor_power_bound":0.2753306342780027},"relative_tolerance":1e-6}
+  },
+  {
+    "id":"diodes.biased_two_sided_clipper",
+    "title":"Biased two-sided diode clipper",
+    "category":"Diodes, LEDs and rectification",
+    "level":"basic",
+    "description":"Calculate a sampled input's clipped output and clamp currents for two oppositely oriented diode clamps and a series resistor.",
+    "formula":"VH = Vref,H + VF,H; VL = Vref,L - VF,L; Vo = min(max(Vi,VL),VH)",
+    "assumptions":["Upper clamp diode has anode at output and cathode at upper reference; lower diode has anode at lower reference and cathode at output.","Output load is high impedance; reference sources are stiff and can sink or source the calculated clamp current.","Constant forward-drop model, quasistatic sample; ignores leakage, dynamic resistance, capacitance and reverse breakdown.","This is clipping, not a capacitor-based DC-restoring clamper; no claim of ESD protection compliance."],
+    "references":[{"title":"Northwestern ECE270 experiment 4, biased clipper and constant-drop diode model","url":"https://www.eecs.northwestern.edu/~plonus/270/270lab4.pdf"}],
+    "inputs":[
+      {"key":"input_voltage","label":"Sampled input voltage","unit":"V","default":8,"min":-10000,"max":10000},
+      {"key":"upper_reference","label":"Upper clamp reference","unit":"V","default":3.3,"min":-10000,"max":10000},
+      {"key":"lower_reference","label":"Lower clamp reference","unit":"V","default":-1,"min":-10000,"max":10000},
+      {"key":"upper_drop","label":"Upper diode forward drop","unit":"V","default":0.65,"min":0,"max":10},
+      {"key":"lower_drop","label":"Lower diode forward drop","unit":"V","default":0.65,"min":0,"max":10},
+      {"key":"series_resistance","label":"Input series resistance","unit":"ohm","default":1000,"min":1e-6,"max":1e12}
+    ],
+    "outputs":[
+      {"key":"upper_level","label":"Upper clipping level","unit":"V","expression":"upper_reference+upper_drop"},
+      {"key":"lower_level","label":"Lower clipping level","unit":"V","expression":"lower_reference-lower_drop"},
+      {"key":"output_voltage","label":"Clipped output voltage","unit":"V","expression":"min(max(input_voltage,lower_level),upper_level)"},
+      {"key":"upper_current","label":"Current into upper reference","unit":"A","expression":"max(0,(input_voltage-upper_level)/series_resistance)"},
+      {"key":"lower_current","label":"Current out of lower reference","unit":"A","expression":"max(0,(lower_level-input_voltage)/series_resistance)"},
+      {"key":"resistor_power","label":"Instantaneous series-resistor dissipation","unit":"W","expression":"(input_voltage-output_voltage)^2/series_resistance"}
+    ],
+    "constraints":[{"left":"upper_reference","op":">=","right":"lower_reference","message":"Upper reference must not be below lower reference."}],
+    "example":{"inputs":{"input_voltage":8,"upper_reference":3.3,"lower_reference":-1,"upper_drop":0.65,"lower_drop":0.65,"series_resistance":1000},"expected":{"upper_level":3.95,"lower_level":-1.65,"output_voltage":3.95,"upper_current":0.00405,"lower_current":0,"resistor_power":0.0164025},"relative_tolerance":1e-6}
+  },
+  {
+    "id":"diodes.parallel_led_ballast",
+    "title":"Two-branch LED ballast and current sharing",
+    "category":"Diodes, LEDs and rectification",
+    "level":"intermediate",
+    "description":"Size equal individual ballast resistors and calculate current imbalance in two parallel LEDs supplied by a common constant-current sink.",
+    "formula":"Rmin = abs(VF2-VF1)/DeltaIallow; I1 = [Itotal+(VF2-VF1)/R]/2; I2 = Itotal-I1",
+    "assumptions":["Exactly two LED branches, each with its own equal ballast resistor, and one common regulated total-current sink.","Forward voltages are bounded values evaluated near the resulting operating currents, not universal constant LED characteristics.","No resistor mismatch or thermal feedback; minimum resistance must be revisited with actual LED I-V and temperature envelopes.","Checks sink voltage headroom; ballast matching is a different physical problem from voltage-fed series LED resistor sizing."],
+    "references":[{"title":"TI SLVA325 Ballast Resistor Calculation – Current Matching in Parallel LEDs, pages 3–7","url":"https://e2echina.ti.com/cfs-file/__key/telligent-evolution-components-attachments/13-107-00-00-00-01-00-92/slva325.pdf"},{"title":"Kingbright circuit design notes, separate resistor per parallel LED","url":"https://www.kingbrightusa.com/images/catalog/SPEC/SA18-11SURKWA.pdf"}],
+    "inputs":[
+      {"key":"total_current","label":"Regulated total sink current","unit":"A","default":0.04,"min":1e-9,"max":100},
+      {"key":"forward_one","label":"LED 1 forward voltage","unit":"V","default":3,"min":1e-6,"max":100},
+      {"key":"forward_two","label":"LED 2 forward voltage","unit":"V","default":3.2,"min":1e-6,"max":100},
+      {"key":"allowed_difference","label":"Allowed branch-current difference","unit":"A","default":0.004,"min":1e-12,"max":100},
+      {"key":"ballast_resistance","label":"Selected resistor per branch","unit":"ohm","default":68,"min":1e-6,"max":1e12},
+      {"key":"supply","label":"LED supply voltage","unit":"V","default":5,"min":1e-6,"max":10000},
+      {"key":"sink_headroom_min","label":"Required current-sink headroom","unit":"V","default":0.3,"min":0,"max":1000}
+    ],
+    "outputs":[
+      {"key":"ballast_min","label":"Minimum ballast resistance for matching","unit":"ohm","expression":"abs(forward_two-forward_one)/allowed_difference"},
+      {"key":"current_one","label":"LED 1 branch current","unit":"A","expression":"(total_current+(forward_two-forward_one)/ballast_resistance)/2"},
+      {"key":"current_two","label":"LED 2 branch current","unit":"A","expression":"total_current-current_one"},
+      {"key":"current_difference","label":"Absolute branch-current difference","unit":"A","expression":"abs(current_one-current_two)"},
+      {"key":"branch_voltage","label":"Common LED plus ballast branch voltage","unit":"V","expression":"forward_one+ballast_resistance*current_one"},
+      {"key":"ballast_power_total","label":"Combined ballast-resistor dissipation","unit":"W","expression":"ballast_resistance*(current_one^2+current_two^2)"},
+      {"key":"sink_headroom","label":"Available sink voltage headroom","unit":"V","expression":"supply-branch_voltage"}
+    ],
+    "constraints":[
+      {"left":"allowed_difference","op":"<","right":"total_current","message":"Allowed branch difference must be smaller than total current."},
+      {"left":"ballast_resistance","op":">=","right":"abs(forward_two-forward_one)/allowed_difference","message":"Ballast is too small for the specified current matching."},
+      {"left":"abs(forward_two-forward_one)","op":"<","right":"total_current*ballast_resistance","message":"Both LED branches must have positive predicted current."},
+      {"left":"supply","op":">=","right":"(forward_one+forward_two+ballast_resistance*total_current)/2+sink_headroom_min","message":"Supply cannot provide the required branch voltage and sink headroom."}
+    ],
+    "example":{"inputs":{"total_current":0.04,"forward_one":3,"forward_two":3.2,"allowed_difference":0.004,"ballast_resistance":68,"supply":5,"sink_headroom_min":0.3},"expected":{"ballast_min":50,"current_one":0.021470588235294116,"current_two":0.018529411764705885,"current_difference":0.002941176470588232,"branch_voltage":4.46,"ballast_power_total":0.054694117647058824,"sink_headroom":0.54},"relative_tolerance":1e-6}
+  },
+  {
+    "id":"diodes.reverse_recovery_charge_budget",
+    "title":"Diode reverse-recovery charge and commutation budget",
+    "category":"Diodes, LEDs and rectification",
+    "level":"expert",
+    "description":"Estimate charge in a triangular diode reverse-recovery waveform and the associated charge-transport energy budget at a specified reverse bus voltage.",
+    "formula":"Qrr ≈ IR,peak trr/2; EQ = VR Qrr; PQ = fcomm EQ; IQ,avg = fcomm Qrr",
+    "assumptions":["Recovery current is approximated by a triangle extending from zero through its peak back to zero; trr is that full triangular base duration.","Datasheet recovery time measured to a percentage threshold is not automatically a zero-to-zero duration; fit the triangle to the measured waveform or charge.","Peak current and duration must correspond to the same forward current, current slew rate, reverse voltage and junction temperature.","VR Qrr is the charge-transport component budget for the commutation cell, not diode-only heat or total switching loss; it excludes forward-current overlap and parasitics.","Do not add this budget to measured switching energy already including recovery; no BJT/MOSFET switching calculator or junction-temperature output.","One recovery event per entered commutation interval; recovery occupies at most 10 percent of that interval."],
+    "references":[{"title":"STMicroelectronics AN5028 Calculation of turn-off power losses generated by an ultrafast diode, Qrr definition and cell-level recovery contribution","url":"https://www.st.com/resource/en/application_note/dm00380483-calculation-of-turnoff-power-losses-generated-by-a-ultrafast-diode-stmicroelectronics.pdf"},{"title":"onsemi AND9068/D Reading onsemi IGBT Datasheets, diode characteristics on pages 8–9","url":"https://www.onsemi.com/pub/Collateral/AND9068-D.PDF"}],
+    "inputs":[
+      {"key":"reverse_peak_current","label":"Peak reverse-recovery current magnitude","unit":"A","default":4,"min":0,"max":10000},
+      {"key":"triangle_duration","label":"Full triangular recovery duration","unit":"s","default":1e-7,"min":1e-12,"max":1},
+      {"key":"reverse_voltage","label":"Reverse bus voltage during commutation","unit":"V","default":400,"min":0,"max":10000},
+      {"key":"commutation_frequency","label":"Recovery events per second","unit":"Hz","default":100000,"min":1e-6,"max":1e9}
+    ],
+    "outputs":[
+      {"key":"recovery_charge","label":"Triangular reverse-recovery charge estimate","unit":"C","expression":"reverse_peak_current*triangle_duration/2"},
+      {"key":"charge_energy_budget","label":"Cell charge-transport energy per event","unit":"J","expression":"reverse_voltage*recovery_charge"},
+      {"key":"charge_power_budget","label":"Cell charge-transport average power budget","unit":"W","expression":"commutation_frequency*charge_energy_budget"},
+      {"key":"reverse_charge_current_avg","label":"Average reverse charge-transport current magnitude","unit":"A","expression":"commutation_frequency*recovery_charge"}
+    ],
+    "constraints":[{"left":"commutation_frequency*triangle_duration","op":"<=","right":"0.1","message":"Recovery duration exceeds 10 percent of the commutation interval."}],
+    "example":{"inputs":{"reverse_peak_current":4,"triangle_duration":1e-7,"reverse_voltage":400,"commutation_frequency":100000},"expected":{"recovery_charge":2e-7,"charge_energy_budget":8e-5,"charge_power_budget":8,"reverse_charge_current_avg":0.02},"relative_tolerance":1e-6}
+  }
+]

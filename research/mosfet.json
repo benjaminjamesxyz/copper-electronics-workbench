@@ -1,0 +1,307 @@
+[
+  {
+    "id": "mosfet.gate_charge_supply",
+    "title": "Gate-charge average supply current and drive power",
+    "category": "MOSFET and gate drive",
+    "level": "basic",
+    "description": "Estimate the cycle-average current and power drawn from a unipolar gate-driver supply by one MOSFET's gate charge.",
+    "formula": "I_supply = Q_g f_sw; E_drive = Q_g V_drive; P_drive = E_drive f_sw",
+    "assumptions": [
+      "One complete 0 V to V_drive to 0 V gate cycle per switching period; no energy-recovery driver or negative gate bias.",
+      "Q_g must come from a gate-charge curve at the actual drive voltage, drain voltage and load current; do not substitute C_iss V_drive.",
+      "Supply current is Q_g f_sw, not 2 Q_g f_sw: gate discharge flows through the sink path rather than drawing a second Q_g from the positive supply.",
+      "Power is dissipated across the driver, external resistor and MOSFET internal gate resistance, not wholly in the MOSFET channel. Driver quiescent and shoot-through consumption are excluded."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLUA618A, section 2.7, equation 9", "url": "https://www.ti.com/lit/slua618"},
+      {"title": "Infineon OptiMOS device selection for synchronous rectification, equation 7", "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-mosfet-optimos-device-selection-for-synchronous-rectification-applicationnotes-en.pdf"}
+    ],
+    "inputs": [
+      {"key": "q_g", "label": "Total gate charge at operating point", "unit": "C", "default": 6e-8, "min": 0, "exclusive_min": true},
+      {"key": "f_sw", "label": "Gate switching frequency", "unit": "Hz", "default": 100000, "min": 0, "exclusive_min": true},
+      {"key": "v_drive", "label": "Positive gate drive voltage", "unit": "V", "default": 10, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "i_supply", "label": "Average gate-charge supply current", "unit": "A", "expression": "q_g*f_sw"},
+      {"key": "e_drive", "label": "Gate-drive energy per cycle", "unit": "J", "expression": "q_g*v_drive"},
+      {"key": "p_drive", "label": "Gate-drive power", "unit": "W", "expression": "e_drive*f_sw"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"q_g": 4e-8, "f_sw": 250000, "v_drive": 12},
+      "expected": {"i_supply": 0.01, "e_drive": 4.8e-7, "p_drive": 0.12},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.channel_conduction_loss",
+    "title": "MOSFET conduction loss with on-state current ripple",
+    "category": "MOSFET and gate drive",
+    "level": "basic",
+    "description": "Compute full-cycle channel RMS current and conduction loss for a duty-gated, linearly ramping positive current.",
+    "formula": "I_rms = sqrt(D (I_mean^2 + Delta_I_pp^2/12)); P_cond = I_rms^2 R_ds_on",
+    "assumptions": [
+      "Channel current is zero outside duty fraction D. During the on interval it traverses uniformly between I_mean - Delta_I_pp/2 and I_mean + Delta_I_pp/2.",
+      "I_mean is the average during the on interval, not the average drain current over the whole cycle. Ripple is peak-to-peak.",
+      "Current stays nonnegative; discontinuous conduction with a zero-current subinterval requires a different waveform model.",
+      "R_ds_on is supplied at the actual gate voltage and junction temperature. No temperature calculation or feedback is performed.",
+      "Body-diode conduction, dead time and switching losses are excluded."
+    ],
+    "references": [
+      {"title": "Infineon OptiMOS device selection for synchronous rectification, section 3.2, equation 5", "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-mosfet-optimos-device-selection-for-synchronous-rectification-applicationnotes-en.pdf"}
+    ],
+    "inputs": [
+      {"key": "i_mean", "label": "Mean current during channel on interval", "unit": "A", "default": 10, "min": 0},
+      {"key": "delta_i_pp", "label": "Peak-to-peak on-state current ripple", "unit": "A", "default": 4, "min": 0},
+      {"key": "duty", "label": "Channel conduction duty fraction", "unit": "1", "default": 0.4, "min": 0, "max": 1},
+      {"key": "r_ds_on", "label": "On-resistance at operating conditions", "unit": "ohm", "default": 0.008, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "i_rms", "label": "Full-cycle channel RMS current", "unit": "A", "expression": "sqrt(duty*(i_mean^2+delta_i_pp^2/12))"},
+      {"key": "p_cond", "label": "Average channel conduction loss", "unit": "W", "expression": "i_rms^2*r_ds_on"}
+    ],
+    "constraints": [
+      {"left": "i_mean", "op": ">=", "right": "delta_i_pp/2", "message": "The triangular current minimum must be nonnegative."}
+    ],
+    "example": {
+      "inputs": {"i_mean": 8, "delta_i_pp": 6, "duty": 0.6, "r_ds_on": 0.015},
+      "expected": {"i_rms": 6.340346993658943, "p_cond": 0.603},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.hard_switch_overlap_loss",
+    "title": "Clamped-inductive switching overlap loss",
+    "category": "MOSFET and gate drive",
+    "level": "intermediate",
+    "description": "Estimate voltage/current overlap energy for separate turn-on and turn-off transitions and its cycle-average power.",
+    "formula": "E_on = V_off I_load t_on/2; E_off = V_off I_load t_off/2; P_overlap = (E_on + E_off) f_sw",
+    "assumptions": [
+      "Clamped-inductive hard switching: current ramps while drain voltage is approximately fixed, then voltage ramps while current is approximately fixed; each ramp is linear.",
+      "t_on and t_off are each the sum of current-ramp and voltage-ramp durations for that event, excluding propagation and gate delay intervals.",
+      "The same load current magnitude applies at turn-on and turn-off; this is not the simultaneous current/voltage ramp model for a resistive load.",
+      "Reverse recovery, output-capacitance discharge, overshoot, avalanche and ringing are excluded. Do not add separately estimated terms to measured E_on/E_off that already contain them.",
+      "Strongly nonlinear capacitance and common-source inductance can substantially invalidate this first-order approximation."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLUA618A, sections 2.4-2.7, equations 13-14", "url": "https://www.ti.com/lit/slua618"},
+      {"title": "Infineon 600 V CoolMOS C7 Design Guide, section 3.1, nonlinear-capacitance limitations", "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-application-note-600v-coolmos-c7-applicationnotes-en.pdf"}
+    ],
+    "inputs": [
+      {"key": "v_off", "label": "Off-state drain-source voltage", "unit": "V", "default": 48, "min": 0, "exclusive_min": true},
+      {"key": "i_load", "label": "Load current at each transition", "unit": "A", "default": 10, "min": 0},
+      {"key": "t_on", "label": "Turn-on overlap duration", "unit": "s", "default": 3e-8, "min": 0, "exclusive_min": true},
+      {"key": "t_off", "label": "Turn-off overlap duration", "unit": "s", "default": 5e-8, "min": 0, "exclusive_min": true},
+      {"key": "f_sw", "label": "Switching frequency", "unit": "Hz", "default": 100000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "e_on", "label": "Turn-on overlap energy", "unit": "J", "expression": "v_off*i_load*t_on/2"},
+      {"key": "e_off", "label": "Turn-off overlap energy", "unit": "J", "expression": "v_off*i_load*t_off/2"},
+      {"key": "e_cycle", "label": "Overlap energy per switching cycle", "unit": "J", "expression": "e_on+e_off"},
+      {"key": "p_overlap", "label": "Average overlap loss", "unit": "W", "expression": "e_cycle*f_sw"}
+    ],
+    "constraints": [
+      {"left": "f_sw*(t_on+t_off)", "op": "<", "right": "1", "message": "The combined transitions must occupy less than one switching period."}
+    ],
+    "example": {
+      "inputs": {"v_off": 100, "i_load": 5, "t_on": 4e-8, "t_off": 6e-8, "f_sw": 200000},
+      "expected": {"e_on": 1e-5, "e_off": 1.5e-5, "e_cycle": 2.5e-5, "p_overlap": 5},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.gate_loop_damping_resistor",
+    "title": "Gate-loop critical-damping resistor selection",
+    "category": "MOSFET and gate drive",
+    "level": "expert",
+    "description": "Size the minimum nonnegative external series gate resistance that brings a lumped gate loop to at least critical damping.",
+    "formula": "R_critical = 2 sqrt(L_loop/C_iss); R_external = max(0, R_critical - R_driver - R_internal); zeta = (R_driver + R_internal + R_external)/R_critical",
+    "assumptions": [
+      "The initial gate charging loop is a linear series RLC network with lumped loop/source inductance and locally appropriate C_iss.",
+      "Use driver output resistance for the edge under study. Source and sink resistances can differ; this is not a current-limited driver model.",
+      "If existing resistance exceeds critical resistance, zero added resistance is returned and zeta exceeds one; no passive resistor can restore exact critical damping.",
+      "This is a ringing/damping design estimate, not Miller-time selection or a guarantee of EMI, gate-voltage safety or switching performance.",
+      "Voltage-dependent capacitance, common-source feedback and distributed parasitics require measured waveform confirmation."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLUA618A, section 2.8, Figure 7 and equation 15", "url": "https://www.ti.com/lit/slua618"}
+    ],
+    "inputs": [
+      {"key": "l_loop", "label": "Total gate-loop inductance", "unit": "H", "default": 1.8e-8, "min": 0, "exclusive_min": true},
+      {"key": "c_iss", "label": "Effective initial input capacitance", "unit": "F", "default": 2e-9, "min": 0, "exclusive_min": true},
+      {"key": "r_driver", "label": "Driver resistance for the selected edge", "unit": "ohm", "default": 1, "min": 0},
+      {"key": "r_internal", "label": "MOSFET internal gate resistance", "unit": "ohm", "default": 0.5, "min": 0}
+    ],
+    "outputs": [
+      {"key": "r_critical", "label": "Critical total series resistance", "unit": "ohm", "expression": "2*sqrt(l_loop/c_iss)"},
+      {"key": "r_external", "label": "Minimum added gate resistance", "unit": "ohm", "expression": "max(0,r_critical-r_driver-r_internal)"},
+      {"key": "zeta", "label": "Resulting damping ratio", "unit": "1", "expression": "(r_driver+r_internal+r_external)/r_critical"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"l_loop": 3.2e-8, "c_iss": 2e-9, "r_driver": 1.5, "r_internal": 0.5},
+      "expected": {"r_critical": 8, "r_external": 6, "zeta": 1},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.miller_plateau_timing",
+    "title": "Miller plateau source/sink timing",
+    "category": "MOSFET and gate drive",
+    "level": "intermediate",
+    "description": "Estimate the drain-voltage slew interval from gate-drain charge and the source/sink current available at the Miller plateau.",
+    "formula": "I_on = (V_drive - V_plateau)/(R_source + R_external + R_internal); I_off = V_plateau/(R_sink + R_external + R_internal); t_on = Q_gd/I_on; t_off = Q_gd/I_off",
+    "assumptions": [
+      "Unipolar drive from 0 V to V_drive; approximately flat Miller plateau at the supplied load current and drain voltage.",
+      "Q_gd is characterized across the actual drain-voltage swing. The same charge and plateau voltage are approximated for turn-on and turn-off.",
+      "Driver source and sink stages are approximately resistive and not current limited; choose resistance from behavior near the plateau, not a peak-current headline rating.",
+      "Times describe only the Miller drain-voltage transition, not total gate delay or total switching overlap time.",
+      "Common-source inductance, gate-loop ringing and nonlinear changes in plateau voltage are neglected."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLUA618A, sections 2.4-2.7 and equation 11", "url": "https://www.ti.com/lit/slua618"},
+      {"title": "Texas Instruments SBAA730, How Can I Determine Which IDRIVE Setting to Use?, equation 1", "url": "https://www.ti.com/document-viewer/lit/html/SBAA730/GUID-5A1B27F5-016C-44FA-9999-FB0187F97B06"}
+    ],
+    "inputs": [
+      {"key": "q_gd", "label": "Gate-drain Miller charge", "unit": "C", "default": 2e-8, "min": 0, "exclusive_min": true},
+      {"key": "v_drive", "label": "Positive gate drive voltage", "unit": "V", "default": 10, "min": 0, "exclusive_min": true},
+      {"key": "v_plateau", "label": "Miller plateau gate voltage", "unit": "V", "default": 4, "min": 0, "exclusive_min": true},
+      {"key": "r_source", "label": "Driver source resistance", "unit": "ohm", "default": 2, "min": 0},
+      {"key": "r_sink", "label": "Driver sink resistance", "unit": "ohm", "default": 1, "min": 0},
+      {"key": "r_external", "label": "External gate resistance", "unit": "ohm", "default": 4, "min": 0},
+      {"key": "r_internal", "label": "MOSFET internal gate resistance", "unit": "ohm", "default": 1, "min": 0}
+    ],
+    "outputs": [
+      {"key": "i_gate_on", "label": "Gate current during turn-on plateau", "unit": "A", "expression": "(v_drive-v_plateau)/(r_source+r_external+r_internal)"},
+      {"key": "i_gate_off", "label": "Gate current magnitude during turn-off plateau", "unit": "A", "expression": "v_plateau/(r_sink+r_external+r_internal)"},
+      {"key": "t_miller_on", "label": "Turn-on Miller duration", "unit": "s", "expression": "q_gd/i_gate_on"},
+      {"key": "t_miller_off", "label": "Turn-off Miller duration", "unit": "s", "expression": "q_gd/i_gate_off"}
+    ],
+    "constraints": [
+      {"left": "v_drive", "op": ">", "right": "v_plateau", "message": "Drive voltage must exceed the Miller plateau voltage."},
+      {"left": "r_source+r_external+r_internal", "op": ">", "right": "0", "message": "The source path must have positive total resistance."},
+      {"left": "r_sink+r_external+r_internal", "op": ">", "right": "0", "message": "The sink path must have positive total resistance."}
+    ],
+    "example": {
+      "inputs": {"q_gd": 3e-8, "v_drive": 12, "v_plateau": 5, "r_source": 2, "r_sink": 1, "r_external": 3, "r_internal": 1},
+      "expected": {"i_gate_on": 1.1666666666666667, "i_gate_off": 1, "t_miller_on": 2.5714285714285714e-8, "t_miller_off": 3e-8},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.long_channel_triode_current",
+    "title": "Long-channel NMOS triode-region current",
+    "category": "MOSFET and gate drive",
+    "level": "intermediate",
+    "description": "Estimate drain current in a long-channel enhancement NMOS from gate overdrive and the full quadratic triode-region model.",
+    "formula": "beta = mu_n C_ox W/L; V_overdrive = V_gs - V_th; I_d = beta (V_overdrive V_ds - V_ds^2/2)",
+    "assumptions": [
+      "Long-channel enhancement NMOS in strong inversion, body tied to source, with 0 <= V_ds < V_gs - V_th.",
+      "beta is mu_n C_ox W/L in A/V^2, with no embedded factor of one half. It is a process/geometry parameter, not datasheet small-signal g_fs.",
+      "Constant mobility, gradual-channel approximation; no body effect, velocity saturation, channel-length modulation or series drift resistance.",
+      "Triode/ohmic region is meant here: vendor descriptions of a power MOSFET in linear-mode service may instead refer to saturation/active-region operation.",
+      "This educational IC model is not a power-MOSFET safe-operating-area or thermal design predictor."
+    ],
+    "references": [
+      {"title": "MIT EECS 6.012 Spring 1998 Lecture 8, section II.D, pages 7-9", "url": "https://web.mit.edu/course/6/6.012/SPR98/www/lectures/S98_Lecture8.pdf"}
+    ],
+    "inputs": [
+      {"key": "beta", "label": "Process and geometry factor mu_n C_ox W/L", "unit": "A/V^2", "default": 0.002, "min": 0, "exclusive_min": true},
+      {"key": "v_gs", "label": "Gate-source voltage", "unit": "V", "default": 3, "min": 0, "exclusive_min": true},
+      {"key": "v_th", "label": "Threshold voltage with body tied to source", "unit": "V", "default": 1, "min": 0},
+      {"key": "v_ds", "label": "Drain-source voltage", "unit": "V", "default": 0.2, "min": 0}
+    ],
+    "outputs": [
+      {"key": "v_overdrive", "label": "Gate overdrive", "unit": "V", "expression": "v_gs-v_th"},
+      {"key": "i_d", "label": "Triode-region drain current", "unit": "A", "expression": "beta*(v_overdrive*v_ds-v_ds^2/2)"}
+    ],
+    "constraints": [
+      {"left": "v_gs", "op": ">", "right": "v_th", "message": "Gate voltage must exceed threshold for this strong-inversion model."},
+      {"left": "v_ds", "op": "<", "right": "v_gs-v_th", "message": "Drain voltage must be below gate overdrive to remain in the triode region."}
+    ],
+    "example": {
+      "inputs": {"beta": 0.004, "v_gs": 2.5, "v_th": 0.7, "v_ds": 0.4},
+      "expected": {"v_overdrive": 1.8, "i_d": 0.00256},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.bootstrap_charge_budget",
+    "title": "Bootstrap capacitance from gate and driver charge budget",
+    "category": "MOSFET and gate drive",
+    "level": "expert",
+    "description": "Find the theoretical minimum effective bootstrap capacitance for a specified droop, accounting for gate charge, high-side leakage and full-cycle quiescent consumption.",
+    "formula": "Q_total = Q_g + I_hbs D_max/f_sw + I_hb/f_sw; V_headroom = V_dd - V_diode - V_min; C_min = Q_total/Delta_V",
+    "assumptions": [
+      "TI SLUA887A charge-budget convention: HB-to-VSS leakage acts for D_max/f_sw; high-side quiescent current is budgeted conservatively over the full 1/f_sw period.",
+      "Floating supply initially charges to approximately V_dd - V_diode; the switch node is near ground during recharge and the capacitor is replenished once each cycle.",
+      "V_min is the larger required floating supply voltage from driver UVLO plus desired margin and MOSFET adequate gate enhancement, entered by the designer.",
+      "Droop must be positive and no larger than V_dd - V_diode - V_min. Duty must be strictly between zero and one; 100 percent duty needs another supply mechanism.",
+      "C_min is effective capacitance at bias and temperature, not the nominal printed value. Add tolerance, aging, DC-bias and transient margin when selecting a real part.",
+      "Driver current definitions vary; use the selected driver's datasheet. Unbudgeted level-shifter charge, gate/capacitor/diode leakage, skipped pulses, recharge impedance, ESR and ESL can require a larger capacitor."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLUA887A Bootstrap Circuitry Selection for Half-Bridge Configurations, section 3.1, equation 3", "url": "https://www.ti.com/lit/an/slua887a/slua887a.pdf"}
+    ],
+    "inputs": [
+      {"key": "q_g", "label": "High-side MOSFET total gate charge", "unit": "C", "default": 5e-8, "min": 0, "exclusive_min": true},
+      {"key": "i_hbs", "label": "HB-to-VSS leakage current", "unit": "A", "default": 1e-5, "min": 0},
+      {"key": "i_hb", "label": "High-side quiescent current", "unit": "A", "default": 0.0002, "min": 0},
+      {"key": "d_max", "label": "Maximum high-side duty fraction", "unit": "1", "default": 0.9, "min": 0, "max": 1, "exclusive_min": true, "exclusive_max": true},
+      {"key": "f_sw", "label": "Switching and recharge frequency", "unit": "Hz", "default": 100000, "min": 0, "exclusive_min": true},
+      {"key": "v_dd", "label": "Gate-driver bias supply voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "v_diode", "label": "Bootstrap diode forward drop", "unit": "V", "default": 0.7, "min": 0},
+      {"key": "v_min", "label": "Minimum acceptable floating supply voltage", "unit": "V", "default": 8, "min": 0, "exclusive_min": true},
+      {"key": "delta_v", "label": "Maximum permitted bootstrap droop", "unit": "V", "default": 1, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "q_total", "label": "Charge consumed per recharge cycle", "unit": "C", "expression": "q_g+i_hbs*d_max/f_sw+i_hb/f_sw"},
+      {"key": "v_headroom", "label": "Available supply-voltage headroom", "unit": "V", "expression": "v_dd-v_diode-v_min"},
+      {"key": "c_min", "label": "Minimum effective bootstrap capacitance", "unit": "F", "expression": "q_total/delta_v"}
+    ],
+    "constraints": [
+      {"left": "v_dd-v_diode-v_min", "op": ">", "right": "0", "message": "The initial bootstrap voltage must exceed the minimum floating supply voltage."},
+      {"left": "delta_v", "op": "<=", "right": "v_dd-v_diode-v_min", "message": "Allowed droop cannot exceed available supply headroom."}
+    ],
+    "example": {
+      "inputs": {"q_g": 1e-7, "i_hbs": 2.5e-5, "i_hb": 0.0005, "d_max": 0.8, "f_sw": 50000, "v_dd": 15, "v_diode": 1, "v_min": 10, "delta_v": 0.5},
+      "expected": {"q_total": 1.104e-7, "v_headroom": 4, "c_min": 2.208e-7},
+      "relative_tolerance": 1e-6
+    }
+  },
+  {
+    "id": "mosfet.output_capacitance_hard_turn_on_loss",
+    "title": "MOSFET output-capacitance hard turn-on loss",
+    "category": "MOSFET and gate drive",
+    "level": "expert",
+    "description": "Estimate the energy dumped from a MOSFET's nonlinear output capacitance into its channel at hard turn-on using energy-equivalent capacitance.",
+    "formula": "E_oss = C_o_er V_ds^2/2; P_oss = E_oss f_sw",
+    "assumptions": [
+      "C_o_er is energy-related effective output capacitance for the complete 0 V to entered V_ds swing, defined by 2 E_oss(V_ds)/V_ds^2.",
+      "Never use a single small-signal C_oss point or time-related C_o_tr as C_o_er. A value characterized at a different drain voltage must be replaced with the appropriate curve value.",
+      "One complete hard discharge of the selected MOSFET's output capacitance into its channel occurs per switching cycle, with no energy recovery.",
+      "This is only the selected device's stored-energy discharge term, not total converter output-capacitance charging loss or a synchronous rectifier V Q_oss - E_oss model.",
+      "Zero-voltage/resonant switching can recycle this energy. Reverse recovery, external capacitors and overlap loss are excluded.",
+      "Do not add this to measured switching energies that already include output-capacitance loss."
+    ],
+    "references": [
+      {"title": "Infineon 600 V CoolMOS C7 Design Guide, section 3.4, Figures 9-12", "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-application-note-600v-coolmos-c7-applicationnotes-en.pdf"},
+      {"title": "Infineon OptiMOS device selection for synchronous rectification, equation 19, nonlinear stored-energy integral", "url": "https://www.infineon.com/assets/row/public/documents/24/42/infineon-mosfet-optimos-device-selection-for-synchronous-rectification-applicationnotes-en.pdf"}
+    ],
+    "inputs": [
+      {"key": "c_o_er", "label": "Energy-equivalent output capacitance at entered voltage", "unit": "F", "default": 1.5e-10, "min": 0, "exclusive_min": true},
+      {"key": "v_ds", "label": "Off-state voltage matching C_o_er characterization", "unit": "V", "default": 400, "min": 0, "exclusive_min": true},
+      {"key": "f_sw", "label": "Hard-discharge switching frequency", "unit": "Hz", "default": 100000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "e_oss", "label": "Output-capacitance energy dissipated per cycle", "unit": "J", "expression": "c_o_er*v_ds^2/2"},
+      {"key": "p_oss", "label": "Hard turn-on output-capacitance loss", "unit": "W", "expression": "e_oss*f_sw"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"c_o_er": 2.5e-10, "v_ds": 200, "f_sw": 500000},
+      "expected": {"e_oss": 5e-6, "p_oss": 2.5},
+      "relative_tolerance": 1e-6
+    }
+  }
+]

@@ -1,0 +1,220 @@
+[
+  {
+    "id": "timing.i2c_pullup_bounds",
+    "title": "I2C pullup resistance bounds",
+    "category": "Digital interfaces",
+    "level": "intermediate",
+    "description": "Find the pullup resistor interval allowed by open-drain sink capability and a 30%-to-70% bus rise-time limit.",
+    "formula": "R_min = (V_supply - V_OL)/I_sink; R_max = t_r/[ln(7/3) C_bus]; width = R_max - R_min",
+    "assumptions": ["Single lumped bus capacitance and passive resistor pullup; no rise-time accelerator or active pullup.", "Rise time is measured between 30% and 70% of the supply.", "Use the weakest device's guaranteed sink capability and actual mode-specific rise-time limit; leakage, resistor tolerance and capacitance tolerance require additional margin.", "Negative interval width means no feasible passive pullup, not a recommended resistor; this estimate does not establish I2C compliance."],
+    "references": [{"title": "TI SLVA689: I2C Bus Pullup Resistor Calculation, equations 1-6", "url": "https://www.ti.com/lit/pdf/slva689"}],
+    "inputs": [
+      {"key": "v_supply", "label": "Pullup supply voltage", "unit": "V", "default": 3.3, "min": 0, "exclusive_min": true},
+      {"key": "v_ol", "label": "Guaranteed maximum output-low voltage", "unit": "V", "default": 0.4, "min": 0},
+      {"key": "i_sink", "label": "Guaranteed sink current at output-low limit", "unit": "A", "default": 0.003, "min": 0, "exclusive_min": true},
+      {"key": "c_bus", "label": "Total bus capacitance", "unit": "F", "default": 2e-10, "min": 0, "exclusive_min": true},
+      {"key": "rise_limit", "label": "Maximum allowed 30%-70% rise time", "unit": "s", "default": 3e-7, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "r_min", "label": "Sink-limited minimum resistance", "unit": "ohm", "expression": "(v_supply-v_ol)/i_sink"},
+      {"key": "r_max", "label": "Rise-limited maximum resistance", "unit": "ohm", "expression": "rise_limit/(ln(7/3)*c_bus)"},
+      {"key": "interval_width", "label": "Feasible resistance interval width (negative means infeasible)", "unit": "ohm", "expression": "r_max-r_min"}
+    ],
+    "constraints": [{"left": "v_ol", "op": "<", "right": "v_supply", "message": "Output-low limit must be below the pullup supply."}],
+    "example": {"inputs": {"v_supply": 3.3, "v_ol": 0.4, "i_sink": 0.003, "c_bus": 2e-10, "rise_limit": 3e-7}, "expected": {"r_min": 966.6666666666666, "r_max": 1770.3337517157427, "interval_width": 803.667085049076}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.schmitt_rc_delay_bounds",
+    "title": "RC Schmitt-input digital delay bounds",
+    "category": "Digital timing",
+    "level": "intermediate",
+    "description": "Bound the output transition time of a rising RC input using guaranteed Schmitt threshold and intrinsic gate-delay limits.",
+    "formula": "t_early = -RC ln(1-V_Tmin/V_supply)+t_gate_min; t_late = -RC ln(1-V_Tmax/V_supply)+t_gate_max",
+    "assumptions": ["Capacitor starts at zero and charges through a constant resistance toward a stiff supply after an ideal step.", "Input has Schmitt hysteresis and permits slow input edges; ordinary CMOS inputs may oscillate or draw excess current.", "Threshold bounds and gate-delay bounds must come from the selected device at the applicable supply, load and temperature.", "R and C are fixed supplied values; repeat with tolerance corners for component variation. Input leakage, driver resistance variation and supply ramps are excluded.", "This is a digital threshold-to-output timing window, not a general analog charging calculator."],
+    "references": [{"title": "TI SN74AHC14 datasheet: section 8.2, RC logic delay application and guaranteed threshold bounds", "url": "https://www.ti.com/lit/ds/symlink/sn74ahc14.pdf"}, {"title": "TI SCEA046: Schmitt-Trigger Inputs", "url": "https://www.ti.com/document-viewer/lit/html/scea046"}],
+    "inputs": [
+      {"key": "r", "label": "Effective charging resistance", "unit": "ohm", "default": 2000, "min": 0, "exclusive_min": true},
+      {"key": "c", "label": "Total input capacitance", "unit": "F", "default": 1e-9, "min": 0, "exclusive_min": true},
+      {"key": "v_supply", "label": "Final input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "threshold_min", "label": "Minimum rising switching threshold", "unit": "V", "default": 2.5, "min": 0, "exclusive_min": true},
+      {"key": "threshold_max", "label": "Maximum rising switching threshold", "unit": "V", "default": 3.75, "min": 0, "exclusive_min": true},
+      {"key": "gate_delay_min", "label": "Minimum intrinsic gate propagation delay", "unit": "s", "default": 1e-8, "min": 0},
+      {"key": "gate_delay_max", "label": "Maximum intrinsic gate propagation delay", "unit": "s", "default": 2e-8, "min": 0}
+    ],
+    "outputs": [
+      {"key": "time_constant", "label": "Input RC time constant", "unit": "s", "expression": "r*c"},
+      {"key": "earliest_transition", "label": "Earliest output transition", "unit": "s", "expression": "-time_constant*ln(1-threshold_min/v_supply)+gate_delay_min"},
+      {"key": "latest_transition", "label": "Latest output transition", "unit": "s", "expression": "-time_constant*ln(1-threshold_max/v_supply)+gate_delay_max"},
+      {"key": "timing_window", "label": "Output transition uncertainty window", "unit": "s", "expression": "latest_transition-earliest_transition"}
+    ],
+    "constraints": [
+      {"left": "threshold_min", "op": "<=", "right": "threshold_max", "message": "Minimum threshold cannot exceed maximum threshold."},
+      {"left": "threshold_max", "op": "<", "right": "v_supply", "message": "Thresholds must be below the final input voltage."},
+      {"left": "gate_delay_min", "op": "<=", "right": "gate_delay_max", "message": "Minimum gate delay cannot exceed maximum gate delay."}
+    ],
+    "example": {"inputs": {"r": 2000, "c": 1e-9, "v_supply": 5, "threshold_min": 2.5, "threshold_max": 3.75, "gate_delay_min": 1e-8, "gate_delay_max": 2e-8}, "expected": {"time_constant": 2e-6, "earliest_transition": 1.3962943611198904e-6, "latest_transition": 2.7925887222397808e-6, "timing_window": 1.3962943611198904e-6}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.timer_clock_divider",
+    "title": "16-bit toggle timer clock divider",
+    "category": "Digital timing",
+    "level": "basic",
+    "description": "Select a 16-bit timer compare value by nearest output-period rounding for a supplied hardware prescaler, and calculate actual frequency error.",
+    "formula": "count = floor(f_clock/(2 P f_target)+0.5); compare = count-1; f_actual = f_clock/(2 P count)",
+    "assumptions": ["Timer counts inclusively from zero through compare and toggles its output once per compare event; two toggles make one output cycle.", "16-bit compare register and common AVR-style prescalers 1, 8, 64, 256 or 1024; verify the selected device supports the chosen prescaler and toggle mode.", "Nearest period count with half-integer ties rounded upward; not guaranteed to minimize absolute frequency error.", "No automatic prescaler selection, fractional divider, oscillator tolerance or transient register-update behavior."],
+    "references": [{"title": "Microchip AVR timer: Clear Timer on Compare Match mode, toggle-output frequency", "url": "https://onlinedocs.microchip.com/oxy/GUID-80B1922D-872B-40C8-A8A5-0CBE009FD908-en-US-3/GUID-6CCB4482-FFD4-4AD9-9D5C-DFC302038433.html"}, {"title": "Microchip ATmega640/1280/1281/2560/2561 datasheet, timer CTC mode", "url": "https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega640-1280-1281-2560-2561-Datasheet-DS40002211A.pdf"}],
+    "inputs": [
+      {"key": "clock_hz", "label": "Timer source clock", "unit": "Hz", "default": 16000000, "min": 0, "exclusive_min": true},
+      {"key": "prescaler", "label": "Hardware prescaler", "unit": "1", "default": 8, "min": 1, "max": 1024},
+      {"key": "target_hz", "label": "Target square-wave frequency", "unit": "Hz", "default": 3000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "count", "label": "Timer clocks per toggle", "unit": "1", "expression": "floor(clock_hz/(2*prescaler*target_hz)+0.5)"},
+      {"key": "compare_value", "label": "Compare register value", "unit": "1", "expression": "count-1"},
+      {"key": "actual_hz", "label": "Actual output frequency", "unit": "Hz", "expression": "clock_hz/(2*prescaler*count)"},
+      {"key": "error_percent", "label": "Signed frequency error", "unit": "%", "expression": "100*(actual_hz/target_hz-1)"},
+      {"key": "output_period", "label": "Actual output period", "unit": "s", "expression": "1/actual_hz"}
+    ],
+    "constraints": [
+      {"left": "(prescaler-1)*(prescaler-8)*(prescaler-64)*(prescaler-256)*(prescaler-1024)", "op": "==", "right": "0", "message": "Prescaler must be one of 1, 8, 64, 256 or 1024."},
+      {"left": "target_hz", "op": "<=", "right": "clock_hz/(2*prescaler)", "message": "Target exceeds the maximum toggle-output frequency."},
+      {"left": "floor(clock_hz/(2*prescaler*target_hz)+0.5)", "op": "<=", "right": "65536", "message": "Rounded count exceeds the 16-bit compare-register range."}
+    ],
+    "example": {"inputs": {"clock_hz": 16000000, "prescaler": 8, "target_hz": 3000}, "expected": {"count": 333, "compare_value": 332, "actual_hz": 3003.003003003003, "error_percent": 0.1001001001001001, "output_period": 0.000333}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.uart_sampling_margin",
+    "title": "UART baud mismatch and stop-sample margin",
+    "category": "Digital interfaces",
+    "level": "expert",
+    "description": "Estimate the worst first-stop-bit sampling margin from independent transmitter and receiver baud rates, frame length and start-edge quantization.",
+    "formula": "n = 1 + data_bits + parity_bits + 0.5; early = n/B_rx - (n-0.5)/B_tx - guard; late = (n+0.5)/B_tx - n/B_rx - 1/(S B_rx) - guard",
+    "assumptions": ["One start bit and one stop bit, independent constant baud clocks, ideal bit boundaries, and sample times centered relative to the detected start edge.", "Start-edge detection is delayed by between zero and one oversample tick; no early-detection offset or mid-frame resynchronization.", "A single center sample is modeled; majority voting, receiver-specific filters, fractional dividers and exact manufacturer tolerance tables are not modeled.", "The optional guard subtracts additional settling/jitter allowance at each stop-bit boundary.", "Positive minimum margin is only a necessary timing-budget result for this simplified receiver model, not proof of communication reliability. Negative margin identifies a possible framing failure."],
+    "references": [{"title": "Microchip USART: Asynchronous Receiver, oversampling and stop-bit sampling", "url": "https://onlinedocs.microchip.com/oxy/GUID-4D282FC5-82FC-4934-8BAD-D4A5D8422E6C-en-US-7/GUID-D742E4B3-493C-4FD7-8A7C-DE55893B1017.html"}, {"title": "Microchip AVR USART: Asynchronous Data Reception, center-sample majority voting", "url": "https://onlinedocs.microchip.com/oxy/GUID-0EC909F9-8FB7-46B2-BF4B-05290662B5C3-en-US-12.1.1/GUID-694A5C41-8200-43BB-94E7-D49D1E6F1E43.html"}],
+    "inputs": [
+      {"key": "baud_tx", "label": "Actual transmitter baud rate", "unit": "baud", "default": 9600, "min": 0, "exclusive_min": true},
+      {"key": "baud_rx", "label": "Actual receiver baud rate", "unit": "baud", "default": 9700, "min": 0, "exclusive_min": true},
+      {"key": "data_bits", "label": "Data bits per frame", "unit": "1", "default": 8, "min": 5, "max": 9},
+      {"key": "parity_bits", "label": "Parity bit count", "unit": "1", "default": 0, "min": 0, "max": 1},
+      {"key": "oversample", "label": "Receiver oversampling factor", "unit": "1", "default": 16, "min": 8, "max": 16},
+      {"key": "guard_time", "label": "Additional bit-boundary timing guard", "unit": "s", "default": 0, "min": 0}
+    ],
+    "outputs": [
+      {"key": "mismatch_percent", "label": "Receiver baud error relative to transmitter", "unit": "%", "expression": "100*(baud_rx/baud_tx-1)"},
+      {"key": "stop_center_time", "label": "Nominal first-stop-bit sample time", "unit": "s", "expression": "(1+data_bits+parity_bits+0.5)/baud_rx"},
+      {"key": "sync_quantization", "label": "Maximum start-edge detection delay", "unit": "s", "expression": "1/(oversample*baud_rx)"},
+      {"key": "early_margin", "label": "Worst margin after stop-bit beginning", "unit": "s", "expression": "stop_center_time-(1+data_bits+parity_bits)/baud_tx-guard_time"},
+      {"key": "late_margin", "label": "Worst margin before stop-bit ending", "unit": "s", "expression": "(2+data_bits+parity_bits)/baud_tx-stop_center_time-sync_quantization-guard_time"},
+      {"key": "minimum_margin", "label": "Minimum stop-sample margin (negative means risk)", "unit": "s", "expression": "min(early_margin,late_margin)"}
+    ],
+    "constraints": [
+      {"left": "data_bits", "op": "==", "right": "floor(data_bits)", "message": "Data bit count must be an integer."},
+      {"left": "parity_bits", "op": "==", "right": "floor(parity_bits)", "message": "Parity bit count must be zero or one."},
+      {"left": "(oversample-8)*(oversample-16)", "op": "==", "right": "0", "message": "This model supports 8x or 16x oversampling."}
+    ],
+    "example": {"inputs": {"baud_tx": 9600, "baud_rx": 9700, "data_bits": 8, "parity_bits": 0, "oversample": 16, "guard_time": 0}, "expected": {"mismatch_percent": 1.0416666666666667, "stop_center_time": 0.000979381443298969, "sync_quantization": 0.000006443298969072165, "early_margin": 0.00004188144329896905, "late_margin": 0.000055841924398625466, "minimum_margin": 0.00004188144329896905}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.synchronous_setup_slack",
+    "title": "Synchronous register setup slack",
+    "category": "Digital timing",
+    "level": "intermediate",
+    "description": "Budget one-cycle register-to-register setup timing with explicit capture-minus-launch clock skew and setup uncertainty.",
+    "formula": "available = T + skew - t_setup - uncertainty; arrival = t_CQ + t_path; slack = available - arrival",
+    "assumptions": ["Related clocks with a one-cycle launch-to-capture relationship; skew is capture-clock arrival minus launch-clock arrival.", "Use worst-case clock-to-Q and combinational-plus-routing delay; supplied setup time may be negative if the cell library specifies it.", "Uncertainty is a nonnegative worst-case setup penalty, not an RMS jitter value.", "Hold checks, multicycle paths, asynchronous CDC, recovery/removal, on-chip variation and common-path pessimism removal are excluded. Negative slack is a valid violation result."],
+    "references": [{"title": "UMBC Ryan Robucci: Physical Design Flow and Timing Analysis, sections 20-23", "url": "https://eclipse.umbc.edu/robucci/cmpeRSD/lectures/Physical_Design_Flow_and_Timing_Analysis/Physical_Design_Flow_and_Timing_Analysis.html"}],
+    "inputs": [
+      {"key": "clock_period", "label": "Launch-to-capture clock period", "unit": "s", "default": 1e-8, "min": 0, "exclusive_min": true},
+      {"key": "clock_to_q", "label": "Maximum source clock-to-Q delay", "unit": "s", "default": 5e-10, "min": 0},
+      {"key": "path_delay", "label": "Maximum logic and routing delay", "unit": "s", "default": 7e-9, "min": 0},
+      {"key": "setup_time", "label": "Destination register setup time", "unit": "s", "default": 3e-10},
+      {"key": "clock_skew", "label": "Capture-minus-launch clock skew", "unit": "s", "default": 2e-10},
+      {"key": "uncertainty", "label": "Worst-case setup uncertainty", "unit": "s", "default": 1e-10, "min": 0}
+    ],
+    "outputs": [
+      {"key": "available_time", "label": "Latest allowed data arrival relative to launch", "unit": "s", "expression": "clock_period+clock_skew-setup_time-uncertainty"},
+      {"key": "arrival_time", "label": "Worst data arrival relative to launch", "unit": "s", "expression": "clock_to_q+path_delay"},
+      {"key": "setup_slack", "label": "Setup slack (negative means violation)", "unit": "s", "expression": "available_time-arrival_time"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"clock_period": 1e-8, "clock_to_q": 5e-10, "path_delay": 7e-9, "setup_time": 3e-10, "clock_skew": 2e-10, "uncertainty": 1e-10}, "expected": {"available_time": 9.8e-9, "arrival_time": 7.5e-9, "setup_slack": 2.3e-9}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.capacitive_crosstalk_peak",
+    "title": "Finite-edge lumped capacitive crosstalk",
+    "category": "EMC coupling",
+    "level": "expert",
+    "description": "Estimate the peak victim-node excursion caused by a linear aggressor edge through mutual capacitance, including victim resistance and shunt capacitance.",
+    "formula": "tau = R_v(C_m+C_v); V_peak = R_v C_m DeltaV/t_edge [1-exp(-t_edge/tau)]",
+    "assumptions": ["Ideal stiff aggressor source with a linear full-swing ramp; victim initially at its resistor-defined DC potential.", "Victim has constant resistance to AC ground and shunt capacitance; mutual capacitance also contributes to victim time constant.", "Coupled segment propagation delay must not exceed one tenth of the ramp duration, a conservative lumped-model selection criterion.", "Magnetic coupling, distributed near/far-end crosstalk, multiple aggressors, clamps and nonlinear victim input behavior are excluded.", "Peak is an excursion magnitude at the end of the ramp; if it reaches clamp thresholds the linear estimate is no longer the realized waveform."],
+    "references": [{"title": "TI/National SNOA382: Understanding and Eliminating EMI in Microcontroller Applications, sections 3.6 and 4.5-4.6", "url": "https://www.ti.com/lit/pdf/snoa382"}, {"title": "MIT 6.071: Capacitors and inductors, capacitor current law and KCL", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf"}],
+    "inputs": [
+      {"key": "r_victim", "label": "Victim resistance to AC ground", "unit": "ohm", "default": 2000, "min": 0, "exclusive_min": true},
+      {"key": "c_mutual", "label": "Mutual aggressor-victim capacitance", "unit": "F", "default": 2e-12, "min": 0},
+      {"key": "c_victim", "label": "Victim shunt capacitance", "unit": "F", "default": 8e-12, "min": 0, "exclusive_min": true},
+      {"key": "voltage_swing", "label": "Aggressor full voltage swing magnitude", "unit": "V", "default": 5, "min": 0},
+      {"key": "edge_time", "label": "Full linear-ramp duration (not 10%-90%)", "unit": "s", "default": 2e-8, "min": 0, "exclusive_min": true},
+      {"key": "segment_delay", "label": "Coupled segment one-way propagation delay", "unit": "s", "default": 1e-9, "min": 0}
+    ],
+    "outputs": [
+      {"key": "victim_time_constant", "label": "Victim recovery time constant", "unit": "s", "expression": "r_victim*(c_mutual+c_victim)"},
+      {"key": "peak_excursion", "label": "Peak victim voltage excursion", "unit": "V", "expression": "r_victim*c_mutual*voltage_swing/edge_time*(1-exp(-edge_time/victim_time_constant))"},
+      {"key": "fast_edge_limit", "label": "Capacitive-divider fast-edge limit", "unit": "V", "expression": "c_mutual/(c_mutual+c_victim)*voltage_swing"}
+    ],
+    "constraints": [{"left": "segment_delay", "op": "<=", "right": "edge_time/10", "message": "Propagation delay must be at most one tenth of edge time for this lumped estimate."}],
+    "example": {"inputs": {"r_victim": 2000, "c_mutual": 2e-12, "c_victim": 8e-12, "voltage_swing": 5, "edge_time": 2e-8, "segment_delay": 1e-9}, "expected": {"victim_time_constant": 2e-8, "peak_excursion": 0.6321205588285577, "fast_edge_limit": 1}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.inductive_turnoff_spike",
+    "title": "Inductive turn-off voltage spike",
+    "category": "EMC coupling",
+    "level": "basic",
+    "description": "Estimate a low-side switch's overvoltage from a specified linear current fall through series loop inductance.",
+    "formula": "current_fall_rate = (I_initial-I_final)/t_fall; spike = L current_fall_rate; switch_voltage = V_supply + spike",
+    "assumptions": ["Positive current falls linearly and monotonically through a constant series inductance during the supplied interval.", "Low-side switching polarity adds inductive overvoltage to the supply; output spike is a positive magnitude.", "Current fall time must come from measurement or a valid switching model; this calculator does not predict it from gate drive.", "Ignore clamp/avalanche conduction, parasitic capacitance, ringing, winding resistance and supply movement. The result is an unclamped linear-slope estimate, not a measured ringing peak or device rating."],
+    "references": [{"title": "MIT 6.071: Capacitors and inductors, equation 1.27, v = L di/dt", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/eac1995aca830cfd0de6bab60a8abf10_capactr_inductr.pdf"}, {"title": "TI/National SNOA382, section 4.7: parasitic-inductance voltage transients", "url": "https://www.ti.com/lit/pdf/snoa382"}],
+    "inputs": [
+      {"key": "loop_inductance", "label": "Series loop inductance", "unit": "H", "default": 4e-8, "min": 0},
+      {"key": "current_initial", "label": "Initial current", "unit": "A", "default": 5, "min": 0},
+      {"key": "current_final", "label": "Final current", "unit": "A", "default": 1, "min": 0},
+      {"key": "fall_time", "label": "Full current-fall interval", "unit": "s", "default": 1e-8, "min": 0, "exclusive_min": true},
+      {"key": "supply_voltage", "label": "Supply voltage", "unit": "V", "default": 12, "min": 0}
+    ],
+    "outputs": [
+      {"key": "current_fall_rate", "label": "Current-fall slew magnitude", "unit": "A/s", "expression": "(current_initial-current_final)/fall_time"},
+      {"key": "spike_voltage", "label": "Inductive overvoltage magnitude", "unit": "V", "expression": "loop_inductance*current_fall_rate"},
+      {"key": "switch_voltage", "label": "Estimated low-side switch voltage", "unit": "V", "expression": "supply_voltage+spike_voltage"}
+    ],
+    "constraints": [{"left": "current_initial", "op": ">=", "right": "current_final", "message": "Turn-off model requires nonincreasing positive current."}],
+    "example": {"inputs": {"loop_inductance": 4e-8, "current_initial": 5, "current_final": 1, "fall_time": 1e-8, "supply_voltage": 12}, "expected": {"current_fall_rate": 400000000, "spike_voltage": 16, "switch_voltage": 28}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "timing.plate_displacement_current",
+    "title": "Parallel-plate displacement current",
+    "category": "EMC coupling",
+    "level": "expert",
+    "description": "Estimate edge-driven common-mode displacement current through a rectangular dielectric overlap to a chassis or reference plane.",
+    "formula": "C = epsilon_0 epsilon_r width length/gap; slew = DeltaV/t_edge; I_displacement = C slew; J_displacement = I/(width length)",
+    "assumptions": ["Rectangular parallel conducting surfaces separated by a homogeneous linear, nonmagnetic dielectric; zero conductive leakage.", "Gap must be at most one tenth of both plate dimensions to neglect fringing; this is a model-selection approximation, not a guaranteed error bound.", "Longest plate dimension must be at most one tenth of the distance light travels in the dielectric during the full ramp, a conservative quasistatic criterion.", "Use relative permittivity appropriate to the edge spectrum. Signed voltage change sets current direction; return-network impedance and radiation are not solved.", "Does not certify EMC emissions, safety leakage, isolation withstand or dielectric breakdown."],
+    "references": [{"title": "MIT 6.013 Electromagnetics and Applications: chapter 3, equations 3.1.10-3.1.12 and displacement-current term in 3.2.1", "url": "https://ocw.mit.edu/courses/6-013-electromagnetics-and-applications-spring-2009/be09fe40701d8ba037ddc18fea301449_MIT6_013S09_chap03.pdf"}],
+    "inputs": [
+      {"key": "width", "label": "Conductive overlap width", "unit": "m", "default": 0.02, "min": 0, "exclusive_min": true},
+      {"key": "length", "label": "Conductive overlap length", "unit": "m", "default": 0.03, "min": 0, "exclusive_min": true},
+      {"key": "gap", "label": "Uniform dielectric separation", "unit": "m", "default": 0.0005, "min": 0, "exclusive_min": true},
+      {"key": "epsilon_r", "label": "Relative dielectric permittivity", "unit": "1", "default": 4, "min": 1},
+      {"key": "voltage_change", "label": "Signed voltage change across the overlap", "unit": "V", "default": 100},
+      {"key": "edge_time", "label": "Full linear-ramp duration", "unit": "s", "default": 2e-8, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "overlap_capacitance", "label": "Estimated overlap capacitance", "unit": "F", "expression": "8.8541878128e-12*epsilon_r*width*length/gap"},
+      {"key": "voltage_slew", "label": "Signed voltage slew", "unit": "V/s", "expression": "voltage_change/edge_time"},
+      {"key": "displacement_current", "label": "Signed displacement current", "unit": "A", "expression": "overlap_capacitance*voltage_slew"},
+      {"key": "current_density", "label": "Signed displacement current density", "unit": "A/m^2", "expression": "displacement_current/(width*length)"}
+    ],
+    "constraints": [
+      {"left": "gap", "op": "<=", "right": "min(width,length)/10", "message": "Gap must be at most one tenth of each plate dimension for the no-fringing approximation."},
+      {"left": "max(width,length)", "op": "<=", "right": "299792458*edge_time/(10*sqrt(epsilon_r))", "message": "Plate dimensions must be electrically short for the quasistatic estimate."}
+    ],
+    "example": {"inputs": {"width": 0.02, "length": 0.03, "gap": 0.0005, "epsilon_r": 4, "voltage_change": 100, "edge_time": 2e-8}, "expected": {"overlap_capacitance": 4.250010150144e-11, "voltage_slew": 5000000000, "displacement_current": 0.2125005075072, "current_density": 354.167512512}, "relative_tolerance": 0.000001}
+  }
+]

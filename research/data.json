@@ -1,0 +1,293 @@
+[
+  {
+    "id": "data.adc_lsb",
+    "title": "Ideal ADC LSB voltage",
+    "category": "ADC DAC and sampled systems",
+    "level": "basic",
+    "description": "Find the ideal code-bin width for an N-bit converter from its full-scale input span.",
+    "formula": "M = 2^N; q = V_span / M",
+    "assumptions": [
+      "Uniform ideal converter with 2^N code bins covering the specified full-scale span.",
+      "Full-scale span is the upper reference minus the lower reference, not the voltage of the highest reconstruction level.",
+      "Resolution does not establish accuracy; offset, gain, INL, DNL and noise are excluded."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLAA694A, General Oversampling of MSP ADCs for Higher Resolution, section 2.1, equation 1", "url": "https://www.ti.com/lit/an/slaa694a/slaa694a.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "Nominal resolution", "unit": "bit", "default": 12, "min": 1, "max": 32},
+      {"key": "full_scale_span", "label": "Full-scale input span", "unit": "V", "default": 3.3, "min": 1e-9, "max": 1e6}
+    ],
+    "outputs": [
+      {"key": "code_count", "label": "Number of code bins", "unit": "count", "expression": "2^bits"},
+      {"key": "lsb_v", "label": "Ideal LSB voltage", "unit": "V", "expression": "full_scale_span/code_count"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "full_scale_span": 3.3},
+      "expected": {"code_count": 4096, "lsb_v": 0.0008056640625},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.adc_quantization_error",
+    "title": "Ideal ADC code and quantization error",
+    "category": "ADC DAC and sampled systems",
+    "level": "intermediate",
+    "description": "Quantize a specific input voltage using an explicitly defined uniform midrise transfer, then report its midpoint reconstruction and signed error.",
+    "formula": "q = (V_high - V_low)/2^N; k = floor((V_in - V_low)/q); V_hat = V_low + (k + 1/2)q; error = V_hat - V_in",
+    "assumptions": [
+      "Uniform midrise model: bin k is [V_low+kq, V_low+(k+1)q), reconstructed at its midpoint.",
+      "The input is inside the nonsaturated interval V_low <= V_in < V_high; the upper endpoint is excluded.",
+      "Unsigned straight-binary code labels are used even when the analog interval is bipolar.",
+      "This explicit midpoint convention is not a universal device transfer curve; consult device transition specifications. Offset, INL, DNL, noise and saturation behavior are excluded."
+    ],
+    "references": [
+      {"title": "University of Texas at Austin EE445S, Lecture 8 Quantization notes, midrise quantization and error analysis", "url": "https://users.ece.utexas.edu/~bevans/courses/realtime/lectures/08_Quantization/notes/2020-12-02%20Lecture%208%20Quantization.pdf"},
+      {"title": "Texas Instruments ADCPro User Guide SBAU128C, appendix A.1.1 ADC transfer and quantization error", "url": "https://www.ti.com/lit/ug/sbau128c/sbau128c.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "Resolution", "unit": "bit", "default": 10, "min": 1, "max": 32},
+      {"key": "v_low", "label": "Lower input endpoint", "unit": "V", "default": -1, "min": -1000, "max": 1000},
+      {"key": "v_high", "label": "Upper input endpoint", "unit": "V", "default": 1, "min": -1000, "max": 1000},
+      {"key": "v_in", "label": "Analog input", "unit": "V", "default": 0.123, "min": -1000, "max": 1000}
+    ],
+    "outputs": [
+      {"key": "quantization_step", "label": "Bin width", "unit": "V", "expression": "(v_high-v_low)/2^bits"},
+      {"key": "code", "label": "Unsigned output code", "unit": "count", "expression": "floor((v_in-v_low)/quantization_step)"},
+      {"key": "reconstructed_v", "label": "Bin midpoint reconstruction", "unit": "V", "expression": "v_low+(code+0.5)*quantization_step"},
+      {"key": "error_v", "label": "Reconstruction minus input", "unit": "V", "expression": "reconstructed_v-v_in"},
+      {"key": "absolute_error_v", "label": "Absolute quantization error", "unit": "V", "expression": "abs(error_v)"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "v_high-v_low", "op": ">=", "right": "1e-9", "message": "The upper endpoint must exceed the lower endpoint by at least 1 nV."},
+      {"left": "v_in", "op": ">=", "right": "v_low", "message": "Input must not lie below the nonsaturated converter interval."},
+      {"left": "(v_in-v_low)/(v_high-v_low)", "op": "<", "right": "1", "message": "Input must remain below full scale after floating-point normalization."},
+      {"left": "v_in", "op": "<", "right": "v_high", "message": "Input must be below the excluded upper endpoint."}
+    ],
+    "example": {
+      "inputs": {"bits": 10, "v_low": -1, "v_high": 1, "v_in": 0.123},
+      "expected": {"quantization_step": 0.001953125, "code": 574, "reconstructed_v": 0.1220703125, "error_v": -0.0009296875, "absolute_error_v": 0.0009296875},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.bandlimited_quantization_snr",
+    "title": "Bandlimited ideal quantization SNR",
+    "category": "ADC DAC and sampled systems",
+    "level": "expert",
+    "description": "Estimate ideal sine-wave SNR after digital filtering to a specified noise bandwidth, including signal backoff and white-quantization-noise process gain.",
+    "formula": "OSR = f_s/(2B); SNR_linear = a*2^N*sqrt((3/2)*OSR); SNR_dB = 20 log10(SNR_linear); process_gain_dB = 10 log10(OSR)",
+    "assumptions": [
+      "Quantization error is approximately zero-mean white noise, uniformly distributed between -q/2 and +q/2, with total variance q^2/12.",
+      "The sine-wave peak-to-peak amplitude is a times the converter full-scale span and remains in the linear input range.",
+      "The sine lies within a unity-gain digital passband whose one-sided equivalent noise bandwidth is B; noise outside B is rejected.",
+      "The sine spans at least 16 LSBs as a conservative applicability screen; this does not guarantee uncorrelated error for coherent tones or undithered inputs.",
+      "No noise shaping, overload, harmonic distortion, thermal/reference noise, clock jitter or analog noise budget is modeled. Raising sample rate without filtering does not provide this process gain."
+    ],
+    "references": [
+      {"title": "Texas Instruments SLAP082, Signal Acquisition and Conditioning Seminar section 2, slide 2-15: q/sqrt(12) and ideal sine SNR", "url": "https://www.ti.com/lit/ml/slap082/slap082.pdf"},
+      {"title": "Texas Instruments SLAA694A, General Oversampling of MSP ADCs for Higher Resolution, section 2.2 and equation 4", "url": "https://www.ti.com/lit/an/slaa694a/slaa694a.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "Nominal resolution", "unit": "bit", "default": 12, "min": 4, "max": 32},
+      {"key": "sample_rate", "label": "Sampling rate", "unit": "Hz", "default": 1000000, "min": 1e-9, "max": 1e12},
+      {"key": "noise_bandwidth", "label": "One-sided digital noise bandwidth", "unit": "Hz", "default": 20000, "min": 1e-9, "max": 1e12},
+      {"key": "amplitude_fraction", "label": "Sine peak-to-peak fraction of full scale", "unit": "1", "default": 0.8, "min": 1e-6, "max": 1}
+    ],
+    "outputs": [
+      {"key": "oversampling_ratio", "label": "Noise-bandwidth oversampling ratio", "unit": "1", "expression": "sample_rate/(2*noise_bandwidth)"},
+      {"key": "snr_linear", "label": "Signal RMS to in-band quantization RMS ratio", "unit": "1", "expression": "amplitude_fraction*2^bits*sqrt(1.5*oversampling_ratio)"},
+      {"key": "process_gain_db", "label": "White-noise filtering process gain", "unit": "dB", "expression": "10*log10(oversampling_ratio)"},
+      {"key": "snr_db", "label": "Ideal in-band quantization SNR", "unit": "dB", "expression": "20*log10(snr_linear)"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "sample_rate", "op": ">=", "right": "2*noise_bandwidth", "message": "Digital noise bandwidth must not exceed the Nyquist bandwidth."},
+      {"left": "amplitude_fraction*2^bits", "op": ">=", "right": "16", "message": "The sine must span at least 16 LSBs for this quantization-noise approximation."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "sample_rate": 1000000, "noise_bandwidth": 20000, "amplitude_fraction": 0.8},
+      "expected": {"oversampling_ratio": 25, "snr_linear": 20066.219972879797, "process_gain_db": 13.979400086720377, "snr_db": 86.04931137647155},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.dynamic_enob",
+    "title": "Dynamic ENOB from measured SINAD",
+    "category": "ADC DAC and sampled systems",
+    "level": "intermediate",
+    "description": "Express a real converter's measured noise-plus-distortion performance as the bit resolution of an equivalent ideal full-scale sine converter.",
+    "formula": "ENOB = (SINAD_dB - 10 log10(3/2))/(20 log10(2))",
+    "assumptions": [
+      "SINAD is an independently measured full-scale sine signal-to-noise-and-distortion ratio, excluding DC and including harmonics and noise over the stated Nyquist measurement band.",
+      "Exact logarithmic constants are used rather than the rounded 6.02 and 1.76 constants.",
+      "No amplitude-backoff correction is applied; below-full-scale tests require normalization outside this calculation.",
+      "This is a dynamic figure of merit, not DC noise-free resolution, static accuracy, or a separation of noise from distortion. A narrowband or noise-shaped result is not directly comparable to this full-Nyquist convention.",
+      "ENOB is continuous and may be negative for very poor SINAD; do not clamp or round it to an integer."
+    ],
+    "references": [
+      {"title": "Texas Instruments ADCPro User Guide SBAU128C, appendix A.1.3.5, equation 4: dynamic ENOB versus DC noise-based resolution", "url": "https://www.ti.com/lit/ug/sbau128c/sbau128c.pdf"},
+      {"title": "Texas Instruments SLAP082, Signal Acquisition and Conditioning Seminar section 2, slide 2-15", "url": "https://www.ti.com/lit/ml/slap082/slap082.pdf"}
+    ],
+    "inputs": [
+      {"key": "sinad_db", "label": "Measured full-scale sine SINAD", "unit": "dB", "default": 68, "min": 0, "max": 200}
+    ],
+    "outputs": [
+      {"key": "enob_bits", "label": "Dynamic effective number of bits", "unit": "bit", "expression": "(sinad_db-10*log10(1.5))/(20*log10(2))"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"sinad_db": 68},
+      "expected": {"enob_bits": 11.002074272256452},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.nyquist_sampling_margin",
+    "title": "Baseband Nyquist sampling margin",
+    "category": "ADC DAC and sampled systems",
+    "level": "basic",
+    "description": "Compare a selected sample rate against the highest frequency in a bandlimited baseband input and show the available anti-alias transition interval.",
+    "formula": "f_N = f_s/2; margin = f_N - f_max; rate_ratio = f_s/(2f_max)",
+    "assumptions": [
+      "Uniform real-valued baseband sampling; the highest input frequency is positive and includes all signal components that must be preserved.",
+      "Strict positive margin is needed for the stated no-alias baseband condition; zero margin is a boundary, not a safe practical design.",
+      "A negative margin intentionally reports an undersampled design and is not an invalid arithmetic input.",
+      "Practical anti-alias attenuation, out-of-band interferers, filter order, ADC aperture response and bandpass undersampling are not calculated."
+    ],
+    "references": [
+      {"title": "Texas Instruments AN-236/SNAA079C, An Introduction to the Sampling Theorem, sections 2 and 4", "url": "https://www.ti.com/lit/an/snaa079c/snaa079c.pdf"}
+    ],
+    "inputs": [
+      {"key": "sample_rate", "label": "Selected sample rate", "unit": "Hz", "default": 48000, "min": 1e-9, "max": 1e12},
+      {"key": "highest_frequency", "label": "Highest preserved baseband frequency", "unit": "Hz", "default": 20000, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "nyquist_frequency", "label": "Nyquist frequency", "unit": "Hz", "expression": "sample_rate/2"},
+      {"key": "frequency_margin", "label": "Baseband to Nyquist margin", "unit": "Hz", "expression": "nyquist_frequency-highest_frequency"},
+      {"key": "rate_ratio", "label": "Rate relative to twice highest frequency", "unit": "1", "expression": "sample_rate/(2*highest_frequency)"}
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {"sample_rate": 48000, "highest_frequency": 20000},
+      "expected": {"nyquist_frequency": 24000, "frequency_margin": 4000, "rate_ratio": 1.2},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.tone_alias_frequency",
+    "title": "Sampled tone alias frequency",
+    "category": "ADC DAC and sampled systems",
+    "level": "intermediate",
+    "description": "Fold a nonnegative analog tone frequency into the first Nyquist zone of a real-valued sampled sequence.",
+    "formula": "k = floor(f_in/f_s + 1/2); f_alias = abs(f_in - k f_s)",
+    "assumptions": [
+      "A single tone is uniformly sampled at an exact fixed sample rate; real-valued first-zone alias magnitude is reported in [0, f_s/2].",
+      "Frequencies differing by an integer sample-rate multiple are indistinguishable; negative frequencies are reflected to their positive magnitudes.",
+      "No phase, spectral inversion direction, anti-alias attenuation or converter input bandwidth is modeled. A computed alias does not establish that the ADC can acquire the analog tone.",
+      "The input-to-sample-rate ratio is capped at 1e9 to limit loss of floating-point precision in subtracting large sample-rate multiples."
+    ],
+    "references": [
+      {"title": "Texas Instruments AN-236/SNAA079C, An Introduction to the Sampling Theorem, spectrum replication and folding in sections 3 and 4", "url": "https://www.ti.com/lit/an/snaa079c/snaa079c.pdf"}
+    ],
+    "inputs": [
+      {"key": "input_frequency", "label": "Analog tone frequency", "unit": "Hz", "default": 173000, "min": 0, "max": 1e12},
+      {"key": "sample_rate", "label": "Sample rate", "unit": "Hz", "default": 48000, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "nearest_sample_multiple", "label": "Nearest sample-rate multiple", "unit": "count", "expression": "floor(input_frequency/sample_rate+0.5)"},
+      {"key": "alias_frequency", "label": "First-zone alias frequency", "unit": "Hz", "expression": "abs(input_frequency-nearest_sample_multiple*sample_rate)"}
+    ],
+    "constraints": [
+      {"left": "input_frequency/sample_rate", "op": "<=", "right": "1e9", "message": "Input frequency must not exceed one billion times the sample rate for this numerical model."}
+    ],
+    "example": {
+      "inputs": {"input_frequency": 173000, "sample_rate": 48000},
+      "expected": {"nearest_sample_multiple": 4, "alias_frequency": 19000},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.unipolar_dac_output",
+    "title": "Ideal unipolar DAC output voltage",
+    "category": "ADC DAC and sampled systems",
+    "level": "basic",
+    "description": "Find the ideal static analog voltage commanded by an unsigned DAC code, including a configured reference-to-output gain.",
+    "formula": "V_span = gain * V_ref; V_out = code * V_span/2^N; V_max_code = (2^N - 1)*V_span/2^N",
+    "assumptions": [
+      "Straight-binary unipolar DAC; configured gain includes any reference division and output-buffer gain.",
+      "The denominator is 2^N, not 2^N-1; the highest code is one ideal LSB below the configured span.",
+      "The output amplifier has sufficient supply headroom and load capability; reference error, offset, INL, DNL, settling, glitches and output loading are excluded.",
+      "This generic transfer law is not a claim that every gain or reference value is supported by the cited DAC device."
+    ],
+    "references": [
+      {"title": "Texas Instruments DAC80501/DAC70501/DAC60501 datasheet SBAS794E, section 8.3.1.1, equation 1", "url": "https://www.ti.com/lit/ds/symlink/dac80501.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "DAC resolution", "unit": "bit", "default": 12, "min": 1, "max": 32},
+      {"key": "code", "label": "Unsigned DAC code", "unit": "count", "default": 1234, "min": 0, "max": 4294967295},
+      {"key": "reference_v", "label": "Reference voltage", "unit": "V", "default": 2.5, "min": 1e-9, "max": 1e6},
+      {"key": "gain", "label": "Configured reference-to-span gain", "unit": "V/V", "default": 2, "min": 1e-6, "max": 1000}
+    ],
+    "outputs": [
+      {"key": "configured_span", "label": "Configured full-scale span", "unit": "V", "expression": "reference_v*gain"},
+      {"key": "output_v", "label": "Ideal DAC output", "unit": "V", "expression": "code*configured_span/2^bits"},
+      {"key": "maximum_code_v", "label": "Highest-code ideal voltage", "unit": "V", "expression": "(2^bits-1)*configured_span/2^bits"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "code", "op": "==", "right": "floor(code)", "message": "DAC code must be an integer."},
+      {"left": "code", "op": "<=", "right": "2^bits-1", "message": "Code exceeds the selected DAC resolution."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "code": 1234, "reference_v": 2.5, "gain": 2},
+      "expected": {"configured_span": 5, "output_v": 1.50634765625, "maximum_code_v": 4.998779296875},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "data.sar_acquisition_settling",
+    "title": "SAR ADC half-LSB acquisition settling",
+    "category": "ADC DAC and sampled systems",
+    "level": "expert",
+    "description": "Estimate acquisition time for the SAR sampling capacitor to settle an input step to half an N-bit LSB through source and sampling-switch resistance.",
+    "formula": "tau = (R_source + R_switch) C_sample; alpha = abs(step)/V_span; t_min = tau ln(alpha * 2^(N+1))",
+    "assumptions": [
+      "Single-pole switched-capacitor acquisition model; the input stays constant during acquisition and source/switch resistances are linear and time-invariant.",
+      "Step fraction is the magnitude of the initial capacitor-to-input voltage difference divided by full-scale span, with 0 < alpha <= 1.",
+      "The initial error must exceed half an LSB; already-settled inputs are outside this positive-time model.",
+      "Alpha = 1 represents a worst-case full-scale step; alpha = 1/2 represents a half-scale initial error, giving N ln(2) time constants.",
+      "Sampling capacitance and switch resistance must come from the selected ADC. Charge buckets, amplifier nonlinear settling, multiple poles, kickback, parasitics and tolerances are not modeled; add datasheet-based margin.",
+      "This is acquisition time only, not conversion time or maximum throughput, and it does not certify converter accuracy."
+    ],
+    "references": [
+      {"title": "Texas Instruments SBAA081A, Using a SAR Analog-to-Digital Converter for Current Measurement in Motor Control Applications, section 5, equations 5-10", "url": "https://www.ti.com/lit/an/sbaa081a/sbaa081a.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "ADC resolution", "unit": "bit", "default": 12, "min": 1, "max": 32},
+      {"key": "source_resistance", "label": "Source resistance", "unit": "ohm", "default": 1000, "min": 0, "max": 1e9},
+      {"key": "switch_resistance", "label": "Sampling-switch resistance", "unit": "ohm", "default": 20, "min": 0, "max": 1e9},
+      {"key": "sample_capacitance", "label": "Effective sampling capacitance", "unit": "F", "default": 1.5e-11, "min": 1e-15, "max": 0.001},
+      {"key": "step_fraction", "label": "Initial-error fraction of full scale", "unit": "1", "default": 1, "min": 1e-12, "max": 1}
+    ],
+    "outputs": [
+      {"key": "time_constant_s", "label": "Acquisition RC time constant", "unit": "s", "expression": "(source_resistance+switch_resistance)*sample_capacitance"},
+      {"key": "required_time_constants", "label": "Half-LSB settling time constants", "unit": "1", "expression": "ln(step_fraction*2^(bits+1))"},
+      {"key": "minimum_acquisition_s", "label": "Minimum modeled acquisition time", "unit": "s", "expression": "time_constant_s*required_time_constants"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "source_resistance+switch_resistance", "op": ">", "right": "0", "message": "Total acquisition resistance must be positive."},
+      {"left": "step_fraction*2^(bits+1)", "op": ">", "right": "1", "message": "Initial error must exceed half an LSB for this positive acquisition-time model."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "source_resistance": 1000, "switch_resistance": 20, "sample_capacitance": 1.5e-11, "step_fraction": 1},
+      "expected": {"time_constant_s": 1.53e-8, "required_time_constants": 9.010913347279288, "minimum_acquisition_s": 1.3786697421337312e-7},
+      "relative_tolerance": 0.000001
+    }
+  }
+]

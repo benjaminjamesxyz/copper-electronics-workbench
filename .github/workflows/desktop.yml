@@ -1,0 +1,55 @@
+name: Desktop quality gates
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev xvfb
+      - name: Rust behavioral tests
+        run: cargo test --locked --manifest-path backend/Cargo.toml
+      - name: Build process for independent-vector smoke
+        run: cargo build --locked --manifest-path backend/Cargo.toml
+      - name: Research-vector process smoke
+        if: runner.os != 'Windows'
+        run: python3 tools/smoke_backend.py
+      - name: Research-vector process smoke (Windows)
+        if: runner.os == 'Windows'
+        run: python tools/smoke_backend.py backend/target/debug/pcb-calculator.exe
+      - name: Flutter dependencies
+        working-directory: frontend
+        run: flutter pub get
+      - name: Flutter static analysis
+        working-directory: frontend
+        run: flutter analyze
+      - name: Build native desktop bundle
+        working-directory: frontend
+        run: dart run tool/build_desktop.dart
+      - name: Exercise actual Linux desktop interface
+        if: runner.os == 'Linux'
+        working-directory: frontend
+        run: xvfb-run -a env PCB_CALCULATOR_BACKEND="$GITHUB_WORKSPACE/backend/target/debug/pcb-calculator" flutter test integration_test/workbench_test.dart -d linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: copper-${{ runner.os }}
+          path: |
+            frontend/build/linux/*/release/bundle/
+            frontend/build/windows/*/runner/Release/
+            frontend/build/macos/Build/Products/Release/*.app/
+          if-no-files-found: error

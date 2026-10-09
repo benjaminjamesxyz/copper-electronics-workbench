@@ -1,0 +1,196 @@
+[
+  {
+    "id": "dc.ohm_current",
+    "title": "Signed Ohm-law current",
+    "category": "DC circuits and resistor networks",
+    "level": "basic",
+    "description": "Find the signed current through an ideal ohmic resistor from its applied DC voltage.",
+    "formula": "I = V / R",
+    "assumptions": ["Linear, constant positive resistance; no temperature, noise, parasitics or semiconductor behavior.", "Voltage polarity and positive current direction follow the passive sign convention.", "Numerical envelope: abs(V) <= 1e6 V and 1e-9 <= R <= 1e12 ohm; these are computation bounds, not component ratings."],
+    "references": [{"title": "OpenStax, University Physics Volume 2, 9.4 Ohm's Law", "url": "https://openstax.org/books/university-physics-volume-2/pages/9-4-ohms-law"}],
+    "inputs": [
+      {"key": "voltage", "label": "Signed resistor voltage", "unit": "V", "default": -3.3, "min": -1000000.0, "max": 1000000.0},
+      {"key": "resistance", "label": "Resistance", "unit": "ohm", "default": 2200.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [{"key": "current", "label": "Signed current", "unit": "A", "expression": "voltage/resistance"}],
+    "constraints": [{"left": "resistance", "op": ">", "right": "0", "message": "Resistance must be positive."}],
+    "example": {"inputs": {"voltage": -3.3, "resistance": 2200.0}, "expected": {"current": -0.0015}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.resistor_dissipation",
+    "title": "Steady resistor dissipation",
+    "category": "DC circuits and resistor networks",
+    "level": "basic",
+    "description": "Calculate the electrical power dissipated by a resistor carrying a specified steady current.",
+    "formula": "P = I^2 R",
+    "assumptions": ["Steady DC and constant positive ohmic resistance.", "This calculates dissipation only; it does not select a safe package, predict temperature, or apply thermal derating or pulse ratings.", "Numerical envelope: abs(I) <= 1e6 A and 1e-9 <= R <= 1e12 ohm; component ratings must be checked separately."],
+    "references": [{"title": "OpenStax, University Physics Volume 2, 9.5 Electrical Energy and Power", "url": "https://openstax.org/books/university-physics-volume-2/pages/9-5-electrical-energy-and-power"}],
+    "inputs": [
+      {"key": "current", "label": "Signed steady current", "unit": "A", "default": 0.012, "min": -1000000.0, "max": 1000000.0},
+      {"key": "resistance", "label": "Resistance", "unit": "ohm", "default": 680.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [{"key": "power", "label": "Dissipated power", "unit": "W", "expression": "current^2*resistance"}],
+    "constraints": [{"left": "resistance", "op": ">", "right": "0", "message": "Resistance must be positive."}],
+    "example": {"inputs": {"current": 0.012, "resistance": 680.0}, "expected": {"power": 0.09792}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.series_parallel_branches",
+    "title": "Two series branches in parallel",
+    "category": "DC circuits and resistor networks",
+    "level": "basic",
+    "description": "Reduce two independent two-resistor series branches connected in parallel and find their DC branch currents.",
+    "formula": "A = R1 + R2; B = R3 + R4; Req = A B / (A + B); I1 = V / A; I2 = V / B",
+    "assumptions": ["R1 and R2 form one series branch; R3 and R4 form another; both branches connect across the same ideal source.", "No connection or load at either branch midpoint; wires and source resistance are neglected.", "Constant positive resistances with 1e-9 <= R <= 1e12 ohm and abs(V) <= 1e6 V; bounds do not certify component ratings."],
+    "references": [{"title": "OpenStax, University Physics Volume 2, 10.2 Resistors in Series and Parallel", "url": "https://openstax.org/books/university-physics-volume-2/pages/10-2-resistors-in-series-and-parallel"}],
+    "inputs": [
+      {"key": "voltage", "label": "Signed source voltage", "unit": "V", "default": 12.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "r_1", "label": "Branch 1 first resistor", "unit": "ohm", "default": 100.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_2", "label": "Branch 1 second resistor", "unit": "ohm", "default": 200.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_3", "label": "Branch 2 first resistor", "unit": "ohm", "default": 300.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_4", "label": "Branch 2 second resistor", "unit": "ohm", "default": 300.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "r_branch_1", "label": "Branch 1 resistance", "unit": "ohm", "expression": "r_1+r_2"},
+      {"key": "r_branch_2", "label": "Branch 2 resistance", "unit": "ohm", "expression": "r_3+r_4"},
+      {"key": "r_equivalent", "label": "Equivalent input resistance", "unit": "ohm", "expression": "r_branch_1*r_branch_2/(r_branch_1+r_branch_2)"},
+      {"key": "i_total", "label": "Total source current", "unit": "A", "expression": "voltage/r_equivalent"},
+      {"key": "i_branch_1", "label": "Branch 1 current", "unit": "A", "expression": "voltage/r_branch_1"},
+      {"key": "i_branch_2", "label": "Branch 2 current", "unit": "A", "expression": "voltage/r_branch_2"}
+    ],
+    "constraints": [{"left": "min(min(r_1,r_2),min(r_3,r_4))", "op": ">", "right": "0", "message": "All four resistances must be positive."}],
+    "example": {"inputs": {"voltage": 12.0, "r_1": 100.0, "r_2": 200.0, "r_3": 300.0, "r_4": 300.0}, "expected": {"r_branch_1": 300.0, "r_branch_2": 600.0, "r_equivalent": 200.0, "i_total": 0.06, "i_branch_1": 0.04, "i_branch_2": 0.02}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.loaded_divider",
+    "title": "Finite-load voltage divider",
+    "category": "DC circuits and resistor networks",
+    "level": "intermediate",
+    "description": "Predict divider voltage, load current and fractional loading error with a finite resistor or DC instrument input connected to the output.",
+    "formula": "Vopen = Vin Rbottom/(Rtop+Rbottom); Rout = Rtop Rbottom/(Rtop+Rbottom); Vloaded = Vopen Rload/(Rout+Rload); error = Rout/(Rout+Rload)",
+    "assumptions": ["Ideal voltage source; Rtop connects the source to the output, Rbottom connects output to ground, and Rload connects output to ground in parallel with Rbottom.", "Load is a linear resistor, not an ADC's switched-capacitor input or a constant-power/current load; no op-amp buffer or dynamics.", "Loading error is a dimensionless attenuation fraction, defined by resistance ratio even when Vin is zero.", "All resistances are constant, 1e-9 <= R <= 1e12 ohm; abs(Vin) <= 1e6 V; bounds are numerical, not safe operating ratings."],
+    "references": [{"title": "University of Colorado Boulder, PHYS 3330 Lab 2, sections 2.6 and 2.7", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab2/"}],
+    "inputs": [
+      {"key": "v_in", "label": "Signed input voltage", "unit": "V", "default": 12.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "r_top", "label": "Upper divider resistance", "unit": "ohm", "default": 10000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_bottom", "label": "Lower divider resistance", "unit": "ohm", "default": 5000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_load", "label": "Output-to-ground load resistance", "unit": "ohm", "default": 10000.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "v_open", "label": "Unloaded divider voltage", "unit": "V", "expression": "v_in*r_bottom/(r_top+r_bottom)"},
+      {"key": "r_output", "label": "Thevenin output resistance", "unit": "ohm", "expression": "r_top*r_bottom/(r_top+r_bottom)"},
+      {"key": "v_loaded", "label": "Loaded output voltage", "unit": "V", "expression": "v_open*r_load/(r_output+r_load)"},
+      {"key": "i_load", "label": "Load current", "unit": "A", "expression": "v_loaded/r_load"},
+      {"key": "loading_error", "label": "Fractional loading error", "unit": "1", "expression": "r_output/(r_output+r_load)"}
+    ],
+    "constraints": [{"left": "min(r_top,min(r_bottom,r_load))", "op": ">", "right": "0", "message": "Divider and finite load resistances must be positive."}],
+    "example": {"inputs": {"v_in": 12.0, "r_top": 10000.0, "r_bottom": 5000.0, "r_load": 10000.0}, "expected": {"v_open": 4.0, "r_output": 3333.3333333333335, "v_loaded": 3.0, "i_load": 0.0003, "loading_error": 0.25}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.resistive_source_matching",
+    "title": "Resistive source loading and maximum-power match",
+    "category": "DC circuits and resistor networks",
+    "level": "intermediate",
+    "description": "Evaluate voltage droop and load/source-resistance losses, then find the positive resistive load that maximizes delivered power for a fixed Thevenin source.",
+    "formula": "I = Vth/(Rs+Rl); Vl = I Rl; Pl = I^2 Rl; Ps = I^2 Rs; Rmatch = Rs; Pmax = Vth^2/(4 Rs)",
+    "assumptions": ["Fixed ideal Thevenin voltage in series with constant positive source resistance, feeding a finite positive resistor.", "Matching maximizes load power, not efficiency; half the source power is lost in Rs at the match. This is not regulator or converter efficiency or RF matching.", "No current limit, battery chemistry, nonlinear regulation, reactive load or safe-short-circuit guarantee.", "At zero source voltage every load produces zero power; Rs is still a valid but nonunique maximizing load.", "1e-9 <= Rs,Rl <= 1e12 ohm and abs(Vth) <= 1e6 V are numerical bounds, not device ratings."],
+    "references": [{"title": "University of Colorado Boulder, PHYS 3330 Lab 2, section 2.4 Input and Output Impedance", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab2/"}],
+    "inputs": [
+      {"key": "v_thevenin", "label": "Signed open-circuit source voltage", "unit": "V", "default": 9.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "r_source", "label": "Source series resistance", "unit": "ohm", "default": 3.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_load", "label": "Actual load resistance", "unit": "ohm", "default": 6.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "current", "label": "Load current", "unit": "A", "expression": "v_thevenin/(r_source+r_load)"},
+      {"key": "v_load", "label": "Loaded terminal voltage", "unit": "V", "expression": "current*r_load"},
+      {"key": "p_load", "label": "Actual load power", "unit": "W", "expression": "current^2*r_load"},
+      {"key": "p_source_resistance", "label": "Source-resistance dissipation", "unit": "W", "expression": "current^2*r_source"},
+      {"key": "r_match", "label": "Maximum-power load resistance", "unit": "ohm", "expression": "r_source"},
+      {"key": "p_maximum", "label": "Maximum available resistive-load power", "unit": "W", "expression": "v_thevenin^2/(4*r_source)"}
+    ],
+    "constraints": [{"left": "min(r_source,r_load)", "op": ">", "right": "0", "message": "Source and load resistance must both be positive for this matching model."}],
+    "example": {"inputs": {"v_thevenin": 9.0, "r_source": 3.0, "r_load": 6.0}, "expected": {"current": 1.0, "v_load": 6.0, "p_load": 6.0, "p_source_resistance": 3.0, "r_match": 3.0, "p_maximum": 6.75}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.loaded_wheatstone_bridge",
+    "title": "Loaded Wheatstone bridge and common-mode voltage",
+    "category": "DC circuits and resistor networks",
+    "level": "expert",
+    "description": "Calculate the exact differential output and actual midpoint/common-mode voltages of an unbalanced resistive bridge with a finite detector resistance across its midpoints.",
+    "formula": "Va0 = Vs R2/(R1+R2); Vb0 = Vs R4/(R3+R4); Ra = R1||R2; Rb = R3||R4; Id = (Va0-Vb0)/(Ra+Rb+Rd); Va = Va0-Id Ra; Vb = Vb0+Id Rb; Vdiff = Id Rd; Vcm = (Va+Vb)/2",
+    "assumptions": ["R1 is excitation-to-left, R2 left-to-ground, R3 excitation-to-right, R4 right-to-ground; the excitation source is ideal.", "Detector resistance connects only between left and right midpoints; it has no ground/common-mode loading or bias current.", "Detector current is positive left-to-right; differential voltage is left minus right; balanced and negatively unbalanced bridges are supported without division by the open-circuit voltage.", "This is an exact linear DC network solution, not a strain/temperature transducer model; no resistor noise, lead resistance or self-heating is modeled.", "All five resistances are 1e-9 to 1e12 ohm and abs(Vs) <= 1e6 V; very close balance can incur floating-point cancellation."],
+    "references": [
+      {"title": "William & Mary, Analog Electronics Chapter 2: Kirchhoff's Laws and Thevenin's Theorem, bridge exercises and Thevenin load relation", "url": "https://physics.wm.edu/~evmik/classes/Physics_252_Analog_Electronics/lab_manuals/LabManual_Chpt2.pdf"},
+      {"title": "University of Colorado Boulder, PHYS 3330 Lab 2, section 2.7 divider Thevenin equivalents", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab2/"}
+    ],
+    "inputs": [
+      {"key": "v_excitation", "label": "Signed bridge excitation", "unit": "V", "default": 10.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "r_1", "label": "Left upper resistance", "unit": "ohm", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_2", "label": "Left lower resistance", "unit": "ohm", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_3", "label": "Right upper resistance", "unit": "ohm", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_4", "label": "Right lower resistance", "unit": "ohm", "default": 3000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_detector", "label": "Midpoint-to-midpoint detector resistance", "unit": "ohm", "default": 1250.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "v_open", "label": "Open-circuit differential voltage", "unit": "V", "expression": "v_excitation*(r_2/(r_1+r_2)-r_4/(r_3+r_4))"},
+      {"key": "r_output", "label": "Differential Thevenin resistance", "unit": "ohm", "expression": "r_1*r_2/(r_1+r_2)+r_3*r_4/(r_3+r_4)"},
+      {"key": "i_detector", "label": "Signed detector current left-to-right", "unit": "A", "expression": "v_open/(r_output+r_detector)"},
+      {"key": "v_loaded", "label": "Loaded differential voltage left minus right", "unit": "V", "expression": "i_detector*r_detector"},
+      {"key": "v_left", "label": "Loaded left midpoint relative to ground", "unit": "V", "expression": "v_excitation*r_2/(r_1+r_2)-i_detector*r_1*r_2/(r_1+r_2)"},
+      {"key": "v_right", "label": "Loaded right midpoint relative to ground", "unit": "V", "expression": "v_excitation*r_4/(r_3+r_4)+i_detector*r_3*r_4/(r_3+r_4)"},
+      {"key": "v_common", "label": "Loaded output common-mode voltage", "unit": "V", "expression": "(v_left+v_right)/2"}
+    ],
+    "constraints": [{"left": "min(min(r_1,r_2),min(min(r_3,r_4),r_detector))", "op": ">", "right": "0", "message": "Bridge arms and finite detector resistance must all be positive."}],
+    "example": {"inputs": {"v_excitation": 10.0, "r_1": 1000.0, "r_2": 1000.0, "r_3": 1000.0, "r_4": 3000.0, "r_detector": 1250.0}, "expected": {"v_open": -2.5, "r_output": 1250.0, "i_detector": -0.001, "v_loaded": -1.25, "v_left": 5.5, "v_right": 6.75, "v_common": 6.125}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.delta_to_star",
+    "title": "Delta-to-star resistor equivalence",
+    "category": "DC circuits and resistor networks",
+    "level": "intermediate",
+    "description": "Replace a three-terminal delta resistor network by an electrically equivalent star to simplify networks that cannot be directly reduced by series/parallel rules.",
+    "formula": "S = Rab+Rbc+Rca; Ra = Rab Rca/S; Rb = Rab Rbc/S; Rc = Rbc Rca/S",
+    "assumptions": ["Rab connects terminals a-b, Rbc b-c, and Rca c-a; star outputs connect their named terminal to a new floating center.", "Equivalence applies at the three original terminals; do not externally ground or connect the new star center.", "The original delta has no accessible internal taps; resistors are linear and constant, with no active sources or reactive elements.", "All resistances are 1e-9 to 1e12 ohm; this is topology reduction, not three-phase power or transformer modeling."],
+    "references": [{"title": "Loai G. Salem, UCSB ECE 10A Lecture 12, pages 54-61: Delta-to-Wye transformation", "url": "https://web.ece.ucsb.edu/~parhami/pres_folder/10A_lecture12_notes.pdf"}],
+    "inputs": [
+      {"key": "r_ab", "label": "Delta resistance a-b", "unit": "ohm", "default": 300.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_bc", "label": "Delta resistance b-c", "unit": "ohm", "default": 600.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_ca", "label": "Delta resistance c-a", "unit": "ohm", "default": 900.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "r_a", "label": "Star arm at terminal a", "unit": "ohm", "expression": "r_ab*r_ca/(r_ab+r_bc+r_ca)"},
+      {"key": "r_b", "label": "Star arm at terminal b", "unit": "ohm", "expression": "r_ab*r_bc/(r_ab+r_bc+r_ca)"},
+      {"key": "r_c", "label": "Star arm at terminal c", "unit": "ohm", "expression": "r_bc*r_ca/(r_ab+r_bc+r_ca)"}
+    ],
+    "constraints": [{"left": "min(r_ab,min(r_bc,r_ca))", "op": ">", "right": "0", "message": "All delta resistances must be positive."}],
+    "example": {"inputs": {"r_ab": 300.0, "r_bc": 600.0, "r_ca": 900.0}, "expected": {"r_a": 150.0, "r_b": 100.0, "r_c": 300.0}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "dc.two_source_node",
+    "title": "Two-source resistive node with load",
+    "category": "DC circuits and resistor networks",
+    "level": "expert",
+    "description": "Find a passive summing-node voltage and signed source currents when two independently driven resistor branches feed a grounded resistive load.",
+    "formula": "G = 1/R1+1/R2+1/Rl; Vnode = (V1/R1+V2/R2)/G; I1 = (V1-Vnode)/R1; I2 = (V2-Vnode)/R2; Il = Vnode/Rl",
+    "assumptions": ["Each ideal voltage source is referenced to the same ground and connects to the node through its own positive resistor; the load connects node to ground.", "Sources must be capable of sinking as well as sourcing the calculated currents; a negative source current is backfeed, not an error.", "No op-amp, virtual ground, isolation diode, switching behavior, current limit or extra load is included; this is a direct KCL/Millman solution.", "All three resistances are 1e-9 to 1e12 ohm and both source voltages are between -1e6 and 1e6 V; near cancellation can lose relative floating-point precision."],
+    "references": [
+      {"title": "Rich Kozick, Bucknell ELEC 101: Outline of the Nodal Analysis Method", "url": "https://www.eg.bucknell.edu/~kozick/elec10105/nodevoltage.html"},
+      {"title": "William & Mary, Analog Electronics Chapter 2, two-source three-resistor circuit and Kirchhoff's point law", "url": "https://physics.wm.edu/~evmik/classes/Physics_252_Analog_Electronics/lab_manuals/LabManual_Chpt2.pdf"}
+    ],
+    "inputs": [
+      {"key": "v_1", "label": "Signed source 1 voltage", "unit": "V", "default": 12.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "r_1", "label": "Source 1 series resistance", "unit": "ohm", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "v_2", "label": "Signed source 2 voltage", "unit": "V", "default": 3.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "r_2", "label": "Source 2 series resistance", "unit": "ohm", "default": 2000.0, "min": 1e-9, "max": 1e12},
+      {"key": "r_load", "label": "Node-to-ground load resistance", "unit": "ohm", "default": 2000.0, "min": 1e-9, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "g_total", "label": "Total conductance at node", "unit": "S", "expression": "1/r_1+1/r_2+1/r_load"},
+      {"key": "v_node", "label": "Loaded summing-node voltage", "unit": "V", "expression": "(v_1/r_1+v_2/r_2)/g_total"},
+      {"key": "i_source_1", "label": "Source 1 current toward node", "unit": "A", "expression": "(v_1-v_node)/r_1"},
+      {"key": "i_source_2", "label": "Source 2 current toward node", "unit": "A", "expression": "(v_2-v_node)/r_2"},
+      {"key": "i_load", "label": "Load current toward ground", "unit": "A", "expression": "v_node/r_load"}
+    ],
+    "constraints": [{"left": "min(r_1,min(r_2,r_load))", "op": ">", "right": "0", "message": "Source resistances and finite grounded load resistance must be positive."}],
+    "example": {"inputs": {"v_1": 12.0, "r_1": 1000.0, "v_2": 3.0, "r_2": 2000.0, "r_load": 2000.0}, "expected": {"g_total": 0.002, "v_node": 6.75, "i_source_1": 0.00525, "i_source_2": -0.001875, "i_load": 0.003375}, "relative_tolerance": 0.000001}
+  }
+]

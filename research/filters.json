@@ -1,0 +1,233 @@
+[
+  {
+    "id": "filters.rc_lowpass_response",
+    "title": "First-order RC low-pass response",
+    "category": "Analog filters",
+    "level": "basic",
+    "description": "Find the cutoff, sinusoidal voltage transmission, phase lag and attenuation of a series-R, shunt-C low-pass section.",
+    "formula": "H(jw)=1/(1+jwRC); fc=1/(2*pi*R*C); x=f/fc; |H|=1/sqrt(1+x^2)",
+    "assumptions": ["Ideal resistor and capacitor; output is across C.", "Zero source resistance and negligible output loading; parasitics and component tolerances are excluded.", "Phase is in radians; attenuation is positive insertion loss for voltage transmission."],
+    "references": [{"title": "University of Colorado Boulder, PHYS 3330 Lab 3, section 5.4", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab3/"}],
+    "inputs": [
+      {"key": "r", "label": "Series resistance", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Shunt capacitance", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "cutoff_hz", "label": "Half-power cutoff", "unit": "Hz", "expression": "1/(2*pi*r*c)"},
+      {"key": "frequency_ratio", "label": "Frequency / cutoff", "unit": "1", "expression": "2*pi*f*r*c"},
+      {"key": "voltage_gain", "label": "Voltage transmission magnitude", "unit": "V/V", "expression": "1/sqrt(1+frequency_ratio^2)"},
+      {"key": "phase_rad", "label": "Output phase relative to input", "unit": "rad", "expression": "-atan(frequency_ratio)"},
+      {"key": "attenuation_db", "label": "Voltage insertion loss", "unit": "dB", "expression": "10*log10(1+frequency_ratio^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"r": 10000.0, "c": 1e-8, "f": 1000.0}, "expected": {"cutoff_hz": 1591.5494309189535, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.8467330159648303, "phase_rad": -0.5609821161086238, "attenuation_db": 1.4450701162052881}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.rc_highpass_response",
+    "title": "First-order RC high-pass response",
+    "category": "Analog filters",
+    "level": "basic",
+    "description": "Evaluate a capacitive AC-coupling section with a resistor to ground and the output across the resistor.",
+    "formula": "H(jw)=jwRC/(1+jwRC); fc=1/(2*pi*R*C); |H|=x/sqrt(1+x^2); phase=pi/2-atan(x)",
+    "assumptions": ["Ideal series C and shunt R, negligible source resistance and no additional output load.", "Positive frequency is required because DC gain is zero, DC phase is undefined and DC attenuation in dB is infinite.", "Output is across R; this is a different circuit and frequency-selection task from the RC low-pass section."],
+    "references": [{"title": "University of Colorado Boulder, PHYS 3330 Lab 3, section 5.5", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab3/"}],
+    "inputs": [
+      {"key": "r", "label": "Shunt resistance", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Series coupling capacitance", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 1e-12, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "cutoff_hz", "label": "Half-power cutoff", "unit": "Hz", "expression": "1/(2*pi*r*c)"},
+      {"key": "frequency_ratio", "label": "Frequency / cutoff", "unit": "1", "expression": "2*pi*f*r*c"},
+      {"key": "voltage_gain", "label": "Voltage transmission magnitude", "unit": "V/V", "expression": "frequency_ratio/sqrt(1+frequency_ratio^2)"},
+      {"key": "phase_rad", "label": "Output phase lead", "unit": "rad", "expression": "pi/2-atan(frequency_ratio)"},
+      {"key": "attenuation_db", "label": "Voltage insertion loss", "unit": "dB", "expression": "10*log10(1+1/frequency_ratio^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"r": 10000.0, "c": 1e-8, "f": 1000.0}, "expected": {"cutoff_hz": 1591.5494309189535, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.532018044501408, "phase_rad": 1.0098142106862729, "attenuation_db": 5.481472749042987}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.second_order_highpass",
+    "title": "Second-order active high-pass response",
+    "category": "Analog filters",
+    "level": "intermediate",
+    "description": "Predict the response and actual half-power cutoff of a stable high-pass biquad from its pole frequency, Q and passband gain.",
+    "formula": "H(s)=K*(s/w0)^2/((s/w0)^2+s/(Q*w0)+1); |H|=K*x^2/sqrt((1-x^2)^2+(x/Q)^2)",
+    "assumptions": ["Ideal stable second-order high-pass section with positive Q and positive high-frequency passband gain.", "Pole frequency is not generally the half-power cutoff; they coincide at Q=1/sqrt(2).", "Finite op-amp gain-bandwidth, slew rate, clipping and component tolerance are not included.", "Half-power cutoff is relative to asymptotic passband gain, not relative to a resonant peak."],
+    "references": [
+      {"title": "Texas Instruments AN-779 / SNOA224A, sections 1.2 and 1.3", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"},
+      {"title": "Texas Instruments, High-pass Sallen-Key filter circuit", "url": "https://www.ti.com/tool/CIRCUIT060053"}
+    ],
+    "inputs": [
+      {"key": "pole_frequency", "label": "Pole natural frequency", "unit": "Hz", "default": 1000.0, "min": 1e-6, "max": 1e12},
+      {"key": "q", "label": "Section Q", "unit": "1", "default": 0.7071067811865476, "min": 0.05, "max": 50.0},
+      {"key": "passband_gain", "label": "High-frequency passband gain", "unit": "V/V", "default": 2.0, "min": 0.001, "max": 1000.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 500.0, "min": 1e-12, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "frequency_ratio", "label": "Signal / pole frequency", "unit": "1", "expression": "f/pole_frequency"},
+      {"key": "voltage_gain", "label": "Voltage gain magnitude", "unit": "V/V", "expression": "passband_gain*frequency_ratio^2/sqrt((1-frequency_ratio^2)^2+(frequency_ratio/q)^2)"},
+      {"key": "gain_db", "label": "Absolute voltage gain", "unit": "dB", "expression": "20*log10(voltage_gain)"},
+      {"key": "half_power_hz", "label": "Half-power cutoff relative to passband", "unit": "Hz", "expression": "pole_frequency*sqrt((1/q^2-2+sqrt((2-1/q^2)^2+4))/2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"pole_frequency": 1000.0, "q": 0.7071067811865476, "passband_gain": 2.0, "f": 500.0}, "expected": {"frequency_ratio": 0.5, "voltage_gain": 0.48507125007266594, "gain_db": -6.283889300503116, "half_power_hz": 1000.0}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.deliyannis_bandpass_design",
+    "title": "Modified Deliyannis band-pass component design",
+    "category": "Analog filters",
+    "level": "expert",
+    "description": "Size the resistor set of TI's modified Deliyannis band-pass topology and predict its exact half-power edges and transmission.",
+    "formula": "R0=1/(2*pi*f0*C0); R1=R4=R0; R3=R0*(2*Q-1); R2=R0/(2*Q-1); peak gain=Q; BW=f0/Q",
+    "assumptions": ["Use the circuit and resistor labels in TI SLOA096 Figure 11: C1=C2=C0 and R1=R4=R0.", "R5 is shorted and R6 open, so there is no input gain-attenuating divider; peak voltage-gain magnitude equals Q.", "Q must exceed 0.5; at Q=0.5 R3 is zero and R2 becomes infinite.", "Ideal op amp and exact component ratios; high-Q designs require adequate gain-bandwidth, slew rate and tolerance analysis.", "Response sign is not reported; magnitude is independent of circuit inversion."],
+    "references": [
+      {"title": "Texas Instruments SLOA096, section 4.1, Figure 11 and equations 1–3", "url": "https://www.ti.com/lit/an/sloa096/sloa096.pdf"},
+      {"title": "Texas Instruments AN-779 / SNOA224A, second-order band-pass Q and edges", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"}
+    ],
+    "inputs": [
+      {"key": "center_frequency", "label": "Band-pass center frequency", "unit": "Hz", "default": 1000.0, "min": 1e-6, "max": 1e12},
+      {"key": "q", "label": "Desired section Q", "unit": "1", "default": 2.0, "min": 0.5, "exclusive_min": true, "max": 50.0},
+      {"key": "c0", "label": "Each equal capacitor C1 and C2", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "r0", "label": "R1 and R4, each", "unit": "ohm", "expression": "1/(2*pi*center_frequency*c0)"},
+      {"key": "r3", "label": "Feedback resistor R3", "unit": "ohm", "expression": "r0*(2*q-1)"},
+      {"key": "r2", "label": "Shunt resistor R2", "unit": "ohm", "expression": "r0/(2*q-1)"},
+      {"key": "peak_gain", "label": "Center-frequency gain magnitude", "unit": "V/V", "expression": "q"},
+      {"key": "bandwidth_hz", "label": "Half-power bandwidth", "unit": "Hz", "expression": "center_frequency/q"},
+      {"key": "lower_edge_hz", "label": "Lower half-power edge", "unit": "Hz", "expression": "center_frequency*2*q/(sqrt(4*q^2+1)+1)"},
+      {"key": "upper_edge_hz", "label": "Upper half-power edge", "unit": "Hz", "expression": "center_frequency*(sqrt(4*q^2+1)+1)/(2*q)"},
+      {"key": "voltage_gain", "label": "Signal-frequency gain magnitude", "unit": "V/V", "expression": "(f/center_frequency)/sqrt((1-(f/center_frequency)^2)^2+(f/(center_frequency*q))^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"center_frequency": 1000.0, "q": 2.0, "c0": 1e-8, "f": 1000.0}, "expected": {"r0": 15915.494309189537, "r3": 47746.482927568606, "r2": 5305.164769729846, "peak_gain": 2.0, "bandwidth_hz": 500.0, "lower_edge_hz": 780.7764064044152, "upper_edge_hz": 1280.7764064044152, "voltage_gain": 2.0}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.butterworth_spec_synthesis",
+    "title": "Butterworth order and cutoff from attenuation specifications",
+    "category": "Analog filters",
+    "level": "expert",
+    "description": "Select the smallest integer analog Butterworth low-pass order and permissible cutoff interval from passband and stopband requirements.",
+    "formula": "N=ceil(ln((10^(As/10)-1)/(10^(Ap/10)-1))/(2*ln(fs/fp))); fc_min=fp/(10^(Ap/10)-1)^(1/(2*N)); fc_max=fs/(10^(As/10)-1)^(1/(2*N))",
+    "assumptions": ["Analog continuous-time Butterworth all-pole low-pass response with unity DC gain; no digital bilinear transformation or frequency prewarping.", "As > Ap > 0 and fs > fp; choose fc_min to make the passband-edge attenuation equal its specified maximum.", "Order is limited to 32 and stopband/passband frequency ratio to at least 1.001 for a bounded, numerically usable design envelope.", "This selects response specifications, not a complete component topology or guaranteed real-world attenuation."],
+    "references": [{"title": "John A. Gubner, University of Wisconsin ECE431 notes, section 7.3, equations 7.7–7.10", "url": "https://gubner.ece.wisc.edu/ece431/ece431notesDir/ece431notes2007Dec26.pdf"}],
+    "inputs": [
+      {"key": "passband_edge", "label": "Passband edge frequency", "unit": "Hz", "default": 1000.0, "min": 1e-6, "max": 1e12},
+      {"key": "stopband_edge", "label": "Stopband edge frequency", "unit": "Hz", "default": 4000.0, "min": 1e-6, "max": 1e12},
+      {"key": "passband_loss", "label": "Maximum passband attenuation", "unit": "dB", "default": 1.0, "min": 0.001, "max": 100.0},
+      {"key": "stopband_loss", "label": "Minimum stopband attenuation", "unit": "dB", "default": 40.0, "min": 0.001, "max": 200.0}
+    ],
+    "outputs": [
+      {"key": "order_bound", "label": "Continuous lower bound on order", "unit": "1", "expression": "ln((10^(stopband_loss/10)-1)/(10^(passband_loss/10)-1))/(2*ln(stopband_edge/passband_edge))"},
+      {"key": "order", "label": "Minimum integer filter order", "unit": "1", "expression": "ceil(order_bound)"},
+      {"key": "cutoff_min_hz", "label": "Minimum allowed cutoff; selected design", "unit": "Hz", "expression": "passband_edge/(10^(passband_loss/10)-1)^(1/(2*order))"},
+      {"key": "cutoff_max_hz", "label": "Maximum allowed cutoff", "unit": "Hz", "expression": "stopband_edge/(10^(stopband_loss/10)-1)^(1/(2*order))"},
+      {"key": "actual_passband_db", "label": "Passband attenuation at selected cutoff", "unit": "dB", "expression": "10*log10(1+(passband_edge/cutoff_min_hz)^(2*order))"},
+      {"key": "actual_stopband_db", "label": "Stopband attenuation at selected cutoff", "unit": "dB", "expression": "10*log10(1+(stopband_edge/cutoff_min_hz)^(2*order))"}
+    ],
+    "constraints": [
+      {"left": "stopband_edge/passband_edge", "op": ">=", "right": "1.001", "message": "Stopband frequency must be at least 1.001 times the passband frequency."},
+      {"left": "stopband_loss", "op": ">", "right": "passband_loss", "message": "Stopband attenuation must exceed passband attenuation."},
+      {"left": "ceil(ln((10^(stopband_loss/10)-1)/(10^(passband_loss/10)-1))/(2*ln(stopband_edge/passband_edge)))", "op": "<=", "right": "32", "message": "Specification requires more than the supported 32 poles."}
+    ],
+    "example": {"inputs": {"passband_edge": 1000.0, "stopband_edge": 4000.0, "passband_loss": 1.0, "stopband_loss": 40.0}, "expected": {"order_bound": 3.8092399086702753, "order": 4.0, "cutoff_min_hz": 1184.003988964071, "cutoff_max_hz": 1264.9268763451062, "actual_passband_db": 1.0, "actual_stopband_db": 42.29680198990891}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.sallen_key_lowpass",
+    "title": "General Sallen-Key low-pass pole, Q and response",
+    "category": "Analog filters",
+    "level": "expert",
+    "description": "Predict the natural frequency, damping Q, transmission and true half-power cutoff of a Sallen-Key low-pass stage from its components and amplifier gain.",
+    "formula": "P=R1*R2*C1*C2; D=R1*C1+R2*C1+R1*C2*(1-K); f0=1/(2*pi*sqrt(P)); Q=sqrt(P)/D; H(s)=K/(P*s^2+D*s+1)",
+    "assumptions": ["Use TI SLOA049D Figure 6-1 labels: R1 and R2 in series, C1 from op-amp noninverting input to ground, C2 from their junction to output.", "K is the ideal noninverting amplifier closed-loop gain, K=1+R4/R3; unity gain uses a follower.", "Positive damping is mandatory; the constrained section-Q envelope is 0.05 through 50.", "No finite gain-bandwidth, output impedance, slew rate, loading, saturation or component-tolerance effects.", "Half-power cutoff is relative to DC gain K, not to any resonant peak; f0 is not generally the cutoff."],
+    "references": [{"title": "Texas Instruments SLOA049D, section 6, Figure 6-1 and equation 21", "url": "https://www.ti.com/lit/an/sloa049d/sloa049d.pdf"}],
+    "inputs": [
+      {"key": "r1", "label": "Series input resistor R1", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "r2", "label": "Series resistor R2 to noninverting input", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c1", "label": "Grounded capacitor C1", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "c2", "label": "Feedback capacitor C2", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "amplifier_gain", "label": "Noninverting amplifier gain K", "unit": "V/V", "default": 2.0, "min": 1.0, "max": 100.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "dc_gain", "label": "DC voltage gain", "unit": "V/V", "expression": "amplifier_gain"},
+      {"key": "pole_hz", "label": "Pole natural frequency", "unit": "Hz", "expression": "1/(2*pi*sqrt(r1*r2*c1*c2))"},
+      {"key": "section_q", "label": "Section Q", "unit": "1", "expression": "sqrt(r1*r2*c1*c2)/(r1*c1+r2*c1+r1*c2*(1-amplifier_gain))"},
+      {"key": "frequency_ratio", "label": "Signal / pole frequency", "unit": "1", "expression": "f/pole_hz"},
+      {"key": "voltage_gain", "label": "Signal-frequency gain magnitude", "unit": "V/V", "expression": "dc_gain/sqrt((1-frequency_ratio^2)^2+(frequency_ratio/section_q)^2)"},
+      {"key": "gain_db", "label": "Absolute voltage gain", "unit": "dB", "expression": "20*log10(voltage_gain)"},
+      {"key": "half_power_hz", "label": "Half-power cutoff relative to DC gain", "unit": "Hz", "expression": "pole_hz*sqrt(2/(1/section_q^2-2+sqrt((1/section_q^2-2)^2+4)))"}
+    ],
+    "constraints": [
+      {"left": "r1*c1+r2*c1+r1*c2*(1-amplifier_gain)", "op": ">=", "right": "sqrt(r1*r2*c1*c2)/50", "message": "Damping must be positive and section Q must not exceed 50."},
+      {"left": "r1*c1+r2*c1+r1*c2*(1-amplifier_gain)", "op": "<=", "right": "20*sqrt(r1*r2*c1*c2)", "message": "Section Q must be at least 0.05."}
+    ],
+    "example": {"inputs": {"r1": 10000.0, "r2": 10000.0, "c1": 1e-8, "c2": 1e-8, "amplifier_gain": 2.0, "f": 1000.0}, "expected": {"dc_gain": 2.0, "pole_hz": 1591.5494309189535, "section_q": 1.0, "frequency_ratio": 0.6283185307179586, "voltage_gain": 2.2925435192800947, "gain_db": 7.206351772370593, "half_power_hz": 2024.482149301843}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.fliege_notch_response",
+    "title": "Fliege notch component and frequency response",
+    "category": "Analog filters",
+    "level": "intermediate",
+    "description": "Predict notch frequency, Q, rejection bandwidth and transmission for TI's equal-component two-op-amp Fliege notch circuit.",
+    "formula": "f0=1/(2*pi*R0*C0); Q=RQ/(2*R0); H(s)=(s^2+w0^2)/(s^2+(w0/Q)*s+w0^2); |H|=abs(1-x^2)/sqrt((1-x^2)^2+(x/Q)^2)",
+    "assumptions": ["Use TI SLOA096 Figure 21: R3=R4=R0, C1=C2=C0, R1=R2=RQ and R5=R6 (nominally 100 kohm).", "Ideal unity-gain symmetric notch with coincident zero and pole natural frequencies.", "Bandwidth and edges use half-power transmission relative to unity passbands; bandwidth is exactly f0/Q for this biquad.", "Ideal gain is exactly zero at the notch frequency; no dB output is supplied because its logarithm would be infinite.", "Real notch depth is limited by component matching and op-amp imperfections; perfect cancellation is not a hardware guarantee."],
+    "references": [
+      {"title": "Texas Instruments SLOA096, section 5.1, Figure 21 and equations 4–5", "url": "https://www.ti.com/lit/an/sloa096/sloa096.pdf"},
+      {"title": "Texas Instruments AN-779 / SNOA224A, section 1.2 notch numerator and Q", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"}
+    ],
+    "inputs": [
+      {"key": "r0", "label": "Equal frequency resistors R3 and R4", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c0", "label": "Equal capacitors C1 and C2", "unit": "F", "default": 1e-7, "min": 1e-15, "max": 1.0},
+      {"key": "rq", "label": "Equal Q-setting resistors R1 and R2", "unit": "ohm", "default": 200000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 160.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "notch_hz", "label": "Ideal zero-transmission frequency", "unit": "Hz", "expression": "1/(2*pi*r0*c0)"},
+      {"key": "section_q", "label": "Notch section Q", "unit": "1", "expression": "rq/(2*r0)"},
+      {"key": "frequency_ratio", "label": "Signal / notch frequency", "unit": "1", "expression": "2*pi*f*r0*c0"},
+      {"key": "voltage_gain", "label": "Voltage transmission magnitude", "unit": "V/V", "expression": "abs(1-frequency_ratio^2)/sqrt((1-frequency_ratio^2)^2+(frequency_ratio/section_q)^2)"},
+      {"key": "bandwidth_hz", "label": "Half-power rejection bandwidth", "unit": "Hz", "expression": "notch_hz/section_q"},
+      {"key": "lower_edge_hz", "label": "Lower half-power edge", "unit": "Hz", "expression": "notch_hz*2*section_q/(sqrt(4*section_q^2+1)+1)"},
+      {"key": "upper_edge_hz", "label": "Upper half-power edge", "unit": "Hz", "expression": "notch_hz*(sqrt(4*section_q^2+1)+1)/(2*section_q)"}
+    ],
+    "constraints": [
+      {"left": "rq/(2*r0)", "op": ">=", "right": "0.05", "message": "Notch Q must be at least 0.05."},
+      {"left": "rq/(2*r0)", "op": "<=", "right": "50", "message": "Notch Q must not exceed 50."}
+    ],
+    "example": {"inputs": {"r0": 10000.0, "c0": 1e-7, "rq": 200000.0, "f": 160.0}, "expected": {"notch_hz": 159.15494309189535, "section_q": 10.0, "frequency_ratio": 1.0053096491487337, "voltage_gain": 0.10532346435527205, "bandwidth_hz": 15.915494309189535, "lower_edge_hz": 151.3960154315485, "upper_edge_hz": 167.31150974073802}, "relative_tolerance": 1e-6}
+  },
+  {
+    "id": "filters.buffered_rc_cascade",
+    "title": "Buffered identical RC low-pass cascade",
+    "category": "Analog filters",
+    "level": "intermediate",
+    "description": "Evaluate an integer cascade of isolated identical RC sections, including the shift of the overall half-power cutoff below each stage's corner.",
+    "formula": "H(s)=(1/(1+sRC))^N; fc_total=fc_stage*sqrt(2^(1/N)-1); |H|=(1+x^2)^(-N/2); phase=-N*atan(x)",
+    "assumptions": ["N is an integer from 2 through 32; every section has the same R and C.", "Ideal unity-gain buffers isolate sections; multiplying responses is not valid for an unbuffered passive RC ladder.", "Overall phase is unwrapped in radians, so it may be less than -pi.", "Repeated real poles are not an Nth-order Butterworth response; the half-power cutoff shifts downward with N.", "Buffer bandwidth, source/load impedance, clipping, noise and parasitics are excluded."],
+    "references": [
+      {"title": "University of Colorado Boulder, PHYS 3330 Lab 3, first-order low-pass transfer function", "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab3/"},
+      {"title": "Texas Instruments AN-779 / SNOA224A, section 1.3 cascading transfer functions", "url": "https://www.ti.com/lit/an/snoa224a/snoa224a.pdf"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Each stage's series resistor", "unit": "ohm", "default": 10000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Each stage's shunt capacitor", "unit": "F", "default": 1e-8, "min": 1e-15, "max": 1.0},
+      {"key": "stage_count", "label": "Number of buffered stages", "unit": "1", "default": 3.0, "min": 2.0, "max": 32.0},
+      {"key": "f", "label": "Signal frequency", "unit": "Hz", "default": 1000.0, "min": 0.0, "max": 1e12}
+    ],
+    "outputs": [
+      {"key": "stage_cutoff_hz", "label": "Individual stage half-power cutoff", "unit": "Hz", "expression": "1/(2*pi*r*c)"},
+      {"key": "overall_order", "label": "Overall filter order", "unit": "1", "expression": "stage_count"},
+      {"key": "cascade_cutoff_hz", "label": "Overall half-power cutoff", "unit": "Hz", "expression": "stage_cutoff_hz*sqrt(2^(1/stage_count)-1)"},
+      {"key": "frequency_ratio", "label": "Signal / individual stage cutoff", "unit": "1", "expression": "2*pi*f*r*c"},
+      {"key": "voltage_gain", "label": "Cascade voltage transmission", "unit": "V/V", "expression": "(1+frequency_ratio^2)^(-stage_count/2)"},
+      {"key": "phase_rad", "label": "Unwrapped output phase", "unit": "rad", "expression": "-stage_count*atan(frequency_ratio)"},
+      {"key": "attenuation_db", "label": "Total voltage insertion loss", "unit": "dB", "expression": "10*stage_count*log10(1+frequency_ratio^2)"}
+    ],
+    "constraints": [{"left": "stage_count", "op": "==", "right": "floor(stage_count)", "message": "The number of physical filter stages must be an integer."}],
+    "example": {"inputs": {"r": 10000.0, "c": 1e-8, "stage_count": 3.0, "f": 1000.0}, "expected": {"stage_cutoff_hz": 1591.5494309189535, "overall_order": 3.0, "cascade_cutoff_hz": 811.4109382567457, "frequency_ratio": 0.6283185307179586, "voltage_gain": 0.6070709938555954, "phase_rad": -1.6829463483258713, "attenuation_db": 4.3352103486158615}, "relative_tolerance": 1e-6}
+  }
+]

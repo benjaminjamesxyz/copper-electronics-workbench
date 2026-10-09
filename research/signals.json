@@ -1,0 +1,204 @@
+[
+  {
+    "id": "signals.microstrip_impedance",
+    "title": "Thin-conductor microstrip impedance",
+    "category": "Signal integrity and transmission lines",
+    "level": "expert",
+    "description": "Estimate quasi-static single-ended microstrip impedance and effective permittivity using the Hammerstad–Jensen fit.",
+    "formula": "u=w/h; a=1+ln((u^4+(u/52)^2)/(u^4+0.432))/49+ln(1+(u/18.1)^3)/18.7; b=0.564*((er-0.9)/(er+3))^0.053; ee=(er+1)/2+(er-1)/2*(1+10/u)^(-a*b); F=6+(2*pi-6)*exp(-(30.666/u)^0.7528); Z0=60*ln(F/u+sqrt(1+(2/u)^2))/sqrt(ee)",
+    "assumptions": [
+      "Zero-thickness Hammerstad–Jensen quasi-static fit: the supplied thickness is an applicability check, not a finite-thickness correction.",
+      "Air above a homogeneous nonmagnetic dielectric, continuous sufficiently wide reference plane, isolated straight trace, no solder mask or nearby conductors.",
+      "Published fit domain: 0.01 <= width/height <= 100 and 1 <= relative permittivity <= 128.",
+      "Conservative thin-conductor guard: thickness <= 1% of both width and height; conservative electrical-thickness guard: height <= 1% of the bulk-dielectric wavelength at the supplied frequency. These are applicability restrictions, not accuracy guarantees.",
+      "Neglects roughness, etch shape, dielectric dispersion and loss; impedance estimates do not certify a manufactured stackup."
+    ],
+    "references": [{"title": "Michael Steer, Microstrip Transmission Lines, sections 4.4.1–4.4.2, equations 9–14", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines"}],
+    "inputs": [
+      {"key": "width", "label": "Trace width", "unit": "m", "default": 0.0008, "min": 0, "exclusive_min": true},
+      {"key": "height", "label": "Dielectric height above reference plane", "unit": "m", "default": 0.0004, "min": 0, "exclusive_min": true},
+      {"key": "thickness", "label": "Conductor thickness (applicability only)", "unit": "m", "default": 0.000002, "min": 0},
+      {"key": "relative_permittivity", "label": "Substrate relative permittivity", "unit": "1", "default": 3.66, "min": 1, "max": 128},
+      {"key": "frequency", "label": "Highest frequency for applicability check", "unit": "Hz", "default": 1000000000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "width_ratio", "label": "Width to height ratio", "unit": "1", "expression": "width/height"},
+      {"key": "fit_a", "label": "Hammerstad geometry fit coefficient", "unit": "1", "expression": "1+ln((width_ratio^4+(width_ratio/52)^2)/(width_ratio^4+0.432))/49+ln(1+(width_ratio/18.1)^3)/18.7"},
+      {"key": "fit_b", "label": "Hammerstad dielectric fit coefficient", "unit": "1", "expression": "0.564*((relative_permittivity-0.9)/(relative_permittivity+3))^0.053"},
+      {"key": "air_factor", "label": "Air impedance shape factor", "unit": "1", "expression": "6+(2*pi-6)*exp(-((30.666/width_ratio)^0.7528))"},
+      {"key": "effective_permittivity", "label": "Effective relative permittivity", "unit": "1", "expression": "(relative_permittivity+1)/2+(relative_permittivity-1)/2*(1+10/width_ratio)^(-fit_a*fit_b)"},
+      {"key": "air_impedance", "label": "Equivalent air-filled impedance", "unit": "ohm", "expression": "60*ln(air_factor/width_ratio+sqrt(1+(2/width_ratio)^2))"},
+      {"key": "impedance", "label": "Microstrip characteristic impedance", "unit": "ohm", "expression": "air_impedance/sqrt(effective_permittivity)"}
+    ],
+    "constraints": [
+      {"left": "width/height", "op": ">=", "right": "0.01", "message": "Width/height must be at least 0.01 for the fitted model."},
+      {"left": "width/height", "op": "<=", "right": "100", "message": "Width/height must not exceed 100 for the effective-permittivity fit."},
+      {"left": "thickness/height", "op": "<=", "right": "0.01", "message": "This zero-thickness model requires thickness <= 1% of dielectric height."},
+      {"left": "thickness/width", "op": "<=", "right": "0.01", "message": "This zero-thickness model requires thickness <= 1% of trace width."},
+      {"left": "height*frequency*sqrt(relative_permittivity)/299792458", "op": "<=", "right": "0.01", "message": "Dielectric height must be <= 1% of the bulk wavelength for the conservative quasi-static restriction."}
+    ],
+    "example": {
+      "inputs": {"width": 0.0008, "height": 0.0004, "thickness": 0.000002, "relative_permittivity": 3.66, "frequency": 1000000000},
+      "expected": {"width_ratio": 2, "fit_a": 0.9995302713283848, "fit_b": 0.5382736881490864, "air_factor": 6.000115105754384, "effective_permittivity": 2.8372126159506297, "air_impedance": 89.09056365708382, "impedance": 52.89148559435723},
+      "relative_tolerance": 0.000001
+    }
+  },
+  {
+    "id": "signals.stripline_impedance",
+    "title": "Symmetric finite-thickness stripline impedance",
+    "category": "Signal integrity and transmission lines",
+    "level": "expert",
+    "description": "Estimate the impedance of a centered conductor between two reference planes, including thickness and edge-fringing corrections.",
+    "formula": "u=w/b; q=t/b; ue=u-max(0,0.35-u)^2/(1+12*q); Cf=2/pi*ln(1/(1-q)+1)-q/pi*ln(q*(2-q)/(1-q)^2); Z0=30*pi*(1-q)/(sqrt(er)*(ue+Cf))",
+    "assumptions": [
+      "Centered, uniform rectangular strip between two continuous ground planes separated by b; homogeneous nonmagnetic dielectric and TEM operation.",
+      "Finite-thickness fit only: 0 < thickness/plane_spacing < 0.025 and width/(plane_spacing-thickness) > 0.05, matching the textbook's stated better-than-1% formula domain.",
+      "Zero thickness is excluded because the finite-thickness logarithm is singular; a zero-thickness limiting formula is not silently substituted.",
+      "No asymmetric stackup, nearby traces, copper roughness, finite-plane effects, dielectric dispersion or loss."
+    ],
+    "references": [{"title": "Michael Steer, Stripline, section 3.7.1, equations 1–3 and stated accuracy domain", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Microwave_and_RF_Design_II_-_Transmission_Lines_%28Steer%29/03%3A_Planar_Transmission_Lines/3.07%3A_Stripline"}],
+    "inputs": [
+      {"key": "width", "label": "Strip width", "unit": "m", "default": 0.0006, "min": 0, "exclusive_min": true},
+      {"key": "plane_spacing", "label": "Total separation between ground planes", "unit": "m", "default": 0.001, "min": 0, "exclusive_min": true},
+      {"key": "thickness", "label": "Strip conductor thickness", "unit": "m", "default": 0.000018, "min": 0, "exclusive_min": true},
+      {"key": "relative_permittivity", "label": "Dielectric relative permittivity", "unit": "1", "default": 4, "min": 1}
+    ],
+    "outputs": [
+      {"key": "width_ratio", "label": "Width to plane spacing ratio", "unit": "1", "expression": "width/plane_spacing"},
+      {"key": "thickness_ratio", "label": "Thickness to plane spacing ratio", "unit": "1", "expression": "thickness/plane_spacing"},
+      {"key": "effective_width_ratio", "label": "Corrected normalized width", "unit": "1", "expression": "width_ratio-max(0,0.35-width_ratio)^2/(1+12*thickness_ratio)"},
+      {"key": "fringe_factor", "label": "Thickness-dependent fringe factor", "unit": "1", "expression": "2/pi*ln(1/(1-thickness_ratio)+1)-thickness_ratio/pi*ln(thickness_ratio*(2-thickness_ratio)/(1-thickness_ratio)^2)"},
+      {"key": "impedance", "label": "Stripline characteristic impedance", "unit": "ohm", "expression": "30*pi*(1-thickness_ratio)/(sqrt(relative_permittivity)*(effective_width_ratio+fringe_factor))"}
+    ],
+    "constraints": [
+      {"left": "thickness/plane_spacing", "op": "<", "right": "0.025", "message": "Finite-thickness fit requires thickness/plane_spacing < 0.025."},
+      {"left": "plane_spacing-thickness", "op": ">", "right": "0", "message": "Conductor must fit strictly between ground planes."},
+      {"left": "width/(plane_spacing-thickness)", "op": ">", "right": "0.05", "message": "Published accuracy domain requires width/(plane_spacing-thickness) > 0.05."}
+    ],
+    "example": {"inputs": {"width": 0.0006, "plane_spacing": 0.001, "thickness": 0.000018, "relative_permittivity": 4}, "expected": {"width_ratio": 0.6, "thickness_ratio": 0.018, "effective_width_ratio": 0.6, "fringe_factor": 0.4659693534707028, "impedance": 43.41181070235101}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "signals.coax_impedance",
+    "title": "Homogeneous coaxial line impedance",
+    "category": "Signal integrity and transmission lines",
+    "level": "intermediate",
+    "description": "Estimate low-loss coax impedance from the radii of the conductor surfaces enclosing the dielectric.",
+    "formula": "Z0=(60/sqrt(er))*ln(b/a)",
+    "assumptions": ["Concentric coax, inner-conductor outer radius a and shield inner radius b, uniform homogeneous nonmagnetic dielectric; b > a > 0.", "Low-loss TEM approximation requires R' << omega*L' and G' << omega*C'; higher-order modes, braid geometry and losses are not modeled.", "60 ohm is the textbook rounded free-space-impedance coefficient, used consistently in the example."],
+    "references": [{"title": "Steven W. Ellingson, Coaxial Line, derivation from per-unit-length inductance and capacitance", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line"}],
+    "inputs": [
+      {"key": "inner_radius", "label": "Inner conductor outer radius", "unit": "m", "default": 0.0005, "min": 0, "exclusive_min": true},
+      {"key": "shield_radius", "label": "Shield inner radius", "unit": "m", "default": 0.0015, "min": 0, "exclusive_min": true},
+      {"key": "relative_permittivity", "label": "Filler relative permittivity", "unit": "1", "default": 2.25, "min": 1}
+    ],
+    "outputs": [{"key": "impedance", "label": "Coax characteristic impedance", "unit": "ohm", "expression": "60*ln(shield_radius/inner_radius)/sqrt(relative_permittivity)"}],
+    "constraints": [{"left": "shield_radius", "op": ">", "right": "inner_radius", "message": "Shield inner radius must exceed inner conductor outer radius."}],
+    "example": {"inputs": {"inner_radius": 0.0005, "shield_radius": 0.0015, "relative_permittivity": 2.25}, "expected": {"impedance": 43.94449154672439}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "signals.line_propagation",
+    "title": "Transmission-line delay and wavelength",
+    "category": "Signal integrity and transmission lines",
+    "level": "basic",
+    "description": "Calculate one-way flight time, round-trip time, wavelength and electrical length using effective permittivity.",
+    "formula": "v=c/sqrt(ee); td=l/v; lambda=v/f; theta=2*pi*l/lambda; c=299792458 m/s",
+    "assumptions": ["Uniform low-loss nonmagnetic line with a frequency-independent effective relative permittivity.", "Use bulk relative permittivity for homogeneous coax/stripline, and effective relative permittivity (not bulk substrate value) for microstrip.", "Delay equals length divided by phase velocity only in this nondispersive model; group-delay dispersion and PCB differential skew are excluded.", "Electrical length is unwrapped phase accumulation in radians, not the negative phase angle of the propagation transfer function."],
+    "references": [{"title": "Steven W. Ellingson, Coaxial Line, velocity and wavelength discussion", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electro-Optics/Book%3A_Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.10%3A__Coaxial_Line"}, {"title": "Michael Steer, Microstrip Transmission Lines, equations 5–8 and guide wavelength", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Electronics/Fundamentals_of_Microwave_and_RF_Design_%28Steer%29/04%3A_Planar_Transmission_Lines/4.04%3A_Microstrip_Transmission_Lines"}],
+    "inputs": [
+      {"key": "length", "label": "Line physical length", "unit": "m", "default": 0.15, "min": 0},
+      {"key": "effective_permittivity", "label": "Effective relative permittivity", "unit": "1", "default": 3, "min": 1},
+      {"key": "frequency", "label": "Signal frequency", "unit": "Hz", "default": 1000000000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "velocity", "label": "Propagation velocity", "unit": "m/s", "expression": "299792458/sqrt(effective_permittivity)"},
+      {"key": "delay", "label": "One-way flight time", "unit": "s", "expression": "length/velocity"},
+      {"key": "round_trip_delay", "label": "Round-trip flight time", "unit": "s", "expression": "2*delay"},
+      {"key": "wavelength", "label": "Guide wavelength", "unit": "m", "expression": "velocity/frequency"},
+      {"key": "electrical_length", "label": "Unwrapped electrical length", "unit": "rad", "expression": "2*pi*length/wavelength"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"length": 0.15, "effective_permittivity": 3, "frequency": 1000000000}, "expected": {"velocity": 173085256.3273196, "delay": 8.666249406959115e-10, "round_trip_delay": 1.733249881391823e-9, "wavelength": 0.17308525632731958, "electrical_length": 5.445165094215932}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "signals.load_reflection",
+    "title": "Resistive-load reflection and first arrival",
+    "category": "Signal integrity and transmission lines",
+    "level": "intermediate",
+    "description": "Calculate the reflected voltage wave, first-arrival load voltage and reflected power fraction at a resistive termination.",
+    "formula": "Gamma=(RL-Z0)/(RL+Z0); Vr=Gamma*Vi; VL=(1+Gamma)*Vi; reflected_fraction=Gamma^2",
+    "assumptions": ["Real positive line impedance and finite nonnegative resistive load; a zero-ohm short is allowed, while infinity/open is not an input.", "Incident voltage is the traveling-wave amplitude at the load, not the driver step voltage; real signed voltage amplitudes are supported.", "Lossless real-Z0 line; outputs describe a single boundary encounter before subsequent source/load reflections.", "No reactive loads, frequency-dependent load impedance or multiple-reflection transient simulation; transmitted_fraction is the accepted-power fraction."],
+    "references": [{"title": "Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 5–6", "url": "https://www.ti.com/lit/an/snla027b/snla027b.pdf"}, {"title": "Steven W. Ellingson, Quarter-Wavelength Transmission Line, load reflection equation", "url": "https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line"}],
+    "inputs": [
+      {"key": "line_impedance", "label": "Characteristic line impedance", "unit": "ohm", "default": 50, "min": 0, "exclusive_min": true},
+      {"key": "load_resistance", "label": "Finite load resistance", "unit": "ohm", "default": 75, "min": 0},
+      {"key": "incident_voltage", "label": "Incident traveling-wave amplitude", "unit": "V", "default": 1.2}
+    ],
+    "outputs": [
+      {"key": "reflection_coefficient", "label": "Voltage reflection coefficient", "unit": "1", "expression": "(load_resistance-line_impedance)/(load_resistance+line_impedance)"},
+      {"key": "reflected_voltage", "label": "Reflected traveling-wave amplitude", "unit": "V", "expression": "reflection_coefficient*incident_voltage"},
+      {"key": "load_voltage", "label": "First-arrival load voltage", "unit": "V", "expression": "(1+reflection_coefficient)*incident_voltage"},
+      {"key": "reflected_fraction", "label": "Reflected power fraction", "unit": "1", "expression": "reflection_coefficient^2"},
+      {"key": "transmitted_fraction", "label": "Accepted load power fraction", "unit": "1", "expression": "1-reflected_fraction"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"line_impedance": 50, "load_resistance": 75, "incident_voltage": 1.2}, "expected": {"reflection_coefficient": 0.2, "reflected_voltage": 0.24, "load_voltage": 1.44, "reflected_fraction": 0.04, "transmitted_fraction": 0.96}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "signals.source_series_termination",
+    "title": "Source-series termination for an open receiver",
+    "category": "Signal integrity and transmission lines",
+    "level": "intermediate",
+    "description": "Select a driver-end series resistor and compute the launch and open-receiver first-arrival voltage for a point-to-point line.",
+    "formula": "Rseries=Z0-Rdriver; Vlaunch=Vstep*Z0/(Rdriver+Rseries+Z0); Vreceiver=2*Vlaunch",
+    "assumptions": ["Single point-to-point uniform lossless line with an ideal open/high-impedance receiver and a Thevenin step driver.", "Driver output resistance is constant, real and <= line impedance; no negative resistor or clamp-to-zero fallback is allowed.", "Resistor sits at the driver; source resistance plus selected series resistance equals Z0, so the returning load reflection is absorbed.", "Receiver capacitance, branched lines, nonlinear/asymmetric driver resistance and finite rise time require waveform analysis beyond this ideal estimate.", "This is source-end component selection and launch behavior, distinct from the load-boundary reflection calculator."],
+    "references": [{"title": "Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 3, 5 and 10", "url": "https://www.ti.com/lit/an/snla027b/snla027b.pdf"}],
+    "inputs": [
+      {"key": "line_impedance", "label": "Characteristic line impedance", "unit": "ohm", "default": 60, "min": 0, "exclusive_min": true},
+      {"key": "driver_resistance", "label": "Driver Thevenin output resistance", "unit": "ohm", "default": 18, "min": 0},
+      {"key": "step_voltage", "label": "Signed driver open-circuit step", "unit": "V", "default": 3.3}
+    ],
+    "outputs": [
+      {"key": "series_resistance", "label": "Required driver-end series resistor", "unit": "ohm", "expression": "line_impedance-driver_resistance"},
+      {"key": "launch_voltage", "label": "Initial launched-wave amplitude", "unit": "V", "expression": "step_voltage*line_impedance/(driver_resistance+series_resistance+line_impedance)"},
+      {"key": "receiver_voltage", "label": "Open-receiver first-arrival voltage", "unit": "V", "expression": "2*launch_voltage"}
+    ],
+    "constraints": [{"left": "driver_resistance", "op": "<=", "right": "line_impedance", "message": "Passive source matching requires driver resistance <= characteristic line impedance."}],
+    "example": {"inputs": {"line_impedance": 60, "driver_resistance": 18, "step_voltage": 3.3}, "expected": {"series_resistance": 42, "launch_voltage": 1.65, "receiver_voltage": 3.3}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "signals.rise_time_bandwidth",
+    "title": "Single-pole rise-time equivalent bandwidth",
+    "category": "Signal integrity and transmission lines",
+    "level": "basic",
+    "description": "Convert a 10–90% exponential edge rise time to the equivalent first-order -3 dB bandwidth.",
+    "formula": "BW=ln(9)/(2*pi*tr) approximately 0.35/tr",
+    "assumptions": ["Monotonic single-real-pole response to an ideal step, with rise time measured between 10% and 90% of the final amplitude.", "Uses exact first-order factor ln(9)/(2*pi), not rounded 0.35, consistently in formula and example.", "Not a universal edge-spectrum cutoff, data-rate limit or recommendation for a specified oscilloscope accuracy; other pole shapes and ringing give different factors.", "No RC component synthesis, op-amp gain-bandwidth calculation or sampled-system Nyquist requirement."],
+    "references": [{"title": "Texas Instruments, John Rice, Are You Accurately Measuring the Picosecond Rise Time of Your GaN Device?, equations 1–2", "url": "https://www.ti.com/document-viewer/lit/html/SSZTCJ0/GUID-3646E4F7-2FCF-4F97-8465-C0F6DF48F197"}],
+    "inputs": [{"key": "rise_time", "label": "10–90% rise time", "unit": "s", "default": 2e-9, "min": 0, "exclusive_min": true}],
+    "outputs": [{"key": "bandwidth", "label": "Equivalent single-pole -3 dB bandwidth", "unit": "Hz", "expression": "ln(9)/(2*pi*rise_time)"}],
+    "constraints": [],
+    "example": {"inputs": {"rise_time": 2e-9}, "expected": {"bandwidth": 174849576.2830299}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "signals.quarter_wave_transformer",
+    "title": "Quarter-wave impedance transformer",
+    "category": "Signal integrity and transmission lines",
+    "level": "expert",
+    "description": "Synthesize the characteristic impedance and physical length of a quarter-wave matching section between two real resistances.",
+    "formula": "Ztransformer=sqrt(Rsource*Rload); length=c/(4*f*sqrt(ee))",
+    "assumptions": ["Positive real source/reference and load resistances, uniform lossless nonmagnetic matching section with supplied effective relative permittivity.", "Exact impedance match at the design frequency only; reactive loads are not supported.", "Effective permittivity belongs to the transformer section, which may differ from the adjoining lines and depends on geometry for microstrip.", "Neglects junction discontinuities, dispersion, conductor/dielectric loss and manufacturing tolerances; no bandwidth or standards-compliance claim.", "A distributed quarter-wave impedance inverter is physically distinct from source-series termination and from bare line propagation."],
+    "references": [{"title": "Steven W. Ellingson, Quarter-Wavelength Transmission Line, impedance inversion and matching derivation", "url": "https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line"}],
+    "inputs": [
+      {"key": "source_resistance", "label": "Source/reference resistance", "unit": "ohm", "default": 50, "min": 0, "exclusive_min": true},
+      {"key": "load_resistance", "label": "Real load resistance", "unit": "ohm", "default": 100, "min": 0, "exclusive_min": true},
+      {"key": "frequency", "label": "Matching design frequency", "unit": "Hz", "default": 2400000000, "min": 0, "exclusive_min": true},
+      {"key": "effective_permittivity", "label": "Matching-section effective relative permittivity", "unit": "1", "default": 2.25, "min": 1}
+    ],
+    "outputs": [
+      {"key": "transformer_impedance", "label": "Required matching-section impedance", "unit": "ohm", "expression": "sqrt(source_resistance*load_resistance)"},
+      {"key": "length", "label": "Quarter-wave section physical length", "unit": "m", "expression": "299792458/(4*frequency*sqrt(effective_permittivity))"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"source_resistance": 50, "load_resistance": 100, "frequency": 2400000000, "effective_permittivity": 2.25}, "expected": {"transformer_impedance": 70.71067811865476, "length": 0.020818920694444444}, "relative_tolerance": 0.000001}
+  }
+]

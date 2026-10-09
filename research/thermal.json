@@ -1,0 +1,306 @@
+[
+  {
+    "id": "thermal.junction_feedback_equilibrium",
+    "title": "Junction temperature with electrothermal feedback",
+    "category": "Thermal and reliability design",
+    "level": "expert",
+    "description": "Solve steady junction temperature when device dissipation increases linearly with temperature; reject unstable or out-of-fit equilibria.",
+    "formula": "P(Tj)=P_ref[1+beta(Tj-T_ref)]; g=R_th P_ref beta; Tj=Ta+R_th P_ref[1+beta(Ta-T_ref)]/(1-g)",
+    "assumptions": [
+      "Reference power and its coefficient represent total internal device dissipation at an unchanged electrical operating point; electrical loss synthesis belongs to other lanes.",
+      "Power is locally linear with temperature and beta is nonnegative. Enter the fitted temperature interval from measured or manufacturer data.",
+      "R_th is an application-specific junction-to-ambient resistance, not an automatically transferable JEDEC board value; ambient is constant and the model is steady state.",
+      "Stability requires R_th P_ref beta < 1. This local lumped equilibrium is not a semiconductor SOA or hotspot certification."
+    ],
+    "references": [
+      {"title": "TI SLVA462: Understanding Thermal Dissipation and Design of a Heatsink, pages 1-2", "url": "https://www.ti.com/lit/an/slva462/slva462.pdf"},
+      {"title": "TI SNVAAA4: temperature coefficient of MOSFET resistance, Table 2-2 note 2", "url": "https://www.ti.com/lit/an/snvaaa4/snvaaa4.pdf"},
+      {"title": "TI SLUA844B: application-dependent thermal metrics", "url": "https://www.ti.com/lit/an/slua844b/slua844b.pdf"}
+    ],
+    "inputs": [
+      {"key": "ambient_temperature", "label": "Ambient temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "reference_temperature", "label": "Power reference temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "reference_power", "label": "Device power at reference temperature", "unit": "W", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "power_coefficient", "label": "Fractional power temperature coefficient", "unit": "1/K", "default": 0.004, "min": 0},
+      {"key": "thermal_resistance", "label": "Application junction-to-ambient resistance", "unit": "K/W", "default": 20, "min": 0, "exclusive_min": true},
+      {"key": "fit_temperature_min", "label": "Minimum validated model temperature", "unit": "K", "default": 233.15, "min": 0, "exclusive_min": true},
+      {"key": "fit_temperature_max", "label": "Maximum validated model temperature", "unit": "K", "default": 423.15, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "feedback_gain", "label": "Electrothermal feedback gain", "unit": "1", "expression": "thermal_resistance*reference_power*power_coefficient"},
+      {"key": "junction_temperature", "label": "Equilibrium junction temperature", "unit": "K", "expression": "ambient_temperature+thermal_resistance*reference_power*(1+power_coefficient*(ambient_temperature-reference_temperature))/(1-feedback_gain)"},
+      {"key": "equilibrium_power", "label": "Equilibrium device dissipation", "unit": "W", "expression": "reference_power*(1+power_coefficient*(junction_temperature-reference_temperature))"}
+    ],
+    "constraints": [
+      {"left": "fit_temperature_max", "op": ">", "right": "fit_temperature_min", "message": "The validated temperature interval must have positive width."},
+      {"left": "ambient_temperature", "op": ">=", "right": "fit_temperature_min", "message": "Ambient must be in the validated fit interval."},
+      {"left": "ambient_temperature", "op": "<=", "right": "fit_temperature_max", "message": "Ambient must be in the validated fit interval."},
+      {"left": "reference_temperature", "op": ">=", "right": "fit_temperature_min", "message": "Reference temperature must be in the validated fit interval."},
+      {"left": "reference_temperature", "op": "<=", "right": "fit_temperature_max", "message": "Reference temperature must be in the validated fit interval."},
+      {"left": "1+power_coefficient*(ambient_temperature-reference_temperature)", "op": ">", "right": "0", "message": "The fitted power at ambient must be positive."},
+      {"left": "thermal_resistance*reference_power*power_coefficient", "op": "<", "right": "1", "message": "Feedback gain must be below unity for a stable equilibrium."},
+      {"left": "ambient_temperature+thermal_resistance*reference_power*(1+power_coefficient*(ambient_temperature-reference_temperature))/(1-thermal_resistance*reference_power*power_coefficient)", "op": "<=", "right": "fit_temperature_max", "message": "Equilibrium exceeds the validated linear-power temperature interval."}
+    ],
+    "example": {"inputs": {"ambient_temperature": 298.15, "reference_temperature": 298.15, "reference_power": 2, "power_coefficient": 0.004, "thermal_resistance": 20, "fit_temperature_min": 233.15, "fit_temperature_max": 423.15}, "expected": {"feedback_gain": 0.16, "junction_temperature": 345.7690476190476, "equilibrium_power": 2.380952380952381}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.heatsink_resistance_budget",
+    "title": "Maximum heatsink thermal resistance",
+    "category": "Thermal and reliability design",
+    "level": "intermediate",
+    "description": "Allocate a junction-temperature budget to a package, interface and heatsink in a dominant series cooling path.",
+    "formula": "R_total,max=(Tj_limit-Ta)/P; R_sa,max=R_total,max-R_jc-R_cs",
+    "assumptions": [
+      "Steady, temperature-independent dissipation supplied by an electrical loss calculation.",
+      "Almost all heat flows through the specified case face, interface and heatsink; do not mix datasheet R_theta_JA with this chain.",
+      "Heatsink resistance must be characterized at actual airflow, orientation, enclosure and mounting conditions. Smaller resistance is better.",
+      "Positive sink resistance headroom is required; a nonpositive budget means the package/interface already consume the temperature allowance."
+    ],
+    "references": [
+      {"title": "TI SLVA462: heatsink design, equations 3-4 and airflow caveats", "url": "https://www.ti.com/lit/an/slva462/slva462.pdf"},
+      {"title": "TI SLUA844B: junction-to-case single-surface applicability, page 5", "url": "https://www.ti.com/lit/an/slua844b/slua844b.pdf"}
+    ],
+    "inputs": [
+      {"key": "ambient_temperature", "label": "Ambient temperature", "unit": "K", "default": 313.15, "min": 0, "exclusive_min": true},
+      {"key": "junction_limit", "label": "Design junction-temperature limit", "unit": "K", "default": 393.15, "min": 0, "exclusive_min": true},
+      {"key": "dissipated_power", "label": "Device dissipated power", "unit": "W", "default": 10, "min": 0, "exclusive_min": true},
+      {"key": "junction_case_resistance", "label": "Junction-to-case thermal resistance", "unit": "K/W", "default": 1.5, "min": 0, "exclusive_min": true},
+      {"key": "case_sink_resistance", "label": "Case-to-sink interface resistance", "unit": "K/W", "default": 0.5, "min": 0}
+    ],
+    "outputs": [
+      {"key": "total_resistance_budget", "label": "Total junction-to-ambient budget", "unit": "K/W", "expression": "(junction_limit-ambient_temperature)/dissipated_power"},
+      {"key": "maximum_sink_resistance", "label": "Maximum heatsink-to-ambient resistance", "unit": "K/W", "expression": "total_resistance_budget-junction_case_resistance-case_sink_resistance"}
+    ],
+    "constraints": [
+      {"left": "junction_limit", "op": ">", "right": "ambient_temperature", "message": "Design junction limit must exceed ambient temperature."},
+      {"left": "(junction_limit-ambient_temperature)/dissipated_power-junction_case_resistance-case_sink_resistance", "op": ">", "right": "0", "message": "No positive heatsink resistance allowance remains after package and interface losses."}
+    ],
+    "example": {"inputs": {"ambient_temperature": 313.15, "junction_limit": 393.15, "dissipated_power": 10, "junction_case_resistance": 1.5, "case_sink_resistance": 0.5}, "expected": {"total_resistance_budget": 8, "maximum_sink_resistance": 6}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.parallel_conduction_paths",
+    "title": "Two parallel solid-conduction heat paths",
+    "category": "Thermal and reliability design",
+    "level": "intermediate",
+    "description": "Estimate heat sharing and source temperature for two separate uniform solid paths between common isothermal endpoints.",
+    "formula": "R_i=L_i/(k_i A_i); R_eq=1/(1/R_1+1/R_2); T_hot=T_sink+P R_eq; Q_i=(T_hot-T_sink)/R_i",
+    "assumptions": [
+      "One-dimensional steady Fourier conduction through two physically separate constant-area paths with the same hot and cold endpoint temperatures.",
+      "Lengths are heat-flow lengths, areas are perpendicular to heat flow, and conductivity is the appropriate directional value for anisotropic material.",
+      "No internal heat generation, contact resistance, lateral heat exchange, spreading resistance, radiation or convection within either path.",
+      "Endpoints are isothermal and conductivity is constant across the temperature interval; this is not a thermal-via or PCB spreading simulation."
+    ],
+    "references": [
+      {"title": "University of South Carolina ECHE 460: Fourier conduction and resistance ratio, equations 1-2 and 13-14", "url": "https://cse.sc.edu/~gatzke/460/F-Heat%20Conduction.pdf"},
+      {"title": "TI SLUA844B: diverse series/parallel thermal conduction paths, page 7", "url": "https://www.ti.com/lit/an/slua844b/slua844b.pdf"}
+    ],
+    "inputs": [
+      {"key": "path_one_length", "label": "Path 1 heat-flow length", "unit": "m", "default": 0.005, "min": 0, "exclusive_min": true},
+      {"key": "path_one_area", "label": "Path 1 cross-sectional area", "unit": "m^2", "default": 0.0001, "min": 0, "exclusive_min": true},
+      {"key": "path_one_conductivity", "label": "Path 1 thermal conductivity", "unit": "W/(m*K)", "default": 200, "min": 0, "exclusive_min": true},
+      {"key": "path_two_length", "label": "Path 2 heat-flow length", "unit": "m", "default": 0.002, "min": 0, "exclusive_min": true},
+      {"key": "path_two_area", "label": "Path 2 cross-sectional area", "unit": "m^2", "default": 0.0004, "min": 0, "exclusive_min": true},
+      {"key": "path_two_conductivity", "label": "Path 2 thermal conductivity", "unit": "W/(m*K)", "default": 1, "min": 0, "exclusive_min": true},
+      {"key": "sink_temperature", "label": "Common sink temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "source_power", "label": "Total source heat flow", "unit": "W", "default": 21, "min": 0}
+    ],
+    "outputs": [
+      {"key": "path_one_resistance", "label": "Path 1 thermal resistance", "unit": "K/W", "expression": "path_one_length/(path_one_conductivity*path_one_area)"},
+      {"key": "path_two_resistance", "label": "Path 2 thermal resistance", "unit": "K/W", "expression": "path_two_length/(path_two_conductivity*path_two_area)"},
+      {"key": "equivalent_resistance", "label": "Parallel thermal resistance", "unit": "K/W", "expression": "1/(1/path_one_resistance+1/path_two_resistance)"},
+      {"key": "hot_temperature", "label": "Common source temperature", "unit": "K", "expression": "sink_temperature+source_power*equivalent_resistance"},
+      {"key": "path_one_heat", "label": "Heat flow in path 1", "unit": "W", "expression": "source_power*equivalent_resistance/path_one_resistance"},
+      {"key": "path_two_heat", "label": "Heat flow in path 2", "unit": "W", "expression": "source_power*equivalent_resistance/path_two_resistance"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"path_one_length": 0.005, "path_one_area": 0.0001, "path_one_conductivity": 200, "path_two_length": 0.002, "path_two_area": 0.0004, "path_two_conductivity": 1, "sink_temperature": 298.15, "source_power": 21}, "expected": {"path_one_resistance": 0.25, "path_two_resistance": 5, "equivalent_resistance": 0.2380952380952381, "hot_temperature": 303.15, "path_one_heat": 20, "path_two_heat": 1}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.lumped_thermal_step",
+    "title": "Lumped body temperature after a power step",
+    "category": "Thermal and reliability design",
+    "level": "intermediate",
+    "description": "Calculate a uniform body's thermal response to constant heat generation and convection, with an explicit Biot-number applicability guard.",
+    "formula": "C_th=rho V c_p; R_th=1/(h A_s); tau=R_th C_th; Bi=h V/(A_s k); T_inf=Ta+P R_th; T(t)=T_inf+(T_initial-T_inf) exp(-t/tau)",
+    "assumptions": [
+      "Spatially uniform body temperature, uniform internal heat generation, constant ambient, convection coefficient, conductivity, density and specific heat.",
+      "The input area is the complete surface exchanging heat with the ambient; L_c=V/A_s and Bi<0.1 are required for the lumped approximation.",
+      "Radiation, contact resistance and multiple thermal masses are neglected. For localized junction heat, a distributed or manufacturer transient-impedance model may be necessary.",
+      "Power is applied constantly from time zero; P=0 also describes cooling from an initially hot body."
+    ],
+    "references": [
+      {"title": "University of South Carolina ECHE 460: lumped energy balance, time constant and Biot criterion, equations 5-15", "url": "https://cse.sc.edu/~gatzke/460/F-Heat%20Conduction.pdf"},
+      {"title": "Brigham Young University ME340: lumped capacitance method", "url": "https://www.et.byu.edu/~vps/ME340/TABLES/5.1.pdf"}
+    ],
+    "inputs": [
+      {"key": "volume", "label": "Body volume", "unit": "m^3", "default": 0.00001, "min": 0, "exclusive_min": true},
+      {"key": "density", "label": "Body density", "unit": "kg/m^3", "default": 2700, "min": 0, "exclusive_min": true},
+      {"key": "specific_heat", "label": "Specific heat capacity", "unit": "J/(kg*K)", "default": 900, "min": 0, "exclusive_min": true},
+      {"key": "surface_area", "label": "Convecting surface area", "unit": "m^2", "default": 0.01, "min": 0, "exclusive_min": true},
+      {"key": "convection_coefficient", "label": "Convection heat-transfer coefficient", "unit": "W/(m^2*K)", "default": 10, "min": 0, "exclusive_min": true},
+      {"key": "thermal_conductivity", "label": "Body thermal conductivity", "unit": "W/(m*K)", "default": 200, "min": 0, "exclusive_min": true},
+      {"key": "ambient_temperature", "label": "Ambient temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "initial_temperature", "label": "Initial uniform body temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "power", "label": "Constant internal heating power", "unit": "W", "default": 2, "min": 0},
+      {"key": "elapsed_time", "label": "Time after power application", "unit": "s", "default": 243, "min": 0}
+    ],
+    "outputs": [
+      {"key": "thermal_capacitance", "label": "Lumped heat capacity", "unit": "J/K", "expression": "density*volume*specific_heat"},
+      {"key": "convection_resistance", "label": "Convection thermal resistance", "unit": "K/W", "expression": "1/(convection_coefficient*surface_area)"},
+      {"key": "time_constant", "label": "Thermal time constant", "unit": "s", "expression": "convection_resistance*thermal_capacitance"},
+      {"key": "biot_number", "label": "Biot number using V/A", "unit": "1", "expression": "convection_coefficient*volume/(surface_area*thermal_conductivity)"},
+      {"key": "steady_temperature", "label": "Asymptotic body temperature", "unit": "K", "expression": "ambient_temperature+power*convection_resistance"},
+      {"key": "body_temperature", "label": "Body temperature at elapsed time", "unit": "K", "expression": "steady_temperature+(initial_temperature-steady_temperature)*exp(-elapsed_time/time_constant)"}
+    ],
+    "constraints": [
+      {"left": "convection_coefficient*volume/(surface_area*thermal_conductivity)", "op": "<", "right": "0.1", "message": "Biot number must be below 0.1 for this uniform-temperature lumped model."}
+    ],
+    "example": {"inputs": {"volume": 0.00001, "density": 2700, "specific_heat": 900, "surface_area": 0.01, "convection_coefficient": 10, "thermal_conductivity": 200, "ambient_temperature": 298.15, "initial_temperature": 298.15, "power": 2, "elapsed_time": 243}, "expected": {"thermal_capacitance": 24.3, "convection_resistance": 10, "time_constant": 243, "biot_number": 0.00005, "steady_temperature": 318.15, "body_temperature": 310.7924111765712}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.arrhenius_acceleration",
+    "title": "Arrhenius accelerated-life exposure",
+    "category": "Thermal and reliability design",
+    "level": "expert",
+    "description": "Convert higher-temperature exposure to equivalent use-temperature exposure for a single characterized thermally activated failure mechanism.",
+    "formula": "AF=exp[(Ea/k_B)(1/T_use-1/T_test)]; t_equivalent=AF t_test; k_B=8.617333262145e-5 eV/K",
+    "assumptions": [
+      "The same single thermally activated failure mechanism governs both temperatures, with constant activation energy and unchanged other stresses.",
+      "Temperatures are absolute temperatures at the failure site, not necessarily chamber or ambient temperatures.",
+      "Activation energy is an experimentally characterized material/mechanism parameter; the default 0.7 eV is illustrative, not universal.",
+      "Equivalent exposure is not guaranteed service life, MTBF, or a reliability confidence bound. Not applicable to generic solder fatigue or changing failure mechanisms.",
+      "The logarithmic numerical-domain guard limits factor and equivalent exposure to at most 1e300 to avoid floating-point overflow."
+    ],
+    "references": [
+      {"title": "NIST/SEMATECH e-Handbook section 8.1.5.1: Arrhenius model", "url": "https://www.itl.nist.gov/div898/handbook/apr/section1/apr151.htm"},
+      {"title": "NIST CODATA: Boltzmann constant in eV/K", "url": "https://physics.nist.gov/cgi-bin/cuu/Value?kev"}
+    ],
+    "inputs": [
+      {"key": "activation_energy", "label": "Characterized activation energy", "unit": "eV", "default": 0.7, "min": 0, "max": 10, "exclusive_min": true},
+      {"key": "use_temperature", "label": "Use failure-site temperature", "unit": "K", "default": 328.15, "min": 0, "exclusive_min": true},
+      {"key": "test_temperature", "label": "Accelerated-test failure-site temperature", "unit": "K", "default": 398.15, "min": 0, "exclusive_min": true},
+      {"key": "test_duration", "label": "Test exposure duration", "unit": "s", "default": 360000, "min": 0, "max": 1e100}
+    ],
+    "outputs": [
+      {"key": "acceleration_factor", "label": "Use-to-test time acceleration factor", "unit": "1", "expression": "exp(activation_energy/8.617333262145e-5*(1/use_temperature-1/test_temperature))"},
+      {"key": "equivalent_use_duration", "label": "Equivalent use-temperature exposure", "unit": "s", "expression": "test_duration*acceleration_factor"}
+    ],
+    "constraints": [
+      {"left": "test_temperature", "op": ">=", "right": "use_temperature", "message": "Accelerated-test temperature must be at least the use temperature."},
+      {"left": "activation_energy/8.617333262145e-5*(1/use_temperature-1/test_temperature)", "op": "<=", "right": "ln(1e300/max(test_duration,1))", "message": "Requested acceleration factor or equivalent exposure exceeds the finite numerical domain."}
+    ],
+    "example": {"inputs": {"activation_energy": 0.7, "use_temperature": 328.15, "test_temperature": 398.15, "test_duration": 360000}, "expected": {"acceleration_factor": 77.64538204961666, "equivalent_use_duration": 27952337.537862}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.resistor_power_derating",
+    "title": "Linear resistor power derating",
+    "category": "Thermal and reliability design",
+    "level": "basic",
+    "description": "Interpolate a specified flat-then-linear resistor rating curve and compare actual dissipation with the resulting permissible power.",
+    "formula": "f=min(1,max(0,(T_zero-Ta)/(T_zero-T_rated))); P_allowed=P_rated f; margin=P_allowed-P_actual",
+    "assumptions": [
+      "The part datasheet specifies full rated power through T_rated followed by a straight line to zero power at T_zero; parameters are not universal resistor values.",
+      "Ta means the datasheet's specified rating reference temperature, ambient for this model. Do not substitute solder-pad temperature unless the curve is defined that way.",
+      "Actual dissipation is supplied independently; only continuous power is compared. Pulse overload, limiting voltage, PCB temperature and mounting restrictions still apply.",
+      "No power uprating below the full-rating breakpoint. Temperatures above T_zero are rejected rather than described as safe at zero dissipation. Negative power margin signals overload."
+    ],
+    "references": [
+      {"title": "Vishay Sfernice 53048: existing derating curves and mounting limitations, sections D-E", "url": "https://www.vishay.com/docs/53048/pprachp.pdf"}
+    ],
+    "inputs": [
+      {"key": "rated_power", "label": "Full continuous power rating", "unit": "W", "default": 0.25, "min": 0, "exclusive_min": true},
+      {"key": "rated_temperature", "label": "Full-rating temperature breakpoint", "unit": "K", "default": 343.15, "min": 0, "exclusive_min": true},
+      {"key": "zero_power_temperature", "label": "Zero-power temperature endpoint", "unit": "K", "default": 428.15, "min": 0, "exclusive_min": true},
+      {"key": "ambient_temperature", "label": "Datasheet ambient reference temperature", "unit": "K", "default": 373.15, "min": 0, "exclusive_min": true},
+      {"key": "actual_power", "label": "Actual continuous resistor dissipation", "unit": "W", "default": 0.12, "min": 0}
+    ],
+    "outputs": [
+      {"key": "rating_fraction", "label": "Available full-rating fraction", "unit": "1", "expression": "min(1,max(0,(zero_power_temperature-ambient_temperature)/(zero_power_temperature-rated_temperature)))"},
+      {"key": "allowed_power", "label": "Derated continuous power allowance", "unit": "W", "expression": "rated_power*rating_fraction"},
+      {"key": "power_margin", "label": "Power allowance minus actual dissipation", "unit": "W", "expression": "allowed_power-actual_power"}
+    ],
+    "constraints": [
+      {"left": "zero_power_temperature", "op": ">", "right": "rated_temperature", "message": "The zero-power endpoint must exceed the full-rating breakpoint."},
+      {"left": "ambient_temperature", "op": "<=", "right": "zero_power_temperature", "message": "Ambient is above the rating curve's maximum temperature endpoint."}
+    ],
+    "example": {"inputs": {"rated_power": 0.25, "rated_temperature": 343.15, "zero_power_temperature": 428.15, "ambient_temperature": 373.15, "actual_power": 0.12}, "expected": {"rating_fraction": 0.6470588235294118, "allowed_power": 0.16176470588235295, "power_margin": 0.04176470588235294}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.resistor_tcr_drift",
+    "title": "Resistor resistance drift from temperature",
+    "category": "Thermal and reliability design",
+    "level": "basic",
+    "description": "Estimate signed resistor drift using a constant component-level TCR over its explicitly entered validated interval.",
+    "formula": "dR/R_ref=TCR_ppm*1e-6*(T-T_ref); R(T)=R_ref[1+dR/R_ref]",
+    "assumptions": [
+      "Constant signed component-level TCR approximation within the supplied temperature interval; actual curves can be nonlinear and datasheet ±TCR values are limits, not a known signed slope.",
+      "Operating temperature is resistor element temperature, including any self-heating, not automatically ambient temperature.",
+      "No aging, overload damage, humidity, voltage coefficient, thermoelectric offsets or terminal/contact corrections.",
+      "For a ±TCR limit, calculate both positive and negative slopes separately to obtain a bound rather than treating the sign as known."
+    ],
+    "references": [
+      {"title": "Vishay Dale 30405: Temperature Coefficient of Resistance for Current Sensing, pages 1-2 and 4", "url": "https://www.vishay.com/docs/30405/whitepapertcr.pdf"}
+    ],
+    "inputs": [
+      {"key": "reference_resistance", "label": "Resistance at reference temperature", "unit": "ohm", "default": 10000, "min": 0, "exclusive_min": true},
+      {"key": "tcr_ppm", "label": "Signed component TCR", "unit": "ppm/K", "default": 100},
+      {"key": "reference_temperature", "label": "Reference element temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "operating_temperature", "label": "Operating element temperature", "unit": "K", "default": 358.15, "min": 0, "exclusive_min": true},
+      {"key": "fit_temperature_min", "label": "Minimum validated TCR temperature", "unit": "K", "default": 218.15, "min": 0, "exclusive_min": true},
+      {"key": "fit_temperature_max", "label": "Maximum validated TCR temperature", "unit": "K", "default": 443.15, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "fractional_drift", "label": "Signed fractional resistance change", "unit": "1", "expression": "tcr_ppm*1e-6*(operating_temperature-reference_temperature)"},
+      {"key": "resistance_change", "label": "Signed resistance change", "unit": "ohm", "expression": "reference_resistance*fractional_drift"},
+      {"key": "operating_resistance", "label": "Resistance at operating temperature", "unit": "ohm", "expression": "reference_resistance*(1+fractional_drift)"}
+    ],
+    "constraints": [
+      {"left": "fit_temperature_max", "op": ">", "right": "fit_temperature_min", "message": "The validated TCR interval must have positive width."},
+      {"left": "reference_temperature", "op": ">=", "right": "fit_temperature_min", "message": "Reference temperature is below the validated TCR interval."},
+      {"left": "reference_temperature", "op": "<=", "right": "fit_temperature_max", "message": "Reference temperature is above the validated TCR interval."},
+      {"left": "operating_temperature", "op": ">=", "right": "fit_temperature_min", "message": "Operating temperature is below the validated TCR interval."},
+      {"left": "operating_temperature", "op": "<=", "right": "fit_temperature_max", "message": "Operating temperature is above the validated TCR interval."},
+      {"left": "1+tcr_ppm*1e-6*(operating_temperature-reference_temperature)", "op": ">", "right": "0", "message": "Linear TCR extrapolation must leave resistance positive."}
+    ],
+    "example": {"inputs": {"reference_resistance": 10000, "tcr_ppm": 100, "reference_temperature": 298.15, "operating_temperature": 358.15, "fit_temperature_min": 218.15, "fit_temperature_max": 443.15}, "expected": {"fractional_drift": 0.006, "resistance_change": 60, "operating_resistance": 10060}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "thermal.free_linear_expansion",
+    "title": "Free linear thermal expansion",
+    "category": "Thermal and reliability design",
+    "level": "basic",
+    "description": "Estimate a freely expanding hardware member's length change with a constant directional coefficient of thermal expansion.",
+    "formula": "strain=alpha(T_final-T_initial); dL=L_initial strain; L_final=L_initial+dL",
+    "assumptions": [
+      "Uniform temperature and an unconstrained member; this computes free dimensional change, not thermal stress, warpage or solder fatigue.",
+      "The input is the directional linear coefficient, not volumetric expansion. For anisotropic boards choose the coefficient along the length being analyzed.",
+      "Constant mean coefficient is valid only over the entered material interval; phase changes, glass transition and large temperature-dependent CTE variations require another model.",
+      "The first-order linear approximation is restricted to absolute thermal strain at most 0.01. Positive or negative CTE and heating or cooling are supported."
+    ],
+    "references": [
+      {"title": "NIST Journal of Research 100(2), Smith and Fickett: Low-Temperature Properties of Silver, section 2.3.3 defines linear expansion coefficient", "url": "https://nvlpubs.nist.gov/nistpubs/jres/100/2/j12smi.pdf"}
+    ],
+    "inputs": [
+      {"key": "initial_length", "label": "Length at initial temperature", "unit": "m", "default": 0.1, "min": 0, "exclusive_min": true},
+      {"key": "expansion_coefficient", "label": "Directional mean linear expansion coefficient", "unit": "1/K", "default": 0.000023},
+      {"key": "initial_temperature", "label": "Initial member temperature", "unit": "K", "default": 298.15, "min": 0, "exclusive_min": true},
+      {"key": "final_temperature", "label": "Final member temperature", "unit": "K", "default": 378.15, "min": 0, "exclusive_min": true},
+      {"key": "fit_temperature_min", "label": "Minimum validated CTE temperature", "unit": "K", "default": 273.15, "min": 0, "exclusive_min": true},
+      {"key": "fit_temperature_max", "label": "Maximum validated CTE temperature", "unit": "K", "default": 423.15, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "thermal_strain", "label": "Free thermal strain", "unit": "1", "expression": "expansion_coefficient*(final_temperature-initial_temperature)"},
+      {"key": "length_change", "label": "Signed length change", "unit": "m", "expression": "initial_length*thermal_strain"},
+      {"key": "final_length", "label": "Length at final temperature", "unit": "m", "expression": "initial_length+length_change"}
+    ],
+    "constraints": [
+      {"left": "fit_temperature_max", "op": ">", "right": "fit_temperature_min", "message": "The validated CTE interval must have positive width."},
+      {"left": "initial_temperature", "op": ">=", "right": "fit_temperature_min", "message": "Initial temperature is below the validated CTE interval."},
+      {"left": "initial_temperature", "op": "<=", "right": "fit_temperature_max", "message": "Initial temperature is above the validated CTE interval."},
+      {"left": "final_temperature", "op": ">=", "right": "fit_temperature_min", "message": "Final temperature is below the validated CTE interval."},
+      {"left": "final_temperature", "op": "<=", "right": "fit_temperature_max", "message": "Final temperature is above the validated CTE interval."},
+      {"left": "abs(expansion_coefficient*(final_temperature-initial_temperature))", "op": "<=", "right": "0.01", "message": "Thermal strain must not exceed 1 percent for this small-strain model."}
+    ],
+    "example": {"inputs": {"initial_length": 0.1, "expansion_coefficient": 0.000023, "initial_temperature": 298.15, "final_temperature": 378.15, "fit_temperature_min": 273.15, "fit_temperature_max": 423.15}, "expected": {"thermal_strain": 0.00184, "length_change": 0.000184, "final_length": 0.100184}, "relative_tolerance": 0.000001}
+  }
+]

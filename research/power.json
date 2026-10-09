@@ -1,0 +1,227 @@
+[
+  {
+    "id": "power.buck_inductor_design",
+    "title": "Buck CCM inductor sizing",
+    "category": "Power conversion and regulation",
+    "level": "intermediate",
+    "description": "Size an ideal buck inductor for a chosen peak-to-peak ripple fraction and calculate current endpoints.",
+    "formula": "D = Vout/Vin; delta_I = r Iout; Lmin = (Vin-Vout) D/(fs delta_I); Ipeak,valley = Iout +/- delta_I/2",
+    "assumptions": ["Ideal fixed-frequency, single-phase buck in steady-state continuous conduction; switch drops and winding resistance are neglected.", "Ripple ratio is peak-to-peak ripple divided by average output current; 0 < r < 2 guarantees positive valley current at this load.", "Lmin is the effective inductance at operating bias; select with tolerances, saturation rating and controller recommendations. Duty is ideal, not efficiency-corrected."],
+    "references": [
+      {"title": "TI SLVA057, Understanding Buck Power Stages in Switchmode Power Supplies, section 2.1", "url": "https://www.ti.com/lit/an/slva057/slva057.pdf"},
+      {"title": "TI SLVA477, Basic Calculation of a Buck Converter's Power Stage, section 3", "url": "https://www.ti.com/lit/an/slva477b/slva477b.pdf"}
+    ],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_ratio", "label": "Peak-to-peak ripple / average current", "unit": "1", "default": 0.3, "min": 0, "exclusive_min": true, "max": 2, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "vout/vin"},
+      {"key": "delta_i", "label": "Target peak-to-peak inductor ripple", "unit": "A", "expression": "ripple_ratio*iout"},
+      {"key": "l_min", "label": "Minimum effective inductance", "unit": "H", "expression": "(vin-vout)*duty/(fs*delta_i)"},
+      {"key": "i_peak", "label": "Inductor peak current", "unit": "A", "expression": "iout+delta_i/2"},
+      {"key": "i_valley", "label": "Inductor valley current", "unit": "A", "expression": "iout-delta_i/2"}
+    ],
+    "constraints": [{"left": "vin", "op": ">", "right": "vout", "message": "Buck operation requires input voltage above output voltage."}],
+    "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "fs": 500000, "ripple_ratio": 0.3}, "expected": {"duty": 0.4166666666666667, "delta_i": 0.6, "l_min": 0.000009722222222222223, "i_peak": 2.3, "i_valley": 1.7}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.boost_inductor_design",
+    "title": "Boost CCM inductor sizing",
+    "category": "Power conversion and regulation",
+    "level": "intermediate",
+    "description": "Size an ideal boost inductor from ripple as a fraction of average input-inductor current, including current stress.",
+    "formula": "D = 1-Vin/Vout; ILavg = Iout/(1-D); delta_I = r ILavg; Lmin = Vin D/(fs delta_I)",
+    "assumptions": ["Ideal fixed-frequency, single-phase boost in steady-state CCM; losses, switch drops and winding resistance are neglected.", "Ripple ratio is relative to average INPUT-inductor current, not output current; 0 < r < 2 guarantees positive valley current.", "Inductance is its effective value at operating current. Saturation, tolerances, control stability and actual current limit require separate component checks."],
+    "references": [
+      {"title": "TI SLVA372D, Basic Calculation of a Boost Converter's Power Stage, sections 2 and 3", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"},
+      {"title": "TI SLVAFJ5, How to Approach a Power-Supply Design Part 3, boost duty equation with zero forward drop", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}
+    ],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_ratio", "label": "Peak-to-peak ripple / average inductor current", "unit": "1", "default": 0.3, "min": 0, "exclusive_min": true, "max": 2, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "1-vin/vout"},
+      {"key": "i_l_avg", "label": "Average input-inductor current", "unit": "A", "expression": "iout/(1-duty)"},
+      {"key": "delta_i", "label": "Target peak-to-peak inductor ripple", "unit": "A", "expression": "ripple_ratio*i_l_avg"},
+      {"key": "l_min", "label": "Minimum effective inductance", "unit": "H", "expression": "vin*duty/(fs*delta_i)"},
+      {"key": "i_peak", "label": "Inductor peak current", "unit": "A", "expression": "i_l_avg+delta_i/2"},
+      {"key": "i_valley", "label": "Inductor valley current", "unit": "A", "expression": "i_l_avg-delta_i/2"}
+    ],
+    "constraints": [{"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."}],
+    "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "fs": 500000, "ripple_ratio": 0.3}, "expected": {"duty": 0.5833333333333334, "i_l_avg": 1.2, "delta_i": 0.36, "l_min": 0.000016203703703703704, "i_peak": 1.38, "i_valley": 1.02}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.buck_output_capacitor",
+    "title": "Buck output capacitor with ESR budget",
+    "category": "Power conversion and regulation",
+    "level": "intermediate",
+    "description": "Allocate buck steady-state peak-to-peak output ripple between capacitor charge and ESR, then size effective capacitance.",
+    "formula": "Vesr_pp = ESR delta_I; Vcap_budget = Vbudget_pp-Vesr_pp; Cmin = delta_I/(8 fs Vcap_budget)",
+    "assumptions": ["Single-phase CCM buck with triangular peak-to-peak inductor ripple and constant load; ESR is resistive at switching frequency and ESL is neglected.", "Sum of capacitive and ESR peak-to-peak ripple is a conservative bound, not an assertion that their extrema coincide.", "The accepted ripple budget is at most 10% of nominal output voltage as an explicit small-ripple model guard.", "Result is effective capacitance after bias, temperature and tolerance derating. Controller stability and load-step response can require more capacitance."],
+    "references": [{"title": "TI SLVA477, Basic Calculation of a Buck Converter's Power Stage, section 7 equations 12 and 13", "url": "https://www.ti.com/lit/an/slva477b/slva477b.pdf"}],
+    "inputs": [
+      {"key": "delta_i", "label": "Peak-to-peak inductor ripple", "unit": "A", "default": 0.6, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Nominal output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_budget", "label": "Allowed peak-to-peak output ripple", "unit": "V", "default": 0.02, "min": 0, "exclusive_min": true},
+      {"key": "esr", "label": "Output capacitor equivalent series resistance", "unit": "ohm", "default": 0.01, "min": 0}
+    ],
+    "outputs": [
+      {"key": "ripple_esr", "label": "ESR peak-to-peak ripple bound", "unit": "V", "expression": "esr*delta_i"},
+      {"key": "ripple_cap_budget", "label": "Remaining capacitive ripple budget", "unit": "V", "expression": "ripple_budget-ripple_esr"},
+      {"key": "c_min", "label": "Minimum effective output capacitance", "unit": "F", "expression": "delta_i/(8*fs*ripple_cap_budget)"}
+    ],
+    "constraints": [
+      {"left": "iout", "op": ">", "right": "delta_i/2", "message": "Positive inductor valley current is required for the CCM model."},
+      {"left": "ripple_budget", "op": ">", "right": "esr*delta_i", "message": "ESR ripple must leave a positive capacitive ripple budget."},
+      {"left": "ripple_budget", "op": "<=", "right": "0.1*vout", "message": "This small-ripple sizing model accepts ripple budgets at most 10% of output voltage."}
+    ],
+    "example": {"inputs": {"delta_i": 0.6, "iout": 2, "vout": 5, "fs": 500000, "ripple_budget": 0.02, "esr": 0.01}, "expected": {"ripple_esr": 0.006, "ripple_cap_budget": 0.014, "c_min": 0.000010714285714285714}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.boost_output_capacitor",
+    "title": "Boost output capacitor with ESR budget",
+    "category": "Power conversion and regulation",
+    "level": "expert",
+    "description": "Size boost output capacitance for the load-supply gap during switch on-time, with ESR current-step budgeting.",
+    "formula": "D = 1-Vin/Vout; ILpeak = Iout/(1-D)+delta_I/2; Vesr_pp = ESR ILpeak; Cmin = Iout D/[fs (Vbudget_pp-Vesr_pp)]",
+    "assumptions": ["Ideal single-phase fixed-frequency boost with triangular CCM inductor current, constant load, small output ripple, constant ESR and negligible ESL.", "Inductor valley current must be at least load current so capacitor voltage rises monotonically throughout the off interval; this is stronger than CCM alone and makes the switch-on charge deficit the capacitive peak-to-peak excursion.", "ESR ripple uses the peak rectifier-path current step, not just the inductor ripple. Adding ESR and capacitive peak-to-peak excursions is conservative.", "Effective capacitance is used; controller compensation, transient response, voltage derating and ripple-current ratings still require checks."],
+    "references": [{"title": "TI SLVA372D, Basic Calculation of a Boost Converter's Power Stage, section 7 equations 12 and 13", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"}, {"title": "TI SLVAFJ5, boost current topology and duty", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "delta_i", "label": "Peak-to-peak inductor ripple", "unit": "A", "default": 0.36, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_budget", "label": "Allowed peak-to-peak output ripple", "unit": "V", "default": 0.05, "min": 0, "exclusive_min": true},
+      {"key": "esr", "label": "Output capacitor equivalent series resistance", "unit": "ohm", "default": 0.01, "min": 0}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "1-vin/vout"},
+      {"key": "i_peak", "label": "Peak output-path current during off interval", "unit": "A", "expression": "iout/(1-duty)+delta_i/2"},
+      {"key": "ripple_esr", "label": "ESR peak-to-peak ripple bound", "unit": "V", "expression": "esr*i_peak"},
+      {"key": "ripple_cap_budget", "label": "Remaining capacitive ripple budget", "unit": "V", "expression": "ripple_budget-ripple_esr"},
+      {"key": "c_min", "label": "Minimum effective output capacitance", "unit": "F", "expression": "iout*duty/(fs*ripple_cap_budget)"}
+    ],
+    "constraints": [
+      {"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."},
+      {"left": "iout*vout/vin-delta_i/2", "op": ">=", "right": "iout", "message": "Inductor valley must be at least load current for monotonic off-interval capacitor charging."},
+      {"left": "ripple_budget", "op": ">", "right": "esr*(iout*vout/vin+delta_i/2)", "message": "ESR ripple must leave a positive capacitive ripple budget."},
+      {"left": "ripple_budget", "op": "<=", "right": "0.1*vout", "message": "This small-ripple model accepts ripple budgets at most 10% of output voltage."}
+    ],
+    "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "delta_i": 0.36, "fs": 500000, "ripple_budget": 0.05, "esr": 0.01}, "expected": {"duty": 0.5833333333333334, "i_peak": 1.38, "ripple_esr": 0.0138, "ripple_cap_budget": 0.0362, "c_min": 0.000016114180478821363}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.buck_input_capacitor_rms",
+    "title": "Buck input capacitor RMS current",
+    "category": "Power conversion and regulation",
+    "level": "expert",
+    "description": "Calculate total RMS ripple current carried by a buck input capacitor bank, including triangular inductor ripple.",
+    "formula": "D = Vout/Vin; ICin_rms = sqrt(Iout^2 D(1-D) + D delta_I^2/12)",
+    "assumptions": ["Ideal single-phase fixed-frequency buck in CCM with triangular inductor ripple and approximately constant voltages.", "Input source supplies only the DC average current; the local input capacitor bank supplies all switching-frequency AC current.", "Result is for the total bank, not individual parallel capacitors. ESR/ESL, source impedance, interleaving and layout change current sharing."],
+    "references": [{"title": "TI SSZTBI6, Power Tips: How to Select Ceramic Capacitors to Meet Ripple-Current Requirements, equation 2", "url": "https://www.ti.com/lit/ta/ssztbi6/ssztbi6.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "delta_i", "label": "Peak-to-peak inductor ripple", "unit": "A", "default": 0.6, "min": 0}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "vout/vin"},
+      {"key": "i_cin_rms", "label": "Total input capacitor RMS ripple current", "unit": "A", "expression": "sqrt(iout^2*duty*(1-duty)+duty*delta_i^2/12)"}
+    ],
+    "constraints": [
+      {"left": "vin", "op": ">", "right": "vout", "message": "Buck operation requires input voltage above output voltage."},
+      {"left": "iout", "op": ">", "right": "delta_i/2", "message": "Positive inductor valley current is required for the CCM model."}
+    ],
+    "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "delta_i": 0.6}, "expected": {"duty": 0.4166666666666667, "i_cin_rms": 0.9923317097736131}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.ldo_dissipation",
+    "title": "LDO dissipation including ground current",
+    "category": "Power conversion and regulation",
+    "level": "basic",
+    "description": "Calculate heat generated electrically in a single-supply LDO from pass-device and operating ground-current losses.",
+    "formula": "Ppass = (Vin-Vout) Iout; Pgnd = Vin Ignd; Pdiss = Ppass+Pgnd",
+    "assumptions": ["Enabled single-input-rail LDO in regulation; ground current is its value at the actual load, voltage and temperature, not necessarily the no-load IQ specification.", "Input voltage must provide the user-supplied dropout headroom for this operating point. Device current ratings, absolute maximum limits and thermal viability must be checked separately.", "Separate bias supplies, reverse current, shutdown and external divider losses are excluded. This calculation returns electrical heat power, not junction temperature."],
+    "references": [{"title": "TI SLYY206, Understanding the Foundations of Quiescent Current in Linear Power Systems, equation 1 and dropout discussion", "url": "https://www.ti.com/lit/wp/slyy206/slyy206.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Regulated output voltage", "unit": "V", "default": 3.3, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 0.2, "min": 0},
+      {"key": "i_gnd", "label": "Operating ground current", "unit": "A", "default": 0.00005, "min": 0},
+      {"key": "v_dropout", "label": "Required dropout headroom at this load", "unit": "V", "default": 0.2, "min": 0}
+    ],
+    "outputs": [
+      {"key": "p_pass", "label": "Pass-path dissipation", "unit": "W", "expression": "(vin-vout)*iout"},
+      {"key": "p_ground", "label": "Ground-current dissipation", "unit": "W", "expression": "vin*i_gnd"},
+      {"key": "p_diss", "label": "Total LDO dissipation", "unit": "W", "expression": "p_pass+p_ground"}
+    ],
+    "constraints": [{"left": "vin-vout", "op": ">=", "right": "v_dropout", "message": "Input-output headroom must meet the operating-point dropout requirement."}],
+    "example": {"inputs": {"vin": 5, "vout": 3.3, "iout": 0.2, "i_gnd": 0.00005, "v_dropout": 0.2}, "expected": {"p_pass": 0.34, "p_ground": 0.00025, "p_diss": 0.34025}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.converter_input_budget",
+    "title": "Converter input current and loss budget",
+    "category": "Power conversion and regulation",
+    "level": "basic",
+    "description": "Budget DC source current and aggregate converter loss from required output power and operating-point total efficiency.",
+    "formula": "Pout = Vout Iout; Pin = Pout/eta; Iin = Pin/Vin; Ploss = Pin-Pout",
+    "assumptions": ["Steady-state single-input, single-output DC converter with positive nonzero load and 0 < total efficiency <= 1.", "Efficiency is the total power efficiency at this operating point, including control/ground power; do not add those losses again.", "This is a power-conservation budget, not a topology voltage-transfer law or device-loss predictor. No startup surge, switching ripple, transient or multi-rail bias power is represented."],
+    "references": [
+      {"title": "TI SLYY206, power efficiency definition, equation 2", "url": "https://www.ti.com/lit/wp/slyy206/slyy206.pdf"},
+      {"title": "TI SLVA118A, Linear Regulator Design Guide For LDOs, section 3 conservation of energy equations 1-4", "url": "https://www.ti.com/lit/an/slva118a/slva118a.pdf"}
+    ],
+    "inputs": [
+      {"key": "vin", "label": "DC input voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "DC output voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "DC output load current", "unit": "A", "default": 2, "min": 0, "exclusive_min": true},
+      {"key": "efficiency", "label": "Total power efficiency as a fraction", "unit": "1", "default": 0.9, "min": 0, "exclusive_min": true, "max": 1}
+    ],
+    "outputs": [
+      {"key": "p_out", "label": "Output load power", "unit": "W", "expression": "vout*iout"},
+      {"key": "p_in", "label": "Required DC input power", "unit": "W", "expression": "p_out/efficiency"},
+      {"key": "i_in", "label": "Required average DC input current", "unit": "A", "expression": "p_in/vin"},
+      {"key": "p_loss", "label": "Aggregate converter loss", "unit": "W", "expression": "p_in-p_out"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"vin": 12, "vout": 5, "iout": 2, "efficiency": 0.9}, "expected": {"p_out": 10, "p_in": 11.11111111111111, "i_in": 0.9259259259259259, "p_loss": 1.1111111111111112}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.boost_rhp_zero",
+    "title": "Boost right-half-plane zero",
+    "category": "Power conversion and regulation",
+    "level": "expert",
+    "description": "Estimate the boost CCM duty-to-output right-half-plane zero and a conservative one-tenth-frequency crossover guideline.",
+    "formula": "D = 1-Vin/Vout; Rload = Vout/Iout; fRHPZ = Rload (1-D)^2/(2 pi L); fc_guideline = fRHPZ/10",
+    "assumptions": ["Ideal single-phase boost averaged small-signal power stage in steady-state CCM, with resistive incremental load Rload = Vout/Iout.", "Fixed-frequency PWM, small perturbations, negligible winding resistance and semiconductor drops. Constant-power loads, DCM, interleaving and strongly nonlinear operation invalidate this model.", "Positive valley current is enforced using the ideal triangular switching ripple.", "One-tenth RHP-zero frequency is TI's conservative end of the usual one-fifth-to-one-tenth guideline, not a stability guarantee. Full loop analysis and separation from switching frequency are still necessary."],
+    "references": [{"title": "TI SLVAFJ5, How to Approach a Power-Supply Design Part 3, boost equation 7 and bandwidth limitation", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}, {"title": "TI SLVA372D, boost inductor ripple equation 2", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Resistive output load current", "unit": "A", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "inductance", "label": "Effective boost inductance", "unit": "H", "default": 0.000022, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "1-vin/vout"},
+      {"key": "r_load", "label": "Resistive incremental load", "unit": "ohm", "expression": "vout/iout"},
+      {"key": "f_rhp_zero", "label": "Right-half-plane zero frequency", "unit": "Hz", "expression": "r_load*(1-duty)^2/(2*pi*inductance)"},
+      {"key": "f_crossover_guideline", "label": "Conservative crossover guideline, not stability certification", "unit": "Hz", "expression": "f_rhp_zero/10"}
+    ],
+    "constraints": [
+      {"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."},
+      {"left": "iout*vout/vin", "op": ">", "right": "vin*(1-vin/vout)/(2*fs*inductance)", "message": "Inductor average current must exceed half the ideal ripple to remain in CCM."}
+    ],
+    "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "inductance": 0.000022, "fs": 500000}, "expected": {"duty": 0.5833333333333334, "r_load": 24, "f_rhp_zero": 30142.9816461923, "f_crossover_guideline": 3014.29816461923}, "relative_tolerance": 0.000001}
+  }
+]

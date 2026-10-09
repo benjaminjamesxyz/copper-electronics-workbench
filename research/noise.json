@@ -1,0 +1,187 @@
+[
+  {
+    "id": "noise.johnson_resistor",
+    "title": "Resistor Johnson noise",
+    "category": "Noise measurement and analog budgets",
+    "level": "basic",
+    "description": "Estimate open-circuit thermal voltage-noise density and integrated RMS noise of a resistor.",
+    "formula": "e_n = sqrt(4 k T R); v_rms = e_n sqrt(B)",
+    "assumptions": ["Classical Johnson-Nyquist approximation: h f is much smaller than k T at every relevant frequency.", "R is real and constant over the band; reported voltage is open circuit, not the voltage delivered to a matched load.", "B is the one-sided equivalent noise bandwidth in Hz, not necessarily the -3 dB bandwidth.", "Excludes resistor excess/flicker noise, parasitic reactance and externally coupled noise."],
+    "references": [
+      {"title": "Texas Instruments SLVA043B, Thermal Noise and Integrating Noise", "url": "https://www.ti.com/lit/an/slva043b/slva043b.pdf"},
+      {"title": "NIST CODATA: exact Boltzmann constant", "url": "https://physics.nist.gov/cgi-bin/cuu/Value?k"}
+    ],
+    "inputs": [
+      {"key": "resistance", "label": "Resistance", "unit": "ohm", "default": 10000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000000.0},
+      {"key": "temperature", "label": "Absolute temperature", "unit": "K", "default": 300.0, "min": 0.0, "exclusive_min": true, "max": 2000.0},
+      {"key": "bandwidth", "label": "Equivalent noise bandwidth", "unit": "Hz", "default": 20000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000000.0}
+    ],
+    "outputs": [
+      {"key": "voltage_noise_density", "label": "Open-circuit voltage-noise density", "unit": "V/sqrt(Hz)", "expression": "sqrt(4*1.380649e-23*temperature*resistance)"},
+      {"key": "voltage_noise_rms", "label": "Open-circuit RMS voltage noise", "unit": "V", "expression": "voltage_noise_density*sqrt(bandwidth)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"resistance": 10000.0, "temperature": 300.0, "bandwidth": 20000.0}, "expected": {"voltage_noise_density": 1.2871591976131002e-8, "voltage_noise_rms": 1.8203179941977172e-6}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.junction_shot",
+    "title": "Junction shot noise",
+    "category": "Noise measurement and analog budgets",
+    "level": "intermediate",
+    "description": "Estimate current noise due to independent carriers crossing a junction barrier.",
+    "formula": "i_n = sqrt(2 q I); i_rms = sqrt(2 q I B)",
+    "assumptions": ["I is the nonnegative magnitude of a single Poisson carrier-current stream; use photocurrent plus dark-current magnitudes when both independently contribute.", "One-sided white shot-noise spectrum, unity Fano factor and no avalanche multiplication.", "Not a general noise model for current in a metal resistor or for the net difference of opposing junction currents.", "B is the equivalent noise bandwidth; excludes thermal, flicker and readout noise."],
+    "references": [
+      {"title": "Texas Instruments SLVA043B, Shot Noise", "url": "https://www.ti.com/lit/an/slva043b/slva043b.pdf"},
+      {"title": "NIST CODATA: exact elementary charge", "url": "https://physics.nist.gov/cgi-bin/cuu/Value?e"}
+    ],
+    "inputs": [
+      {"key": "dc_current", "label": "Carrier-current magnitude", "unit": "A", "default": 0.000001, "min": 0.0, "max": 1000.0},
+      {"key": "bandwidth", "label": "Equivalent noise bandwidth", "unit": "Hz", "default": 10000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000000.0}
+    ],
+    "outputs": [
+      {"key": "current_noise_density", "label": "Shot current-noise density", "unit": "A/sqrt(Hz)", "expression": "sqrt(2*1.602176634e-19*dc_current)"},
+      {"key": "current_noise_rms", "label": "RMS shot current noise", "unit": "A", "expression": "current_noise_density*sqrt(bandwidth)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"dc_current": 0.000001, "bandwidth": 10000.0}, "expected": {"current_noise_density": 5.660700723408719e-13, "current_noise_rms": 5.660700723408719e-11}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.uncorrelated_rms_sum",
+    "title": "Three-source RMS noise sum",
+    "category": "Noise measurement and analog budgets",
+    "level": "basic",
+    "description": "Combine three uncorrelated voltage-noise contributions already referred to the same circuit node and measurement band.",
+    "formula": "v_total = sqrt(v_1^2 + v_2^2 + v_3^2)",
+    "assumptions": ["Contributions have zero mean and zero pairwise cross-correlation; Gaussian statistics are not required for the RMS identity.", "All inputs are RMS voltages at the same reference node over the same measurement bandwidth and weighting.", "Do not combine densities with integrated RMS values, or treat coherent ripple/interference as uncorrelated noise."],
+    "references": [{"title": "Texas Instruments SLVA043B, Adding Noise Sources, equations 4-6", "url": "https://www.ti.com/lit/an/slva043b/slva043b.pdf"}],
+    "inputs": [
+      {"key": "noise_one", "label": "First RMS noise contribution", "unit": "V", "default": 0.000003, "min": 0.0, "max": 1000000.0},
+      {"key": "noise_two", "label": "Second RMS noise contribution", "unit": "V", "default": 0.000004, "min": 0.0, "max": 1000000.0},
+      {"key": "noise_three", "label": "Third RMS noise contribution", "unit": "V", "default": 0.000012, "min": 0.0, "max": 1000000.0}
+    ],
+    "outputs": [{"key": "total_noise_rms", "label": "Combined RMS noise", "unit": "V", "expression": "sqrt(noise_one^2+noise_two^2+noise_three^2)"}],
+    "constraints": [],
+    "example": {"inputs": {"noise_one": 0.000003, "noise_two": 0.000004, "noise_three": 0.000012}, "expected": {"total_noise_rms": 0.000013}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.noninverting_amplifier_budget",
+    "title": "Non-inverting amplifier white-noise budget",
+    "category": "Noise measurement and analog budgets",
+    "level": "expert",
+    "description": "Include both amplifier input current-noise sources and all three resistors in a non-inverting amplifier noise budget.",
+    "formula": "G_N=1+R_F/R_G; e_o^2=(e_n^2+(i_plus R_S)^2+4kTR_S)G_N^2+(i_minus R_F)^2+4kTR_F G_N; v_o=e_o sqrt(B); v_in=v_o/G_N",
+    "assumptions": ["Ideal high-loop-gain non-inverting topology with source resistance R_S, feedback resistance R_F and resistance R_G from the inverting input to ground.", "All six physical sources are uncorrelated and white; R_S, R_F, R_G and noise gain are constant across the band.", "All resistors share the supplied temperature and satisfy the classical thermal-noise approximation h f much smaller than k T.", "A common downstream bandlimit sets B, its equivalent noise bandwidth; amplifier rolloff and source-specific filtering are negligible within that band.", "Input-referred result is referred to the non-inverting signal input. Excludes 1/f noise, excess resistor noise, output loading noise, EMI and power-supply noise; this is not gain synthesis or a stability check."],
+    "references": [
+      {"title": "Texas Instruments SBOA066A, equations 1-5 and 11", "url": "https://www.ti.com/lit/an/sboa066a/sboa066a.pdf"},
+      {"title": "NIST CODATA: exact Boltzmann constant", "url": "https://physics.nist.gov/cgi-bin/cuu/Value?k"}
+    ],
+    "inputs": [
+      {"key": "source_resistance", "label": "Source resistance R_S", "unit": "ohm", "default": 1000.0, "min": 0.0, "max": 1000000000.0},
+      {"key": "feedback_resistance", "label": "Feedback resistance R_F", "unit": "ohm", "default": 9000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000.0},
+      {"key": "ground_resistance", "label": "Gain-setting resistance R_G", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "voltage_density", "label": "Amplifier voltage-noise density", "unit": "V/sqrt(Hz)", "default": 5e-9, "min": 0.0, "max": 0.001},
+      {"key": "plus_current_density", "label": "Non-inverting current-noise density", "unit": "A/sqrt(Hz)", "default": 1e-12, "min": 0.0, "max": 0.001},
+      {"key": "minus_current_density", "label": "Inverting current-noise density", "unit": "A/sqrt(Hz)", "default": 2e-12, "min": 0.0, "max": 0.001},
+      {"key": "temperature", "label": "Resistor absolute temperature", "unit": "K", "default": 300.0, "min": 0.0, "exclusive_min": true, "max": 2000.0},
+      {"key": "bandwidth", "label": "Common equivalent noise bandwidth", "unit": "Hz", "default": 20000.0, "min": 0.0, "exclusive_min": true, "max": 1000000000000.0}
+    ],
+    "outputs": [
+      {"key": "noise_gain", "label": "Noise gain", "unit": "V/V", "expression": "1+feedback_resistance/ground_resistance"},
+      {"key": "output_noise_density", "label": "Total output voltage-noise density", "unit": "V/sqrt(Hz)", "expression": "sqrt((voltage_density^2+(plus_current_density*source_resistance)^2+4*1.380649e-23*temperature*source_resistance)*noise_gain^2+(minus_current_density*feedback_resistance)^2+4*1.380649e-23*temperature*feedback_resistance*noise_gain)"},
+      {"key": "output_noise_rms", "label": "Integrated output RMS noise", "unit": "V", "expression": "output_noise_density*sqrt(bandwidth)"},
+      {"key": "input_referred_noise_rms", "label": "Input-referred RMS noise", "unit": "V", "expression": "output_noise_rms/noise_gain"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"source_resistance": 1000.0, "feedback_resistance": 9000.0, "ground_resistance": 1000.0, "voltage_density": 5e-9, "plus_current_density": 1e-12, "minus_current_density": 2e-12, "temperature": 300.0, "bandwidth": 20000.0}, "expected": {"noise_gain": 10.0, "output_noise_density": 7.79222671641425e-8, "output_noise_rms": 1.1019872703439002e-5, "input_referred_noise_rms": 1.1019872703439002e-6}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.decibel_to_linear",
+    "title": "Decibel gain to linear ratios",
+    "category": "Noise measurement and analog budgets",
+    "level": "basic",
+    "description": "Translate a logarithmic power gain or loss to linear power and equal-impedance voltage ratios.",
+    "formula": "P_2/P_1=10^(g_dB/10); abs(V_2/V_1)=sqrt(P_2/P_1)",
+    "assumptions": ["Input is a dimensionless gain in dB, not an absolute level in dBm or dBV.", "The voltage ratio assumes identical real impedances at the two reference points; it carries no phase or polarity information.", "Negative dB describes attenuation. The -300 to +300 dB bounds are numerical operating limits, not a physical gain claim."],
+    "references": [{"title": "Keysight: Useful Formulas, Conversions, and Reference Information, Understanding Decibels", "url": "https://helpfiles.keysight.com/csg/89600B/Webhelp/Subsystems/gettingstarted/content/concepts_decibels.htm"}],
+    "inputs": [{"key": "gain_db", "label": "Power gain or loss", "unit": "dB", "default": -6.0, "min": -300.0, "max": 300.0}],
+    "outputs": [
+      {"key": "power_ratio", "label": "Linear power ratio", "unit": "1", "expression": "10^(gain_db/10)"},
+      {"key": "voltage_ratio", "label": "Equal-impedance voltage magnitude ratio", "unit": "V/V", "expression": "sqrt(power_ratio)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"gain_db": -6.0}, "expected": {"power_ratio": 0.251188643150958, "voltage_ratio": 0.5011872336272722}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.analog_dynamic_range",
+    "title": "Analog dynamic range and detection margin",
+    "category": "Noise measurement and analog budgets",
+    "level": "intermediate",
+    "description": "Budget the usable analog signal range between an independently established sinusoidal swing limit and a noise-limited detection threshold.",
+    "formula": "V_max,rms=V_peak/sqrt(2); V_min,rms=V_noise,rms 10^(SNR_req/20); DR_noise=20log10(V_max,rms/V_noise,rms); DR_usable=20log10(V_max,rms/V_min,rms)",
+    "assumptions": ["The maximum allowed signal is a sinusoid; the supplied peak swing must already respect clipping, slew-rate, load and distortion limits.", "Noise is the integrated RMS noise at the same node, bandwidth and weighting as the maximum signal.", "Required SNR is a nonnegative power-ratio margin in dB; the threshold is an engineering criterion, not a detection-probability guarantee.", "Voltage ratios compare signal and noise in the same impedance. This is not ADC quantization SNR, ENOB or spurious-free dynamic range."],
+    "references": [
+      {"title": "Texas Instruments SNOA390B, section 12 Dynamic Range Calculation", "url": "https://www.ti.com/lit/an/snoa390b/snoa390b.pdf"},
+      {"title": "Keysight: decibel power and equal-impedance voltage relationships", "url": "https://helpfiles.keysight.com/csg/89600B/Webhelp/Subsystems/gettingstarted/content/concepts_decibels.htm"}
+    ],
+    "inputs": [
+      {"key": "maximum_sine_peak", "label": "Maximum allowed sine peak amplitude", "unit": "V", "default": 2.0, "min": 1e-12, "max": 1000000.0},
+      {"key": "noise_rms", "label": "Integrated RMS noise floor", "unit": "V", "default": 0.00001, "min": 1e-18, "max": 1000000.0},
+      {"key": "required_snr_db", "label": "Required signal-to-noise margin", "unit": "dB", "default": 20.0, "min": 0.0, "max": 120.0}
+    ],
+    "outputs": [
+      {"key": "maximum_signal_rms", "label": "Maximum sinusoidal RMS signal", "unit": "V", "expression": "maximum_sine_peak/sqrt(2)"},
+      {"key": "minimum_signal_rms", "label": "Minimum signal meeting SNR margin", "unit": "V", "expression": "noise_rms*10^(required_snr_db/20)"},
+      {"key": "noise_limited_dynamic_range_db", "label": "Maximum signal to noise-floor range", "unit": "dB", "expression": "20*log10(maximum_signal_rms/noise_rms)"},
+      {"key": "usable_dynamic_range_db", "label": "Usable range above detection threshold", "unit": "dB", "expression": "20*log10(maximum_signal_rms/minimum_signal_rms)"}
+    ],
+    "constraints": [{"left": "maximum_sine_peak/sqrt(2)", "op": ">=", "right": "noise_rms*10^(required_snr_db/20)", "message": "The maximum signal must meet the requested signal-to-noise margin"}],
+    "example": {"inputs": {"maximum_sine_peak": 2.0, "noise_rms": 0.00001, "required_snr_db": 20.0}, "expected": {"maximum_signal_rms": 1.414213562373095, "minimum_signal_rms": 0.0001, "noise_limited_dynamic_range_db": 103.01029995663981, "usable_dynamic_range_db": 83.01029995663981}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.figure_equivalent_temperature",
+    "title": "Noise figure to equivalent input temperature",
+    "category": "Noise measurement and analog budgets",
+    "level": "intermediate",
+    "description": "Represent a device's added input-referred noise as an equivalent temperature at the standard 290 K noise-figure reference.",
+    "formula": "F=10^(NF/10); T_e=290(F-1)",
+    "assumptions": ["Noise figure follows the standard 290 K source reference and a specified frequency, bandwidth convention and source termination.", "Equivalent input noise temperature describes device-added noise, not the device's physical temperature or source temperature.", "Conventional nonnegative-added-noise model F >= 1; excludes negative-noise-factor/nonclassical devices.", "Conversion does not itself account for mismatch, frequency variation or determine output noise for an arbitrary source temperature."],
+    "references": [{"title": "Rohde & Schwarz 1SL378, sections 3.1 and 3.4, equations 4, 10 and 31", "url": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_application/application_notes/1sl378/1SL378_0e_ColdSrcNF.pdf"}],
+    "inputs": [{"key": "noise_figure_db", "label": "Device noise figure at 290 K reference", "unit": "dB", "default": 3.0, "min": 0.0, "max": 100.0}],
+    "outputs": [
+      {"key": "noise_factor", "label": "Linear noise factor", "unit": "1", "expression": "10^(noise_figure_db/10)"},
+      {"key": "equivalent_noise_temperature", "label": "Equivalent input noise temperature", "unit": "K", "expression": "290*(noise_factor-1)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"noise_figure_db": 3.0}, "expected": {"noise_factor": 1.9952623149688795, "equivalent_noise_temperature": 288.62607134097505}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "noise.friis_three_stage",
+    "title": "Three-stage Friis noise cascade",
+    "category": "Noise measurement and analog budgets",
+    "level": "expert",
+    "description": "Predict cascade noise factor, noise figure and equivalent input noise temperature from three stages and the first two available power gains.",
+    "formula": "F_i=10^(NF_i/10); G_i=10^(g_i/10); F_total=F_1+(F_2-1)/G_1+(F_3-1)/(G_1G_2); NF_total=10log10(F_total)",
+    "assumptions": ["Linear, stable cascade at a common frequency/band; all stage noise figures use the 290 K reference.", "Gains are available power gains, not voltage gains; compatible/matched terminations prevent mismatch and multiple-reflection corrections.", "Stage-added noise is uncorrelated, gains and noise factors are constant across the band and stages are not compressed.", "Negative gain dB is permitted for passive loss, but its noise figure must independently match the attenuator's physical temperature.", "The third-stage gain is not required to compute the input-referred cascade noise figure. No arbitrary-source output-noise prediction or frequency-converting mixer model is implied."],
+    "references": [{"title": "Rohde & Schwarz 1SL378, section 3.6 Friis Cascade Equations, equations 32-40", "url": "https://scdn.rohde-schwarz.com/ur/pws/dl_downloads/dl_application/application_notes/1sl378/1SL378_0e_ColdSrcNF.pdf"}],
+    "inputs": [
+      {"key": "first_noise_figure_db", "label": "First stage noise figure", "unit": "dB", "default": 2.0, "min": 0.0, "max": 100.0},
+      {"key": "second_noise_figure_db", "label": "Second stage noise figure", "unit": "dB", "default": 6.0, "min": 0.0, "max": 100.0},
+      {"key": "third_noise_figure_db", "label": "Third stage noise figure", "unit": "dB", "default": 10.0, "min": 0.0, "max": 100.0},
+      {"key": "first_gain_db", "label": "First stage available power gain", "unit": "dB", "default": 20.0, "min": -120.0, "max": 120.0},
+      {"key": "second_gain_db", "label": "Second stage available power gain", "unit": "dB", "default": 10.0, "min": -120.0, "max": 120.0}
+    ],
+    "outputs": [
+      {"key": "first_noise_factor", "label": "First stage linear noise factor", "unit": "1", "expression": "10^(first_noise_figure_db/10)"},
+      {"key": "second_noise_factor", "label": "Second stage linear noise factor", "unit": "1", "expression": "10^(second_noise_figure_db/10)"},
+      {"key": "third_noise_factor", "label": "Third stage linear noise factor", "unit": "1", "expression": "10^(third_noise_figure_db/10)"},
+      {"key": "first_power_gain", "label": "First stage linear power gain", "unit": "1", "expression": "10^(first_gain_db/10)"},
+      {"key": "second_power_gain", "label": "Second stage linear power gain", "unit": "1", "expression": "10^(second_gain_db/10)"},
+      {"key": "cascade_noise_factor", "label": "Cascade linear noise factor", "unit": "1", "expression": "first_noise_factor+(second_noise_factor-1)/first_power_gain+(third_noise_factor-1)/(first_power_gain*second_power_gain)"},
+      {"key": "cascade_noise_figure_db", "label": "Cascade noise figure", "unit": "dB", "expression": "10*log10(cascade_noise_factor)"},
+      {"key": "cascade_noise_temperature", "label": "Cascade equivalent input noise temperature", "unit": "K", "expression": "290*(cascade_noise_factor-1)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"first_noise_figure_db": 2.0, "second_noise_figure_db": 6.0, "third_noise_figure_db": 10.0, "first_gain_db": 20.0, "second_gain_db": 10.0}, "expected": {"first_noise_factor": 1.5848931924611136, "second_noise_factor": 3.9810717055349722, "third_noise_factor": 10.0, "first_power_gain": 100.0, "second_power_gain": 10.0, "cascade_noise_factor": 1.6237039095164632, "cascade_noise_figure_db": 2.1050683636637153, "cascade_noise_temperature": 180.8741337597743}, "relative_tolerance": 0.000001}
+  }
+]

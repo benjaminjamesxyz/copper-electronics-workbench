@@ -1,0 +1,266 @@
+[
+  {
+    "id": "transients.rc_step",
+    "title": "RC charge or discharge after a voltage step",
+    "category": "Passive transients",
+    "level": "basic",
+    "description": "Calculate a capacitor's arbitrary-initial-condition step trajectory, relative-error settling time, stored energy, and accumulated resistor pulse energy.",
+    "formula": "tau=RC; vC=Vs+(V0-Vs)exp(-t/tau); iC=(Vs-vC)/R; t_settle=-tau ln(epsilon); EC=C vC^2/2; ER=C(Vs-V0)^2[1-exp(-2t/tau)]/2",
+    "assumptions": ["Ideal constant capacitance and positive series resistance driven by an ideal constant voltage after t=0; R includes source resistance and capacitor ESR where their lumped approximation is valid.", "Positive current flows from source into capacitor. Vs=0 describes discharge; no separate inverse calculator is counted.", "Settling tolerance is a fraction of the initial-to-final voltage difference, not an ADC or digital threshold specification. For V0=Vs there is no transient and the reported normalized settling time is a conventional time-scale metric only.", "Stored energy excludes dielectric loss; resistor pulse energy does not establish a resistor pulse-rating or safety certification."],
+    "references": [
+      {"title": "MIT 6.200: Optional Review, RC Circuit Derivations and Key Values", "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"},
+      {"title": "Georgia State University HyperPhysics: Energy Stored on a Capacitor", "url": "https://hyperphysics.gsu.edu/hbase/electric/capeng.html"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Total series resistance", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-15, "max": 1.0},
+      {"key": "v_source", "label": "Post-step source voltage", "unit": "V", "default": 5.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "v_initial", "label": "Initial capacitor voltage", "unit": "V", "default": 0.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "time", "label": "Elapsed time", "unit": "s", "default": 0.001, "min": 0.0, "max": 1000000000.0},
+      {"key": "error_fraction", "label": "Remaining normalized error", "unit": "1", "default": 0.01, "min": 1e-12, "max": 1.0, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "tau", "label": "Time constant", "unit": "s", "expression": "r*c"},
+      {"key": "capacitor_voltage", "label": "Capacitor voltage", "unit": "V", "expression": "v_source+(v_initial-v_source)*exp(-time/tau)"},
+      {"key": "capacitor_current", "label": "Charging current", "unit": "A", "expression": "(v_source-v_initial)/r*exp(-time/tau)"},
+      {"key": "settling_time", "label": "Normalized-error settling time", "unit": "s", "expression": "-tau*ln(error_fraction)"},
+      {"key": "capacitor_energy", "label": "Stored capacitor energy", "unit": "J", "expression": "c*capacitor_voltage^2/2"},
+      {"key": "resistor_energy", "label": "Resistor energy accumulated by time t", "unit": "J", "expression": "c*(v_source-v_initial)^2/2*(1-exp(-2*time/tau))"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"r": 1000.0, "c": 0.000001, "v_source": 5.0, "v_initial": 0.0, "time": 0.001, "error_fraction": 0.01}, "expected": {"tau": 0.001, "capacitor_voltage": 3.1606027941427883, "capacitor_current": 0.0018393972058572117, "settling_time": 0.004605170185988092, "capacitor_energy": 0.0000049947050111716, "resistor_energy": 0.00001080830895954234}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.rl_step",
+    "title": "RL current buildup or decay after a voltage step",
+    "category": "Passive transients",
+    "level": "basic",
+    "description": "Predict inductor current, inductor voltage and fractional settling time for a closed series RL circuit with an arbitrary initial current.",
+    "formula": "tau=L/R; If=Vs/R; iL=If+(I0-If)exp(-t/tau); vL=(Vs-RI0)exp(-t/tau); t_settle=-tau ln(epsilon)",
+    "assumptions": ["Linear, unsaturated inductor with constant L; positive R includes winding and source resistance.", "An actual closed RL path remains after switching; an opened inductor, avalanche event or diode clamp is not represented by this model.", "Current is oriented from source through R and L; vL uses the passive sign convention.", "Settling is normalized to the initial-to-final current difference; when I0=If it is only a time-scale metric. Magnetic stored energy is owned by the magnetics lane."],
+    "references": [
+      {"title": "MIT 6.200 Lecture 11: First-Order Driven Response", "url": "https://circuits.mit.edu/_static/S26/handouts/lec06a/slides.pdf"},
+      {"title": "MIT D. Rowell: Review of First- and Second-Order System Response, sections 1.1 and 1.3", "url": "https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Total series resistance", "unit": "ohm", "default": 10.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "l", "label": "Inductance", "unit": "H", "default": 0.01, "min": 1e-12, "max": 1000000.0},
+      {"key": "v_source", "label": "Post-step source voltage", "unit": "V", "default": 12.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "i_initial", "label": "Initial inductor current", "unit": "A", "default": 0.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "time", "label": "Elapsed time", "unit": "s", "default": 0.001, "min": 0.0, "max": 1000000000.0},
+      {"key": "error_fraction", "label": "Remaining normalized error", "unit": "1", "default": 0.01, "min": 1e-12, "max": 1.0, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "tau", "label": "Time constant", "unit": "s", "expression": "l/r"},
+      {"key": "final_current", "label": "Asymptotic current", "unit": "A", "expression": "v_source/r"},
+      {"key": "inductor_current", "label": "Inductor current", "unit": "A", "expression": "final_current+(i_initial-final_current)*exp(-time/tau)"},
+      {"key": "inductor_voltage", "label": "Inductor voltage", "unit": "V", "expression": "(v_source-r*i_initial)*exp(-time/tau)"},
+      {"key": "settling_time", "label": "Normalized-error settling time", "unit": "s", "expression": "-tau*ln(error_fraction)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"r": 10.0, "l": 0.01, "v_source": 12.0, "i_initial": 0.0, "time": 0.001, "error_fraction": 0.01}, "expected": {"tau": 0.001, "final_current": 1.2, "inductor_current": 0.7585446705942692, "inductor_voltage": 4.414553294057308, "settling_time": 0.004605170185988092}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.capacitor_constant_current",
+    "title": "Constant-current capacitor ramp and energy",
+    "category": "Passive transients",
+    "level": "basic",
+    "description": "Calculate the voltage and stored-energy change of a capacitor subjected to a constant signed current, without selecting an active current-source circuit.",
+    "formula": "dv/dt=I/C; vC=V0+It/C; deltaQ=It; EC=C vC^2/2; deltaE=C(vC^2-V0^2)/2",
+    "assumptions": ["Ideal current excitation of a passive, linear capacitor; current-source compliance, load and leakage must be checked externally.", "Positive current enters the positive voltage terminal; a negative current describes discharge and may cross zero voltage mathematically.", "This is not op-amp slew-rate design or switch-mode converter sizing. Polarized capacitor voltage limits are not modeled.", "No ESR voltage step, ESL, dielectric absorption or voltage-dependent capacitance is included."],
+    "references": [
+      {"title": "MIT 6.200: Capacitor constitutive equation i=C dv/dt", "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"},
+      {"title": "Georgia State University HyperPhysics: Energy Stored on a Capacitor", "url": "https://hyperphysics.gsu.edu/hbase/electric/capeng.html"}
+    ],
+    "inputs": [
+      {"key": "c", "label": "Capacitance", "unit": "F", "default": 0.0001, "min": 1e-15, "max": 1.0},
+      {"key": "current", "label": "Constant signed capacitor current", "unit": "A", "default": 0.01, "min": -1000000.0, "max": 1000000.0},
+      {"key": "v_initial", "label": "Initial capacitor voltage", "unit": "V", "default": 1.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "time", "label": "Current application duration", "unit": "s", "default": 0.02, "min": 0.0, "max": 1000000000.0}
+    ],
+    "outputs": [
+      {"key": "voltage_slope", "label": "Capacitor voltage slope", "unit": "V/s", "expression": "current/c"},
+      {"key": "capacitor_voltage", "label": "Final capacitor voltage", "unit": "V", "expression": "v_initial+voltage_slope*time"},
+      {"key": "charge_change", "label": "Signed charge change", "unit": "C", "expression": "current*time"},
+      {"key": "stored_energy", "label": "Final stored energy", "unit": "J", "expression": "c*capacitor_voltage^2/2"},
+      {"key": "energy_change", "label": "Signed stored-energy change", "unit": "J", "expression": "c*(capacitor_voltage^2-v_initial^2)/2"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"c": 0.0001, "current": 0.01, "v_initial": 1.0, "time": 0.02}, "expected": {"voltage_slope": 100.0, "capacitor_voltage": 3.0, "charge_change": 0.0002, "stored_energy": 0.00045, "energy_change": 0.0004}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.capacitor_charge_sharing",
+    "title": "Two-capacitor charge redistribution through resistance",
+    "category": "Passive transients",
+    "level": "intermediate",
+    "description": "Predict common final voltage, redistribution current, individual capacitor trajectories, transferred charge, and irreversible energy loss when two initially charged capacitors are connected through resistance.",
+    "formula": "Ceq=C1C2/(C1+C2); tau=R Ceq; Vf=(C1V1+C2V2)/(C1+C2); deltaV(t)=(V1-V2)exp(-t/tau); Eloss=Ceq(V1-V2)^2/2",
+    "assumptions": ["Capacitors share a common negative reference and their positive terminals are joined through positive R; no external source or load remains connected.", "C1 and C2 are linear; R includes switch resistance and ESR, with parasitic inductance negligible on the redistribution time scale.", "Zero resistance is excluded: the ideal zero-R two-capacitor paradox is outside this dissipative model.", "The general unequal-capacitance result is derived from charge conservation and the capacitor energy law; the cited Berkeley example presents equal-capacitance and voltage-source limits. No switched-capacitor converter or MOSFET bootstrap sizing is performed."],
+    "references": [
+      {"title": "UC Berkeley Wen Chuen Liu: Hybrid Switched-Capacitor Converters, section 3.1 Two-Capacitor Problem", "url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2021/EECS-2021-25.pdf"},
+      {"title": "MIT 6.200: Capacitor constitutive equation and natural response", "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"}
+    ],
+    "inputs": [
+      {"key": "c_one", "label": "First capacitance", "unit": "F", "default": 0.0001, "min": 1e-15, "max": 1.0},
+      {"key": "c_two", "label": "Second capacitance", "unit": "F", "default": 0.0002, "min": 1e-15, "max": 1.0},
+      {"key": "r", "label": "Redistribution resistance", "unit": "ohm", "default": 10.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "v_one", "label": "First initial voltage", "unit": "V", "default": 8.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "v_two", "label": "Second initial voltage", "unit": "V", "default": 2.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "time", "label": "Elapsed time", "unit": "s", "default": 0.0006666666666666667, "min": 0.0, "max": 1000000000.0}
+    ],
+    "outputs": [
+      {"key": "equivalent_capacitance", "label": "Redistribution-mode capacitance", "unit": "F", "expression": "c_one*c_two/(c_one+c_two)"},
+      {"key": "tau", "label": "Redistribution time constant", "unit": "s", "expression": "r*equivalent_capacitance"},
+      {"key": "final_voltage", "label": "Common final voltage", "unit": "V", "expression": "(c_one*v_one+c_two*v_two)/(c_one+c_two)"},
+      {"key": "voltage_one", "label": "First capacitor voltage at t", "unit": "V", "expression": "final_voltage+c_two/(c_one+c_two)*(v_one-v_two)*exp(-time/tau)"},
+      {"key": "voltage_two", "label": "Second capacitor voltage at t", "unit": "V", "expression": "final_voltage-c_one/(c_one+c_two)*(v_one-v_two)*exp(-time/tau)"},
+      {"key": "current", "label": "Current from capacitor one to two", "unit": "A", "expression": "(v_one-v_two)/r*exp(-time/tau)"},
+      {"key": "transferred_charge", "label": "Signed transferred charge by t", "unit": "C", "expression": "equivalent_capacitance*(v_one-v_two)*(1-exp(-time/tau))"},
+      {"key": "initial_energy", "label": "Initial capacitor energy", "unit": "J", "expression": "(c_one*v_one^2+c_two*v_two^2)/2"},
+      {"key": "final_energy", "label": "Asymptotic capacitor energy", "unit": "J", "expression": "(c_one+c_two)*final_voltage^2/2"},
+      {"key": "total_loss", "label": "Asymptotic redistribution energy loss", "unit": "J", "expression": "equivalent_capacitance*(v_one-v_two)^2/2"},
+      {"key": "dissipated_energy", "label": "Resistor energy accumulated by t", "unit": "J", "expression": "total_loss*(1-exp(-2*time/tau))"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"c_one": 0.0001, "c_two": 0.0002, "r": 10.0, "v_one": 8.0, "v_two": 2.0, "time": 0.0006666666666666667}, "expected": {"equivalent_capacitance": 0.00006666666666666667, "tau": 0.0006666666666666668, "final_voltage": 4.0, "voltage_one": 5.471517764685769, "voltage_two": 3.2642411176571153, "current": 0.2207276647028654, "transferred_charge": 0.0002528482235314231, "initial_energy": 0.0036, "final_energy": 0.0024, "total_loss": 0.0012, "dissipated_energy": 0.0010375976601160648}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.rc_periodic_switching",
+    "title": "Periodic RC charging extrema under two-level excitation",
+    "category": "Passive transients",
+    "level": "intermediate",
+    "description": "Find periodic steady-state capacitor extrema and ripple for alternating source levels with arbitrary high and low durations, including incomplete charging memory between pulses.",
+    "formula": "a=exp(-Th/RC); b=exp(-Tl/RC); Vmin=[Vl(1-b)+b Vh(1-a)]/(1-ab); Vmax=Vmin+(Vh-Vmin)(1-a); Vavg=(VhTh+VlTl)/(Th+Tl)",
+    "assumptions": ["An ideal voltage source switches between Vhigh and Vlow through one unchanged positive R into one linear capacitor; no DC load.", "Periodic steady state is assumed, not the first pulse after startup. Vhigh>=Vlow defines extrema; source levels can be signed.", "No frequency-domain filter synthesis, digital threshold, transistor switching loss or converter sizing is included.", "Both pulse durations divided by RC must exceed 1e-7 to avoid subtraction cancellation in the closed-form exponential expression. This is a numerical representability restriction, not a physical pulse-width limit."],
+    "references": [
+      {"title": "Colorado State University ECE 202 Experiment 5: Square-wave RC step responses", "url": "https://www.engr.colostate.edu/ECE202/common/LABS/Lab_5.pdf"},
+      {"title": "MIT 6.200: Arbitrary-initial-condition RC step solution", "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Series resistance", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-15, "max": 1.0},
+      {"key": "v_high", "label": "High source level", "unit": "V", "default": 5.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "v_low", "label": "Low source level", "unit": "V", "default": 0.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "time_high", "label": "High-level duration", "unit": "s", "default": 0.001, "min": 1e-15, "max": 1000000000.0},
+      {"key": "time_low", "label": "Low-level duration", "unit": "s", "default": 0.001, "min": 1e-15, "max": 1000000000.0}
+    ],
+    "outputs": [
+      {"key": "tau", "label": "Time constant", "unit": "s", "expression": "r*c"},
+      {"key": "high_decay", "label": "High-interval decay factor", "unit": "1", "expression": "exp(-time_high/tau)"},
+      {"key": "low_decay", "label": "Low-interval decay factor", "unit": "1", "expression": "exp(-time_low/tau)"},
+      {"key": "voltage_min", "label": "Periodic capacitor minimum", "unit": "V", "expression": "(v_low*(1-low_decay)+low_decay*v_high*(1-high_decay))/(1-high_decay*low_decay)"},
+      {"key": "voltage_max", "label": "Periodic capacitor maximum", "unit": "V", "expression": "voltage_min+(v_high-voltage_min)*(1-high_decay)"},
+      {"key": "ripple", "label": "Capacitor peak-to-peak ripple", "unit": "V", "expression": "voltage_max-voltage_min"},
+      {"key": "average_voltage", "label": "Periodic average capacitor voltage", "unit": "V", "expression": "(v_high*time_high+v_low*time_low)/(time_high+time_low)"},
+      {"key": "high_initial_current", "label": "Current immediately after rising source edge", "unit": "A", "expression": "(v_high-voltage_min)/r"},
+      {"key": "low_initial_current", "label": "Current immediately after falling source edge", "unit": "A", "expression": "(v_low-voltage_max)/r"}
+    ],
+    "constraints": [
+      {"left": "v_high", "op": ">=", "right": "v_low", "message": "High source level must be at least the low source level."},
+      {"left": "time_high/(r*c)", "op": ">=", "right": "1e-7", "message": "High interval must be at least 1e-7 time constants for stable exponential subtraction."},
+      {"left": "time_low/(r*c)", "op": ">=", "right": "1e-7", "message": "Low interval must be at least 1e-7 time constants for stable exponential subtraction."}
+    ],
+    "example": {"inputs": {"r": 1000.0, "c": 0.000001, "v_high": 5.0, "v_low": 0.0, "time_high": 0.001, "time_low": 0.001}, "expected": {"tau": 0.001, "high_decay": 0.36787944117144233, "low_decay": 0.36787944117144233, "voltage_min": 1.3447071068499756, "voltage_max": 3.6552928931500244, "ripple": 2.3105857863000487, "average_voltage": 2.5, "high_initial_current": 0.0036552928931500245, "low_initial_current": -0.0036552928931500245}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.rc_ramp_source",
+    "title": "RC tracking of a finite-slope voltage ramp",
+    "category": "Passive transients",
+    "level": "intermediate",
+    "description": "Predict capacitor voltage, charging current and tracking lag when the source voltage changes linearly rather than instantaneously.",
+    "formula": "Vs(t)=Vs0+mt; tau=RC; vC=Vs0+m(t-tau)+(V0-Vs0+m tau)exp(-t/tau); iC=Cm+(Vs0-V0-m tau)exp(-t/tau)/R",
+    "assumptions": ["A linear capacitor is driven through constant positive R by an ideal voltage source whose specified ramp persists throughout the selected elapsed time.", "Source-ramp slope is not imposed capacitor current: current starts according to initial conditions and approaches C times the ramp slope.", "Supports signed slopes and arbitrary initial capacitor voltage; no limiter or piecewise ramp-end response is modeled.", "This is time-domain startup tracking, not op-amp slew-rate or frequency-domain filter design. Very short times can lose relative precision through cancellation; time=0 initial conditions remain finite."],
+    "references": [
+      {"title": "MIT D. Rowell: Review of First- and Second-Order System Response, equations 21, 30 and 32", "url": "https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf"},
+      {"title": "MIT 6.200: RC governing differential equation", "url": "https://circuits.mit.edu/F25/psets/05/rc_tutorial"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Series resistance", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-15, "max": 1.0},
+      {"key": "v_source_initial", "label": "Source voltage at ramp start", "unit": "V", "default": 0.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "v_initial", "label": "Initial capacitor voltage", "unit": "V", "default": 0.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "slope", "label": "Source ramp slope", "unit": "V/s", "default": 1000.0, "min": -1000000000.0, "max": 1000000000.0},
+      {"key": "time", "label": "Elapsed time within ramp", "unit": "s", "default": 0.002, "min": 0.0, "max": 1000000000.0}
+    ],
+    "outputs": [
+      {"key": "tau", "label": "Time constant", "unit": "s", "expression": "r*c"},
+      {"key": "source_voltage", "label": "Source voltage at t", "unit": "V", "expression": "v_source_initial+slope*time"},
+      {"key": "capacitor_voltage", "label": "Capacitor voltage at t", "unit": "V", "expression": "v_source_initial+slope*(time-tau)+(v_initial-v_source_initial+slope*tau)*exp(-time/tau)"},
+      {"key": "tracking_error", "label": "Source minus capacitor voltage", "unit": "V", "expression": "slope*tau+(v_source_initial-v_initial-slope*tau)*exp(-time/tau)"},
+      {"key": "capacitor_current", "label": "Capacitor charging current", "unit": "A", "expression": "tracking_error/r"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"r": 1000.0, "c": 0.000001, "v_source_initial": 0.0, "v_initial": 0.0, "slope": 1000.0, "time": 0.002}, "expected": {"tau": 0.001, "source_voltage": 2.0, "capacitor_voltage": 1.1353352832366128, "tracking_error": 0.8646647167633873, "capacitor_current": 0.0008646647167633873}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.rc_ladder_step",
+    "title": "Unbuffered two-stage RC ladder startup",
+    "category": "Passive transients",
+    "level": "expert",
+    "description": "Compute both capacitor-node voltages and the downstream capacitor current in a passive two-stage RC ladder, retaining interstage loading instead of multiplying independent RC step responses.",
+    "formula": "a=R1R2C1C2; b=R1C1+R1C2+R2C2; tau_s=(b+sqrt(b^2-4a))/2; tau_f=a/tau_s; v2=Vs[1-(tau_s exp(-t/tau_s)-tau_f exp(-t/tau_f))/(tau_s-tau_f)]; v1=v2+R2 C2 dv2/dt",
+    "assumptions": ["Topology: ideal source, R1, node one, R2, node two in sequence; C1 and C2 connect their respective nodes to common ground. Both capacitors initially uncharged; no external output load or buffer.", "All four components are positive and linear. R1 incorporates source resistance; parasitic inductance, capacitor ESR and leakage are neglected.", "The R1C2 cross term explicitly accounts for downstream loading. This is a startup transient calculation, not cutoff or filter synthesis.", "The relative discriminant must be at least 1e-8 for distinct-pole numerical conditioning. The fast time constant is evaluated as a/tau_s to avoid subtracting nearly equal b and sqrt(discriminant). Tiny elapsed times can still lose relative precision in output voltage."],
+    "references": [
+      {"title": "Harvey Mudd College Matthew Spencer: Review of Linear Circuits and Dynamics, KCL and step-response methods", "url": "https://pages.hmc.edu/mspencer/e151/sp26/notes/02.pdf"},
+      {"title": "MIT D. Rowell: Review of First- and Second-Order System Response, overdamped characteristic step response", "url": "https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf"}
+    ],
+    "inputs": [
+      {"key": "r_one", "label": "First series resistance", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "r_two", "label": "Second series resistance", "unit": "ohm", "default": 1000.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "c_one", "label": "First shunt capacitance", "unit": "F", "default": 0.000001, "min": 1e-15, "max": 1.0},
+      {"key": "c_two", "label": "Second shunt capacitance", "unit": "F", "default": 0.000001, "min": 1e-15, "max": 1.0},
+      {"key": "v_step", "label": "Source step amplitude", "unit": "V", "default": 5.0, "min": -1000000.0, "max": 1000000.0},
+      {"key": "time", "label": "Elapsed time", "unit": "s", "default": 0.001, "min": 0.0, "max": 1000000000.0}
+    ],
+    "outputs": [
+      {"key": "quadratic_coefficient", "label": "Second-derivative coefficient", "unit": "s^2", "expression": "r_one*r_two*c_one*c_two"},
+      {"key": "linear_coefficient", "label": "First-derivative coefficient", "unit": "s", "expression": "r_one*c_one+r_one*c_two+r_two*c_two"},
+      {"key": "tau_slow", "label": "Slow modal time constant", "unit": "s", "expression": "(linear_coefficient+sqrt(linear_coefficient^2-4*quadratic_coefficient))/2"},
+      {"key": "tau_fast", "label": "Fast modal time constant", "unit": "s", "expression": "quadratic_coefficient/tau_slow"},
+      {"key": "voltage_two", "label": "Second capacitor voltage", "unit": "V", "expression": "v_step*(1-(tau_slow*exp(-time/tau_slow)-tau_fast*exp(-time/tau_fast))/(tau_slow-tau_fast))"},
+      {"key": "capacitor_two_current", "label": "Second capacitor charging current", "unit": "A", "expression": "c_two*v_step*(exp(-time/tau_slow)-exp(-time/tau_fast))/(tau_slow-tau_fast)"},
+      {"key": "voltage_one", "label": "First capacitor voltage", "unit": "V", "expression": "voltage_two+r_two*capacitor_two_current"}
+    ],
+    "constraints": [
+      {"left": "(r_one*c_one+r_one*c_two+r_two*c_two)^2-4*r_one*r_two*c_one*c_two", "op": ">=", "right": "1e-8*(r_one*c_one+r_one*c_two+r_two*c_two)^2", "message": "Distinct modal time constants require a relative discriminant of at least 1e-8."}
+    ],
+    "example": {"inputs": {"r_one": 1000.0, "r_two": 1000.0, "c_one": 0.000001, "c_two": 0.000001, "v_step": 5.0, "time": 0.001}, "expected": {"quadratic_coefficient": 0.000001, "linear_coefficient": 0.003, "tau_slow": 0.002618033988749895, "tau_fast": 0.0003819660112501051, "voltage_two": 1.0667720034831585, "capacitor_two_current": 0.0013630446883126453, "voltage_one": 2.4298166917958035}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "transients.rlc_underdamped_step",
+    "title": "Underdamped series-RLC step ringing and peak stress",
+    "category": "Passive transients",
+    "level": "expert",
+    "description": "Predict capacitor voltage, series current, first voltage overshoot and a conservative error-envelope settling bound following a source step in an initially unenergized series RLC circuit.",
+    "formula": "alpha=R/(2L); wn=1/sqrt(LC); zeta=alpha/wn; wd=sqrt(wn^2-alpha^2); vC=Vs{1-exp(-alpha t)[cos(wd t)+(alpha/wd)sin(wd t)]}; i=Vs exp(-alpha t)sin(wd t)/(L wd); tp=pi/wd; Mp=exp(-alpha pi/wd)",
+    "assumptions": ["Series RLC with output across C, zero initial capacitor voltage and zero initial inductor current; positive source step.", "Linear unsaturated L and linear C; R is total series resistance including source resistance, winding resistance and ESR where the series lumped model holds.", "Only the underdamped domain is implemented: (R/(2L))^2 must be at most (1-1e-8)/(LC). Critical and overdamped responses are not approximated by this expression.", "Settling output is a sufficient envelope bound, not the exact last threshold crossing: absolute normalized voltage error <= exp(-alpha t)/sqrt(1-zeta^2). No AC resonance, Q or filter synthesis outputs are counted.", "Distributed parasitics, nonlinear clamps and component pulse/voltage ratings require separate checks."],
+    "references": [
+      {"title": "MIT 2.003 Prelab 5: Series RLC step response and winding-resistance correction", "url": "https://ocw.mit.edu/courses/2-003-modeling-dynamics-and-control-i-spring-2005/d29876dfd3a4df303146df410d26041e_prelab5_sp2005.pdf"},
+      {"title": "MIT D. Rowell: Review of First- and Second-Order System Response, underdamped roots and characteristic step response", "url": "https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf"}
+    ],
+    "inputs": [
+      {"key": "r", "label": "Total series resistance", "unit": "ohm", "default": 10.0, "min": 0.001, "max": 1000000000.0},
+      {"key": "l", "label": "Inductance", "unit": "H", "default": 0.001, "min": 1e-12, "max": 1000000.0},
+      {"key": "c", "label": "Capacitance", "unit": "F", "default": 0.00001, "min": 1e-15, "max": 1.0},
+      {"key": "v_step", "label": "Positive source step amplitude", "unit": "V", "default": 5.0, "min": 0.0, "exclusive_min": true, "max": 1000000.0},
+      {"key": "time", "label": "Elapsed time", "unit": "s", "default": 0.0001, "min": 0.0, "max": 1000000000.0},
+      {"key": "error_fraction", "label": "Normalized voltage error limit", "unit": "1", "default": 0.01, "min": 1e-12, "max": 1.0, "exclusive_max": true}
+    ],
+    "outputs": [
+      {"key": "alpha", "label": "Exponential damping rate", "unit": "1/s", "expression": "r/(2*l)"},
+      {"key": "omega_n", "label": "Undamped natural angular frequency", "unit": "rad/s", "expression": "1/sqrt(l*c)"},
+      {"key": "damping_ratio", "label": "Damping ratio", "unit": "1", "expression": "alpha/omega_n"},
+      {"key": "omega_d", "label": "Damped oscillation angular frequency", "unit": "rad/s", "expression": "sqrt(omega_n^2-alpha^2)"},
+      {"key": "capacitor_voltage", "label": "Capacitor voltage at t", "unit": "V", "expression": "v_step*(1-exp(-alpha*time)*(cos(omega_d*time)+alpha/omega_d*sin(omega_d*time)))"},
+      {"key": "series_current", "label": "Series current at t", "unit": "A", "expression": "v_step/(l*omega_d)*exp(-alpha*time)*sin(omega_d*time)"},
+      {"key": "peak_time", "label": "Time of first capacitor-voltage peak", "unit": "s", "expression": "pi/omega_d"},
+      {"key": "overshoot_fraction", "label": "First overshoot relative to final voltage", "unit": "1", "expression": "exp(-alpha*peak_time)"},
+      {"key": "peak_voltage", "label": "First peak capacitor voltage", "unit": "V", "expression": "v_step*(1+overshoot_fraction)"},
+      {"key": "envelope_settling_bound", "label": "Sufficient normalized-error settling time", "unit": "s", "expression": "ln(1/(error_fraction*sqrt(1-damping_ratio^2)))/alpha"}
+    ],
+    "constraints": [
+      {"left": "(r/(2*l))^2", "op": "<=", "right": "(1-1e-8)/(l*c)", "message": "Circuit must be underdamped with a relative squared-frequency margin of at least 1e-8."}
+    ],
+    "example": {"inputs": {"r": 10.0, "l": 0.001, "c": 0.00001, "v_step": 5.0, "time": 0.0001, "error_fraction": 0.01}, "expected": {"alpha": 5000.0, "omega_n": 10000.0, "damping_ratio": 0.5, "omega_d": 8660.254037844386, "capacitor_voltage": 1.701499233041492, "series_current": 0.2667535975573465, "peak_time": 0.00036275987284684356, "overshoot_fraction": 0.16303353482158048, "peak_voltage": 5.815167674107903, "envelope_settling_bound": 0.0009498022444427963}, "relative_tolerance": 0.000001}
+  }
+]

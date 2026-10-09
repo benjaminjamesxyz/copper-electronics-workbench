@@ -1,0 +1,205 @@
+[
+  {
+    "id": "magnetics.turns_ratio",
+    "title": "Ideal transformer turns ratio and reflected load",
+    "category": "Magnetics and transformers",
+    "level": "basic",
+    "description": "Predict secondary RMS voltage and the primary-referred resistive load from winding turns.",
+    "formula": "a = Ns/Np; Vs = a Vp; Rprimary = Rload/a²",
+    "assumptions": ["Ideal, lossless, perfectly coupled transformer in steady alternating excitation; no DC operation.", "Neglect magnetizing current, leakage, winding resistance, regulation and saturation.", "Voltages are RMS magnitudes; winding polarity is not represented. Load is purely resistive."],
+    "references": [{"title": "MIT 6.014 Lecture 11, section B: Transformers", "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"}, {"title": "Stanford EE102 exercises, static-circuit exercise 10: Reflected resistance", "url": "https://stanford.edu/~boyd/ee102/101exercises.pdf"}],
+    "inputs": [
+      {"key": "primary_turns", "label": "Primary turns", "unit": "turn", "default": 1000.0, "min": 1.0},
+      {"key": "secondary_turns", "label": "Secondary turns", "unit": "turn", "default": 100.0, "min": 1.0},
+      {"key": "primary_voltage", "label": "Primary RMS voltage", "unit": "V", "default": 230.0, "min": 0.0},
+      {"key": "load_resistance", "label": "Secondary load resistance", "unit": "ohm", "default": 24.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "voltage_ratio", "label": "Secondary / primary voltage ratio", "unit": "1", "expression": "secondary_turns/primary_turns"},
+      {"key": "secondary_voltage", "label": "Secondary RMS voltage", "unit": "V", "expression": "primary_voltage*voltage_ratio"},
+      {"key": "reflected_resistance", "label": "Primary-referred load resistance", "unit": "ohm", "expression": "load_resistance/voltage_ratio^2"}
+    ],
+    "constraints": [
+      {"left": "floor(primary_turns)", "op": "==", "right": "primary_turns", "message": "Primary turns must be a positive integer"},
+      {"left": "floor(secondary_turns)", "op": "==", "right": "secondary_turns", "message": "Secondary turns must be a positive integer"}
+    ],
+    "example": {"inputs": {"primary_turns": 1000.0, "secondary_turns": 100.0, "primary_voltage": 230.0, "load_resistance": 24.0}, "expected": {"voltage_ratio": 0.1, "secondary_voltage": 23.0, "reflected_resistance": 2400.0}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.sinusoidal_flux_density",
+    "title": "Sinusoidal transformer peak flux density",
+    "category": "Magnetics and transformers",
+    "level": "intermediate",
+    "description": "Calculate peak core flux density from sinusoidal winding voltage and check a user-supplied material operating limit.",
+    "formula": "Bpk = sqrt(2) Vrms/(2 pi f N Ae); Phiflux,pk = Bpk Ae",
+    "assumptions": ["Applied winding voltage is sinusoidal, zero-mean, and equal to the induced voltage; no DC flux offset.", "Flux is approximately uniform over effective magnetic cross section Ae; winding drops and leakage are neglected.", "The exact sinusoidal factor 2 pi/sqrt(2) is used rather than the rounded 4.44.", "The supplied flux limit must be appropriate for material, temperature and frequency; satisfying it does not certify acceptable core loss."],
+    "references": [{"title": "Micrometals Power Conversion and Line Filter Applications, Issue L, printed page 29: Core loss and sinusoidal form factor", "url": "https://web.mit.edu/6.131/www/document/micrometals.pdf"}, {"title": "MIT 6.014 Lecture 11: Faraday's law and transformer winding voltage", "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"}],
+    "inputs": [
+      {"key": "rms_voltage", "label": "Winding RMS voltage", "unit": "V", "default": 24.0, "min": 0.0},
+      {"key": "frequency", "label": "Sinusoidal excitation frequency", "unit": "Hz", "default": 50.0, "min": 0.0, "exclusive_min": true},
+      {"key": "turns", "label": "Winding turns", "unit": "turn", "default": 1000.0, "min": 1.0},
+      {"key": "core_area", "label": "Effective core cross-sectional area", "unit": "m^2", "default": 0.0004, "min": 0.0, "exclusive_min": true},
+      {"key": "flux_limit", "label": "Material operating flux-density limit", "unit": "T", "default": 0.3, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "peak_flux_density", "label": "Peak AC flux density", "unit": "T", "expression": "sqrt(2)*rms_voltage/(2*pi*frequency*turns*core_area)"},
+      {"key": "peak_flux", "label": "Peak magnetic flux", "unit": "Wb", "expression": "peak_flux_density*core_area"}
+    ],
+    "constraints": [
+      {"left": "floor(turns)", "op": "==", "right": "turns", "message": "Turns must be a positive integer"},
+      {"left": "sqrt(2)*rms_voltage/(2*pi*frequency*turns*core_area)", "op": "<=", "right": "flux_limit", "message": "Predicted flux exceeds the supplied material operating limit"}
+    ],
+    "example": {"inputs": {"rms_voltage": 24.0, "frequency": 50.0, "turns": 1000.0, "core_area": 0.0004, "flux_limit": 0.3}, "expected": {"peak_flux_density": 0.2700948948471318, "peak_flux": 0.00010803795793885272}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.rectangular_toroid_inductance",
+    "title": "Rectangular-section toroid inductance",
+    "category": "Magnetics and transformers",
+    "level": "expert",
+    "description": "Integrate the radial 1/r field in an ungapped toroid rather than using a mean-radius approximation.",
+    "formula": "L = mu0 mur N² h ln(ro/ri)/(2 pi); Binner = mu0 mur N Ipk/(2 pi ri)",
+    "assumptions": ["Toroid has rectangular radial/axial cross section, homogeneous real constant permeability and no discrete gap.", "An evenly distributed winding confines flux to the toroid; leakage, winding self-capacitance and core losses are ignored.", "Permeability is valid throughout the operating field range; inner-radius field is the highest field and is checked against a user-supplied linearity limit.", "Use mu0 = 4 pi times 1e-7 H/m as an engineering approximation; dimensions are core radii, not diameters."],
+    "references": [{"title": "MIT 8.02 Spring 2003, Inductance Worked Examples, example 2: Rectangular-section toroid", "url": "https://web.mit.edu/course/8/8.02-esg/Spring03/www/8.02ch32we.pdf"}, {"title": "MIT 6.014 Lecture 11, sections A and C: Linear magnetic material and toroidal inductors", "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"}],
+    "inputs": [
+      {"key": "inner_radius", "label": "Core inner radius", "unit": "m", "default": 0.01, "min": 0.0, "exclusive_min": true},
+      {"key": "outer_radius", "label": "Core outer radius", "unit": "m", "default": 0.02, "min": 0.0, "exclusive_min": true},
+      {"key": "height", "label": "Core axial height", "unit": "m", "default": 0.005, "min": 0.0, "exclusive_min": true},
+      {"key": "relative_permeability", "label": "Linear relative permeability", "unit": "1", "default": 100.0, "min": 0.0, "exclusive_min": true},
+      {"key": "turns", "label": "Winding turns", "unit": "turn", "default": 50.0, "min": 1.0},
+      {"key": "peak_current", "label": "Peak winding current", "unit": "A", "default": 0.1, "min": 0.0},
+      {"key": "linear_flux_limit", "label": "Material linear-region flux limit", "unit": "T", "default": 0.2, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "inductance", "label": "Toroidal inductance", "unit": "H", "expression": "4*pi*1e-7*relative_permeability*turns^2*height*ln(outer_radius/inner_radius)/(2*pi)"},
+      {"key": "inner_flux_density", "label": "Peak field at core inner radius", "unit": "T", "expression": "4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius)"}
+    ],
+    "constraints": [
+      {"left": "outer_radius", "op": ">", "right": "inner_radius", "message": "Outer core radius must exceed inner core radius"},
+      {"left": "floor(turns)", "op": "==", "right": "turns", "message": "Turns must be a positive integer"},
+      {"left": "4*pi*1e-7*relative_permeability*turns*peak_current/(2*pi*inner_radius)", "op": "<=", "right": "linear_flux_limit", "message": "Inner-radius field exceeds the supplied linear-material limit"}
+    ],
+    "example": {"inputs": {"inner_radius": 0.01, "outer_radius": 0.02, "height": 0.005, "relative_permeability": 100.0, "turns": 50.0, "peak_current": 0.1, "linear_flux_limit": 0.2}, "expected": {"inductance": 0.00017328679513998633, "inner_flux_density": 0.01}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.gapped_core_inductance",
+    "title": "Finite-permeability gapped-core inductance",
+    "category": "Magnetics and transformers",
+    "level": "expert",
+    "description": "Estimate inductance with both core and total air-gap reluctance retained and check peak core flux.",
+    "formula": "Rc = lc/(mu0 mur w h); Rg = g/(mu0 w h); L = N²/(Rc+Rg); Bpk = N Ipk/((Rc+Rg) w h)",
+    "assumptions": ["Single series magnetic path with uniform rectangular cross section; core length excludes air gaps and gap input is the total series gap length.", "Homogeneous linear core, negligible leakage/fringing, equal core and gap flux areas; no parallel return paths.", "The catalog conservatively requires total gap <= 0.1 times the smaller pole dimension and <= 0.1 times core path length. This is an approximation-screening rule, not an error guarantee or standard.", "Peak flux must remain below the user-supplied linearity limit. Real fringing and bias-dependent permeability need manufacturer data or field analysis.", "Use mu0 = 4 pi times 1e-7 H/m; no gap-dominant approximation is imposed."],
+    "references": [{"title": "MIT Electromagnetic Fields and Energy, section 9.7, example 9.7.1: Finite-permeability air-gap field", "url": "https://www.mit.edu/course/6/6.013_book/www/chapter9/9.7.html"}, {"title": "MIT 6.014 Lecture 11, section C: Gap, flux continuity and inductance", "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"}],
+    "inputs": [
+      {"key": "core_length", "label": "Core magnetic path length excluding gaps", "unit": "m", "default": 0.1, "min": 0.0, "exclusive_min": true},
+      {"key": "pole_width", "label": "Rectangular pole width", "unit": "m", "default": 0.01, "min": 0.0, "exclusive_min": true},
+      {"key": "pole_height", "label": "Rectangular pole height", "unit": "m", "default": 0.01, "min": 0.0, "exclusive_min": true},
+      {"key": "gap_length", "label": "Total series air-gap length", "unit": "m", "default": 0.0005, "min": 0.0, "exclusive_min": true},
+      {"key": "relative_permeability", "label": "Linear core relative permeability", "unit": "1", "default": 2000.0, "min": 1.0},
+      {"key": "turns", "label": "Winding turns", "unit": "turn", "default": 100.0, "min": 1.0},
+      {"key": "peak_current", "label": "Peak winding current", "unit": "A", "default": 1.0, "min": 0.0},
+      {"key": "linear_flux_limit", "label": "Material linear-region flux limit", "unit": "T", "default": 0.3, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "core_reluctance", "label": "Core reluctance", "unit": "A/Wb", "expression": "core_length/(4*pi*1e-7*relative_permeability*pole_width*pole_height)"},
+      {"key": "gap_reluctance", "label": "Gap reluctance", "unit": "A/Wb", "expression": "gap_length/(4*pi*1e-7*pole_width*pole_height)"},
+      {"key": "inductance", "label": "Gapped-core inductance", "unit": "H", "expression": "turns^2/(core_reluctance+gap_reluctance)"},
+      {"key": "peak_flux_density", "label": "Peak core flux density", "unit": "T", "expression": "turns*peak_current/((core_reluctance+gap_reluctance)*pole_width*pole_height)"}
+    ],
+    "constraints": [
+      {"left": "floor(turns)", "op": "==", "right": "turns", "message": "Turns must be a positive integer"},
+      {"left": "gap_length", "op": "<=", "right": "0.1*min(pole_width,pole_height)", "message": "Gap is too large relative to pole dimensions for the selected no-fringing approximation"},
+      {"left": "gap_length", "op": "<=", "right": "0.1*core_length", "message": "Gap is too large relative to core path for this lumped magnetic model"},
+      {"left": "4*pi*1e-7*turns*peak_current/(core_length/relative_permeability+gap_length)", "op": "<=", "right": "linear_flux_limit", "message": "Predicted field exceeds the supplied linear-material limit"}
+    ],
+    "example": {"inputs": {"core_length": 0.1, "pole_width": 0.01, "pole_height": 0.01, "gap_length": 0.0005, "relative_permeability": 2000.0, "turns": 100.0, "peak_current": 1.0, "linear_flux_limit": 0.3}, "expected": {"core_reluctance": 397887.35772973834, "gap_reluctance": 3978873.5772973835, "inductance": 0.0022847946571562133, "peak_flux_density": 0.22847946571562133}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.field_energy_density",
+    "title": "Magnetic field energy in a material volume",
+    "category": "Magnetics and transformers",
+    "level": "intermediate",
+    "description": "Find magnetic energy density and stored field energy in a uniform linear-material region, such as an inductor air gap.",
+    "formula": "u = B²/(2 mu0 mur); W = u Volume",
+    "assumptions": ["Uniform magnetic field in a homogeneous, isotropic, linear material with real constant permeability and no hysteresis.", "Only the specified material region is integrated; this is not necessarily total device energy. Use separate regions for a core and its gap.", "For an air gap, relative permeability is approximately 1. For nonlinear materials the integral of H dB replaces B²/(2 mu).",
+      "The user-supplied field limit defines the chosen linear regime; it must come from appropriate material data. Use mu0 = 4 pi times 1e-7 H/m."],
+    "references": [{"title": "MIT 6.014 Lecture 11, equations 9 and 15: Magnetic energy density and volume integral", "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"}, {"title": "MIT 8.02 Inductance Worked Examples, examples 1 and 3: B²/(2 mu0)", "url": "https://web.mit.edu/course/8/8.02-esg/Spring03/www/8.02ch32we.pdf"}],
+    "inputs": [
+      {"key": "flux_density", "label": "Uniform magnetic flux density magnitude", "unit": "T", "default": 0.2, "min": 0.0},
+      {"key": "relative_permeability", "label": "Linear material relative permeability", "unit": "1", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "volume", "label": "Field-filled material volume", "unit": "m^3", "default": 0.00000005, "min": 0.0, "exclusive_min": true},
+      {"key": "linear_flux_limit", "label": "Chosen linear-regime field limit", "unit": "T", "default": 0.3, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [
+      {"key": "energy_density", "label": "Magnetic field energy density", "unit": "J/m^3", "expression": "flux_density^2/(2*4*pi*1e-7*relative_permeability)"},
+      {"key": "field_energy", "label": "Energy in specified material volume", "unit": "J", "expression": "energy_density*volume"}
+    ],
+    "constraints": [{"left": "flux_density", "op": "<=", "right": "linear_flux_limit", "message": "Field exceeds the supplied linear-regime limit"}],
+    "example": {"inputs": {"flux_density": 0.2, "relative_permeability": 1.0, "volume": 0.00000005, "linear_flux_limit": 0.3}, "expected": {"energy_density": 15915.494309189534, "field_energy": 0.0007957747154594767}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.conductor_skin_depth",
+    "title": "Good-conductor skin depth",
+    "category": "Magnetics and transformers",
+    "level": "expert",
+    "description": "Calculate the 1/e penetration depth of a sinusoidal field in a good conductor and enforce a conduction-dominant domain.",
+    "formula": "delta = sqrt(1/(pi f mu0 mur sigma)); require sigma/(2 pi f eps0 epsr) >= 100",
+    "assumptions": ["Homogeneous isotropic conductor with real, positive, frequency-independent conductivity and permeability at the specified frequency and temperature.", "Displacement current is neglected. The ratio sigma/(omega epsilon) >= 100 is a conservative catalog screening threshold, not a manufacturer standard.", "Skin depth is the field/current amplitude 1/e length, not a hard boundary; power density decays twice as rapidly.", "Planar half-space field model; finite wires and proximity effects need additional analysis. No AC resistance or litz-wire performance is inferred.", "Use mu0 = 4 pi times 1e-7 H/m and eps0 = 8.8541878128e-12 F/m."],
+    "references": [{"title": "MIT Center for Bits and Atoms, Circuits, Transmission Lines, and Waveguides, section 7.2.1, equations 7.26–7.35", "url": "https://fab.cba.mit.edu/classes/862.19/notes/circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Sinusoidal field frequency", "unit": "Hz", "default": 100000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "conductivity", "label": "Conductor conductivity at operating temperature", "unit": "S/m", "default": 58000000.0, "min": 0.0, "exclusive_min": true},
+      {"key": "relative_permeability", "label": "Real relative permeability", "unit": "1", "default": 1.0, "min": 0.0, "exclusive_min": true},
+      {"key": "relative_permittivity", "label": "Relative permittivity for domain check", "unit": "1", "default": 1.0, "min": 0.0, "exclusive_min": true}
+    ],
+    "outputs": [{"key": "skin_depth", "label": "Field amplitude skin depth", "unit": "m", "expression": "sqrt(1/(pi*frequency*4*pi*1e-7*relative_permeability*conductivity))"}],
+    "constraints": [{"left": "conductivity", "op": ">=", "right": "100*2*pi*frequency*8.8541878128e-12*relative_permittivity", "message": "Conduction must exceed displacement-current admittance by at least 100 for this approximation"}],
+    "example": {"inputs": {"frequency": 100000.0, "conductivity": 58000000.0, "relative_permeability": 1.0, "relative_permittivity": 1.0}, "expected": {"skin_depth": 0.0002089806784938892}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.transformer_va_budget",
+    "title": "Two-secondary transformer VA budget",
+    "category": "Magnetics and transformers",
+    "level": "basic",
+    "description": "Sum simultaneous winding RMS load VA and apply explicitly chosen sizing headroom.",
+    "formula": "S1 = V1,rms I1,rms; S2 = V2,rms I2,rms; Sload = S1+S2; Sminimum = headroom Sload",
+    "assumptions": ["Separate secondary-winding loads operate simultaneously; inputs are actual AC winding RMS values, not rectified DC values.", "Summed winding VA is a conservative nameplate allocation budget; it is not phasor-summed mains apparent power or real watts.", "Do not double-count taps or the same winding's series/parallel connection. Set secondary-two current to zero for a single load.", "Headroom is a user-selected factor >= 1, not a universal safety rule or thermal certification. Check individual winding current limits, frequency and ambient derating separately.", "For capacitor-input rectification the pulsed winding RMS current must be obtained separately; this calculator deliberately does not assume a DC-to-AC conversion factor."],
+    "references": [{"title": "Hammond 265 Series: VA and secondary RMS voltage/current rating tables", "url": "https://www.hammfg.com/electronics/transformers/power/265"}, {"title": "Hammond Design Guide for Rectifier Use: Transformer RMS ratings versus DC loads", "url": "https://www.hammfg.com/electronics/transformers/rectifier"}],
+    "inputs": [
+      {"key": "secondary_one_voltage", "label": "Secondary one RMS voltage", "unit": "V", "default": 24.0, "min": 0.0, "exclusive_min": true},
+      {"key": "secondary_one_current", "label": "Secondary one RMS load current", "unit": "A", "default": 2.0, "min": 0.0},
+      {"key": "secondary_two_voltage", "label": "Secondary two RMS voltage", "unit": "V", "default": 12.0, "min": 0.0, "exclusive_min": true},
+      {"key": "secondary_two_current", "label": "Secondary two RMS load current", "unit": "A", "default": 0.5, "min": 0.0},
+      {"key": "headroom_factor", "label": "User-chosen VA headroom factor", "unit": "1", "default": 1.25, "min": 1.0}
+    ],
+    "outputs": [
+      {"key": "secondary_one_va", "label": "Secondary one load VA", "unit": "VA", "expression": "secondary_one_voltage*secondary_one_current"},
+      {"key": "secondary_two_va", "label": "Secondary two load VA", "unit": "VA", "expression": "secondary_two_voltage*secondary_two_current"},
+      {"key": "total_load_va", "label": "Simultaneous winding VA budget", "unit": "VA", "expression": "secondary_one_va+secondary_two_va"},
+      {"key": "minimum_rating_va", "label": "Minimum VA budget with chosen headroom", "unit": "VA", "expression": "headroom_factor*total_load_va"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"secondary_one_voltage": 24.0, "secondary_one_current": 2.0, "secondary_two_voltage": 12.0, "secondary_two_current": 0.5, "headroom_factor": 1.25}, "expected": {"secondary_one_va": 48.0, "secondary_two_va": 6.0, "total_load_va": 54.0, "minimum_rating_va": 67.5}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "magnetics.coupled_coil_inductance",
+    "title": "Mutual and series-connected coupled-coil inductance",
+    "category": "Magnetics and transformers",
+    "level": "intermediate",
+    "description": "Predict mutual inductance and both series polarities from two self-inductances and coupling coefficient.",
+    "formula": "M = k sqrt(L1 L2); Laiding = L1+L2+2M; Lopposing = L1+L2-2M",
+    "assumptions": ["Two passive reciprocal linear coils, with self-inductances measured with the other winding open at the same operating frequency and bias.", "Coupling coefficient is a magnitude between 0 and 1; dot convention and wiring determine aiding versus opposing.", "No saturation, significant frequency dispersion, winding capacitance or resistive losses. Opposing mode may be dominated by parasitics near perfect coupling.", "At k=1 and equal self-inductances the ideal opposing value is zero; this does not imply a real physical winding has zero parasitic inductance."],
+    "references": [{"title": "UC Berkeley EECS-2007-3, section 3.2.2, equations 3.6–3.8: Mutual inductance and coupling coefficient", "url": "https://www2.eecs.berkeley.edu/Pubs/TechRpts/2007/EECS-2007-3.pdf"}, {"title": "MIT Electromagnetic Fields and Energy, section 9.7: Linear two-winding flux-linkage matrix", "url": "https://www.mit.edu/course/6/6.013_book/www/chapter9/9.7.html"}],
+    "inputs": [
+      {"key": "inductance_one", "label": "Winding one open-circuit self-inductance", "unit": "H", "default": 0.0001, "min": 0.0, "exclusive_min": true},
+      {"key": "inductance_two", "label": "Winding two open-circuit self-inductance", "unit": "H", "default": 0.0004, "min": 0.0, "exclusive_min": true},
+      {"key": "coupling", "label": "Coupling coefficient magnitude", "unit": "1", "default": 0.9, "min": 0.0, "max": 1.0}
+    ],
+    "outputs": [
+      {"key": "mutual_inductance", "label": "Mutual inductance magnitude", "unit": "H", "expression": "coupling*sqrt(inductance_one*inductance_two)"},
+      {"key": "series_aiding", "label": "Series-aiding inductance", "unit": "H", "expression": "inductance_one+inductance_two+2*mutual_inductance"},
+      {"key": "series_opposing", "label": "Series-opposing inductance", "unit": "H", "expression": "(sqrt(inductance_one)-sqrt(inductance_two))^2+2*(1-coupling)*sqrt(inductance_one*inductance_two)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"inductance_one": 0.0001, "inductance_two": 0.0004, "coupling": 0.9}, "expected": {"mutual_inductance": 0.00018, "series_aiding": 0.00086, "series_opposing": 0.00014}, "relative_tolerance": 0.000001}
+  }
+]

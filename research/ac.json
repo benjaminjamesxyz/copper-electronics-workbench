@@ -1,0 +1,201 @@
+[
+  {
+    "id": "ac.inductor_reactance",
+    "title": "Ideal inductor AC reactance and current",
+    "category": "AC impedance and resonance",
+    "level": "basic",
+    "description": "Estimate the sinusoidal current drawn by an ideal inductor at a specified frequency and RMS terminal voltage.",
+    "formula": "X_L = 2 pi f L; I_rms = V_rms / X_L; arg(Z_L) = +pi/2",
+    "assumptions": ["Linear lumped ideal inductor in sinusoidal steady state; no winding resistance, core loss, saturation or self-capacitance.", "Frequency must be below the component's self-resonance and within its linear operating range; numerical input limits are not component ratings."],
+    "references": [{"title": "MIT OCW, Alternating-Current Circuits, section 12.2.2", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "inductance", "label": "Inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "reactance", "label": "Inductive reactance", "unit": "ohm", "expression": "2*pi*frequency*inductance"},
+      {"key": "current_rms", "label": "Inductor RMS current", "unit": "A", "expression": "voltage_rms/reactance"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "pi/2"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "inductance": 0.01, "voltage_rms": 5.0}, "expected": {"reactance": 62.83185307179586, "current_rms": 0.07957747154594767, "impedance_phase": 1.5707963267948966}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.capacitor_reactance",
+    "title": "Ideal capacitor AC reactance and current",
+    "category": "AC impedance and resonance",
+    "level": "basic",
+    "description": "Estimate an ideal capacitor's impedance and RMS AC current loading, with capacitive sign convention explicit.",
+    "formula": "X_C = 1/(2 pi f C); Im(Z_C) = -X_C; I_rms = V_rms/X_C",
+    "assumptions": ["Linear lumped ideal capacitor in sinusoidal steady state; no ESR, leakage, dielectric loss or ESL.", "Frequency must be below self-resonance; voltage/current ratings and dielectric bias dependence require component data."],
+    "references": [{"title": "MIT OCW, Alternating-Current Circuits, section 12.2.3", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "capacitance", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "reactance_magnitude", "label": "Capacitive reactance magnitude", "unit": "ohm", "expression": "1/(2*pi*frequency*capacitance)"},
+      {"key": "impedance_imaginary", "label": "Imaginary impedance", "unit": "ohm", "expression": "-reactance_magnitude"},
+      {"key": "current_rms", "label": "Capacitor RMS current", "unit": "A", "expression": "voltage_rms/reactance_magnitude"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "-pi/2"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"reactance_magnitude": 159.15494309189535, "impedance_imaginary": -159.15494309189535, "current_rms": 0.031415926535897934, "impedance_phase": -1.5707963267948966}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.series_rlc_impedance",
+    "title": "Series RLC impedance, phase and current",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Calculate complex input impedance and displacement power factor for a resistor, ideal inductor and ideal capacitor connected in series.",
+    "formula": "Z = R + j(2 pi f L - 1/(2 pi f C)); |Z| = sqrt(R^2 + X^2); phi = atan(X/R)",
+    "assumptions": ["Single-frequency sinusoidal steady state with lumped, linear, frequency-independent R, L and C.", "Resistance is the total series resistance, including source/winding/ESR only if represented by a frequency-independent resistance.", "Positive impedance phase means current lags voltage; R is strictly positive so atan gives the correct quadrant."],
+    "references": [{"title": "MIT OCW, Alternating-Current Circuits, sections 12.3 and 12.4", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "resistance", "label": "Total series resistance", "unit": "ohm", "default": 100.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Series inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Series capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Source RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "impedance_real", "label": "Real impedance", "unit": "ohm", "expression": "resistance"},
+      {"key": "impedance_imaginary", "label": "Imaginary impedance", "unit": "ohm", "expression": "2*pi*frequency*inductance-1/(2*pi*frequency*capacitance)"},
+      {"key": "impedance_magnitude", "label": "Impedance magnitude", "unit": "ohm", "expression": "sqrt(impedance_real^2+impedance_imaginary^2)"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "atan(impedance_imaginary/resistance)"},
+      {"key": "current_rms", "label": "Source RMS current", "unit": "A", "expression": "voltage_rms/impedance_magnitude"},
+      {"key": "power_factor", "label": "Displacement power factor", "unit": "1", "expression": "resistance/impedance_magnitude"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "resistance": 100.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"impedance_real": 100.0, "impedance_imaginary": -96.32309002009949, "impedance_magnitude": 138.84573335547688, "impedance_phase": -0.7666714810055317, "current_rms": 0.03601118939102619, "power_factor": 0.7202237878205238}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.parallel_rlc_impedance",
+    "title": "Parallel RLC admittance and impedance",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Calculate input impedance of three separate ideal R, L and C parallel branches using admittance addition.",
+    "formula": "Y = G+jB = 1/R + j(2 pi f C - 1/(2 pi f L)); Z = (G-jB)/(G^2+B^2)",
+    "assumptions": ["R, L and C are independent parallel branches, not a lossy series-RL coil branch.", "Linear lumped sinusoidal steady state; resistor is finite and positive, preventing infinite ideal-tank impedance.", "Positive impedance phase means current lags voltage; source RMS current is V_rms |Y|."],
+    "references": [{"title": "MIT OCW, Resonance, Bandwidth, Q Factor, parallel circuit section", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/5bcec4bfba5f2e99754b77509e9e7ab4_resonance_qfactr.pdf"}, {"title": "Georgia State University HyperPhysics, Parallel Resonant Circuits: admittance", "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/electric/parres.html"}],
+    "inputs": [
+      {"key": "frequency", "label": "Frequency", "unit": "Hz", "default": 1000.0, "min": 0.000001, "max": 1e12},
+      {"key": "resistance", "label": "Parallel resistance", "unit": "ohm", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Parallel inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Parallel capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "conductance", "label": "Input conductance", "unit": "S", "expression": "1/resistance"},
+      {"key": "susceptance", "label": "Input susceptance", "unit": "S", "expression": "2*pi*frequency*capacitance-1/(2*pi*frequency*inductance)"},
+      {"key": "impedance_real", "label": "Real impedance", "unit": "ohm", "expression": "conductance/(conductance^2+susceptance^2)"},
+      {"key": "impedance_imaginary", "label": "Imaginary impedance", "unit": "ohm", "expression": "-susceptance/(conductance^2+susceptance^2)"},
+      {"key": "impedance_magnitude", "label": "Impedance magnitude", "unit": "ohm", "expression": "1/sqrt(conductance^2+susceptance^2)"},
+      {"key": "impedance_phase", "label": "Voltage phase relative to current", "unit": "rad", "expression": "-atan(susceptance/conductance)"},
+      {"key": "current_rms", "label": "Source RMS current", "unit": "A", "expression": "voltage_rms*sqrt(conductance^2+susceptance^2)"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"frequency": 1000.0, "resistance": 1000.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"conductance": 0.001, "susceptance": -0.009632309002009948, "impedance_real": 10.66309788872204, "impedance_imaginary": 102.71025378285057, "impedance_magnitude": 103.26227718156345, "impedance_phase": 1.4673496474397956, "current_rms": 0.04842039258158743}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.series_resonator_bandwidth",
+    "title": "Series resonator frequency, Q and exact bandwidth",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Characterize a voltage-driven series resonator's resonance and exact resistor half-power frequencies without a high-Q approximation.",
+    "formula": "omega_0 = 1/sqrt(LC); Q = omega_0 L/R; delta_omega = R/L; omega_H = sqrt(omega_0^2+(R/(2L))^2)+R/(2L); omega_L = omega_0^2/omega_H",
+    "assumptions": ["Lumped linear series RLC with constant total series R > 0 and ideal L,C.", "Constant-amplitude ideal voltage drive; half power refers to the series resistor's dissipated power relative to resonance.", "All positive Q are supported; half-power endpoints are not assumed symmetric in hertz about resonance.", "No filter transfer-function or component-synthesis calculation is performed."],
+    "references": [{"title": "MIT OCW, Resonance, Bandwidth, Q Factor, equations 1.9–1.19", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/5bcec4bfba5f2e99754b77509e9e7ab4_resonance_qfactr.pdf"}],
+    "inputs": [
+      {"key": "resistance", "label": "Total series resistance", "unit": "ohm", "default": 10.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0}
+    ],
+    "outputs": [
+      {"key": "resonance_frequency", "label": "Resonance frequency", "unit": "Hz", "expression": "1/(2*pi*sqrt(inductance*capacitance))"},
+      {"key": "quality_factor", "label": "Series resonator Q", "unit": "1", "expression": "sqrt(inductance/capacitance)/resistance"},
+      {"key": "bandwidth", "label": "Half-power bandwidth", "unit": "Hz", "expression": "resistance/(2*pi*inductance)"},
+      {"key": "upper_half_power", "label": "Upper half-power frequency", "unit": "Hz", "expression": "sqrt(resonance_frequency^2+(bandwidth/2)^2)+bandwidth/2"},
+      {"key": "lower_half_power", "label": "Lower half-power frequency", "unit": "Hz", "expression": "resonance_frequency^2/upper_half_power"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"resistance": 10.0, "inductance": 0.01, "capacitance": 0.000001}, "expected": {"resonance_frequency": 1591.5494309189535, "quality_factor": 10.0, "bandwidth": 159.15494309189535, "upper_half_power": 1673.11509740738, "lower_half_power": 1513.9601543154847}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.lossy_coil_antiresonance",
+    "title": "Lossy-coil parallel phase resonance",
+    "category": "AC impedance and resonance",
+    "level": "expert",
+    "description": "Find the finite unity-power-factor resonance of a capacitor in parallel with an inductor having series winding resistance, including circulating current and copper loss.",
+    "formula": "Y = 1/(r+j omega L)+j omega C; omega_r = sqrt((L-C r^2)/(L^2 C)); Z_r = L/(C r)",
+    "assumptions": ["Topology is (r + j omega L) in parallel with an ideal capacitor, with no additional shunt load.", "Coil r and L are constant at resonance; core loss, capacitor ESR, parasitic capacitance and external loading are excluded.", "Resonance means zero input susceptance (source voltage and current in phase), not necessarily the frequency of maximum impedance.", "A positive-frequency phase resonance exists only if L > C r^2; equality leaves only DC and is excluded."],
+    "references": [{"title": "Georgia State University HyperPhysics, Parallel Resonant Circuits: phase definition and admittance", "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/electric/parres.html"}, {"title": "MIT OCW, Alternating-Current Circuits, impedance and phasor laws", "url": "https://ocw.mit.edu/courses/8-02t-electricity-and-magnetism-spring-2005/77f396b6d9907db677e2b94da90613be_cha12ac_circuits.pdf"}],
+    "inputs": [
+      {"key": "coil_resistance", "label": "Series winding resistance", "unit": "ohm", "default": 30.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Coil inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Shunt capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0},
+      {"key": "voltage_rms", "label": "Terminal RMS voltage", "unit": "V", "default": 5.0, "min": 0.0, "max": 1e9}
+    ],
+    "outputs": [
+      {"key": "resonance_frequency", "label": "Zero-susceptance resonance frequency", "unit": "Hz", "expression": "sqrt((inductance-capacitance*coil_resistance^2)/(inductance^2*capacitance))/(2*pi)"},
+      {"key": "ideal_lc_frequency", "label": "Lossless LC frequency for comparison", "unit": "Hz", "expression": "1/(2*pi*sqrt(inductance*capacitance))"},
+      {"key": "resonance_resistance", "label": "Input resistance at phase resonance", "unit": "ohm", "expression": "inductance/(capacitance*coil_resistance)"},
+      {"key": "source_current_rms", "label": "Source RMS current at resonance", "unit": "A", "expression": "voltage_rms/resonance_resistance"},
+      {"key": "coil_current_rms", "label": "Coil branch RMS current", "unit": "A", "expression": "voltage_rms*sqrt(capacitance/inductance)"},
+      {"key": "copper_loss", "label": "Winding dissipation at resonance", "unit": "W", "expression": "coil_current_rms^2*coil_resistance"}
+    ],
+    "constraints": [{"left": "inductance", "op": ">", "right": "capacitance*coil_resistance^2", "message": "Positive-frequency phase resonance requires L > C r^2"}],
+    "example": {"inputs": {"coil_resistance": 30.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"resonance_frequency": 1518.2413931464207, "ideal_lc_frequency": 1591.5494309189535, "resonance_resistance": 333.3333333333333, "source_current_rms": 0.015, "coil_current_rms": 0.05, "copper_loss": 0.075}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.sinusoidal_power_triangle",
+    "title": "Single-phase sinusoidal power triangle",
+    "category": "AC impedance and resonance",
+    "level": "basic",
+    "description": "Convert measured RMS voltage, RMS current and voltage-minus-current phase to apparent, real and signed reactive power.",
+    "formula": "S = V_rms I_rms; P = S cos(phi); Q = S sin(phi); PF = cos(phi)",
+    "assumptions": ["Single-phase equal-frequency sinusoidal voltage/current with no harmonic distortion.", "Passive-load phase is between -pi/2 and +pi/2; positive phase/reactive power means lagging inductive current.", "PF is displacement power factor; this equals true power factor only for the stated sinusoidal model.", "Both RMS quantities are positive so phase/power-factor interpretation is meaningful; this is electrical input power, not mechanical output power."],
+    "references": [{"title": "University of Illinois ECE 333, Power System Basics – AC Analysis, slides 45–48", "url": "https://courses.grainger.illinois.edu/ece333/fa2018/handouts/ECE_333_Lecture%202_Power%20System%20Basics.pdf"}],
+    "inputs": [
+      {"key": "voltage_rms", "label": "Load RMS voltage", "unit": "V", "default": 230.0, "min": 1e-9, "max": 1e9},
+      {"key": "current_rms", "label": "Load RMS current", "unit": "A", "default": 4.0, "min": 1e-12, "max": 1e9},
+      {"key": "phase", "label": "Voltage-minus-current phase", "unit": "rad", "default": 0.5235987755982988}
+    ],
+    "outputs": [
+      {"key": "apparent_power", "label": "Apparent power", "unit": "VA", "expression": "voltage_rms*current_rms"},
+      {"key": "real_power", "label": "Real power", "unit": "W", "expression": "apparent_power*cos(phase)"},
+      {"key": "reactive_power", "label": "Signed reactive power", "unit": "var", "expression": "apparent_power*sin(phase)"},
+      {"key": "power_factor", "label": "Displacement power factor", "unit": "1", "expression": "cos(phase)"}
+    ],
+    "constraints": [{"left": "abs(phase)", "op": "<=", "right": "pi/2", "message": "Passive load phase must be within -pi/2 to +pi/2 radians"}],
+    "example": {"inputs": {"voltage_rms": 230.0, "current_rms": 4.0, "phase": 0.5235987755982988}, "expected": {"apparent_power": 920.0, "real_power": 796.7433714816837, "reactive_power": 460.0, "power_factor": 0.8660254037844387}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.shunt_power_factor_correction",
+    "title": "Single-phase shunt capacitor power-factor correction",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Size an ideal shunt capacitor to improve a sinusoidal inductive load from an initial lagging power factor to a target lagging or unity value.",
+    "formula": "Q_C = P(sqrt(1-PF_initial^2)/PF_initial - sqrt(1-PF_target^2)/PF_target); C = Q_C/(2 pi f V_rms^2)",
+    "assumptions": ["Single-phase sinusoidal inductive load; supplied real electrical power and terminal RMS voltage remain constant.", "Both power factors are lagging magnitudes; target is no lower than initial and no greater than unity.", "Capacitor is connected directly across the stated RMS voltage; not a three-phase bank formula.", "Ideal fundamental-frequency estimate only; harmonic resonance, switching transients, discharge provisions, overvoltage and approved capacitor ratings require separate engineering review."],
+    "references": [{"title": "University of Illinois ECE 333, Power System Basics – AC Analysis, slides 47 and 52–58", "url": "https://courses.grainger.illinois.edu/ece333/fa2018/handouts/ECE_333_Lecture%202_Power%20System%20Basics.pdf"}],
+    "inputs": [
+      {"key": "real_power", "label": "Load real electrical power", "unit": "W", "default": 1000.0, "min": 1e-9, "max": 1e12},
+      {"key": "voltage_rms", "label": "Voltage across shunt capacitor", "unit": "V", "default": 230.0, "min": 1e-9, "max": 1e9},
+      {"key": "frequency", "label": "Supply frequency", "unit": "Hz", "default": 50.0, "min": 0.000001, "max": 1e12},
+      {"key": "initial_pf", "label": "Initial lagging power factor", "unit": "1", "default": 0.8, "min": 1e-9, "max": 1.0},
+      {"key": "target_pf", "label": "Target lagging or unity power factor", "unit": "1", "default": 0.95, "min": 1e-9, "max": 1.0}
+    ],
+    "outputs": [
+      {"key": "capacitor_reactive_power", "label": "Capacitive reactive power magnitude", "unit": "var", "expression": "real_power*(sqrt(1-initial_pf^2)/initial_pf-sqrt(1-target_pf^2)/target_pf)"},
+      {"key": "required_capacitance", "label": "Required shunt capacitance", "unit": "F", "expression": "capacitor_reactive_power/(2*pi*frequency*voltage_rms^2)"},
+      {"key": "initial_source_current", "label": "Initial source RMS current", "unit": "A", "expression": "real_power/(voltage_rms*initial_pf)"},
+      {"key": "corrected_source_current", "label": "Corrected source RMS current", "unit": "A", "expression": "real_power/(voltage_rms*target_pf)"},
+      {"key": "capacitor_current_rms", "label": "Capacitor RMS current", "unit": "A", "expression": "capacitor_reactive_power/voltage_rms"}
+    ],
+    "constraints": [{"left": "target_pf", "op": ">=", "right": "initial_pf", "message": "A shunt capacitor requires target power factor at least equal to initial lagging power factor"}],
+    "example": {"inputs": {"real_power": 1000.0, "voltage_rms": 230.0, "frequency": 50.0, "initial_pf": 0.8, "target_pf": 0.95}, "expected": {"capacitor_reactive_power": 421.3158948211366, "required_capacitance": 0.000025351420515678246, "initial_source_current": 5.434782608695652, "corrected_source_current": 4.576659038901602, "capacitor_current_rms": 1.8318082383527678}, "relative_tolerance": 0.000001}
+  }
+]
