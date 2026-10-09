@@ -61,5 +61,152 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "dc.loaded_wheatstone_bridge",
+    "title": "Loaded Wheatstone bridge and common-mode voltage",
+    "category": "DC circuits and resistor networks",
+    "level": "expert",
+    "description": "Calculate the exact differential output and actual midpoint/common-mode voltages of an unbalanced resistive bridge with a finite detector resistance across its midpoints.",
+    "formula": "Va0 = Vs R2/(R1+R2); Vb0 = Vs R4/(R3+R4); Ra = R1||R2; Rb = R3||R4; Id = (Va0-Vb0)/(Ra+Rb+Rd); Va = Va0-Id Ra; Vb = Vb0+Id Rb; Vdiff = Id Rd; Vcm = (Va+Vb)/2",
+    "assumptions": [
+      "R1 is excitation-to-left, R2 left-to-ground, R3 excitation-to-right, R4 right-to-ground; the excitation source is ideal.",
+      "Detector resistance connects only between left and right midpoints; it has no ground/common-mode loading or bias current.",
+      "Detector current is positive left-to-right; differential voltage is left minus right; balanced and negatively unbalanced bridges are supported without division by the open-circuit voltage.",
+      "This is an exact linear DC network solution, not a strain/temperature transducer model; no resistor noise, lead resistance or self-heating is modeled.",
+      "All five resistances are 1e-9 to 1e12 ohm and abs(Vs) <= 1e6 V; very close balance can incur floating-point cancellation."
+    ],
+    "references": [
+      {
+        "title": "William & Mary, Analog Electronics Chapter 2: Kirchhoff's Laws and Thevenin's Theorem, bridge exercises and Thevenin load relation",
+        "url": "https://physics.wm.edu/~evmik/classes/Physics_252_Analog_Electronics/lab_manuals/LabManual_Chpt2.pdf"
+      },
+      {
+        "title": "University of Colorado Boulder, PHYS 3330 Lab 2, section 2.7 divider Thevenin equivalents",
+        "url": "https://physicslabs.colorado.edu/courses/phys-3330/lab-guides/lab2/"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "v_excitation",
+        "label": "Signed bridge excitation",
+        "unit": "V",
+        "default": 10.0,
+        "min": -1000000.0,
+        "max": 1000000.0
+      },
+      {
+        "key": "r_1",
+        "label": "Left upper resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_2",
+        "label": "Left lower resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_3",
+        "label": "Right upper resistance",
+        "unit": "ohm",
+        "default": 1000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_4",
+        "label": "Right lower resistance",
+        "unit": "ohm",
+        "default": 3000.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      },
+      {
+        "key": "r_detector",
+        "label": "Midpoint-to-midpoint detector resistance",
+        "unit": "ohm",
+        "default": 1250.0,
+        "min": 1e-09,
+        "max": 1000000000000.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "v_open",
+        "label": "Open-circuit differential voltage",
+        "unit": "V",
+        "expression": "v_excitation*(r_2/(r_1+r_2)-r_4/(r_3+r_4))"
+      },
+      {
+        "key": "r_output",
+        "label": "Differential Thevenin resistance",
+        "unit": "ohm",
+        "expression": "r_1*r_2/(r_1+r_2)+r_3*r_4/(r_3+r_4)"
+      },
+      {
+        "key": "i_detector",
+        "label": "Signed detector current left-to-right",
+        "unit": "A",
+        "expression": "v_open/(r_output+r_detector)"
+      },
+      {
+        "key": "v_loaded",
+        "label": "Loaded differential voltage left minus right",
+        "unit": "V",
+        "expression": "i_detector*r_detector"
+      },
+      {
+        "key": "v_left",
+        "label": "Loaded left midpoint relative to ground",
+        "unit": "V",
+        "expression": "v_excitation*r_2/(r_1+r_2)-i_detector*r_1*r_2/(r_1+r_2)"
+      },
+      {
+        "key": "v_right",
+        "label": "Loaded right midpoint relative to ground",
+        "unit": "V",
+        "expression": "v_excitation*r_4/(r_3+r_4)+i_detector*r_3*r_4/(r_3+r_4)"
+      },
+      {
+        "key": "v_common",
+        "label": "Loaded output common-mode voltage",
+        "unit": "V",
+        "expression": "(v_left+v_right)/2"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "min(min(r_1,r_2),min(min(r_3,r_4),r_detector))",
+        "op": ">",
+        "right": "0",
+        "message": "Bridge arms and finite detector resistance must all be positive."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "v_excitation": 10.0,
+        "r_1": 1000.0,
+        "r_2": 1000.0,
+        "r_3": 1000.0,
+        "r_4": 3000.0,
+        "r_detector": 1250.0
+      },
+      "expected": {
+        "v_open": -2.5,
+        "r_output": 1250.0,
+        "i_detector": -0.001,
+        "v_loaded": -1.25,
+        "v_left": 5.5,
+        "v_right": 6.75,
+        "v_common": 6.125
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

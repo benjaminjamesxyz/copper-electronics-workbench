@@ -58,3 +58,46 @@ The negative sign means current flows opposite the chosen positive direction. Th
 
 Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
 
+## 6. `dc.loaded_wheatstone_bridge` — Loaded Wheatstone bridge and common-mode voltage (expert)
+
+**Design question:** What differential signal and common-mode voltage actually appear at an unbalanced bridge when the detector has finite resistance?
+
+**Unambiguous topology and signs:** `R1` connects excitation-to-left midpoint, `R2` left-to-ground, `R3` excitation-to-right midpoint, `R4` right-to-ground. `Rd` connects left directly to right, with no separate connection to ground. Detector current is positive left-to-right; differential voltage is left minus right.
+
+**Derivation:** Apply the divider Thevenin equivalent separately to the two arms:
+
+`Va0 = Vs R2/(R1+R2)`; `Vb0 = Vs R4/(R3+R4)`;
+
+`Ra = R1 R2/(R1+R2)`; `Rb = R3 R4/(R3+R4)`.
+
+The floating detector closes a loop between the two Thevenin outputs, so `Vopen = Va0-Vb0`, `Routput = Ra+Rb`, and `Id = Vopen/(Routput+Rd)`. The actual midpoints are `Va = Va0-Id Ra`, `Vb = Vb0+Id Rb`. Hence `Vloaded = Id Rd = Va-Vb`, and `Vcommon = (Va+Vb)/2`.
+
+These equations are this report's explicit derivation from S4's divider equivalents and S5's KCL/KVL and Thevenin load relation. S5 also includes Wheatstone bridge design/laboratory exercises. No unsourced manufacturer behavior is assumed.
+
+**Inputs:** `v_excitation` (V), `r_1` through `r_4`, `r_detector` (ohm). **Outputs:** `v_open`, `v_loaded`, `v_left`, `v_right`, `v_common` (V); `r_output` (ohm); `i_detector` (A).
+
+**Domain and limitations:** All five resistances positive and finite; excitation can have either sign or be zero. Balanced bridge condition is `R1 R4 = R2 R3`, making both differential voltage and detector current exactly zero in the mathematical model. Because no expression divides by `Vopen`, this case is supported. Near balance the subtraction of nearly equal ratios can lose relative binary64 precision. A real amplifier with grounded or unequal input impedances, input bias currents, finite excitation impedance or sensor lead resistances does not satisfy this topology. No strain-gauge temperature or noise modeling is included.
+
+**Independent example/default:** `Vs = 10 V`, `R1 = R2 = R3 = 1000 ohm`, `R4 = 3000 ohm`, `Rd = 1250 ohm`.
+
+- Open midpoints are `5 V` and `7.5 V`, so `Vopen = -2.5 V`.
+- `Ra = 500 ohm`, `Rb = 750 ohm`, so `Routput = 1250 ohm`.
+- The detector current is `-2.5/(1250+1250) = -0.001 A`; `Vloaded = -1.25 V`.
+- The loaded midpoints are `Va = 5-(-0.001)(500) = 5.5 V`, `Vb = 7.5+(-0.001)(750) = 6.75 V`.
+- `Vcommon = (5.5+6.75)/2 = 6.125 V`.
+- Independent original-network KCL confirms these numbers: at the left, `(10-5.5)/1000 = 5.5/1000 + (5.5-6.75)/1250 = 0.0045 A`; at the right, `(10-6.75)/1000 + (5.5-6.75)/1250 = 6.75/3000 = 0.00225 A`.
+
+### Complete expected output map
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `v_open` | `-2.5` | V |
+| `r_output` | `1250.0` | ohm |
+| `i_detector` | `-0.001` | A |
+| `v_loaded` | `-1.25` | V |
+| `v_left` | `5.5` | V |
+| `v_right` | `6.75` | V |
+| `v_common` | `6.125` | V |
+
+Relative tolerance: `1e-6`; these values are the independently derived research oracle, not engine observations.
+
