@@ -1,0 +1,803 @@
+{
+  "lane": "cables",
+  "base": "4c46fa1",
+  "file": "backend/tests/cables.rs",
+  "authored_tests": 28,
+  "behaviors_covered": {
+    "cables.twin_lead_geometry": "Complete acosh(D/d)=ln(2) oracle; scale and permittivity invariants with the TEM energy identity for the loop-L/wire-C convention; one-ulp-gap geometry via the sqrt(2u) expansion; D+d overflow conditioning regression; touching/reversed/scalar rejection with full recovery. Every NaN/+Inf/-Inf input rejected with complete asserted recovery.",
+    "cables.lossy_rlgc_line": "Complete 3+j4 / 12+j5 oracle checked through telegrapher identities gamma*Z0=z and gamma/Z0=y on the selected physical root; exact-zero lossless limit; zero-length and length-cascade scaling; Heaviside balance real and frequency independent across 1..1e10 Hz; near-DC tiny-phase Taylor oracles; 1e-24 loss not rounded to lossless; every scalar domain rejection with recovery. Every NaN/+Inf/-Inf input rejected with complete asserted recovery.",
+    "cables.radial_insulation_stress": "Complete ln(b/a) oracle with Gauss integration identity E(a)*a*ln(b/a)=V; zero-voltage and geometric-scaling invariants including admitted negative margin; thin-gap planar limit via u/ln(1+u) without cancellation; reversed-gap and scalar rejection with recovery. Every NaN/+Inf/-Inf input rejected with complete asserted recovery.",
+    "cables.hertz_holm_contact": "Complete prescribed-radius oracle with Hertz pressure-profile force integral; force cube-root scaling and auxetic Poisson symmetry; all three inclusive screens distinct and equal at exact cube=1; small-contact equality regression against fractional-power rounding; each physical screen and scalar domain isolated and rejected with recovery. Every NaN/+Inf/-Inf input rejected with complete asserted recovery.",
+    "cables.contact_hotspot_temperature": "Complete 3-4-5 hypot oracle at exactly representable Lorenz 2^-26; zero-drop and equal-temperature valid limits; sub-ULP positive quadratic rise through the binomial series, not Tm-Tbulk subtraction; exact thermal limit and Lorenz scaling; scalar and coupled limit rejections with recovery; equal-bulk/limit rounding contradiction regression. Every NaN/+Inf/-Inf input rejected with complete asserted recovery.",
+    "cables.cantilever_contact_spring": "Complete 3-4-5 oracle; width/thickness/length scaling through the second-moment bending identities; zero travel and every inclusive physical boundary t=L/10, delta=L/10 and stress=limit; geometry/travel/stress and scalar rejections with isolation of coupled screens and full recovery. Every NaN/+Inf/-Inf input rejected with complete asserted recovery."
+  },
+  "oracle_provenance": "Non-default vectors derived independently from the source laws: acosh(1.25)=ln(2), exact complex square roots of 0.016+j0.063, cylindrical Gauss/Laplace integration, prescribed Hertz radius a^3=1e-15, the exactly representable 3-4-5 hypot triangle at Lorenz 2^-26, and the rectangular second moment. No catalog example outputs loaded; independent high-precision arithmetic re-verified every pinned constant.",
+  "verification": "Not executed. No builds, tests, lint, formatter, backend process or native launches. Independent arithmetic and source inspection only; all 28 Rust tests and 27 flat process scenarios await Main. Three conditioning regressions are expected to expose current source defects, not observed failures.",
+  "untested_gaps": [
+    "Main must compile and run the cables integration target and full integrated suite.",
+    "Main must run flat scenarios in one real JSON-lines process and inspect native scenarios; three conditioning regressions are expected to expose current source defects, not observed failures.",
+    "No physical contact wear, plating/oxide film, insulation breakdown certification, skin-effect RL(f) fit or fatigue life is modeled or tested.",
+    "No exhaustive binary64 domain sweep; physical unrepresentability differs from avoidable intermediate failures."
+  ],
+  "suspected_defects": [
+    {
+      "severity": "medium",
+      "id": "cables.twin_lead_geometry",
+      "location": "backend/catalog/cables.json:73",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "wire_diameter": 1e+308,
+        "center_spacing": 1.5e+308,
+        "relative_permittivity": 2.25
+      },
+      "expected_outputs": {
+        "geometry_factor": 0.9624236501192069,
+        "inductance_per_length": 3.8496946004768275e-07,
+        "capacitance_per_length": 6.503016172887135e-11,
+        "differential_impedance": 76.94062714269572
+      },
+      "contradiction": "All outputs depend only on D/d=1.5 and acosh(1.5)=0.9624236501192069, yet the geometry expression forms center_spacing+wire_diameter=2.5e308 which overflows to infinity before log1p; the engine then rejects a valid representable input with an exactly representable answer.",
+      "minimal_correction": "Evaluate the geometry factor from the D/d ratio without forming D+d (e.g. log1p(u+sqrt(u)*sqrt(2+u)) with u=(D-d)/d); do not add arbitrary physical bounds to hide the arithmetic failure."
+    },
+    {
+      "severity": "medium",
+      "id": "cables.hertz_holm_contact",
+      "location": "backend/catalog/cables.json:471",
+      "evidence": "Source-derived, not executed.",
+      "inputs": {
+        "normal_force": 10000.0,
+        "sphere_radius": 0.01,
+        "young_modulus": 150000000000.0,
+        "poisson_ratio": 0.0,
+        "resistivity": 2e-08,
+        "electron_mean_free_path": 1e-08,
+        "elastic_pressure_limit": 10000000000.0
+      },
+      "expected_outputs": {
+        "effective_modulus": 75000000000.0,
+        "contact_radius": 0.001,
+        "maximum_pressure": 4774648292.756855,
+        "constriction_resistance": 1e-05,
+        "indentation": 0.0001
+      },
+      "contradiction": "Exact contact radius equals 0.1*sphere_radius exactly (a^3=1e-9 m^3 on both sides of the inclusive screen), but pow(1e-9,1/3)=0.0010000000000000005 rounds one half-ulp above 0.001 and the small-contact screen spuriously rejects an exactly-boundary valid contact.",
+      "minimal_correction": "Evaluate the screen on the cube side (compare a^3 against (0.1R)^3 or keep the shared pow result for constraint and output), so an exact boundary is not decided by fractional-power rounding."
+    },
+    {
+      "severity": "medium",
+      "id": "cables.contact_hotspot_temperature",
+      "location": "backend/catalog/cables.json:613",
+      "evidence": "Source-derived, not executed; corroborates the V2CablesRun counterexample.",
+      "inputs": {
+        "contact_voltage": 1e-10,
+        "bulk_temperature": 300.0,
+        "lorenz_number": 2.45e-08,
+        "temperature_limit": 300.0
+      },
+      "expected_outputs": {},
+      "contradiction": "Exact hypot(300, 3.1944e-7) exceeds the 300 K limit for any positive contact voltage, so the model limit is violated and the request must be rejected; binary64 hypot rounds down to exactly 300.0, the inclusive screen passes, and the engine admits a positive temperature rise with zero margin. The rounded comparison hides a true violation.",
+      "minimal_correction": "Reject the equal-bulk/limit case with any positive contact voltage (or compare rise against the limit with a cancellation-aware test) instead of trusting the rounded hypot; keep Vcontact=0 valid at equality."
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "twin_lead_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cables.twin_lead_geometry",
+        "inputs": {
+          "wire_diameter": 0.0008,
+          "center_spacing": 0.001,
+          "relative_permittivity": 4.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "D/d=1.25 gives acosh(1.25)=ln(2) exactly; independently derived, not an implementation example.",
+      "expected_outputs": {
+        "geometry_factor": 0.6931471805599453,
+        "inductance_per_length": 2.772588722239781e-07,
+        "capacitance_per_length": 1.605214717239473e-10,
+        "differential_impedance": 41.56005941448021
+      }
+    },
+    {
+      "name": "twin_lead_touching_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.twin_lead_geometry",
+        "inputs": {
+          "wire_diameter": 0.0008,
+          "center_spacing": 0.0008,
+          "relative_permittivity": 4.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Wire centers at one diameter violate the acosh domain; reject without terminating the process."
+    },
+    {
+      "name": "twin_lead_touching_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cables.twin_lead_geometry",
+        "inputs": {
+          "wire_diameter": 0.0008,
+          "center_spacing": 0.001,
+          "relative_permittivity": 4.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; the full independent output map must recover.",
+      "expected_outputs": {
+        "geometry_factor": 0.6931471805599453,
+        "inductance_per_length": 2.772588722239781e-07,
+        "capacitance_per_length": 1.605214717239473e-10,
+        "differential_impedance": 41.56005941448021
+      }
+    },
+    {
+      "name": "twin_lead_ratio_overflow_conditioning",
+      "request": {
+        "command": "calculate",
+        "id": "cables.twin_lead_geometry",
+        "inputs": {
+          "wire_diameter": 1e+308,
+          "center_spacing": 1.5e+308,
+          "relative_permittivity": 2.25
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conditioning regression: D+d overflows although every output depends only on D/d=1.5 and stays representable; expected to expose the current source defect.",
+      "expected_outputs": {
+        "geometry_factor": 0.9624236501192069,
+        "inductance_per_length": 3.8496946004768275e-07,
+        "capacitance_per_length": 6.503016172887135e-11,
+        "differential_impedance": 76.94062714269572
+      }
+    },
+    {
+      "name": "rlgc_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cables.lossy_rlgc_line",
+        "inputs": {
+          "series_resistance_per_length": 3.0,
+          "inductance_per_length": 4e-06,
+          "shunt_conductance_per_length": 0.012,
+          "capacitance_per_length": 5e-09,
+          "frequency": 159154.94309189535,
+          "length": 4.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "omega=1e6 rad/s gives z=3+j4, y=0.012+j0.005, gamma^2=0.016+j0.063; roots taken independently.",
+      "expected_outputs": {
+        "angular_frequency": 1000000.0,
+        "series_impedance_magnitude": 5.0,
+        "shunt_admittance_magnitude": 0.013,
+        "normalized_propagation_square_real": 0.2461538461538462,
+        "normalized_propagation_square_imaginary": 0.9692307692307692,
+        "attenuation_constant": 0.20124611797498107,
+        "phase_constant": 0.15652475842498528,
+        "impedance_real": 18.92057519422899,
+        "impedance_imaginary": 5.16015687115336,
+        "forward_amplitude_ratio": 0.4470948690393243,
+        "attenuation_db": 6.9920062832788075
+      }
+    },
+    {
+      "name": "rlgc_lossless_exact_zero_limit",
+      "request": {
+        "command": "calculate",
+        "id": "cables.lossy_rlgc_line",
+        "inputs": {
+          "series_resistance_per_length": 0.0,
+          "inductance_per_length": 2.5e-07,
+          "shunt_conductance_per_length": 0.0,
+          "capacitance_per_length": 1e-10,
+          "frequency": 1000000.0,
+          "length": 10.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Admitted zero-resistance/zero-conductance limit: attenuation must be exactly zero, Z0 exactly 50 ohm real and beta exactly omega*sqrt(LC).",
+      "expected_outputs": {
+        "angular_frequency": 6283185.307179586,
+        "series_impedance_magnitude": 1.5707963267948966,
+        "shunt_admittance_magnitude": 0.0006283185307179586,
+        "normalized_propagation_square_real": -1.0,
+        "normalized_propagation_square_imaginary": 0.0,
+        "attenuation_constant": 0.0,
+        "phase_constant": 0.031415926535897934,
+        "impedance_real": 50.0,
+        "impedance_imaginary": 0.0,
+        "forward_amplitude_ratio": 1.0,
+        "attenuation_db": 0.0
+      }
+    },
+    {
+      "name": "rlgc_dc_frequency_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.lossy_rlgc_line",
+        "inputs": {
+          "series_resistance_per_length": 3.0,
+          "inductance_per_length": 4e-06,
+          "shunt_conductance_per_length": 0.012,
+          "capacitance_per_length": 5e-09,
+          "frequency": 0.0,
+          "length": 4.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "DC lies outside the positive-frequency model; reject without terminating the process."
+    },
+    {
+      "name": "rlgc_dc_frequency_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cables.lossy_rlgc_line",
+        "inputs": {
+          "series_resistance_per_length": 3.0,
+          "inductance_per_length": 4e-06,
+          "shunt_conductance_per_length": 0.012,
+          "capacitance_per_length": 5e-09,
+          "frequency": 159154.94309189535,
+          "length": 4.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; the full independent output map must recover.",
+      "expected_outputs": {
+        "angular_frequency": 1000000.0,
+        "series_impedance_magnitude": 5.0,
+        "shunt_admittance_magnitude": 0.013,
+        "normalized_propagation_square_real": 0.2461538461538462,
+        "normalized_propagation_square_imaginary": 0.9692307692307692,
+        "attenuation_constant": 0.20124611797498107,
+        "phase_constant": 0.15652475842498528,
+        "impedance_real": 18.92057519422899,
+        "impedance_imaginary": 5.16015687115336,
+        "forward_amplitude_ratio": 0.4470948690393243,
+        "attenuation_db": 6.9920062832788075
+      }
+    },
+    {
+      "name": "radial_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cables.radial_insulation_stress",
+        "inputs": {
+          "conductor_radius": 0.002,
+          "shield_inner_radius": 0.006,
+          "peak_voltage": 1800.0,
+          "allowable_field": 2000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "ln(b/a)=ln(3); fields follow the cylindrical Gauss law and integrate back to the applied voltage.",
+      "expected_outputs": {
+        "inner_surface_field": 819215.3039641536,
+        "outer_surface_field": 273071.7679880512,
+        "voltage_limit": 4394.449154672439,
+        "field_margin": 1180784.6960358464
+      }
+    },
+    {
+      "name": "radial_oversupply_negative_margin",
+      "request": {
+        "command": "calculate",
+        "id": "cables.radial_insulation_stress",
+        "inputs": {
+          "conductor_radius": 0.002,
+          "shield_inner_radius": 0.006,
+          "peak_voltage": 6000.0,
+          "allowable_field": 2000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Over-stressed designs stay valid with an admitted negative margin; field calculation remains meaningful before breakdown.",
+      "expected_outputs": {
+        "inner_surface_field": 2730717.679880513,
+        "outer_surface_field": 910239.2266268376,
+        "voltage_limit": 4394.449154672438,
+        "field_margin": -730717.6798805129
+      }
+    },
+    {
+      "name": "radial_touching_shield_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.radial_insulation_stress",
+        "inputs": {
+          "conductor_radius": 0.002,
+          "shield_inner_radius": 0.002,
+          "peak_voltage": 1800.0,
+          "allowable_field": 2000000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Zero insulation gap has a singular logarithm; reject without terminating the process."
+    },
+    {
+      "name": "radial_touching_shield_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cables.radial_insulation_stress",
+        "inputs": {
+          "conductor_radius": 0.002,
+          "shield_inner_radius": 0.006,
+          "peak_voltage": 1800.0,
+          "allowable_field": 2000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; the full independent output map must recover.",
+      "expected_outputs": {
+        "inner_surface_field": 819215.3039641536,
+        "outer_surface_field": 273071.7679880512,
+        "voltage_limit": 4394.449154672439,
+        "field_margin": 1180784.6960358464
+      }
+    },
+    {
+      "name": "hertz_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cables.hertz_holm_contact",
+        "inputs": {
+          "normal_force": 0.016,
+          "sphere_radius": 0.004,
+          "young_modulus": 96000000000.0,
+          "poisson_ratio": 0.0,
+          "resistivity": 2e-08,
+          "electron_mean_free_path": 5e-08,
+          "elastic_pressure_limit": 200000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Auxetic-free vector engineered so a^3=1e-15 m^3 exactly; all outputs follow closed form.",
+      "expected_outputs": {
+        "effective_modulus": 48000000000.0,
+        "contact_radius": 1e-05,
+        "maximum_pressure": 76394372.68410976,
+        "constriction_resistance": 0.001,
+        "indentation": 2.5e-08
+      }
+    },
+    {
+      "name": "hertz_triple_equality_boundary",
+      "request": {
+        "command": "calculate",
+        "id": "cables.hertz_holm_contact",
+        "inputs": {
+          "normal_force": 100.0,
+          "sphere_radius": 10.0,
+          "young_modulus": 1500.0,
+          "poisson_ratio": 0.0,
+          "resistivity": 2e-08,
+          "electron_mean_free_path": 0.1,
+          "elastic_pressure_limit": 47.7464829275686
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "a^3=1 exactly: all three inclusive screens meet equality independently and must be admitted.",
+      "expected_outputs": {
+        "effective_modulus": 750.0,
+        "contact_radius": 1.0,
+        "maximum_pressure": 47.7464829275686,
+        "constriction_resistance": 1e-08,
+        "indentation": 0.1
+      }
+    },
+    {
+      "name": "hertz_pow_rounding_boundary",
+      "request": {
+        "command": "calculate",
+        "id": "cables.hertz_holm_contact",
+        "inputs": {
+          "normal_force": 10000.0,
+          "sphere_radius": 0.01,
+          "young_modulus": 150000000000.0,
+          "poisson_ratio": 0.0,
+          "resistivity": 2e-08,
+          "electron_mean_free_path": 1e-08,
+          "elastic_pressure_limit": 10000000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conditioning regression: exact contact radius equals 0.1R exactly but pow(a^3,1/3) rounds a half-ulp high; expected to expose the current source defect.",
+      "expected_outputs": {
+        "effective_modulus": 75000000000.0,
+        "contact_radius": 0.001,
+        "maximum_pressure": 4774648292.756855,
+        "constriction_resistance": 1e-05,
+        "indentation": 0.0001
+      }
+    },
+    {
+      "name": "hertz_poisson_upper_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.hertz_holm_contact",
+        "inputs": {
+          "normal_force": 0.016,
+          "sphere_radius": 0.004,
+          "young_modulus": 96000000000.0,
+          "poisson_ratio": 0.5,
+          "resistivity": 2e-08,
+          "electron_mean_free_path": 5e-08,
+          "elastic_pressure_limit": 200000000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Poisson ratio 0.5 is an excluded incompressible bound; reject without terminating the process."
+    },
+    {
+      "name": "hertz_poisson_upper_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cables.hertz_holm_contact",
+        "inputs": {
+          "normal_force": 0.016,
+          "sphere_radius": 0.004,
+          "young_modulus": 96000000000.0,
+          "poisson_ratio": 0.0,
+          "resistivity": 2e-08,
+          "electron_mean_free_path": 5e-08,
+          "elastic_pressure_limit": 200000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; the full independent output map must recover.",
+      "expected_outputs": {
+        "effective_modulus": 48000000000.0,
+        "contact_radius": 1e-05,
+        "maximum_pressure": 76394372.68410976,
+        "constriction_resistance": 0.001,
+        "indentation": 2.5e-08
+      }
+    },
+    {
+      "name": "hotspot_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cables.contact_hotspot_temperature",
+        "inputs": {
+          "contact_voltage": 0.09765625,
+          "bulk_temperature": 300.0,
+          "lorenz_number": 1.4901161193847656e-08,
+          "temperature_limit": 600.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Exactly representable Lorenz 2^-26 with a 3-4-5 hypot triangle: hotspot exactly 500 K.",
+      "expected_outputs": {
+        "hotspot_temperature": 500.0,
+        "temperature_rise": 200.0,
+        "contact_voltage_limit": 0.12685919000748613,
+        "temperature_margin": 100.0
+      }
+    },
+    {
+      "name": "hotspot_zero_drop_valid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.contact_hotspot_temperature",
+        "inputs": {
+          "contact_voltage": 0.0,
+          "bulk_temperature": 300.0,
+          "lorenz_number": 2.45e-08,
+          "temperature_limit": 300.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Admitted zero dissipation at bulk equal to limit: no heating, zero headroom, zero limit voltage.",
+      "expected_outputs": {
+        "hotspot_temperature": 300.0,
+        "temperature_rise": 0.0,
+        "contact_voltage_limit": 0.0,
+        "temperature_margin": 0.0
+      }
+    },
+    {
+      "name": "hotspot_over_limit_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.contact_hotspot_temperature",
+        "inputs": {
+          "contact_voltage": 0.2,
+          "bulk_temperature": 300.0,
+          "lorenz_number": 1.4901161193847656e-08,
+          "temperature_limit": 600.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Hotspot hypot(300,819.2) far exceeds the 600 K model limit; reject without terminating the process."
+    },
+    {
+      "name": "hotspot_over_limit_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cables.contact_hotspot_temperature",
+        "inputs": {
+          "contact_voltage": 0.09765625,
+          "bulk_temperature": 300.0,
+          "lorenz_number": 1.4901161193847656e-08,
+          "temperature_limit": 600.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; the full independent output map must recover.",
+      "expected_outputs": {
+        "hotspot_temperature": 500.0,
+        "temperature_rise": 200.0,
+        "contact_voltage_limit": 0.12685919000748613,
+        "temperature_margin": 100.0
+      }
+    },
+    {
+      "name": "hotspot_equal_bulk_rounding_contradiction",
+      "request": {
+        "command": "calculate",
+        "id": "cables.contact_hotspot_temperature",
+        "inputs": {
+          "contact_voltage": 1e-10,
+          "bulk_temperature": 300.0,
+          "lorenz_number": 2.45e-08,
+          "temperature_limit": 300.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Conditioning regression: exact hypot exceeds the limit for any positive contact voltage; rounded hypot(300,3.19e-7)=300.0 must not authorize positive heat. Expected to expose the current source defect.",
+      "expected_outputs": {}
+    },
+    {
+      "name": "beam_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "cables.cantilever_contact_spring",
+        "inputs": {
+          "beam_length": 0.016,
+          "beam_width": 0.003,
+          "beam_thickness": 0.0004,
+          "young_modulus": 120000000000.0,
+          "tip_deflection": 0.00064,
+          "allowable_stress": 360000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "3-4-5-style vector: stiffness 1406.25 N/m, force 0.9 N, root stress exactly half the allowable.",
+      "expected_outputs": {
+        "spring_rate": 1406.25,
+        "normal_force": 0.9,
+        "root_stress": 180000000.0,
+        "stress_margin": 180000000.0
+      }
+    },
+    {
+      "name": "beam_zero_travel_valid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.cantilever_contact_spring",
+        "inputs": {
+          "beam_length": 0.016,
+          "beam_width": 0.003,
+          "beam_thickness": 0.0004,
+          "young_modulus": 120000000000.0,
+          "tip_deflection": 0.0,
+          "allowable_stress": 360000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Admitted zero mating travel: stiffness finite, force and stress exactly zero, full margin.",
+      "expected_outputs": {
+        "spring_rate": 1406.25,
+        "normal_force": 0.0,
+        "root_stress": 0.0,
+        "stress_margin": 360000000.0
+      }
+    },
+    {
+      "name": "beam_slenderness_boundary_valid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.cantilever_contact_spring",
+        "inputs": {
+          "beam_length": 0.016,
+          "beam_width": 0.003,
+          "beam_thickness": 0.0016,
+          "young_modulus": 120000000000.0,
+          "tip_deflection": 0.0,
+          "allowable_stress": 1000000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Thickness exactly L/10 sits on the inclusive slenderness screen and must be admitted; f64(0.016)/10 equals f64(0.0016) exactly.",
+      "expected_outputs": {
+        "spring_rate": 90000.0,
+        "normal_force": 0.0,
+        "root_stress": 0.0,
+        "stress_margin": 1000000000.0
+      }
+    },
+    {
+      "name": "beam_slenderness_excess_invalid",
+      "request": {
+        "command": "calculate",
+        "id": "cables.cantilever_contact_spring",
+        "inputs": {
+          "beam_length": 0.016,
+          "beam_width": 0.003,
+          "beam_thickness": 0.0016001,
+          "young_modulus": 120000000000.0,
+          "tip_deflection": 0.0,
+          "allowable_stress": 1000000000.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-12,
+      "rationale": "Thickness beyond L/10 leaves the Euler-Bernoulli screen; reject without terminating the process."
+    },
+    {
+      "name": "beam_slenderness_excess_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "cables.cantilever_contact_spring",
+        "inputs": {
+          "beam_length": 0.016,
+          "beam_width": 0.003,
+          "beam_thickness": 0.0004,
+          "young_modulus": 120000000000.0,
+          "tip_deflection": 0.00064,
+          "allowable_stress": 360000000.0
+        }
+      },
+      "expected_ok": true,
+      "relative_tolerance": 1e-12,
+      "rationale": "Immediately follows the invalid request; the full independent output map must recover.",
+      "expected_outputs": {
+        "spring_rate": 1406.25,
+        "normal_force": 0.9,
+        "root_stress": 180000000.0,
+        "stress_margin": 180000000.0
+      }
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "cables.twin_lead_geometry",
+      "inputs": {
+        "wire_diameter": 0.0008,
+        "center_spacing": 0.001,
+        "relative_permittivity": 4.0
+      },
+      "expected_outputs": {
+        "geometry_factor": 0.6931471805599453,
+        "inductance_per_length": 2.772588722239781e-07,
+        "capacitance_per_length": 1.605214717239473e-10,
+        "differential_impedance": 41.56005941448021
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all outputs and units. Exercise touching spacing then restore without reopening app. Inspect exact wire/spacing labels, polarity-free geometry and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cables.lossy_rlgc_line",
+      "inputs": {
+        "series_resistance_per_length": 3.0,
+        "inductance_per_length": 4e-06,
+        "shunt_conductance_per_length": 0.012,
+        "capacitance_per_length": 5e-09,
+        "frequency": 159154.94309189535,
+        "length": 4.0
+      },
+      "expected_outputs": {
+        "angular_frequency": 1000000.0,
+        "series_impedance_magnitude": 5.0,
+        "shunt_admittance_magnitude": 0.013,
+        "normalized_propagation_square_real": 0.2461538461538462,
+        "normalized_propagation_square_imaginary": 0.9692307692307692,
+        "attenuation_constant": 0.20124611797498107,
+        "phase_constant": 0.15652475842498528,
+        "impedance_real": 18.92057519422899,
+        "impedance_imaginary": 5.16015687115336,
+        "forward_amplitude_ratio": 0.4470948690393243,
+        "attenuation_db": 6.9920062832788075
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all eleven outputs and units. Exercise zero frequency rejection then restore. Inspect complex impedance sign labels, Np/m versus dB distinction and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cables.radial_insulation_stress",
+      "inputs": {
+        "conductor_radius": 0.002,
+        "shield_inner_radius": 0.006,
+        "peak_voltage": 6000.0,
+        "allowable_field": 2000000.0
+      },
+      "expected_outputs": {
+        "inner_surface_field": 2730717.679880513,
+        "outer_surface_field": 910239.2266268376,
+        "voltage_limit": 4394.449154672438,
+        "field_margin": -730717.6798805129
+      },
+      "steps": "Select calculator in native app; enter over-stressed vector; calculate; verify the admitted negative margin renders without hiding its sign. Exercise touching radii rejection then restore. Inspect radial field arrow directions on the diagram and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cables.hertz_holm_contact",
+      "inputs": {
+        "normal_force": 0.016,
+        "sphere_radius": 0.004,
+        "young_modulus": 96000000000.0,
+        "poisson_ratio": 0.0,
+        "resistivity": 2e-08,
+        "electron_mean_free_path": 5e-08,
+        "elastic_pressure_limit": 200000000.0
+      },
+      "expected_outputs": {
+        "effective_modulus": 48000000000.0,
+        "contact_radius": 1e-05,
+        "maximum_pressure": 76394372.68410976,
+        "constriction_resistance": 0.001,
+        "indentation": 2.5e-08
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all five outputs and units. Exercise Poisson 0.5 rejection then restore. Inspect contact-patch radius versus sphere-radius distinction in the diagram and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cables.contact_hotspot_temperature",
+      "inputs": {
+        "contact_voltage": 0.09765625,
+        "bulk_temperature": 300.0,
+        "lorenz_number": 1.4901161193847656e-08,
+        "temperature_limit": 600.0
+      },
+      "expected_outputs": {
+        "hotspot_temperature": 500.0,
+        "temperature_rise": 200.0,
+        "contact_voltage_limit": 0.12685919000748613,
+        "temperature_margin": 100.0
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all four outputs and units. Exercise over-limit voltage rejection then restore. Inspect hotspot versus bulk temperature labeling on the constriction diagram and scrolling at narrow width and large text."
+    },
+    {
+      "id": "cables.cantilever_contact_spring",
+      "inputs": {
+        "beam_length": 0.016,
+        "beam_width": 0.003,
+        "beam_thickness": 0.0004,
+        "young_modulus": 120000000000.0,
+        "tip_deflection": 0.00064,
+        "allowable_stress": 360000000.0
+      },
+      "expected_outputs": {
+        "spring_rate": 1406.25,
+        "normal_force": 0.9,
+        "root_stress": 180000000.0,
+        "stress_margin": 180000000.0
+      },
+      "steps": "Select calculator in native app; enter complete non-default vector; calculate; compare all four outputs and units. Exercise over-slender thickness rejection then restore. Inspect thickness-in-bending-direction labeling and fixed-root drawing and scrolling at narrow width and large text."
+    }
+  ]
+}
