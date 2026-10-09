@@ -558,5 +558,111 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.sinusoidal_flux_density",
+    "title": "Sinusoidal transformer peak flux density",
+    "category": "Magnetics and transformers",
+    "level": "intermediate",
+    "description": "Calculate peak core flux density from sinusoidal winding voltage and check a user-supplied material operating limit.",
+    "formula": "Bpk = sqrt(2) Vrms/(2 pi f N Ae); Phiflux,pk = Bpk Ae",
+    "assumptions": [
+      "Applied winding voltage is sinusoidal, zero-mean, and equal to the induced voltage; no DC flux offset.",
+      "Flux is approximately uniform over effective magnetic cross section Ae; winding drops and leakage are neglected.",
+      "The exact sinusoidal factor 2 pi/sqrt(2) is used rather than the rounded 4.44.",
+      "The supplied flux limit must be appropriate for material, temperature and frequency; satisfying it does not certify acceptable core loss."
+    ],
+    "references": [
+      {
+        "title": "Micrometals Power Conversion and Line Filter Applications, Issue L, printed page 29: Core loss and sinusoidal form factor",
+        "url": "https://web.mit.edu/6.131/www/document/micrometals.pdf"
+      },
+      {
+        "title": "MIT 6.014 Lecture 11: Faraday's law and transformer winding voltage",
+        "url": "https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "rms_voltage",
+        "label": "Winding RMS voltage",
+        "unit": "V",
+        "default": 24.0,
+        "min": 0.0
+      },
+      {
+        "key": "frequency",
+        "label": "Sinusoidal excitation frequency",
+        "unit": "Hz",
+        "default": 50.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "turns",
+        "label": "Winding turns",
+        "unit": "turn",
+        "default": 1000.0,
+        "min": 1.0
+      },
+      {
+        "key": "core_area",
+        "label": "Effective core cross-sectional area",
+        "unit": "m^2",
+        "default": 0.0004,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "flux_limit",
+        "label": "Material operating flux-density limit",
+        "unit": "T",
+        "default": 0.3,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "peak_flux_density",
+        "label": "Peak AC flux density",
+        "unit": "T",
+        "expression": "sqrt(2)*rms_voltage/(2*pi*frequency*turns*core_area)"
+      },
+      {
+        "key": "peak_flux",
+        "label": "Peak magnetic flux",
+        "unit": "Wb",
+        "expression": "peak_flux_density*core_area"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "floor(turns)",
+        "op": "==",
+        "right": "turns",
+        "message": "Turns must be a positive integer"
+      },
+      {
+        "left": "sqrt(2)*rms_voltage/(2*pi*frequency*turns*core_area)",
+        "op": "<=",
+        "right": "flux_limit",
+        "message": "Predicted flux exceeds the supplied material operating limit"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "rms_voltage": 24.0,
+        "frequency": 50.0,
+        "turns": 1000.0,
+        "core_area": 0.0004,
+        "flux_limit": 0.3
+      },
+      "expected": {
+        "peak_flux_density": 0.2700948948471318,
+        "peak_flux": 0.00010803795793885272
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

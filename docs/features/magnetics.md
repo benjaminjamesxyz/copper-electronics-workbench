@@ -320,6 +320,59 @@ All inputs are the default/worked input column above; every result is named belo
 | `series_opposing` | Series-opposing inductance | H | 0.00014 |
 
 
+## `magnetics.sinusoidal_flux_density` — Sinusoidal transformer peak flux density (intermediate)
+
+ID: `magnetics.sinusoidal_flux_density`.
+
+**Question:** Is the alternating core flux compatible with a chosen material operating limit at the applied sine-wave voltage?
+
+**Derivation:** Let B(t) = Bpk sin(2πft), with Φ = Ae B. Then induced v(t) = N Ae 2πf Bpk cos(2πft). Thus Vrms = 2πf N Ae Bpk/√2. The exact sine coefficient is 2π/√2 = 4.442882938..., commonly rounded to 4.44 in manufacturer guidance. The expression deliberately keeps π and √2; otherwise a strict example tolerance would expose the rounding discrepancy.
+
+**Formula and outputs:**
+
+- `peak_flux_density = sqrt(2)*rms_voltage/(2*pi*frequency*turns*core_area)` [T].
+- `peak_flux = peak_flux_density*core_area` [Wb].
+
+**Input units/domain:** Vrms [V] ≥ 0; f [Hz] > 0; N [turn] ≥ 1 integral; Ae [m²] > 0; flux_limit [T] > 0. The expanded expression for Bpk must be ≤ flux_limit. The flux limit is an operating bound chosen using material, frequency and temperature data, not a guaranteed universal saturation value.
+
+**Limitations:** Zero-mean sinusoidal voltage, negligible winding drops and leakage, approximately uniform flux over the effective area. No DC offset, half-wave volt-second imbalance, square-wave waveform factor, or PWM excitation. Staying below a field limit does not establish acceptable core loss.
+
+**Worked example/defaults:** Vrms = 24 V, f = 50 Hz, N = 1000, Ae = 0.0004 m², flux_limit = 0.3 T.
+
+- f N Ae = 50 × 1000 × 0.0004 = 20.
+- Bpk = 24√2/(40π) = **0.2700948948471318 T**, below 0.3 T.
+- Φpk = Bpk × 0.0004 = **0.00010803795793885272 Wb**.
+
+**Sources:** [Micrometals printed page 29](https://web.mit.edu/6.131/www/document/micrometals.pdf) provides the sine RMS form factor and unit conversion; [MIT Lecture 11](https://web.mit.edu/6.014/www/handouts/lecture11_notes.pdf) supplies Faraday's law.
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `rms_voltage` | Winding RMS voltage | V | 24.0 | >= 0.0 |
+| `frequency` | Sinusoidal excitation frequency | Hz | 50.0 | > 0.0 |
+| `turns` | Winding turns | turn | 1000.0 | >= 1.0 |
+| `core_area` | Effective core cross-sectional area | m^2 | 0.0004 | > 0.0 |
+| `flux_limit` | Material operating flux-density limit | T | 0.3 | > 0.0 |
+
+**Model-domain and error rationale:** Positive frequency, integer turns and positive area guard the volt-second divisor. Nonnegative winding RMS voltage includes zero excitation. The positive user-supplied flux bound is checked before outputs, rejecting excessive predicted peak field; no DC offset or core-loss acceptability can be inferred from that guard.
+
+**Pre-output, input-only constraints:**
+
+- `floor(turns) == turns` — Turns must be a positive integer.
+- `sqrt(2)*rms_voltage/(2*pi*frequency*turns*core_area) <= flux_limit` — Predicted flux exceeds the supplied material operating limit.
+
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `peak_flux_density` | Peak AC flux density | T | 0.2700948948471318 |
+| `peak_flux` | Peak magnetic flux | Wb | 0.00010803795793885272 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.
