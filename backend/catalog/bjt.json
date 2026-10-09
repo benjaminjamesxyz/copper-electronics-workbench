@@ -347,5 +347,175 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.divider_bias",
+    "title": "Loaded-divider BJT DC operating point",
+    "category": "Bipolar transistor design",
+    "level": "intermediate",
+    "description": "Solve the forward-active operating point of an NPN with a base divider, collector resistor and emitter resistor, including divider loading by base current.",
+    "formula": "Vth=Vcc Rbottom/(Rtop+Rbottom); Rth=Rtop||Rbottom; Ib=(Vth-Vbe)/(Rth+(beta+1)Re); Ic=beta Ib; Vce=Vcc-Ic Rc-(beta+1)Ib Re",
+    "assumptions": [
+      "NPN with Rtop to the positive supply and Rbottom to ground; emitter resistor to ground.",
+      "Constant DC beta and supplied Vbe; leakage, Early effect and self-heating ignored.",
+      "Only forward-active solutions with collector above base are accepted; actual device current, breakdown and safe-operating-area ratings must be checked separately."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.101 Lecture 3, slides 31-38: transistor bias and two-resistor biasing",
+        "url": "https://web.mit.edu/6.101/www/s2019/handouts/L03_4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "vcc",
+        "label": "Supply voltage",
+        "unit": "V",
+        "default": 10,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_top",
+        "label": "Upper divider resistance",
+        "unit": "ohm",
+        "default": 40000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_bottom",
+        "label": "Lower divider resistance",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_collector",
+        "label": "Collector resistance",
+        "unit": "ohm",
+        "default": 2000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_emitter",
+        "label": "Emitter resistance",
+        "unit": "ohm",
+        "default": 1000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta",
+        "label": "DC current gain",
+        "unit": "1",
+        "default": 99,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "vbe",
+        "label": "Base-emitter voltage at bias",
+        "unit": "V",
+        "default": 0.7,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "v_thevenin",
+        "label": "Unloaded divider voltage",
+        "unit": "V",
+        "expression": "vcc*r_bottom/(r_top+r_bottom)"
+      },
+      {
+        "key": "r_thevenin",
+        "label": "Divider Thevenin resistance",
+        "unit": "ohm",
+        "expression": "r_top*r_bottom/(r_top+r_bottom)"
+      },
+      {
+        "key": "i_base",
+        "label": "Base current",
+        "unit": "A",
+        "expression": "(v_thevenin-vbe)/(r_thevenin+(beta+1)*r_emitter)"
+      },
+      {
+        "key": "i_collector",
+        "label": "Collector current",
+        "unit": "A",
+        "expression": "beta*i_base"
+      },
+      {
+        "key": "i_emitter",
+        "label": "Emitter current",
+        "unit": "A",
+        "expression": "(beta+1)*i_base"
+      },
+      {
+        "key": "v_emitter",
+        "label": "Emitter voltage",
+        "unit": "V",
+        "expression": "i_emitter*r_emitter"
+      },
+      {
+        "key": "v_base",
+        "label": "Loaded base voltage",
+        "unit": "V",
+        "expression": "v_emitter+vbe"
+      },
+      {
+        "key": "v_collector",
+        "label": "Collector voltage",
+        "unit": "V",
+        "expression": "vcc-i_collector*r_collector"
+      },
+      {
+        "key": "v_ce",
+        "label": "Collector-emitter voltage",
+        "unit": "V",
+        "expression": "v_collector-v_emitter"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "vcc*r_bottom/(r_top+r_bottom)",
+        "op": ">",
+        "right": "vbe",
+        "message": "Divider voltage must forward bias the base-emitter junction."
+      },
+      {
+        "left": "vcc-(vcc*r_bottom/(r_top+r_bottom)-vbe)*(beta*r_collector+(beta+1)*r_emitter)/(r_top*r_bottom/(r_top+r_bottom)+(beta+1)*r_emitter)",
+        "op": ">",
+        "right": "vbe",
+        "message": "Collector must remain above base; this model cannot calculate saturation."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "vcc": 10,
+        "r_top": 40000,
+        "r_bottom": 10000,
+        "r_collector": 2000,
+        "r_emitter": 1000,
+        "beta": 99,
+        "vbe": 0.7
+      },
+      "expected": {
+        "v_thevenin": 2,
+        "r_thevenin": 8000,
+        "i_base": 1.2037037037037037e-05,
+        "i_collector": 0.0011916666666666666,
+        "i_emitter": 0.0012037037037037038,
+        "v_emitter": 1.2037037037037037,
+        "v_base": 1.9037037037037037,
+        "v_collector": 7.616666666666667,
+        "v_ce": 6.412962962962963
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

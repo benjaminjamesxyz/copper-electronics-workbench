@@ -167,3 +167,54 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 
 The executable difference uses `alpha*Itail*expm1(Vdiff/VT)/(1+current_ratio)` rather than subtracting two nearly equal collector currents. From the preceding conservation equations, `Idiff=alpha*Itail*(exp(x)-1)/(1+exp(x))`; native `expm1` preserves the small signed difference when `x` is near zero, without narrowing the physical domain. At zero input it is exactly zero. Its independent limiting slope is `alpha*Itail/(2*VT)`; at the nominal tail/beta/temperature this is approximately `0.0382987396750828 S`. The individual collector outputs retain their original formulas and all researched expected values are unchanged. Parent QA should cover very small positive/negative Vdiff, zero, sign symmetry and the +/-40 VT endpoints.
 
+
+## 1. `bjt.divider_bias` — loaded-divider DC operating point
+
+**Level:** intermediate. **Purpose:** obtain the DC Q point without pretending the base divider is unloaded. Upper resistor `Rtop` connects Vcc to base, lower resistor `Rbottom` connects base to ground, Rc goes from Vcc to collector, and Re goes from emitter to ground.
+
+### Derivation and units
+
+Replace the divider by its Thevenin equivalent:
+
+`Vth = Vcc*Rbottom/(Rtop+Rbottom)` in V,
+
+`Rth = Rtop*Rbottom/(Rtop+Rbottom)` in ohm.
+
+Base-loop KVL and `Ie = (beta+1)*Ib` give
+
+`Vth = Ib*Rth + Vbe + (beta+1)*Ib*Re`,
+
+so `Ib = (Vth-Vbe)/(Rth+(beta+1)*Re)` in A. Then `Ic=beta*Ib`, `Ve=Ie*Re`, `Vb=Ve+Vbe`, `Vc=Vcc-Ic*Rc`, and `Vce=Vc-Ve`. S1 supplies the divider-reduction and bias equations; retaining `beta+1` rather than approximating it by beta preserves emitter-current bookkeeping.
+
+### Domain and limitations
+
+All resistances, Vcc, Vbe and beta are positive. `Vth>Vbe` rejects cutoff. A second constraint expands the complete expression for Vce and requires `Vce>Vbe`, equivalently `Vc>Vb`, to keep the collector-base junction reverse biased. A saturated result is rejected, not clipped to a guessed Vce(sat). The constant-beta, constant-Vbe model ignores Early effect, leakage and thermal feedback. A real design must check parameter corners and SOA.
+
+### Independent worked example
+
+Inputs: Vcc=10 V, Rtop=40 kohm, Rbottom=10 kohm, Rc=2 kohm, Re=1 kohm, beta=99, Vbe=0.7 V.
+
+- `Vth=10*(10/50)=2 V`, `Rth=40*10/50=8 kohm`.
+- Base-loop resistance is `8 kohm+100*1 kohm=108 kohm`.
+- `Ib=1.3/108000=12.0370370370370 uA`.
+- `Ic=99*Ib=1.19166666666667 mA`; `Ie=100*Ib=1.20370370370370 mA`.
+- `Ve=1.20370370370370 V`, `Vb=1.90370370370370 V`.
+- `Vc=10-2.38333333333333=7.61666666666667 V`.
+- `Vce=6.41296296296296 V`, greater than Vbe, so the forward-active constraint passes.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `v_thevenin` | `2` | V |
+| `r_thevenin` | `8000` | ohm |
+| `i_base` | `1.2037037037037037e-05` | A |
+| `i_collector` | `0.0011916666666666666` | A |
+| `i_emitter` | `0.0012037037037037038` | A |
+| `v_emitter` | `1.2037037037037037` | V |
+| `v_base` | `1.9037037037037037` | V |
+| `v_collector` | `7.616666666666667` | V |
+| `v_ce` | `6.412962962962963` | V |
+
