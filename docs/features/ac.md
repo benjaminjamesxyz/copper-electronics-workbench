@@ -127,3 +127,32 @@ Parallel currents add: Y=1/R+1/(j omega L)+j omega C=G+jB, G=1/R, B=omega C-1/(o
 | `current_rms` | 0.04842039258158743 | A RMS |
 
 This result is inductive although the series example is capacitive at the same L/C/f: impedance and admittance sums differ physically. **Parent verification scenarios:** Independent admittance inversion/conjugate sign, B=0 => Z=R, V=0 and rejected zero inputs.
+
+## `ac.series_resonator_bandwidth` — exact series half-power endpoints (intermediate)
+
+**Purpose/topology:** Characterize an existing voltage-driven series RLC resonator's resonance, Q and exact resistor half-power endpoints without filter synthesis or a high-Q approximation.
+
+Reactive cancellation gives omega0=1/sqrt(LC), f0=omega0/(2 pi). Stored-energy/loss ratio gives Q=omega0 L/R=sqrt(L/C)/R. Under fixed RMS voltage, resistor power is V²R/[R²+(omega L-1/(omega C))²]. Half resonant power requires |omega L-1/(omega C)|=R. Solving the positive quadratic roots:
+
+- omegaH=sqrt(omega0²+(R/(2L))²)+R/(2L).
+- omegaL=sqrt(omega0²+(R/(2L))²)-R/(2L).
+- omegaH omegaL=omega0², so the program instead evaluates **omegaL=omega0²/omegaH**, avoiding low-Q subtractive cancellation.
+- Delta omega=R/L; bandwidth=R/(2 pi L)=f0/Q.
+
+The catalog uses equivalent Hz arithmetic fH=sqrt(f0²+(bandwidth/2)²)+bandwidth/2, fL=f0²/fH. f0 is the **geometric**, not arithmetic, endpoint mean. Source: [M2], equations 1.9–1.19, particularly 1.12. Input R/L/C units are ohm/H/F, frequency outputs Hz and Q dimensionless.
+
+**Domain/error rationale:** Positive bounded R,L,C guard LC roots and divisions. All positive Q in those numerical envelopes are allowed; neither high-Q nor underdamping is required. The positive upper root is computed before the lower root, guarding sequential division. At extreme high Q, floating-point subtraction of returned endpoints can lose the small bandwidth; the direct bandwidth output remains the analytical R/(2 pi L).
+
+**Assumptions/limits:** Constant linear total series resistance, ideal L/C and constant-amplitude ideal voltage drive. Include source resistance in R when the ohmic approximation is justified. Half power refers to resistor dissipation relative to resonance. Frequency-varying loss can invalidate Q/bandwidth identities. Driven resonance is not the time-domain damped natural frequency.
+
+**Complete independent example inputs:** `resistance=10 ohm`, `inductance=0.01 H`, `capacitance=1e-6 F`. omega0=10000 rad/s; R/L=1000 rad/s. Independently solve omega²LC ± omegaRC -1=0: omegaL=9512.49219725 and omegaH=10512.49219725 rad/s. Their reactances are -10/+10 ohm, |Z|=sqrt(2)R and resistor power half its resonant value.
+
+| Output key | Expected value | Unit |
+|---|---:|---|
+| `resonance_frequency` | 1591.5494309189535 | Hz |
+| `quality_factor` | 10.0 | 1 |
+| `bandwidth` | 159.15494309189535 | Hz |
+| `upper_half_power` | 1673.11509740738 | Hz |
+| `lower_half_power` | 1513.9601543154847 | Hz |
+
+**Parent verification scenarios:** Low/high Q, fH-fL=bandwidth where resolved, fH fL=f0², positive low root at low Q, and rejection of zero R/L/C. Do not assert symmetric Hz endpoints.

@@ -124,5 +124,29 @@
     ],
     "constraints": [],
     "example": {"inputs": {"frequency": 1000.0, "resistance": 1000.0, "inductance": 0.01, "capacitance": 0.000001, "voltage_rms": 5.0}, "expected": {"conductance": 0.001, "susceptance": -0.009632309002009948, "impedance_real": 10.66309788872204, "impedance_imaginary": 102.71025378285057, "impedance_magnitude": 103.26227718156345, "impedance_phase": 1.4673496474397956, "current_rms": 0.04842039258158743}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "ac.series_resonator_bandwidth",
+    "title": "Series resonator frequency, Q and exact bandwidth",
+    "category": "AC impedance and resonance",
+    "level": "intermediate",
+    "description": "Characterize a voltage-driven series resonator's resonance and exact resistor half-power frequencies without a high-Q approximation.",
+    "formula": "omega_0 = 1/sqrt(LC); Q = omega_0 L/R; delta_omega = R/L; omega_H = sqrt(omega_0^2+(R/(2L))^2)+R/(2L); omega_L = omega_0^2/omega_H",
+    "assumptions": ["Lumped linear series RLC with constant total series R > 0 and ideal L,C.", "Constant-amplitude ideal voltage drive; half power refers to the series resistor's dissipated power relative to resonance.", "All positive Q are supported; half-power endpoints are not assumed symmetric in hertz about resonance.", "No filter transfer-function or component-synthesis calculation is performed."],
+    "references": [{"title": "MIT OCW, Resonance, Bandwidth, Q Factor, equations 1.9–1.19", "url": "https://ocw.mit.edu/courses/6-071j-introduction-to-electronics-signals-and-measurement-spring-2006/5bcec4bfba5f2e99754b77509e9e7ab4_resonance_qfactr.pdf"}],
+    "inputs": [
+      {"key": "resistance", "label": "Total series resistance", "unit": "ohm", "default": 10.0, "min": 1e-9, "max": 1e12},
+      {"key": "inductance", "label": "Inductance", "unit": "H", "default": 0.01, "min": 1e-15, "max": 1000.0},
+      {"key": "capacitance", "label": "Capacitance", "unit": "F", "default": 0.000001, "min": 1e-18, "max": 1000.0}
+    ],
+    "outputs": [
+      {"key": "resonance_frequency", "label": "Resonance frequency", "unit": "Hz", "expression": "1/(2*pi*sqrt(inductance*capacitance))"},
+      {"key": "quality_factor", "label": "Series resonator Q", "unit": "1", "expression": "sqrt(inductance/capacitance)/resistance"},
+      {"key": "bandwidth", "label": "Half-power bandwidth", "unit": "Hz", "expression": "resistance/(2*pi*inductance)"},
+      {"key": "upper_half_power", "label": "Upper half-power frequency", "unit": "Hz", "expression": "sqrt(resonance_frequency^2+(bandwidth/2)^2)+bandwidth/2"},
+      {"key": "lower_half_power", "label": "Lower half-power frequency", "unit": "Hz", "expression": "resonance_frequency^2/upper_half_power"}
+    ],
+    "constraints": [],
+    "example": {"inputs": {"resistance": 10.0, "inductance": 0.01, "capacitance": 0.000001}, "expected": {"resonance_frequency": 1591.5494309189535, "quality_factor": 10.0, "bandwidth": 159.15494309189535, "upper_half_power": 1673.11509740738, "lower_half_power": 1513.9601543154847}, "relative_tolerance": 0.000001}
   }
 ]
