@@ -67,3 +67,48 @@ Substitution: `9r+10l=0.39 m`; `r²*N²=0.04 m²`; `L=(1e-6/0.0254)*0.04/0.39=4.
 
 Left zone x=50–440, y=70–190: side view of a cylindrical nonmagnetic former with evenly spaced visible turns. A small end-view circle at x=570,y=125 shows the **mean conductor-centre** radius, not the bore radius. Axial dimension arrow below winding binds `length`; radial arrow binds `radius`; one enlarged turn-spacing bracket binds `turn_pitch`; wire cross-section callout binds `wire_diameter`. Place `turns` above the coil and `inductance` in the lower right. Draw a conceptual input-current arrow on the lead and an axial field arrow consistent with winding handedness; neither is a calculated quantity. Caption: “Single-layer, nonmagnetic finite coil; current-sheet length is N times pitch. Lead inductance and self capacitance are omitted; geometry is not to scale.”
 
+## `cores.square_planar_spiral`
+
+**Purpose and novelty.** Lay out a square spiral using lithographic/PCB dimensions. Closest old item is toroidal inductance, and the closest new neighbor is the cylindrical solenoid above. Neither contains the four-sheet mutual-field geometry, radial fill correction or central opening of a planar spiral. The model estimates inductance only, not generic resonance.
+
+**Equation and units.** Mohan equation (2), Table II square coefficients are `(c1,c2,c3,c4)=(1.27,2.07,0.18,0.13)`. Define `a=N*w+(N-1)*s`, `di=do-2a`, `davg=(do+di)/2`, `fill=a/davg`. Then `L=mu0*N²*davg*c1/2*[ln(c2/fill)+c3*fill+c4*fill²]`, with `mu0=4*pi*1e-7 H/m`. Square diameters mean side dimensions, not diagonal lengths. All supplied lengths are metres; `L` is henries.
+
+**Validity.** Thin, isolated, uniform square spiral, nonmagnetic surroundings, omitted underpass and terminal routing. Require integer `N>=1`, positive opening and `s<=3w`. The source's <=8% statement applies to its examined geometries under that spacing limit, not every macroscopic PCB layout. Its main simulated database used 100–480 micrometre outside diameters and 0.5–100 nH; the worked geometry is within that scale. Quasistatic geometric scaling does not establish high-frequency lumped validity. A nearby ground plane, conductive substrate loss, large copper thickness, or resonance needs EM characterization.
+
+### Complete independent numerical example
+
+Inputs:
+
+```json
+{
+  "outer_side": 0.0003,
+  "turns": 4,
+  "trace_width": 1e-05,
+  "spacing": 1e-05
+}
+```
+
+Expected outputs:
+
+```json
+{
+  "inner_side": 0.00015999999999999996,
+  "average_side": 0.00022999999999999995,
+  "fill_ratio": 0.3043478260869566,
+  "inductance": 5.825908169108072e-09
+}
+```
+
+Substitution: `a=4*10e-6+3*10e-6=70e-6 m`; `di=300e-6-140e-6=160e-6 m`; `davg=230e-6 m`; `fill=70/230=0.3043478260869565`. The bracket is `ln(2.07/(7/23))+0.18*(7/23)+0.13*(7/23)^2`. Multiplying by `4*pi*1e-7*16*230e-6*1.27/2` gives `5.825908169108072e-9 H`. Tiny last-digit representation differences in inner/average sides are floating-point representation, not model tolerance.
+
+### Independent test scenarios
+
+- Nominal: complete vector above.
+- Scale every length by two: inner side `0.00032 m`, average side `0.00046 m`, unchanged fill, inductance `1.1651816338216144e-8 H`.
+- Limiting construction: `turns=1` remains allowed when the positive opening fits; no turn gap contributes to the inner-side formula. Approach the central-opening limit from above and ensure finite positive inductance.
+- Invalid: noninteger turns; outside side equal to or below `2[Nw+(N-1)s]`; zero width or spacing; spacing above three widths. At `spacing=3*trace_width`, the spacing screen is inclusive if opening remains positive.
+
+### Mandatory physical-geometry diagram
+
+Draw one continuous four-turn square spiral in x=70–330, y=35–225, with visible central opening. Outer lead exits left; inner lead exits via an explicitly dashed, electrically separate underpass representation labeled “underpass omitted from L model,” never a false same-layer crossing. Top dimension binds `outer_side`; central-opening bracket binds `inner_side`. Right-side enlarged adjacent trace pair shows `trace_width` across copper and `spacing` across dielectric. Lower right labels bind `turns`, `fill_ratio`, and `inductance`; `average_side` may remain in the accessible legend. A conceptual current arrow follows the spiral clockwise. Caption: “Square current-sheet estimate; thin isolated spiral, no ground plane. Underpass, loss and self resonance are excluded; drawing is not to scale.”
+

@@ -108,5 +108,119 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "cores.square_planar_spiral",
+    "title": "Square planar spiral current-sheet inductance",
+    "category": "Winding and magnetic design",
+    "level": "intermediate",
+    "description": "Size an isolated square spiral from its trace width, spacing, turns and outside dimension.",
+    "formula": "di=do-2[Nw+(N-1)s]; davg=(do+di)/2; fill=(do-di)/(do+di); L=mu0 N^2 davg*1.27/2*[ln(2.07/fill)+0.18fill+0.13fill^2]",
+    "assumptions": [
+      "Mohan square current-sheet fit, DC/quasistatic inductance; not a self-resonant frequency or Q prediction.",
+      "Uniform thin conductor on a nonmagnetic substrate; no nearby ground plane, shield or magnetic core. Thickness, underpass and terminal parasitics are omitted.",
+      "Source reports at most 8% error for spacing <= 3 widths in its studied integrated-spiral population; typical errors are smaller. This is not a PCB-wide guaranteed tolerance.",
+      "Integer complete turns are used. Inner-side geometry follows the ideal nested-turn convention; terminal routing is excluded."
+    ],
+    "references": [
+      {
+        "title": "Mohan et al., 1999: current-sheet equation (2), Table II",
+        "url": "https://web.stanford.edu/~boyd/papers/pdf/inductance_expressions.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "outer_side",
+        "label": "Outer square side",
+        "unit": "m",
+        "default": 0.0003,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "turns",
+        "label": "Complete turns",
+        "unit": "turn",
+        "default": 4,
+        "min": 1
+      },
+      {
+        "key": "trace_width",
+        "label": "Trace width",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "spacing",
+        "label": "Edge-to-edge spacing",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "inner_side",
+        "label": "Inner clear side",
+        "unit": "m",
+        "expression": "outer_side-2*(turns*trace_width+(turns-1)*spacing)"
+      },
+      {
+        "key": "average_side",
+        "label": "Average square side",
+        "unit": "m",
+        "expression": "(outer_side+inner_side)/2"
+      },
+      {
+        "key": "fill_ratio",
+        "label": "Radial fill ratio",
+        "unit": "1",
+        "expression": "(turns*trace_width+(turns-1)*spacing)/average_side"
+      },
+      {
+        "key": "inductance",
+        "label": "Estimated inductance",
+        "unit": "H",
+        "expression": "4*pi*1e-7*turns^2*average_side*1.27/2*(ln(2.07/fill_ratio)+0.18*fill_ratio+0.13*fill_ratio^2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "turns",
+        "op": "==",
+        "right": "floor(turns)",
+        "message": "Turns must be an integer."
+      },
+      {
+        "left": "outer_side",
+        "op": ">",
+        "right": "2*(turns*trace_width+(turns-1)*spacing)",
+        "message": "The spiral must retain a positive central opening."
+      },
+      {
+        "left": "spacing",
+        "op": "<=",
+        "right": "3*trace_width",
+        "message": "Use spacing no greater than three trace widths for this fit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "outer_side": 0.0003,
+        "turns": 4,
+        "trace_width": 1e-05,
+        "spacing": 1e-05
+      },
+      "expected": {
+        "inner_side": 0.00015999999999999996,
+        "average_side": 0.00022999999999999995,
+        "fill_ratio": 0.3043478260869566,
+        "inductance": 5.825908169108072e-09
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
