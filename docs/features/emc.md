@@ -64,3 +64,57 @@ Geometry checks: L/w=10, L/t=40, L/wavelength=0.006671281903963042.
 
 700×280 canvas, 16 px margins, labels at least 14 px. Draw a shield front face at x=170..430, y=65..200 with one visibly long horizontal slot; show a separate thin edge inset at x=510..620 for wall thickness. Incoming and transmitted field arrows cross the slot, not the solid metal. Dimension the longest slot edge as `slot_length`, its narrow opening as `slot_width`, and inset thickness as `shield_thickness`. Bind a frequency label to `frequency`, the outgoing/incoming amplitude ratio to `field_ratio`, and an external result label to `shielding_db`. `wavelength` may appear in a separate legend. Do not portray width as equal to thickness. Caption: “One thin, electrically small slot; worst-orientation field-leakage estimate. Enclosure resonances and other openings are not modeled.” No simulated field map.
 
+
+## 2. `emc.rc_common_mode_conversion` — expert
+
+### Purpose and novelty
+
+Predict differential noise created by mismatched input EMI-filter legs and suppress it with a bridging capacitor. Closest baselines: `filters.rc_lowpass_response` describes one scalar branch, and `opamps.difference_ratio_error` describes a resistive active amplifier. Neither predicts common-mode conversion through a coupled three-capacitor input network. This is also not the baseline injected capacitive-crosstalk pulse model.
+
+### Topology and exact derivation
+
+Both ideal source terminals have the same sinusoidal voltage Vcm relative to a common reference. R1 feeds node 1 and R2 feeds node 2. C1 connects node 1 to the reference; C2 connects node 2 to the reference. Cd connects node 1 directly to node 2. The receiver has infinite input impedance. Vdiff=V1−V2.
+
+With s=jω, nodal equations after multiplying each by its branch resistance are:
+
+- [1+sR1(C1+Cd)] V1 − sR1 Cd V2 = Vcm
+- −sR2 Cd V1 + [1+sR2(C2+Cd)] V2 = Vcm
+
+The determinant is 1+sA+s²B, where A=R1(C1+Cd)+R2(C2+Cd) [s] and B=R1R2[C1C2+Cd(C1+C2)] [s²]. Subtracting the two numerator solutions cancels both Cd terms:
+
+- mismatch_time = D = R2C2−R1C1 [s]
+- Vdiff/Vcm = sD/(1+sA+s²B)
+- conversion_gain = ω|D|/hypot(1−ω²B,ωA)
+- differential_rms = common_mode_rms × conversion_gain [V]
+
+The signed D carries branch polarity; the last two outputs are magnitudes. R1/R2 and C1/C2 are positive, Cd and frequency may be zero. Positive passive elements make the denominator nonzero for all admitted finite physical frequencies. At DC conversion is exactly zero. Source resistance belongs in R1/R2; finite ADC loading and nonlinear RF rectification do not.
+
+Evidence is the TI topology and mismatch mechanism; the general algebra is our independently solved ideal network. No claim is made that a large Cd makes the complete receiver immune.
+
+### Complete independent example
+
+Inputs: resistance_one=resistance_two=1000 ohm; capacitance_one=1.01e-8 F; capacitance_two=9.9e-9 F; differential_capacitance=1e-7 F; frequency=10000 Hz; common_mode_rms=0.1 V.
+
+- R1C1=10.1 microseconds; R2C2=9.9 microseconds.
+- mismatch_time = **−2e-7 s**.
+- A=0.00022 s; B=2.09999e-9 s².
+- ω=62831.85307179586 rad/s, 1−ω²B=−7.290428218497455, ωA=13.82300767579509.
+- Solving the two complex nodal equations independently gives |V1/Vcm−V2/Vcm| = **0.0008041073247070083** = conversion_gain.
+- differential_rms = 0.1×conversion_gain = **0.00008041073247070084 V**.
+
+Complex two-by-two inversion, not the Rust expression evaluator, generated the gain oracle.
+
+### Independent tester cases
+
+- Nominal: every output above at 1e-6 relative tolerance.
+- Set capacitance_one=capacitance_two=1e-8: D, gain and differential voltage are exactly zero, regardless of Cd.
+- Set frequency=0: retain D=−2e-7 s, but both amplitude outputs are zero.
+- Set Cd=0: D remains −2e-7 s, gain=**0.009009434213906478**, differential_rms=**0.0009009434213906478 V**. Independently subtract two uncoupled complex RC responses.
+- Swap complete branch pairs: D changes sign; both magnitudes are unchanged.
+- Set common_mode_rms=0: gain remains nominal and voltage becomes zero.
+- Reject nonpositive R/C1/C2, negative Cd/frequency/common-mode RMS and nonfinite values. Huge arithmetic intermediates must fail explicitly, not return plausible finite zero through a nonfinite normalization.
+
+### Mandatory diagram
+
+Place common source bus x=70, node-one rail y=85, node-two rail y=185. Each rail passes through its own resistor, with wires broken at resistor bodies, to receiver terminals x=570. Connect C1 from node one down to a clearly separate common-return rail; connect C2 from node two to that same return without accidentally shorting the signal rails. Place Cd vertically between node-one and node-two junctions near x=430. Use explicit junction dots for each branch. Route the shunt capacitor returns outside the bridge region, with no ambiguous crossings. Bind `resistance_one`, `resistance_two`, `capacitance_one`, `capacitance_two`, `differential_capacitance`, and `common_mode_rms`. Mark output + at node one and − at node two; bind its magnitude to `differential_rms`. Caption: “Equal source interference becomes differential through RC mismatch; Cd bridges the receiver inputs. Ideal high-impedance receiver.” Do not draw a differential capacitor to ground.
+

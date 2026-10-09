@@ -105,5 +105,119 @@
     },
     "relative_tolerance": 1e-06
   }
+},
+{
+  "id": "emc.rc_common_mode_conversion",
+  "title": "RC input-filter common-mode conversion",
+  "category": "EMC design",
+  "level": "expert",
+  "description": "Predict differential interference created by mismatched RC input legs, including the bridging differential capacitor. Engineering estimate, not immunity compliance.",
+  "formula": "D=R2 C2-R1 C1; a=1-w^2 R1 R2[C1 C2+Cd(C1+C2)]; b=w[R1(C1+Cd)+R2(C2+Cd)]; |Vdiff/Vcm|=w|D|/hypot(a,b)",
+  "assumptions": [
+    "Both ideal source nodes carry the same sinusoidal RMS common-mode voltage relative to the capacitor return.",
+    "R1 and R2 feed separate high-impedance receiver inputs; C1 and C2 shunt these nodes to the common return; Cd bridges the receiver nodes.",
+    "Lumped linear ideal components; effective source resistances may be included in R1/R2. No receiver loading, rectification, capacitor voltage dependence or amplifier CMRR.",
+    "Differential polarity is node one minus node two. Output voltage is a nonnegative RMS magnitude.",
+    "Estimate only, not proof of RF immunity or EMC compliance."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments, Art Kay, Common mode and differential filter, 2022, pages 2-5",
+      "url": "https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/73/common-mode-and-differential-filter.pdf"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "resistance_one",
+      "label": "Input one series resistance",
+      "unit": "ohm",
+      "default": 1000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "resistance_two",
+      "label": "Input two series resistance",
+      "unit": "ohm",
+      "default": 1000,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "capacitance_one",
+      "label": "Input one common-mode capacitance",
+      "unit": "F",
+      "default": 1.01e-08,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "capacitance_two",
+      "label": "Input two common-mode capacitance",
+      "unit": "F",
+      "default": 9.9e-09,
+      "min": 0,
+      "exclusive_min": true
+    },
+    {
+      "key": "differential_capacitance",
+      "label": "Bridging differential capacitance",
+      "unit": "F",
+      "default": 1e-07,
+      "min": 0
+    },
+    {
+      "key": "frequency",
+      "label": "Common-mode interference frequency",
+      "unit": "Hz",
+      "default": 10000,
+      "min": 0
+    },
+    {
+      "key": "common_mode_rms",
+      "label": "Common-mode interference RMS",
+      "unit": "V",
+      "default": 0.1,
+      "min": 0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "mismatch_time",
+      "label": "Signed RC mismatch R2C2 minus R1C1",
+      "unit": "s",
+      "expression": "resistance_two*capacitance_two-resistance_one*capacitance_one"
+    },
+    {
+      "key": "conversion_gain",
+      "label": "Common-to-differential magnitude gain",
+      "unit": "1",
+      "expression": "2*pi*frequency*abs(mismatch_time)/hypot(1-(2*pi*frequency)^2*resistance_one*resistance_two*(capacitance_one*capacitance_two+differential_capacitance*(capacitance_one+capacitance_two)),2*pi*frequency*(resistance_one*(capacitance_one+differential_capacitance)+resistance_two*(capacitance_two+differential_capacitance)))"
+    },
+    {
+      "key": "differential_rms",
+      "label": "Converted differential RMS voltage",
+      "unit": "V",
+      "expression": "common_mode_rms*conversion_gain"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "resistance_one": 1000,
+      "resistance_two": 1000,
+      "capacitance_one": 1.01e-08,
+      "capacitance_two": 9.9e-09,
+      "differential_capacitance": 1e-07,
+      "frequency": 10000,
+      "common_mode_rms": 0.1
+    },
+    "expected": {
+      "mismatch_time": -2e-07,
+      "conversion_gain": 0.0008041073247070083,
+      "differential_rms": 8.041073247070084e-05
+    },
+    "relative_tolerance": 1e-06
+  }
 }
 ]

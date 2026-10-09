@@ -29,4 +29,32 @@ const emcDiagrams = <String, CalculatorDiagram>{
       Label(360, 224, 'E transmitted / E incident', quantity: 'field_ratio', ink: DiagramInk.output),
     ],
   ),
+  'emc.rc_common_mode_conversion': CalculatorDiagram(
+    title: 'Two mismatched input legs with a bridging capacitor',
+    caption: 'Equal source interference becomes differential through RC mismatch; Cd bridges '
+        'the receiver inputs. Ideal high-impedance receiver. The outer return connects C1 and C2 '
+        'without crossing either signal rail; Vdiff = V1 − V2, displayed as RMS magnitude.',
+    marks: [
+      Wire([70, 85, 150, 85]), Wire([70, 85, 70, 185, 150, 185]),
+      Part(CircuitPart.resistor, 180, 85), Part(CircuitPart.resistor, 180, 185),
+      Wire([210, 85, 570, 85]), Wire([210, 185, 570, 185]),
+      Label(157, 59, 'R1', quantity: 'resistance_one'),
+      Label(157, 157, 'R2', quantity: 'resistance_two'),
+      Wire([280, 85, 280, 64]), Part(CircuitPart.capacitor, 280, 44, width: 40, turns: 1),
+      Wire([280, 24, 650, 24, 650, 245, 280, 245, 280, 235]),
+      Wire([280, 185, 280, 195]), Part(CircuitPart.capacitor, 280, 215, width: 40, turns: 1),
+      Label(312, 38, 'C1', quantity: 'capacitance_one'),
+      Label(312, 212, 'C2', quantity: 'capacitance_two'),
+      Wire([430, 85, 430, 105]), Part(CircuitPart.capacitor, 430, 135, turns: 1),
+      Wire([430, 165, 430, 185]),
+      Label(454, 124, 'Cd', quantity: 'differential_capacitance'),
+      Dot(70, 85), Dot(70, 185), Dot(280, 85), Dot(280, 185),
+      Dot(430, 85), Dot(430, 185), Dot(570, 85), Dot(570, 185),
+      Label(579, 75, '+ V1'), Label(579, 175, '− V2'),
+      Label(76, 115, 'Equal Vcm'),
+      Label(76, 137, 'RMS', quantity: 'common_mode_rms'),
+      Label(477, 99, '|Vdiff| RMS', quantity: 'differential_rms', ink: DiagramInk.output),
+      Label(484, 247, 'Common return'),
+    ],
+  ),
 };
