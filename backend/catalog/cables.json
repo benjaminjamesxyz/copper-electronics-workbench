@@ -514,5 +514,114 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "cables.contact_hotspot_temperature",
+    "title": "Metallic contact voltage–hotspot temperature",
+    "category": "Cables and connectors",
+    "level": "basic",
+    "description": "Estimate the microscopic contact hotspot from contact voltage using the Kohlrausch/Wiedemann–Franz relation, not a package thermal resistance.",
+    "formula": "Tm = sqrt(Tbulk² + Vcontact²/(4 Lorenz)); DeltaT = Tm-Tbulk; Vlimit = 2 sqrt(Lorenz) sqrt(Tlimit²-Tbulk²)",
+    "assumptions": [
+      "Clean symmetric metallic constriction in steady state; both remote electrodes have the same bulk temperature.",
+      "Wiedemann–Franz electronic heat conduction with a constant supplied Lorenz number; surfaces otherwise thermally insulated.",
+      "Voltage is the drop across the constriction only, excluding lead resistance, oxide films, dissimilar-metal thermoelectric effects and arcs.",
+      "User temperature limit is an upper validity bound below relevant softening, melting or structural change. Reject conditions beyond that bound.",
+      "This local hotspot is not the connector housing temperature, current rating or an instruction to apply a damaging test voltage."
+    ],
+    "references": [
+      {
+        "title": "NTU, Made, Gan and Tan, ECS Transactions 33(12) (2010), page 10 before equation 23: contact voltage–temperature relation",
+        "url": "https://dr.ntu.edu.sg/server/api/core/bitstreams/f6cee9fd-a286-4c14-ac2c-4b32c161afae/content"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "contact_voltage",
+        "label": "Contact-only voltage drop magnitude",
+        "unit": "V",
+        "default": 0.05,
+        "min": 0
+      },
+      {
+        "key": "bulk_temperature",
+        "label": "Remote electrode temperature",
+        "unit": "K",
+        "default": 300,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "lorenz_number",
+        "label": "Lorenz number",
+        "unit": "V^2/K^2",
+        "default": 2.45e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature_limit",
+        "label": "Upper physical-model temperature limit",
+        "unit": "K",
+        "default": 600,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "hotspot_temperature",
+        "label": "Microscopic contact hotspot",
+        "unit": "K",
+        "expression": "hypot(bulk_temperature,contact_voltage/(2*sqrt(lorenz_number)))"
+      },
+      {
+        "key": "temperature_rise",
+        "label": "Local hotspot temperature rise",
+        "unit": "K",
+        "expression": "contact_voltage/(2*sqrt(lorenz_number))*(contact_voltage/(2*sqrt(lorenz_number))/(hotspot_temperature+bulk_temperature))"
+      },
+      {
+        "key": "contact_voltage_limit",
+        "label": "Contact voltage at model temperature limit",
+        "unit": "V",
+        "expression": "2*sqrt(lorenz_number)*sqrt(temperature_limit-bulk_temperature)*sqrt(temperature_limit+bulk_temperature)"
+      },
+      {
+        "key": "temperature_margin",
+        "label": "Limit minus hotspot temperature",
+        "unit": "K",
+        "expression": "temperature_limit-hotspot_temperature"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "temperature_limit",
+        "op": ">=",
+        "right": "bulk_temperature",
+        "message": "Temperature limit must not be below the remote electrode temperature."
+      },
+      {
+        "left": "hypot(bulk_temperature,contact_voltage/(2*sqrt(lorenz_number)))",
+        "op": "<=",
+        "right": "temperature_limit",
+        "message": "Contact hotspot exceeds the supplied physical-model temperature limit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "contact_voltage": 0.05,
+        "bulk_temperature": 300,
+        "lorenz_number": 2.45e-08,
+        "temperature_limit": 600
+      },
+      "expected": {
+        "hotspot_temperature": 339.8679215248663,
+        "temperature_rise": 39.86792152486629,
+        "contact_voltage_limit": 0.16266530054071152,
+        "temperature_margin": 260.1320784751337
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

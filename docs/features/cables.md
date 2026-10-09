@@ -121,3 +121,28 @@ Independent cases: F=0.08 N scales a by 2, p0 by 2, Rc by 1/2 and approach by 4,
 ### Mandatory diagram
 
 Draw a rounded upper contact resting on a thick lower flat, interface around y=145 and x=180. Force arrow points downward into the upper sphere, labeled `normal_force`. Curvature arrow binds `sphere_radius`, explicitly “R, tip curvature”. Contact patch shown by a short interface segment with dimension `2a`; bind `contact_radius` with text “a; spot width 2a”, never label the full diameter as a. Current streamlines narrow through the patch and spread into the lower electrode. Right inset: equivalent single constriction resistor labeled `constriction_resistance`, separate from any unmodeled leads. Lower legend binds `maximum_pressure`, `effective_modulus`, `indentation`. Mark both bodies “same metal, E / nu / rho” with bindings `young_modulus`, `poisson_ratio`, `resistivity` if space permits. Caption: “One clean elastic spherical contact on a flat. Current constricts through radius a; oxide, rough multi-spot and bulk lead resistance are excluded.”
+
+## 5. `cables.contact_hotspot_temperature` — basic
+
+### Physical model and units
+
+S6 page 10 gives `Tm=sqrt(Tbulk²+Vc²/(4*Lorenz))`, with the quoted ideal-metal Lorenz number `2.45e-8 V²/K²`. This follows from steady coupled electric/thermal conduction with a constant Wiedemann–Franz ratio. Temperature units are kelvin, never Celsius. Vc is the contact-only voltage-drop magnitude, not supply voltage.
+
+Domain: Tbulk>0, Lorenz>0, Vc>=0, Tlimit>=Tbulk. The calculated hotspot must not exceed the supplied material/model validity limit; this bound should precede softening, melting or geometry change. Both remote electrodes have equal temperature, identical metal and no significant alternative heat-loss path at the constriction. Oxide-film heating, thermoelectric asymmetry and arcs violate the model. The relation does not supply connector current rating or housing temperature.
+
+Use `hypot(Tbulk,Vc/(2*sqrt(Lorenz)))`. With `u=Vc/(2*sqrt(Lorenz))`, evaluate rise as `u*(u/(Tm+Tbulk))`, not subtraction of nearly equal temperatures. Contact voltage at the limit is `2*sqrt(Lorenz)*sqrt(Tlimit-Tbulk)*sqrt(Tlimit+Tbulk)`.
+
+### Complete worked example
+
+Inputs: contact_voltage=0.05 V, bulk_temperature=300 K, lorenz_number=2.45e-8 V²/K², temperature_limit=600 K.
+
+- `hotspot_temperature = sqrt(90000+0.0025/(9.8e-8)) = 339.8679215248663 K`.
+- `temperature_rise = 39.86792152486629 K`.
+- `contact_voltage_limit = 2*sqrt(2.45e-8)*sqrt(600²-300²) = 0.16266530054071152 V`.
+- `temperature_margin = 600-339.8679215248663 = 260.1320784751337 K`.
+
+Independent cases: Vc=0 gives Tm=300 K, rise=0, unchanged voltage limit, margin=300 K. Tlimit=Tbulk with Vc=0 is valid and gives limit voltage=0/margin=0. Vc=1e-6 V gives rise about `1.7006802720606382e-8 K`; it must remain positive. Invalid: Tbulk<=0, Lorenz<=0, Tlimit<Tbulk or Vc=0.2 V at nominal temperatures, which exceeds the 600 K validity bound. Do not clamp the over-limit temperature into a plausible result.
+
+### Mandatory diagram
+
+Two metal blocks at x≈75–290 and x≈365–580 connected by a narrow neck at x≈325,y≈130. Current arrow runs left to right. Kelvin voltage taps bracket only the neck; + left and - right, label binding `contact_voltage`. Remote ends both bind `bulk_temperature` and carry “Tbulk”. Hotspot circle at the neck binds `hotspot_temperature`. Heat arrows point away from the hotspot into **both** metal blocks. Lower legend binds `lorenz_number`, `temperature_rise`, `temperature_limit`; use no lumped ambient thermal resistor. Caption: “Steady microscopic contact heating with equal remote metal temperatures. Vc is the constriction drop only; Wiedemann–Franz conduction sets the hotspot, not housing thermal resistance.”
