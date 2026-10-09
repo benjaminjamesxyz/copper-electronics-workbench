@@ -191,5 +191,105 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "opto.layer_absorption_capture",
+    "title": "Inactive and active optical layer absorption",
+    "category": "Optical hardware",
+    "level": "intermediate",
+    "description": "Partition incident optical power between a noncollecting entrance layer, a useful absorbing layer and transmitted light.",
+    "formula": "Pd=P0*(1-exp(-alpha_d*d)); Fa=exp(-alpha_d*d)*(1-exp(-alpha_a*t)); Pa=P0*Fa; Pt=P0*exp(-alpha_d*d-alpha_a*t)",
+    "assumptions": [
+      "Homogeneous independent absorption coefficients at one wavelength; normal incidence, no scattering, fluorescence or optical gain.",
+      "Incident power is defined immediately inside the entrance surface. Ignore interface reflections and coherent thin-film interference.",
+      "Inactive layer absorption is lost; active absorption is optical capture only, not collected photocurrent or quantum efficiency.",
+      "The exponential single-pass model applies without back-reflection or optical saturation; coefficients must come from material data at operating conditions."
+    ],
+    "references": [
+      {
+        "title": "Hamamatsu MPPC physics, section I equation 1 and absorption-depth discussion",
+        "url": "https://hub.hamamatsu.com/us/en/technical-notes/mppc-sipms/physics-and-operation-of-the-MPPC-silicon-photomultiplier.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "incident_power",
+        "label": "Power just inside entrance surface",
+        "unit": "W",
+        "default": 0.002,
+        "min": 0
+      },
+      {
+        "key": "dead_absorption",
+        "label": "Inactive-layer absorption coefficient",
+        "unit": "1/m",
+        "default": 200000.0,
+        "min": 0
+      },
+      {
+        "key": "dead_thickness",
+        "label": "Inactive-layer thickness",
+        "unit": "m",
+        "default": 1e-06,
+        "min": 0
+      },
+      {
+        "key": "active_absorption",
+        "label": "Active-layer absorption coefficient",
+        "unit": "1/m",
+        "default": 100000.0,
+        "min": 0
+      },
+      {
+        "key": "active_thickness",
+        "label": "Active-layer thickness",
+        "unit": "m",
+        "default": 1e-05,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "dead_absorbed_power",
+        "label": "Power lost in inactive layer",
+        "unit": "W",
+        "expression": "incident_power*(-expm1(-dead_absorption*dead_thickness))"
+      },
+      {
+        "key": "active_capture_fraction",
+        "label": "Fraction captured in active layer",
+        "unit": "1",
+        "expression": "exp(-dead_absorption*dead_thickness)*(-expm1(-active_absorption*active_thickness))"
+      },
+      {
+        "key": "active_absorbed_power",
+        "label": "Power captured in active layer",
+        "unit": "W",
+        "expression": "incident_power*active_capture_fraction"
+      },
+      {
+        "key": "transmitted_power",
+        "label": "Power transmitted through both layers",
+        "unit": "W",
+        "expression": "incident_power*exp(-dead_absorption*dead_thickness-active_absorption*active_thickness)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "incident_power": 0.002,
+        "dead_absorption": 200000.0,
+        "dead_thickness": 1e-06,
+        "active_absorption": 100000.0,
+        "active_thickness": 1e-05
+      },
+      "expected": {
+        "dead_absorbed_power": 0.0003625384938440363,
+        "active_capture_fraction": 0.5175365411657797,
+        "active_absorbed_power": 0.0010350730823315596,
+        "transmitted_power": 0.0006023884238244042
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

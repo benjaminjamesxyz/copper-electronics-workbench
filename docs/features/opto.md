@@ -94,3 +94,39 @@ Place a small flat emitter near (95,95) with its normal pointing right; draw a r
 
 Quantity labels: `Phi` → `radiant_flux`; `theta` → `emission_angle`; `phi` → `incidence_angle`; `r` → `distance`; `E` next to the target → `target_irradiance`. Caption: “Ideal Lambertian source in the far field. Source emission and receiver projected area contribute separate cosine factors; E is local irradiance, not total collected power.”
 
+
+## 3. `opto.layer_absorption_capture`
+
+### Purpose, novelty and source
+
+Use this intermediate model to choose absorbing-layer thickness when a noncollecting entrance layer wastes incoming light. H2 section I equation 1 states `Phi(z)=Phi(0)*exp(-alpha*z)` and discusses penetration depth and carrier recombination in inactive material. Apply that spatial absorption law successively to two homogeneous layers. This is a layer-power partition derived from the source equation, not a manufacturer-specific device fit.
+
+Closest baseline: `noise.decibel_to_linear` converts an already known logarithmic ratio; it does not derive absorption from material coefficients and geometry. `transients.rc_step` is temporal energy storage, not photon attenuation. Closest neighboring item: `opto.photodiode_quantum_conversion` uses measured external QE to determine current. Here the outputs are absorbed optical powers; active absorption does not imply unit collection or predict photocurrent. No extra QE inverse is counted.
+
+### Model and physical domain
+
+Let `ud=dead_absorption*dead_thickness` and `ua=active_absorption*active_thickness`. The inactive loss is `P0*(-expm1(-ud))`; active capture fraction is `exp(-ud)*(-expm1(-ua))`; active absorbed power is `P0` times that fraction; transmitted power is `P0*exp(-ud-ua)`. Their three powers sum to input power in exact arithmetic.
+
+All five inputs are nonnegative; zero thickness and zero absorption are meaningful. Define incident power immediately inside the entrance surface so entrance reflection is not silently included. Normal incidence, no scattering/gain, no coherent interference and no interface/back reflections are required. Absorption coefficients are intensity coefficients in 1/m, not field-amplitude attenuation coefficients. They depend on wavelength and temperature; no wavelength interpolation is performed. Do not reinterpret captured fraction as measured external QE.
+
+### Complete independent example
+
+Inputs: `incident_power=0.002`, `dead_absorption=200000`, `dead_thickness=1e-6`, `active_absorption=100000`, `active_thickness=1e-5`.
+
+Optical depths are `ud=0.2`, `ua=1`. Thus:
+
+- `dead_absorbed_power=0.002*(1-exp(-0.2))=0.000362538493844036282660 W`.
+- `active_capture_fraction=exp(-0.2)*(1-exp(-1))=0.517536541165779762025`.
+- `active_absorbed_power=0.002*active_capture_fraction=0.00103507308233155952405 W`.
+- `transmitted_power=0.002*exp(-1.2)=0.000602388423824404193290 W`.
+
+### Tester cases
+
+Assert all four outputs and conservation of the three powers. Set both coefficients to zero: inactive and active absorption are zero, active fraction zero, transmission `0.002 W`. Set only inactive thickness to zero: active fraction `0.632120558828557678404`, active power `0.00126424111765711535681 W`, transmission `0.000735758882342884643192 W`, inactive power zero. Active thickness zero eliminates useful capture but preserves entrance loss. Tiny positive active optical depth `1e-16` with no inactive loss must retain a positive capture fraction approximately `1e-16`; this requires `expm1`. A very thick active slab tends to capture all surviving entrance power. Reject any negative power, coefficient or thickness. No invented upper thickness or absorption bound is required.
+
+### Mandatory diagram
+
+Draw two adjacent vertical slabs from y=60 to 220: narrow inactive layer x=235..290 and wider active layer x=290..440. Incident ray travels left-to-right. Draw one downward absorbed-power arrow from each slab and a rightward transmitted arrow. Distinct thickness dimension lines above the slabs explain that absorption is distributed through thickness rather than occurring only at the boundaries.
+
+Quantity labels: `P0` → `incident_power`; `d` → `dead_thickness`; `t` → `active_thickness`; `alpha_d` → `dead_absorption`; `alpha_a` → `active_absorption`; `Pd` → `dead_absorbed_power`; `Pa` → `active_absorbed_power`; `Pt` → `transmitted_power`. Use compact labels with clear spacing and move coefficients to the lower legend if needed. Caption: “Single-pass absorption after the entrance surface. Inactive absorption is lost; active absorption is optical capture only. Reflections, scattering and carrier-collection losses are not modeled.”
+
