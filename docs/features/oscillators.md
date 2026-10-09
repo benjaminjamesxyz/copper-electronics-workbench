@@ -195,3 +195,53 @@ Exact bindings: both R labels `bridge_resistance`; both C labels `bridge_capacit
 
 Caption: “The equal-component Wien bridge supplies zero phase and one-third feedback at f0. This checks small-signal balance only; real sine amplitude needs stabilization.”
 
+
+## 5. `oscillators.loaded_rc_phase_shift` — intermediate
+
+### Purpose, novelty and source
+
+Design a three-section, unbuffered, high-pass RC oscillator without making the false independent-section assumption. PHASE gives `f0=1/(2 pi RC sqrt(6))` and feedback magnitude 1/29. WIEN §8.2 explicitly demonstrates the large error caused by neglecting loading. Its displayed low-pass circuit and the buffered gain-8 formula are not copied into this high-pass model.
+
+Closest baseline: `filters.buffered_rc_cascade` uses independent buffered low-pass sections driven by an external source. Here sections load each other, the feedback is high-pass and an inverting amplifier closes the oscillation loop. This is not a filter-frequency rename or a second Wien calculation: its feedback polynomial, phase mechanism and required gain differ.
+
+### Exact implemented topology and derivation
+
+Output drives three capacitors in series: node1, node2, node3 after each capacitor. Node1 and node2 each have R to ground. Node3 connects through the third R to the op-amp inverting virtual ground. The op-amp noninverting input is ground; RF connects output to inverting input. There is **no separate third shunt R plus another amplifier input resistor**. That would load the final section differently and invalidate the equal-load equation.
+
+The GSU illustrative schematic shows a separate amplifier input resistor alongside the three shunts; its quoted ideal factor needs negligible additional loading or an effective-load adjustment. Our third-R-to-virtual-ground termination realizes exactly the three equal loads assumed by the quoted formula. This distinction is intentional and must survive implementation and drawing.
+
+For `x=sRC`, normalized node equations are:
+
+`(2x+1)v1 − x v2 = x vo`
+
+`−x v1 + (2x+1)v2 − x v3 = 0`
+
+`−x v2 + (x+1)v3 = 0`.
+
+Elimination gives `beta=v3/vo=x^3/(x^3+6x^2+5x+1)`. At `x=j/sqrt(6)`, denominator real part vanishes and beta=−1/29. The amplifier gain is `−RF/R`, so unity positive loop gain needs RF=29R. Equivalently the closed-loop characteristic is `(1+RF/R)x^3+6x^2+5x+1=0`; substituting x=j/sqrt(6) gives RF/R=29.
+
+All components are positive. Admit loop gains below, at and above one for diagnosis. The reported frequency is the ladder's 180-degree frequency and the marginal oscillator design frequency, not a nonlinear steady-state solution at arbitrary excess gain. Ideal amplifier bandwidth/input behavior, zero output impedance and no extra ladder loading are assumed. Output amplitude, saturation, distortion and startup time are excluded.
+
+### Complete independent example
+
+Inputs: `section_resistance=10000 ohm`, `section_capacitance=1e-8 F`, `feedback_resistance=300000 ohm`.
+
+| Output key | Derivation | Expected |
+|---|---|---|
+| `frequency` | 1/(2 pi×1e-4×sqrt(6)) | 649.7473343613968 Hz |
+| `feedback_magnitude` | 1/29 | 0.034482758620689655 |
+| `critical_feedback_resistance` | 29×10000 | 290000 ohm |
+| `amplifier_gain_magnitude` | 300000/10000 | 30 |
+| `loop_gain` | 30/29 | 1.0344827586206897 |
+| `loop_excess` | (300000−290000)/(29×10000) | 0.034482758620689655 |
+
+Tester cases: RF=290000 produces gain 29, loop_gain 1 and loop_excess 0; RF=280000 produces gain 28, loop_gain 28/29 and loop_excess −1/29. Both are valid diagnostic inputs. Doubling C halves frequency without changing any gain output. Doubling R and RF together halves frequency, doubles critical_feedback_resistance and preserves all gain ratios. Reject nonpositive components. Independently evaluate the complex ladder at omega=1/(RC sqrt(6)): real beta must be −1/29 and imaginary beta zero within tolerance; do not test using the buffered response.
+
+### Mandatory diagram specification
+
+Use a long horizontal chain of three C symbols from op-amp output around the lower/right side back toward the amplifier. The first two intermediate nodes each have R to ground. The last node connects through a third R to the amplifier inverting input. RF runs from output to the same inverting node. Noninverting input connects to ground. Make the absence of a third extra shunt resistor visually unambiguous. Label the third R “R to virtual ground.” Add a loop annotation “RC network: −180°; amplifier: −180°,” and `|beta|=1/29 at f0` in a free region. Do not draw buffers between sections.
+
+Exact bindings: three C labels `section_capacitance`; all three effective R labels `section_resistance`; RF `feedback_resistance`; f0 `frequency`; beta magnitude `feedback_magnitude`; gain magnitude `amplifier_gain_magnitude`; loop-gain legend `loop_gain`/`loop_excess`; critical-RF legend `critical_feedback_resistance`.
+
+Caption: “Unbuffered sections load one another. The third R terminates at virtual ground; no extra third-node shunt is fitted. Gain 29 is marginal, not a steady-amplitude guarantee.”
+

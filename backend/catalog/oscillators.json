@@ -449,5 +449,110 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "oscillators.loaded_rc_phase_shift",
+    "title": "Loaded three-section RC oscillator",
+    "category": "Oscillator design",
+    "level": "intermediate",
+    "description": "Size the gain and frequency of an unbuffered high-pass RC phase-shift oscillator including section loading.",
+    "formula": "beta(s)=(sRC)^3/[(sRC)^3+6(sRC)^2+5sRC+1]; f0=1/(2 pi RC sqrt(6)); |beta(f0)|=1/29; |A|=RF/R",
+    "assumptions": [
+      "Three equal series capacitors form the feedback ladder. The first two nodes have R to ground; the final node connects through the third R to the op-amp virtual ground. No additional final-node shunt resistor is fitted.",
+      "Amplifier noninverting input is grounded and RF feeds output to inverting input. This topology makes all three effective ladder loads equal to R.",
+      "Mutual loading is included; independent buffered-section formulas (gain 8 and sqrt(3)/(2 pi RC)) do not apply.",
+      "Ideal op-amp bandwidth and input impedance; no parasitics or output loading. Loop gain above one is a startup condition, not a prediction of steady amplitude, harmonic purity or startup time."
+    ],
+    "references": [
+      {
+        "title": "Georgia State University HyperPhysics, Phase-Shift Oscillator, 1/29 feedback and frequency equation",
+        "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/Electronic/oscphas.html"
+      },
+      {
+        "title": "Texas Instruments SLOA060, section 8.2, warning about unbuffered RC section loading",
+        "url": "https://www.ti.com/lit/an/sloa060/sloa060.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "section_resistance",
+        "label": "Each effective ladder resistance R",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "section_capacitance",
+        "label": "Each series ladder capacitance C",
+        "unit": "F",
+        "default": 1e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "feedback_resistance",
+        "label": "Amplifier feedback resistance RF",
+        "unit": "ohm",
+        "default": 300000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "frequency",
+        "label": "180-degree feedback frequency",
+        "unit": "Hz",
+        "expression": "1/(2*pi*sqrt(6))/section_resistance/section_capacitance"
+      },
+      {
+        "key": "feedback_magnitude",
+        "label": "Ladder feedback magnitude",
+        "unit": "1",
+        "expression": "1/29"
+      },
+      {
+        "key": "critical_feedback_resistance",
+        "label": "Marginal RF for unity loop gain",
+        "unit": "ohm",
+        "expression": "29*section_resistance"
+      },
+      {
+        "key": "amplifier_gain_magnitude",
+        "label": "Inverting gain magnitude",
+        "unit": "1",
+        "expression": "feedback_resistance/section_resistance"
+      },
+      {
+        "key": "loop_gain",
+        "label": "Small-signal loop gain",
+        "unit": "1",
+        "expression": "amplifier_gain_magnitude/29"
+      },
+      {
+        "key": "loop_excess",
+        "label": "Signed excess above unity loop gain",
+        "unit": "1",
+        "expression": "(feedback_resistance-29*section_resistance)/section_resistance/29"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "section_resistance": 10000,
+        "section_capacitance": 1e-08,
+        "feedback_resistance": 300000
+      },
+      "expected": {
+        "frequency": 649.7473343613968,
+        "feedback_magnitude": 0.034482758620689655,
+        "critical_feedback_resistance": 290000,
+        "amplifier_gain_magnitude": 30,
+        "loop_gain": 1.0344827586206897,
+        "loop_excess": 0.034482758620689655
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]
