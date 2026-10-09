@@ -227,5 +227,117 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "oscillators.triangle_integrator_oscillator",
+    "title": "Integrator and comparator triangle oscillator",
+    "category": "Oscillator design",
+    "level": "intermediate",
+    "description": "Calculate the triangle amplitude and self-oscillation period of a closed integrator–hysteresis loop.",
+    "formula": "Vtri,pk=(RT/RF)Vsq,pk; |dVtri/dt|=Vsq,pk/(RI C); T=4 RI C RT/RF; f=1/T",
+    "assumptions": [
+      "All voltages are referred to a stiff midpoint or ground. Comparator output levels are symmetric at plus/minus square_peak.",
+      "Comparator noninverting input sums triangle voltage through RT and comparator output through RF; its inverting input is grounded. An inverting integrator driven through RI closes the loop.",
+      "The integrator uses feedback C and a grounded noninverting input. Available linear output swing must exceed the calculated triangle peak; slew rate must exceed ramp_slew.",
+      "Comparator delay must be small compared with a half-cycle; integrator GBW, bias-current drift, capacitor leakage, offsets and saturation recovery are neglected. Output amplitude is not independently regulated."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SBOA212B, PWM Generator Circuit, triangle-generator subcircuit and design steps 3–4",
+        "url": "https://www.ti.com/lit/pdf/sboa212"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "square_peak",
+        "label": "Comparator output peak about reference",
+        "unit": "V",
+        "default": 5,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "triangle_resistance",
+        "label": "Triangle output to comparator sum RT",
+        "unit": "ohm",
+        "default": 8000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "feedback_resistance",
+        "label": "Comparator output to sum RF",
+        "unit": "ohm",
+        "default": 20000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "integrator_resistance",
+        "label": "Integrator input resistance RI",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "integrator_capacitance",
+        "label": "Integrator feedback capacitance",
+        "unit": "F",
+        "default": 1e-08,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "triangle_peak",
+        "label": "Triangle peak about reference",
+        "unit": "V",
+        "expression": "square_peak*(triangle_resistance/feedback_resistance)"
+      },
+      {
+        "key": "triangle_pp",
+        "label": "Triangle peak-to-peak voltage",
+        "unit": "V",
+        "expression": "2*triangle_peak"
+      },
+      {
+        "key": "ramp_slew",
+        "label": "Magnitude of triangle ramp slope",
+        "unit": "V/s",
+        "expression": "square_peak/integrator_resistance/integrator_capacitance"
+      },
+      {
+        "key": "period",
+        "label": "Oscillation period",
+        "unit": "s",
+        "expression": "4*integrator_resistance*integrator_capacitance*(triangle_resistance/feedback_resistance)"
+      },
+      {
+        "key": "frequency",
+        "label": "Oscillation frequency",
+        "unit": "Hz",
+        "expression": "1/period"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "square_peak": 5,
+        "triangle_resistance": 8000,
+        "feedback_resistance": 20000,
+        "integrator_resistance": 10000,
+        "integrator_capacitance": 1e-08
+      },
+      "expected": {
+        "triangle_peak": 2,
+        "triangle_pp": 4,
+        "ramp_slew": 50000,
+        "period": 0.00016,
+        "frequency": 6250
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

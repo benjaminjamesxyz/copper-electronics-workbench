@@ -111,3 +111,44 @@ Exact bindings: supply `supply_voltage`; RU `upper_resistance`; RL `lower_resist
 
 Caption: “Output-dependent positive feedback sets VH and VL; the same RT charges and discharges C. Ideal rail swing and zero delay; curves are illustrative.”
 
+
+## 3. `oscillators.triangle_integrator_oscillator` — intermediate
+
+### Purpose, novelty and source
+
+Design the amplitude and period of an op-amp integrator closed around a hysteretic comparator. TRI's triangle-generator block and design steps 3–4 give the amplitude ratio and oscillation frequency. Its single-supply midpoint implementation is translated to symmetric voltages about a stiff reference; no PWM model is added.
+
+Nearest old model: `opamps.integrator_constant_input` integrates a prescribed input from a prescribed initial state. This addition determines self-consistent switching amplitude and repetition frequency, with no prescribed interval. Unlike the RC comparator oscillator, an active integrator maintains a constant input-resistor voltage and produces linear ramps instead of exponential capacitor charging.
+
+### Model, domains and limitations
+
+Comparator inverting input is reference zero. Its noninverting input sums triangle output through RT and comparator square output through RF. At switching, `(Vtri/RT)+(Vsq/RF)=0`, hence the triangle threshold is `Vtri=−(RT/RF)Vsq`. When square output is +Vsq, the inverting integrator ramps downward; it switches at the negative triangle threshold, then ramps upward when square output becomes negative.
+
+`triangle_peak=(RT/RF)square_peak`; `triangle_pp=2 triangle_peak`; `ramp_slew=square_peak/(RI C)`; half-cycle is `2 triangle_peak/ramp_slew`; full `period=4 RI C RT/RF`; `frequency=1/period`.
+
+All inputs are positive. Symmetric square levels are essential to this formula. A real integrator's available output swing must exceed `triangle_peak`, and its slew rate must exceed `ramp_slew`; select supply rails and devices accordingly. GBW must support the integration approximation. Comparator delay, offsets, bias drift, capacitor leakage and saturation recovery are omitted. There is no arbitrary RT/RF<1 restriction because the integrator can legitimately have larger supply rails than the comparator. The default ±2 V triangle and ±5 V square are feasible with suitable split-supply devices; the cited 5 V single-supply part numbers are not asserted to support this exact split-supply example.
+
+### Complete independent example
+
+Inputs: `square_peak=5 V`, `triangle_resistance=8000 ohm`, `feedback_resistance=20000 ohm`, `integrator_resistance=10000 ohm`, `integrator_capacitance=1e-8 F`.
+
+`RT/RF=0.4`; `RI C=1e-4 s`. Each ramp traverses 4 V at 50000 V/s, taking 80 µs.
+
+| Output key | Derivation | Expected |
+|---|---|---|
+| `triangle_peak` | 0.4×5 | 2 V |
+| `triangle_pp` | 2×2 | 4 V |
+| `ramp_slew` | 5/1e-4 | 50000 V/s |
+| `period` | 2×4/50000 | 0.00016 s |
+| `frequency` | 1/0.00016 | 6250 Hz |
+
+Tester cases: doubling square_peak doubles triangle_peak, triangle_pp and ramp_slew, while period and frequency remain unchanged. Doubling RT doubles triangle amplitude and period but leaves ramp_slew unchanged. Doubling RI doubles period and halves ramp_slew and frequency. With RT/RF approaching zero, predicted frequency diverges; hardware delay/slew limitations invalidate that asymptote, not the algebra. Reject zero/negative amplitude, resistance or capacitance. A high RT/RF is mathematically permitted but requires explicit larger integrator swing, not clipping disguised as a triangle result.
+
+### Mandatory diagram specification
+
+Draw the actual two-device loop, not two disconnected amplifier symbols. Comparator output → RI → integrator inverting input; C bridges integrator output to that input; integrator noninverting input goes to reference ground. Integrator triangle output → RT → comparator noninverting summing node; RF returns comparator output to that same node. Comparator inverting input goes to reference ground. Mark the square output ±Vsq and triangle output ±Vtri. Show a descending triangle segment under positive square output. DC supplies may be omitted with a caption requiring sufficient headroom.
+
+Exact bindings: ±Vsq peak `square_peak`; RT `triangle_resistance`; RF `feedback_resistance`; RI `integrator_resistance`; C `integrator_capacitance`; triangle peak `triangle_peak`; peak-to-peak legend `triangle_pp`; slope magnitude `ramp_slew`; timing legend `period`/`frequency`. Do not bind a ± label to peak-to-peak voltage.
+
+Caption: “The inverting integrator reverses ramp direction when the comparator changes state. Voltages are relative to a stiff reference; symmetric output levels and adequate linear swing are assumed.”
+
