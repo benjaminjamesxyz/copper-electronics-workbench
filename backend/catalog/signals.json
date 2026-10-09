@@ -620,5 +620,90 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "signals.source_series_termination",
+    "title": "Source-series termination for an open receiver",
+    "category": "Signal integrity and transmission lines",
+    "level": "intermediate",
+    "description": "Select a driver-end series resistor and compute the launch and open-receiver first-arrival voltage for a point-to-point line.",
+    "formula": "Rseries=Z0-Rdriver; Vlaunch=Vstep*Z0/(Rdriver+Rseries+Z0); Vreceiver=2*Vlaunch",
+    "assumptions": [
+      "Single point-to-point uniform lossless line with an ideal open/high-impedance receiver and a Thevenin step driver.",
+      "Driver output resistance is constant, real and <= line impedance; no negative resistor or clamp-to-zero fallback is allowed.",
+      "Resistor sits at the driver; source resistance plus selected series resistance equals Z0, so the returning load reflection is absorbed.",
+      "Receiver capacitance, branched lines, nonlinear/asymmetric driver resistance and finite rise time require waveform analysis beyond this ideal estimate.",
+      "This is source-end component selection and launch behavior, distinct from the load-boundary reflection calculator."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 3, 5 and 10",
+        "url": "https://www.ti.com/lit/an/snla027b/snla027b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "line_impedance",
+        "label": "Characteristic line impedance",
+        "unit": "ohm",
+        "default": 60,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "driver_resistance",
+        "label": "Driver Thevenin output resistance",
+        "unit": "ohm",
+        "default": 18,
+        "min": 0
+      },
+      {
+        "key": "step_voltage",
+        "label": "Signed driver open-circuit step",
+        "unit": "V",
+        "default": 3.3
+      }
+    ],
+    "outputs": [
+      {
+        "key": "series_resistance",
+        "label": "Required driver-end series resistor",
+        "unit": "ohm",
+        "expression": "line_impedance-driver_resistance"
+      },
+      {
+        "key": "launch_voltage",
+        "label": "Initial launched-wave amplitude",
+        "unit": "V",
+        "expression": "step_voltage/2"
+      },
+      {
+        "key": "receiver_voltage",
+        "label": "Open-receiver first-arrival voltage",
+        "unit": "V",
+        "expression": "step_voltage"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "driver_resistance",
+        "op": "<=",
+        "right": "line_impedance",
+        "message": "Passive source matching requires driver resistance <= characteristic line impedance."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "line_impedance": 60,
+        "driver_resistance": 18,
+        "step_voltage": 3.3
+      },
+      "expected": {
+        "series_resistance": 42,
+        "launch_voltage": 1.65,
+        "receiver_voltage": 3.3
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

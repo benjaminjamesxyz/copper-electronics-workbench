@@ -355,6 +355,60 @@ Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative
 - [Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 5–6](https://www.ti.com/lit/an/snla027b/snla027b.pdf)
 - [Steven W. Ellingson, Quarter-Wavelength Transmission Line, load reflection equation](https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_I_%28Ellingson%29/03%3A_Transmission_Lines/3.19%3A_Quarter-Wavelength_Transmission_Line)
 
+## 6. Source-series termination for an open receiver — intermediate
+
+**ID:** `signals.source_series_termination`. **Source:** S4 sections 3, 5 and 10.
+
+The source is an ideal step V_step with Thevenin resistance R_driver. A series resistor adjacent to the driver makes total source resistance equal to the line impedance:
+
+- R_series = Z0 - R_driver.
+- Initial wave V_launch = V_step Z0/(R_driver + R_series + Z0).
+- Open receiver has Gamma_L = +1, so its first-arrival voltage is V_receiver = 2 V_launch.
+
+The matched source has Gamma_S = 0 and absorbs the returning reflected wave. This model therefore solves **component selection at the source and the launched step**, rather than inverting the load reflection calculation. Under an exact match the launch is one-half of the open-circuit step.
+
+**Domain guards:** Z0 > 0, 0 <= R_driver <= Z0. A driver with resistance already above Z0 cannot be corrected by adding a passive series resistor and must be rejected, not clamped to a false zero-ohm solution. V_step is signed; R_driver = Z0 legitimately yields R_series = 0. Physical restrictions: single point-to-point line, ideal high-impedance/open receiver, negligible receiver capacitance, source resistor at the driver and approximately constant driver resistance. Branches, nonlinear pull-up/pull-down I–V behavior and finite edge waveforms are not modeled.
+
+**Independent example/default:** Z0 = 60 ohm, R_driver = 18 ohm and V_step = 3.3 V. R_series = **42 ohm**; V_launch = 3.3*60/(18+42+60) = **1.65 V**; first-arrival open-receiver voltage = **3.3 V**. The driver end does not jump to full voltage immediately; returning-wave absorption happens after a round trip. Practical standard-value selection and IBIS verification are not claimed by this ideal calculator.
+
+### Executable conditioning
+
+Because the selected resistor enforces exact source matching, the executable launch is `step_voltage/2` and receiver voltage is `step_voltage`. The unsimplified source-divider derivation above remains the physical explanation; simplifying its exact result avoids unnecessary large products/sums and recovers a representable tiny receiver step without doubling an underflowed half-step. The required resistor remains a sequential supporting output, and driver resistance greater than Z0 is rejected before outputs.
+
+### Catalog units, admissible inputs and output sequence
+
+Inputs must be finite and supply exactly the listed keys. Domain violations produce an error, not a clamped result. Bounds apply before the input-only relational constraints below; nonfinite intermediate/final arithmetic is an engine error even for finite scalars.
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `line_impedance` | Characteristic line impedance | ohm | 60 | > 0 |
+| `driver_resistance` | Driver Thevenin output resistance | ohm | 18 | >= 0 |
+| `step_voltage` | Signed driver open-circuit step | V | 3.3 | any finite signed value |
+
+**Input-only model guards:**
+- `driver_resistance <= line_impedance` — Passive source matching requires driver resistance <= characteristic line impedance.
+
+Outputs execute in the following order and may consume earlier outputs. Their expected numbers are the independent source-equation substitutions worked above, not runtime results. All inputs in the following explicit vector equal the defaults.
+
+```json
+{
+  "line_impedance": 60,
+  "driver_resistance": 18,
+  "step_voltage": 3.3
+}
+```
+
+| Output key | Meaning | Unit | Executable expression | Independent expected value |
+|---|---|---|---|---|
+| `series_resistance` | Required driver-end series resistor | ohm | `line_impedance-driver_resistance` | `42` |
+| `launch_voltage` | Initial launched-wave amplitude | V | `step_voltage/2` | `1.65` |
+| `receiver_voltage` | Open-receiver first-arrival voltage | V | `step_voltage` | `3.3` |
+
+Relative numerical tolerance: **1e-6**, not physical-model accuracy. Qualitative geometry/material/topology assumptions above remain user responsibilities, not inferred guarantees.
+
+**Feature sources:**
+- [Texas Instruments AN-807, Reflections: Computations and Waveforms, sections 3, 5 and 10](https://www.ti.com/lit/an/snla027b/snla027b.pdf)
+
 ## Integration checks to run
 
 No builds, tests, lint, formatters or engine smoke commands were run by this author. Integration should exercise every complete example, input/nonfinite errors and model guards; include microstrip ratio/thickness/electrical-thickness endpoints, stripline narrow/wide branches and strict 0.025/zero-thickness endpoints, coax reversed radii, zero-length propagation, short/matched load with signed/zero waves, reflection near-short/near-open power conditioning, driver=Z0 and driver>Z0, nonpositive rise time/frequency, and quarter-wave impedance inversion with matching-section permittivity.
