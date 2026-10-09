@@ -70,3 +70,70 @@ Cross-input constraints:
 - [Texas Instruments SZZA036C, section 5 and Figure 50: logic compatibility](https://www.ti.com/lit/an/szza036c/szza036c.pdf)
 - [Texas Instruments SCAA029, Figure 23: DC noise margin](https://www.ti.com/lit/pdf/scaa029)
 
+## 2. `logic.dc_current_fanout` — basic
+
+### Purpose and novelty
+
+Determine the number of input pins one output can drive while preserving the output's characterized high/low voltage guarantees. Nearest baseline: `timing.i2c_pullup_bounds`, which solves an open-drain resistor/edge-time design window. Here a push-pull output must meet two static input-current sums; no pullup resistance or rise-time equation is used. This is not `dc.ohm_current`: there is no assumed resistive input model, and bipolar high/low input currents can differ greatly.
+
+### Model and limits
+
+TI SZZA036C sections 4.6.12–4.6.14 define II, IIH and IIL and distinguish CMOS leakage from bipolar input current. Its current-sign convention defines current entering the pin as positive; a low bipolar input normally sources current toward the driving sink. Enter positive magnitudes for both receiver currents and both driver capabilities.
+
+Conservation of current gives N·IIH≤Isource and N·|IIL|≤Isink. Therefore:
+
+- `high_fanout = floor(source_limit/receiver_high_current)`.
+- `low_fanout = floor(sink_limit/receiver_low_current)`.
+- `maximum_fanout = min(high_fanout,low_fanout)`.
+- `source_headroom = source_limit - load_count*receiver_high_current`.
+- `sink_headroom = sink_limit - load_count*receiver_low_current`.
+
+Currents are amperes; counts are dimensionless whole numbers. `load_count` can be zero and may exceed the computed fanout: negative current headroom is useful. Driver limits can be zero. Input current magnitudes must be positive because ideal zero-current loading has no finite DC-current fanout.
+
+Use operating drive guarantees at the required VOH/VOL, not destructive absolute-maximum ratings. Currents from external pulls and bus-hold circuits are not silently included. TI SCEA046B warns that heavy output loading can violate the next gate's rise/fall specification; this calculator deliberately does not claim AC fanout. Separately evaluate capacitance, package current and voltage margins.
+
+### Complete independent example
+
+Inputs: `source_limit=0.004 A`, `sink_limit=0.008 A`, `receiver_high_current=0.00002 A`, `receiver_low_current=0.0004 A`, `load_count=18`.
+
+- `high_fanout = floor(0.004/0.00002) = 200`.
+- `low_fanout = floor(0.008/0.0004) = 20`.
+- `maximum_fanout = min(200,20) = 20`.
+- `source_headroom = 0.004−18×0.00002 = 0.00364 A`.
+- `sink_headroom = 0.008−18×0.0004 = 0.0008 A`.
+
+### Independent test cases
+
+- Nominal: all five outputs above.
+- Fractional ratio must round downward: source=0.0039 A, receiver_high=0.0002 A, retain nominal sink/low input, loads=18; high=19, low=20, maximum=19, source headroom=0.0003 A, sink headroom=0.0008 A.
+- Exactly exhausted low drive: nominal with loads=20; source headroom=0.0036 A, sink headroom=0; fanout outputs unchanged.
+- Overloaded but valid: nominal with loads=21; source headroom=0.00358 A, sink headroom=−0.0004 A. Preserve the sign.
+- Zero capabilities and zero loads: source=sink=0, positive receiver currents; all five outputs are zero.
+- Invalid: either receiver current zero/negative, either driver current negative, fractional/negative load count, or nonfinite input. Tests near integer ratios should use binary-exact currents where exact floor placement matters.
+
+### Illustration and accessible quantity bindings
+
+One 700×280 current-distribution schematic. Place driver block at left, a branched net through explicit junction dots at center, and three representative receiver blocks at right. Label the repeated receiver group “N identical inputs” with quantity `load_count`; the three drawn blocks are representatives, not a literal count.
+
+Show two separate arrow annotations above/below the same topology: high-state source current flows driver→receivers; low-state input current flows receivers→driver. Bind “Source limit” → `source_limit`, “Sink limit” → `sink_limit`, “Each IIH” → `receiver_high_current`, “Each |IIL|” → `receiver_low_current`. Put the output callout “DC Nmax” → `maximum_fanout` below the branch, clear of wires. Use no resistor icons on the receiver inputs: the current requirements are datasheet bounds, not ohmic loads.
+
+Caption: “High and low states are separate cases. Currents are magnitudes; low-state bipolar inputs feed the output sink. DC current fanout does not guarantee acceptable edge rate.”
+
+### Catalog input units and bounds
+
+| Key | Unit | Default | Bounds |
+|---|---|---|---|
+| `source_limit` | A | `0.004` | >= 0 |
+| `sink_limit` | A | `0.008` | >= 0 |
+| `receiver_high_current` | A | `2e-05` | > 0 |
+| `receiver_low_current` | A | `0.0004` | > 0 |
+| `load_count` | count | `18` | >= 0 |
+
+Cross-input constraints:
+- `load_count == floor(load_count)` — Receiver count must be a whole number.
+
+### Sources
+
+- [Texas Instruments SZZA036C, sections 3.3, 4.6.12-4.6.14 and 5: terminal signs, input currents and loading](https://www.ti.com/lit/an/szza036c/szza036c.pdf)
+- [Texas Instruments SCEA046B, Slow or Noisy Edges: heavily loaded output edge-rate limitation](https://www.ti.com/lit/pdf/scea046)
+

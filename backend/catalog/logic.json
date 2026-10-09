@@ -122,5 +122,125 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "logic.dc_current_fanout",
+    "title": "Logic output DC-current fanout",
+    "category": "Digital logic and interfaces",
+    "level": "basic",
+    "description": "Find the maximum whole number of identical receiver inputs that a logic output can drive in both states, and check current headroom for a proposed load count.",
+    "formula": "NH = floor(Isource/IIH); NL = floor(Isink/abs(IIL)); Nmax = min(NH,NL); headroom_H = Isource-N*IIH; headroom_L = Isink-N*abs(IIL)",
+    "assumptions": [
+      "Enter all currents as nonnegative magnitudes. In particular, convert negative datasheet IOH and IIL to positive magnitudes; their conventional terminal-current signs are not used in this budget.",
+      "Identical loads and worst-case input currents; driver limits must be guaranteed operating currents at the required VOH/VOL, not absolute-maximum current ratings.",
+      "This is DC fanout only. Capacitive loading, edge-rate limits, transient switching current, package current limits, voltage compatibility, bus hold and transmission-line behavior can impose a smaller practical load count.",
+      "Receiver current magnitudes must be strictly positive; an ideal zero-current receiver does not have a finite current-limited fanout. Zero driver capability and zero proposed loads are valid."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SZZA036C, sections 3.3, 4.6.12-4.6.14 and 5: terminal signs, input currents and loading",
+        "url": "https://www.ti.com/lit/an/szza036c/szza036c.pdf"
+      },
+      {
+        "title": "Texas Instruments SCEA046B, Slow or Noisy Edges: heavily loaded output edge-rate limitation",
+        "url": "https://www.ti.com/lit/pdf/scea046"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "source_limit",
+        "label": "Guaranteed high-state source-current magnitude",
+        "unit": "A",
+        "default": 0.004,
+        "min": 0
+      },
+      {
+        "key": "sink_limit",
+        "label": "Guaranteed low-state sink-current magnitude",
+        "unit": "A",
+        "default": 0.008,
+        "min": 0
+      },
+      {
+        "key": "receiver_high_current",
+        "label": "Worst-case high input-current magnitude",
+        "unit": "A",
+        "default": 2e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "receiver_low_current",
+        "label": "Worst-case low input-current magnitude",
+        "unit": "A",
+        "default": 0.0004,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_count",
+        "label": "Proposed receiver count",
+        "unit": "count",
+        "default": 18,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "high_fanout",
+        "label": "High-state integer fanout",
+        "unit": "count",
+        "expression": "floor(source_limit/receiver_high_current)"
+      },
+      {
+        "key": "low_fanout",
+        "label": "Low-state integer fanout",
+        "unit": "count",
+        "expression": "floor(sink_limit/receiver_low_current)"
+      },
+      {
+        "key": "maximum_fanout",
+        "label": "DC fanout valid in both states",
+        "unit": "count",
+        "expression": "min(high_fanout,low_fanout)"
+      },
+      {
+        "key": "source_headroom",
+        "label": "High-state current headroom",
+        "unit": "A",
+        "expression": "source_limit-load_count*receiver_high_current"
+      },
+      {
+        "key": "sink_headroom",
+        "label": "Low-state current headroom",
+        "unit": "A",
+        "expression": "sink_limit-load_count*receiver_low_current"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "load_count",
+        "op": "==",
+        "right": "floor(load_count)",
+        "message": "Receiver count must be a whole number"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "source_limit": 0.004,
+        "sink_limit": 0.008,
+        "receiver_high_current": 2e-05,
+        "receiver_low_current": 0.0004,
+        "load_count": 18
+      },
+      "expected": {
+        "high_fanout": 200,
+        "low_fanout": 20,
+        "maximum_fanout": 20,
+        "source_headroom": 0.00364,
+        "sink_headroom": 0.0008
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
