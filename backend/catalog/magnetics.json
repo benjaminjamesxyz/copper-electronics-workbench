@@ -390,5 +390,88 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "magnetics.conductor_skin_depth",
+    "title": "Good-conductor skin depth",
+    "category": "Magnetics and transformers",
+    "level": "expert",
+    "description": "Calculate the 1/e penetration depth of a sinusoidal field in a good conductor and enforce a conduction-dominant domain.",
+    "formula": "delta = sqrt(1/(pi f mu0 mur sigma)); require sigma/(2 pi f eps0 epsr) >= 100",
+    "assumptions": [
+      "Homogeneous isotropic conductor with real, positive, frequency-independent conductivity and permeability at the specified frequency and temperature.",
+      "Displacement current is neglected. The ratio sigma/(omega epsilon) >= 100 is a conservative catalog screening threshold, not a manufacturer standard.",
+      "Skin depth is the field/current amplitude 1/e length, not a hard boundary; power density decays twice as rapidly.",
+      "Planar half-space field model; finite wires and proximity effects need additional analysis. No AC resistance or litz-wire performance is inferred.",
+      "Use mu0 = 4 pi times 1e-7 H/m and eps0 = 8.8541878128e-12 F/m."
+    ],
+    "references": [
+      {
+        "title": "MIT Center for Bits and Atoms, Circuits, Transmission Lines, and Waveguides, section 7.2.1, equations 7.26–7.35",
+        "url": "https://fab.cba.mit.edu/classes/862.19/notes/circuits.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "frequency",
+        "label": "Sinusoidal field frequency",
+        "unit": "Hz",
+        "default": 100000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "conductivity",
+        "label": "Conductor conductivity at operating temperature",
+        "unit": "S/m",
+        "default": 58000000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permeability",
+        "label": "Real relative permeability",
+        "unit": "1",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Relative permittivity for domain check",
+        "unit": "1",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "skin_depth",
+        "label": "Field amplitude skin depth",
+        "unit": "m",
+        "expression": "sqrt(1/(pi*frequency*4*pi*1e-7*relative_permeability*conductivity))"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "conductivity",
+        "op": ">=",
+        "right": "100*2*pi*frequency*8.8541878128e-12*relative_permittivity",
+        "message": "Conduction must exceed displacement-current admittance by at least 100 for this approximation"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "frequency": 100000.0,
+        "conductivity": 58000000.0,
+        "relative_permeability": 1.0,
+        "relative_permittivity": 1.0
+      },
+      "expected": {
+        "skin_depth": 0.0002089806784938892
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

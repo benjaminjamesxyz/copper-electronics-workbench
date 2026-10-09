@@ -216,6 +216,55 @@ All inputs are the default/worked input column above; every result is named belo
 | `peak_flux_density` | Peak core flux density | T | 0.22847946571562133 |
 
 
+## `magnetics.conductor_skin_depth` — Good-conductor skin depth (expert)
+
+ID: `magnetics.conductor_skin_depth`.
+
+**Question:** Over what distance does a sinusoidal field/current amplitude penetrate a good conductor?
+
+**Derivation:** Maxwell equations with J = σE, B = mu H and D = eps E give a conductor propagation relation containing both conduction and displacement current. If σ ≫ ω eps, the spatial field equation reduces to ∇²E = jω mu σ E. Its decaying solution is E(z) = E0 exp[-(1+j)z/delta], with delta = √[2/(ω mu σ)] = √[1/(π f mu σ)].
+
+**Formula/output:**
+
+`skin_depth = sqrt(1/(pi*frequency*4*pi*1e-7*relative_permeability*conductivity))` [m].
+
+**Input units/domain:** f [Hz] > 0; σ [S/m] > 0; mur [1] > 0; epsr [1] > 0. Constraint σ ≥ 100 × 2π f × eps0 × epsr ensures a catalog-selected conduction/displacement ratio of at least 100. This threshold is not a sourced universal standard: it makes the neglected term ≤ 1% of the conduction term, without claiming a complete device error bound. Relative permittivity is used only in this domain check.
+
+**Limitations:** Homogeneous isotropic conductor; real material coefficients suitable for frequency/temperature, no significant dispersion or complex magnetic permeability. Planar half-space reference depth, not a complete wire resistance model. A finite conductor thinner than delta does not suddenly stop conducting; currents simply approach a more uniform distribution. Proximity effect, roughness, anomalous skin effect, ferromagnetic loss, optical behavior and litz-wire benefit are not modeled. The 1/e definition refers to amplitude; Joule-power density decays as exp(-2z/delta).
+
+**Worked example/defaults:** f = 100000 Hz, σ = 5.8 × 10^7 S/m, mur = epsr = 1 (room-temperature copper approximation supported by the source).
+
+- π f mu0 σ = 2.32 × 10^6 π² m^-2.
+- delta = 1/[π √(2.32 × 10^6)] = **0.0002089806784938892 m**, or **208.980678 µm**.
+- Domain threshold: 100 × 2π × 10^5 × eps0 ≈ 0.000556325 S/m, far below the supplied conductivity; the approximation is conduction-dominant.
+
+**Source:** [MIT CBA §7.2.1, equations 7.26–7.35](https://fab.cba.mit.edu/classes/862.19/notes/circuits.pdf).
+
+### Executable input metadata
+
+| Key | Meaning | Unit | Default / worked input | Admissible bounds |
+|---|---|---|---:|---|
+| `frequency` | Sinusoidal field frequency | Hz | 100000.0 | > 0.0 |
+| `conductivity` | Conductor conductivity at operating temperature | S/m | 58000000.0 | > 0.0 |
+| `relative_permeability` | Real relative permeability | 1 | 1.0 | > 0.0 |
+| `relative_permittivity` | Relative permittivity for domain check | 1 | 1.0 | > 0.0 |
+
+**Model-domain and error rationale:** Positive frequency, conductivity and permeability guard the inverse square root; positive permittivity is required for the domain screen. The conductivity/displacement-admittance ratio must be at least 100, including equality, so dropping displacement current is an explicit approximation. This does not validate finite-wire, proximity or dispersion assumptions.
+
+**Pre-output, input-only constraints:**
+
+- `conductivity >= 100*2*pi*frequency*8.8541878128e-12*relative_permittivity` — Conduction must exceed displacement-current admittance by at least 100 for this approximation.
+
+
+### Complete independent worked output oracle
+
+All inputs are the default/worked input column above; every result is named below in evaluation order. Relative arithmetic tolerance: **1e-6**, not a physical accuracy claim.
+
+| Output key | Meaning | Unit | Expected value |
+|---|---|---|---:|
+| `skin_depth` | Field amplitude skin depth | m | 0.0002089806784938892 |
+
+
 ## Lane boundary and parent verification handoff
 
 Magnetic energy is specifically field density/region energy, not transients' circuit stored-energy formula. No passive AC reactance/resonance, power-factor calculator, switch-mode converter inductor sizing, PCB trace resistance or RF transmission-line impedance is included. Ungapped radial toroid integration and discrete-gap magnetic-circuit modeling are separate reserved geometries, not inverse versions of one calculation. Transformer VA is winding allocation; turns ratio is ideal voltage/impedance transformation; coupled-coil inductance is finite-k linkage and wiring.
