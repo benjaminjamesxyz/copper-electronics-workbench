@@ -177,3 +177,95 @@ All input values for this independent example are `{"r_one":1000.0,"r_two":1000.
 | `capacitor_two_current` | A | 0.0013630446883126453 | `c_two*v_step*exp(-time/tau_slow)*(-expm1(-time*(1/tau_fast-1/tau_slow)))/(tau_slow-tau_fast)` |
 | `voltage_one` | V | 2.4298166917958035 | `voltage_two+r_two*capacitor_two_current` |
 
+
+## `transients.rlc_underdamped_step` — oscillatory startup and voltage stress
+
+**Level:** expert. **Design purpose:** estimate time-domain ringing, first capacitor-voltage peak and a guaranteed model-error envelope following a positive source step. Sources: [MIT series-RLC prelab](https://ocw.mit.edu/courses/2-003-modeling-dynamics-and-control-i-spring-2005/d29876dfd3a4df303146df410d26041e_prelab5_sp2005.pdf), [MIT Rowell second-order response](https://web.mit.edu/2.151/www/Handouts/FirstSecondOrder.pdf).
+
+### Derivation
+
+In the series RLC, `i=C dvC/dt`. KVL yields
+
+`LC d²vC/dt²+RC dvC/dt+vC=Vs`.
+
+With zero initial current and capacitor voltage, define
+
+`alpha=R/(2L)`, `omega_n=1/sqrt(LC)`, `zeta=alpha/omega_n`,
+
+`omega_d=sqrt(omega_n²−alpha²)`.
+
+In the underdamped regime,
+
+`vC(t)=Vs{1−exp(−alpha t)[cos(omega_d t)+(alpha/omega_d)sin(omega_d t)]}`,
+
+`i(t)=Vs exp(−alpha t)sin(omega_d t)/(L omega_d)`.
+
+Differentiate vC to find its stationary points. The first positive-time maximum occurs at `t_peak=pi/omega_d`; its fractional overshoot is
+
+`Mp=exp(−alpha pi/omega_d)` and `Vpeak=Vs(1+Mp)`.
+
+These are temporal stress estimates, not additional resonance or Q calculators.
+
+### Conservative settling derivation
+
+The normalized error is `exp(−alpha t)[cos(omega_d t)+(alpha/omega_d)sin(omega_d t)]`. Its oscillatory bracket has maximum absolute magnitude
+
+`sqrt(1+(alpha/omega_d)²)=1/sqrt(1−zeta²)`.
+
+Thus a sufficient condition for **all later** normalized errors to remain below `epsilon` is
+
+`t >= ln[1/(epsilon sqrt(1−zeta²))]/alpha`.
+
+This reported time is an envelope bound, not the exact last crossing or the heuristic `4/(zeta omega_n)`.
+
+### Domain and limitations
+
+`R,L,C,Vs>0`, `t>=0`, `0<epsilon<1`. Total R includes winding/source resistance and series ESR. The model requires `alpha²<omega_n²`; the implemented input-only guard strengthens this to `alpha² <= (1−1e-8)/(LC)` for numerical margin. It does not silently use an underdamped expression for critically damped or overdamped circuits. Initial energy is zero; nonlinear clamps, core saturation, dielectric loss, distributed modes and component ratings are excluded. Angular frequency is in rad/s, never confused with hertz.
+
+### Independent worked example
+
+`R=10 ohm`, `L=1 mH`, `C=10 microF`, `Vs=5 V`, `t=100 microseconds`, `epsilon=0.01`.
+
+- `alpha=10/(2×0.001)=5000 s^-1`.
+- `omega_n=1/sqrt(10^-8)=10000 rad/s`; `zeta=0.5`.
+- `omega_d=sqrt(100000000−25000000)=8660.254037844386 rad/s`.
+- At 100 microseconds, `alpha t=0.5`, `omega_d t=0.8660254037844386`; direct trigonometric substitution gives `vC=1.701499233041492 V`, `i=0.2667535975573465 A`.
+- `t_peak=pi/8660.254037844386=0.0003627598728468436 s`.
+- `Mp=exp(−pi/sqrt(3))=0.1630335348215805`; `Vpeak=5.815167674107903 V`.
+- Envelope factor `=1/sqrt(0.75)`; the 1% sufficient settling bound is `ln[1/(0.01 sqrt(0.75))]/5000=0.0009498022444427963 s`.
+
+
+### Executable input contract
+
+| Key | Unit | Default | Admissible range |
+|---|---|---:|---|
+| `r` | ohm | 10.0 | [0.001, 1000000000.0] |
+| `l` | H | 0.001 | [1e-12, 1000000.0] |
+| `c` | F | 1e-05 | [1e-15, 1.0] |
+| `v_step` | V | 5.0 | (0.0, 1000000.0] |
+| `time` | s | 0.0001 | [0.0, 1000000000.0] |
+| `error_fraction` | 1 | 0.01 | [1e-12, 1.0) |
+
+The shared integration-owned `step_underdamped(u,zeta)` evaluates the derived unit-DC-gain analytic response with `u=omega_n*time` and the declared damping ratio. Its arguments are dimensionless; ordinary seconds or `omega_d*time` would be incorrect. It changes only numerical conditioning, keeping every output and the full researched time domain. At t=0 voltage/current are exactly zero; at default components and t=1e-20 s the independent startup asymptote is `vC≈Vs*omega_n²*t²/2=2.5e-32 V`. The input-only squared-frequency guard rejects critical/overdamping and protects omega_d and the settling-envelope root. R, L, C and positive step amplitude retain their finite positive ranges; `0<epsilon<1` protects the logarithm. At peak_time the waveform equals peak_voltage; envelope_settling_bound is sufficient for all later times, not the exact last crossing. No clipping or pulse-rating guarantee is implied. Very large oscillatory phases have ordinary finite-precision argument-resolution limitations.
+
+Additional input-only constraints (checked before any output):
+
+- `(r/(2*l))^2 <= (1-1e-8)/(l*c)`: Circuit must be underdamped with a relative squared-frequency margin of at least 1e-8.
+
+### Complete worked outputs (SI)
+
+All input values for this independent example are `{"r":10.0,"l":0.001,"c":1e-05,"v_step":5.0,"time":0.0001,"error_fraction":0.01}`.
+
+| Output key | Unit | Independent expected value | Executable expression |
+|---|---|---:|---|
+| `alpha` | 1/s | 5000.0 | `r/(2*l)` |
+| `omega_n` | rad/s | 10000.0 | `1/sqrt(l*c)` |
+| `damping_ratio` | 1 | 0.5 | `alpha/omega_n` |
+| `omega_d` | rad/s | 8660.254037844386 | `sqrt(omega_n^2-alpha^2)` |
+| `capacitor_voltage` | V | 1.701499233041492 | `v_step*step_underdamped(omega_n*time,damping_ratio)` |
+| `series_current` | A | 0.2667535975573465 | `v_step/(l*omega_d)*exp(-alpha*time)*sin(omega_d*time)` |
+| `peak_time` | s | 0.00036275987284684356 | `pi/omega_d` |
+| `overshoot_fraction` | 1 | 0.16303353482158048 | `exp(-alpha*peak_time)` |
+| `peak_voltage` | V | 5.815167674107903 | `v_step*(1+overshoot_fraction)` |
+| `envelope_settling_bound` | s | 0.0009498022444427963 | `ln(1/(error_fraction*sqrt(1-damping_ratio^2)))/alpha` |
+
