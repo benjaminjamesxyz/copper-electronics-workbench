@@ -414,6 +414,59 @@ Exact example inputs (SI):
 
 Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
 
+
+## 6. Long-channel NMOS triode-region current
+
+**ID:** `mosfet.long_channel_triode_current` — **intermediate**. Source: S5 section II.D.
+
+The inversion charge at position x is approximately C_ox(V_gs − V_th − V(x)). Under the gradual-channel, constant-mobility approximation, integrating drift current from source to drain gives
+
+I_d L = mu_n C_ox W ∫[0 to V_ds] (V_gs − V_th − v) dv.
+
+Define beta = mu_n C_ox W/L, without an embedded one-half factor, and V_overdrive = V_gs − V_th:
+
+- V_overdrive = V_gs − V_th.
+- I_d = beta(V_overdrive V_ds − V_ds²/2).
+
+Dimensional check: A/V² times V² gives A.
+
+**Inputs and model domain:** beta > 0 A/V², V_gs > V_th ≥ 0 V, and 0 ≤ V_ds < V_gs − V_th. At V_ds = 0 the current is zero without a singularity. The strict upper boundary keeps the model in triode rather than saturation. Body is tied to source; strong inversion and a long channel are assumed. Velocity saturation, body effect, mobility degradation, drift resistance and channel-length modulation are omitted. A positive overdrive is necessary but does not numerically establish strong inversion without additional process data; this remains an explicit assumption.
+
+“Linear region” here means the textbook triode/ohmic region. Discrete power-MOSFET “linear-mode” operation often instead means the active/saturation region, and beta is not the datasheet g_fs value. Do not use this model to certify a power MOSFET's load-line safety or SOA.
+
+**Independent example:** beta = 0.004 A/V², V_gs = 2.5 V, V_th = 0.7 V, V_ds = 0.4 V. Overdrive = **1.8 V** and the bracket is 1.8 × 0.4 − 0.4²/2 = 0.72 − 0.08 = 0.64 V². Current = **0.00256 A**. Region check: 0.4 V < 1.8 V.
+
+**Defaults:** beta = 0.002 A/V², V_gs = 3 V, V_th = 1 V, V_ds = 0.2 V yield **2 V overdrive** and **0.00076 A**.
+
+### Executable interface and complete example vector
+
+| Input key | Meaning | Unit | Default | Admissible range |
+|---|---|---|---|---|
+| `beta` | Process and geometry factor mu_n C_ox W/L | A/V^2 | 0.002 | > 0 |
+| `v_gs` | Gate-source voltage | V | 3 | > 0 |
+| `v_th` | Threshold voltage with body tied to source | V | 1 | ≥ 0 |
+| `v_ds` | Drain-source voltage | V | 0.2 | ≥ 0 |
+
+Outputs are evaluated in the listed order; earlier outputs are available to later expressions.
+
+| Output key | Meaning | Unit | Expression | Independent example value |
+|---|---|---|---|---|
+| `v_overdrive` | Gate overdrive | V | `v_gs-v_th` | 1.8 |
+| `i_d` | Triode-region drain current | A | `beta*(v_overdrive*v_ds-v_ds^2/2)` | 0.00256 |
+
+Exact example inputs (SI):
+
+```json
+{
+  "beta": 0.004,
+  "v_gs": 2.5,
+  "v_th": 0.7,
+  "v_ds": 0.4
+}
+```
+
+Declared relative comparison tolerance: `1e-6`; this is an arithmetic criterion, not a physical model error guarantee.
+
 ## Runtime contract and verification handoff
 
 Only the shared Rust engine evaluates these programs; there is no lane-local evaluator or Flutter math. Required finite inputs must match the catalog keys exactly. Input ranges and input-only relational constraints run before sequential outputs. Invalid arithmetic and nonfinite intermediate or final results are errors, never substituted zeros. Bounds protect positive divisors and roots; operating-region constraints are necessary model screens, not semiconductor safety certificates. Extreme finite inputs can still overflow or underflow binary64 and are subject to the shared engine arithmetic error policy, not fabricated physical upper limits.

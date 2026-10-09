@@ -744,5 +744,99 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "mosfet.long_channel_triode_current",
+    "title": "Long-channel NMOS triode-region current",
+    "category": "MOSFET and gate drive",
+    "level": "intermediate",
+    "description": "Estimate drain current in a long-channel enhancement NMOS from gate overdrive and the full quadratic triode-region model.",
+    "formula": "beta = mu_n C_ox W/L; V_overdrive = V_gs - V_th; I_d = beta (V_overdrive V_ds - V_ds^2/2)",
+    "assumptions": [
+      "Long-channel enhancement NMOS in strong inversion, body tied to source, with 0 <= V_ds < V_gs - V_th.",
+      "beta is mu_n C_ox W/L in A/V^2, with no embedded factor of one half. It is a process/geometry parameter, not datasheet small-signal g_fs.",
+      "Constant mobility, gradual-channel approximation; no body effect, velocity saturation, channel-length modulation or series drift resistance.",
+      "Triode/ohmic region is meant here: vendor descriptions of a power MOSFET in linear-mode service may instead refer to saturation/active-region operation.",
+      "This educational IC model is not a power-MOSFET safe-operating-area or thermal design predictor."
+    ],
+    "references": [
+      {
+        "title": "MIT EECS 6.012 Spring 1998 Lecture 8, section II.D, pages 7-9",
+        "url": "https://web.mit.edu/course/6/6.012/SPR98/www/lectures/S98_Lecture8.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "beta",
+        "label": "Process and geometry factor mu_n C_ox W/L",
+        "unit": "A/V^2",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_gs",
+        "label": "Gate-source voltage",
+        "unit": "V",
+        "default": 3,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "v_th",
+        "label": "Threshold voltage with body tied to source",
+        "unit": "V",
+        "default": 1,
+        "min": 0
+      },
+      {
+        "key": "v_ds",
+        "label": "Drain-source voltage",
+        "unit": "V",
+        "default": 0.2,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "v_overdrive",
+        "label": "Gate overdrive",
+        "unit": "V",
+        "expression": "v_gs-v_th"
+      },
+      {
+        "key": "i_d",
+        "label": "Triode-region drain current",
+        "unit": "A",
+        "expression": "beta*(v_overdrive*v_ds-v_ds^2/2)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "v_gs",
+        "op": ">",
+        "right": "v_th",
+        "message": "Gate voltage must exceed threshold for this strong-inversion model."
+      },
+      {
+        "left": "v_ds",
+        "op": "<",
+        "right": "v_gs-v_th",
+        "message": "Drain voltage must be below gate overdrive to remain in the triode region."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "beta": 0.004,
+        "v_gs": 2.5,
+        "v_th": 0.7,
+        "v_ds": 0.4
+      },
+      "expected": {
+        "v_overdrive": 1.8,
+        "i_d": 0.00256
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
