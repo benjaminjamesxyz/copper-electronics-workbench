@@ -359,5 +359,145 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "batteries.kinetic_charge_recovery",
+    "title": "Kinetic available and bound charge after a pulse",
+    "category": "Battery design",
+    "level": "expert",
+    "description": "Propagate a discharge-conditioned two-well battery state through one constant-current pulse or rest period, including chemical charge recovery.",
+    "formula": "a = c q2-(1-c)q1; x = lambda t; q1f = q1+a(1-exp(-x))-It[c+(1-c)exprel(-x)]; q2f = q2-a(1-exp(-x))-I(1-c)t x expm1mx_ratio(-x)",
+    "assumptions": [
+      "KiBaM charge reservoirs are empirical chemical availability states, not two physical capacitors.",
+      "lambda is the equalization decay rate k/[c(1-c)] in inverse seconds, not the original well conductance k.",
+      "Only discharge or rest is modeled. Initial available-well height cannot exceed bound-well height; both wells start within their capacities.",
+      "The model ceases to supply the load when available charge reaches zero, even if bound charge remains.",
+      "Parameters require cell-specific discharge/recovery fitting. Terminal voltage, thermal limits, aging and charge acceptance are not predicted.",
+      "lambda=0 is the disconnected-well limit; exprel and expm1mx_ratio retain the analytic zero limit."
+    ],
+    "references": [
+      {
+        "title": "Jongerden and Haverkort, Battery Modeling, section 5.3, Figure 6 and equation (4), pages 8-10",
+        "url": "https://ris.utwente.nl/ws/portalfiles/portal/5101624/BatteryRep4.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "maximum_charge",
+        "label": "Combined full-well capacity",
+        "unit": "C",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "available_fraction",
+        "label": "Available-well capacity fraction",
+        "unit": "1",
+        "default": 0.4,
+        "min": 0,
+        "exclusive_min": true,
+        "max": 1,
+        "exclusive_max": true
+      },
+      {
+        "key": "available_initial",
+        "label": "Initially available charge",
+        "unit": "C",
+        "default": 3000,
+        "min": 0
+      },
+      {
+        "key": "bound_initial",
+        "label": "Initially bound charge",
+        "unit": "C",
+        "default": 5000,
+        "min": 0
+      },
+      {
+        "key": "equalization_rate",
+        "label": "Well equalization decay rate",
+        "unit": "1/s",
+        "default": 0.001,
+        "min": 0
+      },
+      {
+        "key": "pulse_current",
+        "label": "Discharge current; zero for rest",
+        "unit": "A",
+        "default": 2,
+        "min": 0
+      },
+      {
+        "key": "pulse_duration",
+        "label": "Pulse or rest duration",
+        "unit": "s",
+        "default": 600,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "available_final",
+        "label": "Available charge after interval",
+        "unit": "C",
+        "expression": "available_initial+(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))-pulse_current*pulse_duration*(available_fraction+(1-available_fraction)*exprel(-equalization_rate*pulse_duration))"
+      },
+      {
+        "key": "bound_final",
+        "label": "Bound charge after interval",
+        "unit": "C",
+        "expression": "bound_initial-(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))-pulse_current*(1-available_fraction)*pulse_duration*(equalization_rate*pulse_duration)*expm1mx_ratio(-equalization_rate*pulse_duration)"
+      },
+      {
+        "key": "total_final",
+        "label": "Total remaining chemical charge",
+        "unit": "C",
+        "expression": "available_initial+bound_initial-pulse_current*pulse_duration"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "available_initial",
+        "op": "<=",
+        "right": "available_fraction*maximum_charge",
+        "message": "Available well exceeds its capacity"
+      },
+      {
+        "left": "bound_initial",
+        "op": "<=",
+        "right": "(1-available_fraction)*maximum_charge",
+        "message": "Bound well exceeds its capacity"
+      },
+      {
+        "left": "(1-available_fraction)*available_initial",
+        "op": "<=",
+        "right": "available_fraction*bound_initial",
+        "message": "Use an equilibrated or discharge-conditioned initial state"
+      },
+      {
+        "left": "available_initial+(available_fraction*bound_initial-(1-available_fraction)*available_initial)*(-expm1(-equalization_rate*pulse_duration))",
+        "op": ">=",
+        "right": "pulse_current*pulse_duration*(available_fraction+(1-available_fraction)*exprel(-equalization_rate*pulse_duration))",
+        "message": "Available charge would be exhausted before the interval ends"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "maximum_charge": 10000,
+        "available_fraction": 0.4,
+        "available_initial": 3000,
+        "bound_initial": 5000,
+        "equalization_rate": 0.001,
+        "pulse_current": 2,
+        "pulse_duration": 600
+      },
+      "expected": {
+        "available_final": 2068.8116360940267,
+        "bound_final": 4731.188363905973,
+        "total_final": 6800
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

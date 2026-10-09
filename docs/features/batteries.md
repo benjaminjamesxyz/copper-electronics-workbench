@@ -116,3 +116,59 @@ Nominal: assert all outputs. At `load_current=5 A` with other nominal inputs, ru
 
 The schematic log-log plot shows the fitted slope −n, a dashed ideal −1 reference, and symbolic rated/requested points. Positions are not computed results.
 
+## 4. `batteries.kinetic_charge_recovery` — expert
+
+### Purpose and novelty
+
+Predict chemically available and temporarily bound charge after a current pulse or rest. This supplies state for duty-cycle battery studies without pretending to simulate full electrochemistry. The model is distinct from Peukert: stored charge remains conserved during rest while accessible charge recovers. It is distinct from `transients.capacitor_charge_sharing`: wells represent empirical reaction availability, do not have electrical voltages/capacitances, and the load has an available-charge exhaustion condition.
+
+### Equation, convention and physical limits
+
+Twente section 5.3 equation (4) gives:
+
+`dq1/dt=-I+k(h2-h1)`; `dq2/dt=-k(h2-h1)`; `h1=q1/c`; `h2=q2/(1-c)`.
+
+Define the input decay rate `lambda=k/[c(1-c)]`, not the original `k`. Then `dq1/dt=-I+lambda[c q2-(1-c)q1]`, and `dq2/dt=-lambda[c q2-(1-c)q1]`. Set `a=c q2,0-(1-c)q1,0`, `x=lambda t` and `u=1-exp(-x)`.
+
+The propagated states are:
+
+`q1f=q1,0+a u-I t[c+(1-c)exprel(-x)]`;
+
+`q2f=q2,0-a u-I(1-c)t x expm1mx_ratio(-x)`;
+
+`qtotal,f=q1,0+q2,0-I t`.
+
+Here `exprel(z)=(exp(z)-1)/z`, analytic limit one, and `expm1mx_ratio(z)=(exp(z)-1-z)/z²`, analytic limit one-half. Identity `x expm1mx_ratio(-x)=1-exprel(-x)` avoids cancellation in the small-time bound-well discharge term. Use `-expm1(-x)` for `u`. All quantities are coulombs, amperes, seconds and inverse seconds.
+
+Require positive combined capacity, `0<c<1`, `lambda>=0`, nonnegative pulse current/duration and initial states. Both wells must be within their allocated full capacities. Require `h1<=h2`, which includes equilibrium and states produced by discharge/rest. This is deliberately a discharge/rest model, not a charge-acceptance model. With these states and `I>=0`, the bound well never gains charge or exceeds its initial capacity. Available charge either decreases or initially rises then decreases; thus nonnegative endpoints suffice to reject a pulse that exhausts it during the interval. The catalog's final-availability inequality has input expressions only. Exhaustion is not concealed by clamping.
+
+`lambda=0` is admitted as the disconnected-well limit, and `t=0` returns the initial state exactly. Parameters need measured fitting; the source notes the original model targets lead-acid batteries and other chemistries may need changed kinetics. Do not infer terminal voltage, thermal safety or charge current acceptance.
+
+### Complete independent example
+
+Inputs: `maximum_charge=10000 C`, `available_fraction=.4`, `available_initial=3000 C`, `bound_initial=5000 C`, `equalization_rate=.001 s^-1`, `pulse_current=2 A`, `pulse_duration=600 s`.
+
+Well capacities are `4000 C` and `6000 C`; starting heights are `7500 C` and `8333.33333333333 C`, so the discharge-conditioned guard holds. Total starts at `8000 C`. Let `E=exp(-.6)=.5488116360940264`.
+
+For an independent oracle, use the source's integrating-factor form rather than the catalog's conditioned expression:
+
+`q1f=3000 E+[(8000×.001×.4-2)/.001](1-E)-[2×.4/.001](.6-1+E)`.
+
+This becomes `1646.434908282079+541.4260366871683-119.0493088752212=2068.8116360940267 C`.
+
+`q2f=5000 E+8000×.6(1-E)-[2×.6/.001](.6-1+E)`
+
+`=2744.058180470132+2165.704146748673-178.5739633128318=4731.188363905973 C`.
+
+`total_final=8000-2×600=6800 C`, equal to the sum of the two outputs. Independent Python arithmetic evaluated these analytical expressions; the Rust engine was not used.
+
+### Independent tester cases
+
+Nominal: assert all three values. With only `pulse_current=0`, expect `available_final=3090.2376727811948 C`, `bound_final=4909.762327218806 C`, total `8000 C`; accessible charge increases without new stored charge. With only `equalization_rate=0`, expect `1800 C`, `5000 C`, `6800 C`. Zero duration returns `3000`, `5000`, `8000 C`. Equilibrated wells with zero current remain unchanged for all durations/rates. Test tiny positive `lambda*t` without substituting `1-exp` or `1-exprel`; the stable expressions must preserve small transfers. Invalid: `c=0` or `1`, a well above capacity, reversed initial height order, negative load/rate/time, or nominal state with `pulse_current=10 A` for `600 s` (available well exhausts).
+
+### Sources and illustration
+
+- [Jongerden and Haverkort, Battery Modeling, section 5.3, Figure 6 and equation (4), pages 8-10](https://ris.utwente.nl/ws/portalfiles/portal/5101624/BatteryRep4.pdf)
+
+Two chemical wells exchange charge through a passage. Only the available well feeds the load. The equalization rate is λ, not the original well conductance k; levels are symbolic.
+
