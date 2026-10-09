@@ -456,3 +456,33 @@ fn each_declared_input_range_and_nonfinite_domain_is_rejected() {
         }
     }
 }
+
+#[test]
+fn scaled_startup_preserves_representable_subnormal_voltage() {
+    // Independent ODE leading terms: ramp m*t^2/(2*RC), ladder Vs*t^2/(2*a),
+    // RLC Vs*t^2/(2*LC). Higher-order corrections are utterly below one ULP here.
+    // Binary64 subnormal spacing is exactly 2^-1074 V, so relative-only comparison
+    // is unattainable; two ULPs cover final multiplication quantization, never zero.
+    let ulp = f64::from_bits(1);
+    for sign in [-1.0, 1.0] {
+        let ramp = calculate("transients.rc_ramp_source", &[
+            ("r", 1000.0), ("c", 1e-6), ("v_source_initial", 0.0), ("v_initial", 0.0),
+            ("slope", sign * 1e9), ("time", 1e-165),
+        ]).unwrap();
+        assert_close(ramp["capacitor_voltage"], sign * 5e-319, 0.0, 2.0 * ulp);
+        assert!(sign * ramp["capacitor_voltage"] > 0.0);
+        let ladder = calculate("transients.rc_ladder_step", &[
+            ("r_one", 1000.0), ("r_two", 1000.0), ("c_one", 1e-6), ("c_two", 1e-6),
+            ("v_step", sign * 1e6), ("time", 1e-165),
+        ]).unwrap();
+        assert_close(ladder["voltage_two"], sign * 5e-319, 0.0, 2.0 * ulp);
+        assert!(sign * ladder["voltage_two"] > 0.0);
+    }
+    let rlc = calculate("transients.rlc_underdamped_step", &[
+        ("r", 10.0), ("l", 0.001), ("c", 1e-5), ("v_step", 1e6),
+        ("time", 1e-168), ("error_fraction", 0.01),
+    ]).unwrap();
+    // This voltage is only ten subnormal spacings; allow one final rounding ULP.
+    assert_close(rlc["capacitor_voltage"], 5e-323, 0.0, ulp);
+    assert!(rlc["capacitor_voltage"] > 0.0);
+}
