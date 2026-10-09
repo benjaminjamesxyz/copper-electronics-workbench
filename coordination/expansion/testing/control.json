@@ -1,0 +1,964 @@
+{
+  "lane": "control",
+  "base": "4c46fa1",
+  "file": "backend/tests/control.rs",
+  "authored_tests": 26,
+  "behaviors_covered": {
+    "control.delay_phase_budget": "Complete non-default output map; zero added delay, exact budget boundary, initial=target, initial 180/target 0, negative margin/headroom, inverse frequency scaling to tiny time budgets, coupled target rejection, scalar/nonfinite invalid-then-valid recovery, finite lag despite intermediate overflow.",
+    "control.loop_sensitivity": "Complete complex 3-4-5 denominator oracle; conjugation invariance; distinct complex S/T magnitudes; zero loop; positive-real loop; independent zero disturbance/noise; near-singular amplification with tiny sources; overflow-safe hypot; exact singularity and amplitude/nonfinite errors with recovery.",
+    "control.lead_crossover_synthesis": "Complete alpha=1/4 design; reconstruct complex C at crossover to prove magnitude normalization and phase; geometric corner identity; independent frequency and plant-gain scaling; near-zero and near-90-degree half-angle oracles; open phase endpoints and positive magnitude/frequency guards; nonfinite recovery.",
+    "control.pi_pole_placement": "Complete coefficient-matched non-default design; gain scaling, critical repeated-pole and overdamped cases, target polynomial reconstruction, one-ulp positive-Kp boundary, equality/below-boundary errors, all scalar/nonfinite recovery, representable extreme coefficient regression.",
+    "control.peak_current_slope_compensation": "Complete comparator event-time oracle; unstable/marginal/deadbeat/positive contraction; zero ramp below and at half duty; volt-second identity; signed/zero/tiny perturbations; independent period scaling; all scalar/nonfinite recovery; common-slope overflow and representable tiny-duty regressions.",
+    "control.integral_two_lag_stability": "Complete non-default cubic/Routh oracle; stable/marginal/unstable signed reserve; marginal imaginary mode; plant/sensor exchange; equal poles and fast-sensor limit; adjacent-f64 signed reserve; extreme time-product avoidance; reciprocal-sum overflow; positive-domain/nonfinite recovery."
+  },
+  "verification": "Not executed: no build, test, lint, formatter, backend/process or native launch. Authored against source snapshot 4c46fa1 and existing common helper. Python arithmetic used only to transcribe independent parent-scenario oracles, never to run production code.",
+  "untested_gaps": [
+    "Main must run cargo test --test control and integrated suite after cherry-pick. Five source-inferred numerical defects are intentionally represented by success expectations and unignored regression tests.",
+    "Main must execute flat parent_json_lines_scenarios in order on one real process, including error/recovery adjacency. No process pass is claimed.",
+    "Native diagrams, keyboard entry, error presentation, quantity legends, clipping, narrow window and large text remain Main/V2ControlRun acceptance work. No pixel approval is claimed by tester.",
+    "No hardware calibration, nonlinear/sampled outer-loop stability, saturation or exhaustive binary64-space validation. Primary-source retrieval is inherited from research; independent algebra is newly authored."
+  ],
+  "suspected_defects": [
+    {
+      "finding": "CTRL-N1",
+      "severity": "medium",
+      "id": "control.delay_phase_budget",
+      "location": "backend/catalog/control.json:61",
+      "evidence": "Source-inferred against snapshot 4c46fa1; not executed. 360*frequency overflows before multiplication by a reciprocal-scale delay. One full period must still give 360 degrees.",
+      "inputs": {
+        "crossover_frequency": 1e+307,
+        "initial_phase_margin": 180,
+        "target_phase_margin": 0,
+        "added_delay": 1e-307
+      },
+      "expected_outputs": {
+        "added_phase_lag": 360,
+        "remaining_phase_margin": -180,
+        "maximum_delay": 5e-308,
+        "delay_headroom": -5e-308
+      },
+      "minimal_correction": "Scale or reorder phase rotation to avoid overflowing an intermediate when final lag is representable.",
+      "regression": "backend/tests/control.rs; parent scenario ctrl-n1_finite_output_regression"
+    },
+    {
+      "finding": "CTRL-N2",
+      "severity": "medium",
+      "id": "control.pi_pole_placement",
+      "location": "backend/catalog/control.json:382",
+      "evidence": "Source-inferred against snapshot 4c46fa1; not executed. 2*zeta*wn overflows in both constraint line 405 and proportional-gain expression, although wn*tau=1 and all outputs are finite.",
+      "inputs": {
+        "plant_gain": 1e+308,
+        "plant_time_constant": 1e-308,
+        "natural_frequency": 1e+308,
+        "damping_ratio": 1
+      },
+      "expected_outputs": {
+        "proportional_gain": 1e-308,
+        "integral_gain": 1,
+        "integral_time": 1e-308,
+        "zero_frequency": 1.5915494309189535e+307
+      },
+      "minimal_correction": "Use a consistently scaled coefficient product in both domain constraint and proportional-gain expression.",
+      "regression": "backend/tests/control.rs; parent scenario ctrl-n2_finite_output_regression"
+    },
+    {
+      "finding": "CTRL-N3",
+      "severity": "medium",
+      "id": "control.peak_current_slope_compensation",
+      "location": "backend/catalog/control.json:493",
+      "evidence": "Source-inferred against snapshot 4c46fa1; not executed. rising_slope+ramp_slope overflows; common scaling cannot change a .25 contraction into zero or an error.",
+      "inputs": {
+        "rising_slope": 1e+308,
+        "falling_slope": 5e+307,
+        "ramp_slope": 1e+308,
+        "switching_period": 1e-308,
+        "initial_perturbation": 0.001
+      },
+      "expected_outputs": {
+        "sample_multiplier": 0.25,
+        "next_perturbation": 0.00025,
+        "minimum_ramp_slope": 0,
+        "ramp_amplitude": 1,
+        "stability_reserve": 0.75,
+        "steady_duty": 0.3333333333333333
+      },
+      "minimal_correction": "Normalize the three slopes by their maximum before forming multiplier numerator and denominator.",
+      "regression": "backend/tests/control.rs; parent scenario ctrl-n3_finite_output_regression"
+    },
+    {
+      "finding": "CTRL-N4",
+      "severity": "medium",
+      "id": "control.peak_current_slope_compensation",
+      "location": "backend/catalog/control.json:523",
+      "evidence": "Source-inferred against snapshot 4c46fa1; not executed. rising_slope/falling_slope overflows although duty and signed multiplier remain representable subnormal numbers.",
+      "inputs": {
+        "rising_slope": 1e+200,
+        "falling_slope": 1e-109,
+        "ramp_slope": 0,
+        "switching_period": 1e-05,
+        "initial_perturbation": 1
+      },
+      "expected_outputs": {
+        "sample_multiplier": -1e-309,
+        "next_perturbation": -1e-309,
+        "minimum_ramp_slope": 0,
+        "ramp_amplitude": 0,
+        "stability_reserve": 1,
+        "steady_duty": 1e-309
+      },
+      "minimal_correction": "Use a scaled positive-slope sum for duty, preserving tiny finite falling/rising ratios.",
+      "regression": "backend/tests/control.rs; parent scenario ctrl-n4_finite_output_regression"
+    },
+    {
+      "finding": "CTRL-N5",
+      "severity": "medium",
+      "id": "control.integral_two_lag_stability",
+      "location": "backend/catalog/control.json:609",
+      "evidence": "Source-inferred against snapshot 4c46fa1; not executed. Sum of two 1e308 reciprocals overflows before division by gain 4, although equal-pole critical gain is 2/(K*tau)=5e307.",
+      "inputs": {
+        "plant_gain": 4,
+        "plant_time_constant": 1e-308,
+        "sensor_time_constant": 1e-308,
+        "integral_gain": 1e+307
+      },
+      "expected_outputs": {
+        "critical_integral_gain": 5e+307,
+        "gain_factor_to_boundary": 5,
+        "routh_reserve": 0.8,
+        "critical_frequency": 1.5915494309189535e+307
+      },
+      "minimal_correction": "Evaluate gain-scaled reciprocal terms without overflowing the unscaled reciprocal sum.",
+      "regression": "backend/tests/control.rs; parent scenario ctrl-n5_finite_output_regression"
+    }
+  ],
+  "parent_desktop_scenarios": [
+    {
+      "id": "control.delay_phase_budget",
+      "inputs": {
+        "crossover_frequency": 125.0,
+        "initial_phase_margin": 90.0,
+        "target_phase_margin": 36.0,
+        "added_delay": 0.0004
+      },
+      "expected_outputs": {
+        "added_phase_lag": 18.0,
+        "remaining_phase_margin": 72.0,
+        "maximum_delay": 0.0012,
+        "delay_headroom": 0.0008
+      },
+      "steps": [
+        "Select calculator and enter every input explicitly.",
+        "Calculate and compare all outputs using the independent oracle.",
+        "Inspect exact quantity bindings and units; do not interpret schematic curves as live response.",
+        "Enter the corresponding invalid-domain process vector, require a visible error, restore this complete vector and require valid output."
+      ]
+    },
+    {
+      "id": "control.loop_sensitivity",
+      "inputs": {
+        "loop_real": 2.0,
+        "loop_imaginary": -4.0,
+        "disturbance_amplitude": 0.025,
+        "noise_amplitude": 0.003
+      },
+      "expected_outputs": {
+        "return_difference": 5.0,
+        "sensitivity_magnitude": 0.2,
+        "complementary_magnitude": 0.894427190999916,
+        "disturbance_output": 0.005,
+        "noise_output": 0.002683281572999748
+      },
+      "steps": [
+        "Select calculator and enter every input explicitly.",
+        "Calculate and compare all outputs using the independent oracle.",
+        "Inspect exact quantity bindings and units; do not interpret schematic curves as live response.",
+        "Enter the corresponding invalid-domain process vector, require a visible error, restore this complete vector and require valid output."
+      ]
+    },
+    {
+      "id": "control.lead_crossover_synthesis",
+      "inputs": {
+        "phase_boost": 36.86989764584402,
+        "crossover_frequency": 800.0,
+        "plant_magnitude": 0.25
+      },
+      "expected_outputs": {
+        "pole_zero_ratio": 0.25,
+        "zero_frequency": 400.0,
+        "pole_frequency": 1600.0,
+        "dc_gain": 2.0,
+        "high_frequency_gain": 8.0,
+        "zero_time_constant": 0.00039788735772973834
+      },
+      "steps": [
+        "Select calculator and enter every input explicitly.",
+        "Calculate and compare all outputs using the independent oracle.",
+        "Inspect exact quantity bindings and units; do not interpret schematic curves as live response.",
+        "Enter the corresponding invalid-domain process vector, require a visible error, restore this complete vector and require valid output."
+      ]
+    },
+    {
+      "id": "control.pi_pole_placement",
+      "inputs": {
+        "plant_gain": 4.0,
+        "plant_time_constant": 0.125,
+        "natural_frequency": 16.0,
+        "damping_ratio": 0.625
+      },
+      "expected_outputs": {
+        "proportional_gain": 0.375,
+        "integral_gain": 8.0,
+        "integral_time": 0.046875,
+        "zero_frequency": 3.3953054526271007
+      },
+      "steps": [
+        "Select calculator and enter every input explicitly.",
+        "Calculate and compare all outputs using the independent oracle.",
+        "Inspect exact quantity bindings and units; do not interpret schematic curves as live response.",
+        "Enter the corresponding invalid-domain process vector, require a visible error, restore this complete vector and require valid output."
+      ]
+    },
+    {
+      "id": "control.peak_current_slope_compensation",
+      "inputs": {
+        "rising_slope": 20000.0,
+        "falling_slope": 60000.0,
+        "ramp_slope": 40000.0,
+        "switching_period": 2e-05,
+        "initial_perturbation": -0.006
+      },
+      "expected_outputs": {
+        "sample_multiplier": -0.3333333333333333,
+        "next_perturbation": 0.002,
+        "minimum_ramp_slope": 20000.0,
+        "ramp_amplitude": 0.8,
+        "stability_reserve": 0.6666666666666666,
+        "steady_duty": 0.75
+      },
+      "steps": [
+        "Select calculator and enter every input explicitly.",
+        "Calculate and compare all outputs using the independent oracle.",
+        "Inspect exact quantity bindings and units; do not interpret schematic curves as live response.",
+        "Enter the corresponding invalid-domain process vector, require a visible error, restore this complete vector and require valid output."
+      ]
+    },
+    {
+      "id": "control.integral_two_lag_stability",
+      "inputs": {
+        "plant_gain": 5.0,
+        "plant_time_constant": 0.02,
+        "sensor_time_constant": 0.08,
+        "integral_gain": 5.0
+      },
+      "expected_outputs": {
+        "critical_integral_gain": 12.5,
+        "gain_factor_to_boundary": 2.5,
+        "routh_reserve": 0.6,
+        "critical_frequency": 3.9788735772973833
+      },
+      "steps": [
+        "Select calculator and enter every input explicitly.",
+        "Calculate and compare all outputs using the independent oracle.",
+        "Inspect exact quantity bindings and units; do not interpret schematic curves as live response.",
+        "Enter the corresponding invalid-domain process vector, require a visible error, restore this complete vector and require valid output."
+      ]
+    }
+  ],
+  "parent_json_lines_scenarios": [
+    {
+      "name": "delay_phase_budget_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "control.delay_phase_budget",
+        "inputs": {
+          "crossover_frequency": 125.0,
+          "initial_phase_margin": 90.0,
+          "target_phase_margin": 36.0,
+          "added_delay": 0.0004
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "added_phase_lag": 18.0,
+        "remaining_phase_margin": 72.0,
+        "maximum_delay": 0.0012,
+        "delay_headroom": 0.0008
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "One 125-Hz period is 8 ms. A 0.4-ms delay consumes 18 degrees; 54 degrees allows 1.2 ms."
+    },
+    {
+      "name": "loop_sensitivity_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "control.loop_sensitivity",
+        "inputs": {
+          "loop_real": 2.0,
+          "loop_imaginary": -4.0,
+          "disturbance_amplitude": 0.025,
+          "noise_amplitude": 0.003
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "return_difference": 5.0,
+        "sensitivity_magnitude": 0.2,
+        "complementary_magnitude": 0.894427190999916,
+        "disturbance_output": 0.005,
+        "noise_output": 0.002683281572999748
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "L=2-j4 yields S=(3+j4)/25 and T=(22-j4)/25. Apply separate 25-mV disturbance and 3-mV measurement noise."
+    },
+    {
+      "name": "lead_crossover_synthesis_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "control.lead_crossover_synthesis",
+        "inputs": {
+          "phase_boost": 36.86989764584402,
+          "crossover_frequency": 800.0,
+          "plant_magnitude": 0.25
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "pole_zero_ratio": 0.25,
+        "zero_frequency": 400.0,
+        "pole_frequency": 1600.0,
+        "dc_gain": 2.0,
+        "high_frequency_gain": 8.0,
+        "zero_time_constant": 0.00039788735772973834
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Choose alpha=1/4: sin(phi)=3/5. C(jwc)=3.2+j2.4 has magnitude 4 and phase atan(3/4), giving unity loop gain for M=.25."
+    },
+    {
+      "name": "pi_pole_placement_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "control.pi_pole_placement",
+        "inputs": {
+          "plant_gain": 4.0,
+          "plant_time_constant": 0.125,
+          "natural_frequency": 16.0,
+          "damping_ratio": 0.625
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "proportional_gain": 0.375,
+        "integral_gain": 8.0,
+        "integral_time": 0.046875,
+        "zero_frequency": 3.3953054526271007
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Target denominator .125s^2+2.5s+32 requires Kp=.375 and Ki=8 for K=4; zero at -64/3 rad/s."
+    },
+    {
+      "name": "peak_current_slope_compensation_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 20000.0,
+          "falling_slope": 60000.0,
+          "ramp_slope": 40000.0,
+          "switching_period": 2e-05,
+          "initial_perturbation": -0.006
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": -0.3333333333333333,
+        "next_perturbation": 0.002,
+        "minimum_ramp_slope": 20000.0,
+        "ramp_amplitude": 0.8,
+        "stability_reserve": 0.6666666666666666,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Comparator event moves +100 ns for -6 mV, changing next perturbation by +8 mV to +2 mV. Volt-second balance gives duty .75."
+    },
+    {
+      "name": "integral_two_lag_stability_independent_nondefault",
+      "request": {
+        "command": "calculate",
+        "id": "control.integral_two_lag_stability",
+        "inputs": {
+          "plant_gain": 5.0,
+          "plant_time_constant": 0.02,
+          "sensor_time_constant": 0.08,
+          "integral_gain": 5.0
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "critical_integral_gain": 12.5,
+        "gain_factor_to_boundary": 2.5,
+        "routh_reserve": 0.6,
+        "critical_frequency": 3.9788735772973833
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Cubic .0016s^3+.1s^2+s+25 has Routh column third entry .6. At Ki=12.5 it factors as (.0016s^2+1)(s+62.5)."
+    },
+    {
+      "name": "delay_phase_budget_invalid_domain",
+      "request": {
+        "command": "calculate",
+        "id": "control.delay_phase_budget",
+        "inputs": {
+          "crossover_frequency": 125.0,
+          "initial_phase_margin": 90.0,
+          "target_phase_margin": 90.0001,
+          "added_delay": 0.0004
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain without terminating the shared process; next request is valid and independently checked."
+    },
+    {
+      "name": "delay_phase_budget_valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "control.delay_phase_budget",
+        "inputs": {
+          "crossover_frequency": 125.0,
+          "initial_phase_margin": 90.0,
+          "target_phase_margin": 36.0,
+          "added_delay": 0.0004
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "added_phase_lag": 18.0,
+        "remaining_phase_margin": 72.0,
+        "maximum_delay": 0.0012,
+        "delay_headroom": 0.0008
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follows invalid request on the same process. One 125-Hz period is 8 ms. A 0.4-ms delay consumes 18 degrees; 54 degrees allows 1.2 ms."
+    },
+    {
+      "name": "loop_sensitivity_invalid_domain",
+      "request": {
+        "command": "calculate",
+        "id": "control.loop_sensitivity",
+        "inputs": {
+          "loop_real": -1.0,
+          "loop_imaginary": 0.0,
+          "disturbance_amplitude": 0.025,
+          "noise_amplitude": 0.003
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain without terminating the shared process; next request is valid and independently checked."
+    },
+    {
+      "name": "loop_sensitivity_valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "control.loop_sensitivity",
+        "inputs": {
+          "loop_real": 2.0,
+          "loop_imaginary": -4.0,
+          "disturbance_amplitude": 0.025,
+          "noise_amplitude": 0.003
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "return_difference": 5.0,
+        "sensitivity_magnitude": 0.2,
+        "complementary_magnitude": 0.894427190999916,
+        "disturbance_output": 0.005,
+        "noise_output": 0.002683281572999748
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follows invalid request on the same process. L=2-j4 yields S=(3+j4)/25 and T=(22-j4)/25. Apply separate 25-mV disturbance and 3-mV measurement noise."
+    },
+    {
+      "name": "lead_crossover_synthesis_invalid_domain",
+      "request": {
+        "command": "calculate",
+        "id": "control.lead_crossover_synthesis",
+        "inputs": {
+          "phase_boost": 90.0,
+          "crossover_frequency": 800.0,
+          "plant_magnitude": 0.25
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain without terminating the shared process; next request is valid and independently checked."
+    },
+    {
+      "name": "lead_crossover_synthesis_valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "control.lead_crossover_synthesis",
+        "inputs": {
+          "phase_boost": 36.86989764584402,
+          "crossover_frequency": 800.0,
+          "plant_magnitude": 0.25
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "pole_zero_ratio": 0.25,
+        "zero_frequency": 400.0,
+        "pole_frequency": 1600.0,
+        "dc_gain": 2.0,
+        "high_frequency_gain": 8.0,
+        "zero_time_constant": 0.00039788735772973834
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follows invalid request on the same process. Choose alpha=1/4: sin(phi)=3/5. C(jwc)=3.2+j2.4 has magnitude 4 and phase atan(3/4), giving unity loop gain for M=.25."
+    },
+    {
+      "name": "pi_pole_placement_invalid_domain",
+      "request": {
+        "command": "calculate",
+        "id": "control.pi_pole_placement",
+        "inputs": {
+          "plant_gain": 4.0,
+          "plant_time_constant": 0.125,
+          "natural_frequency": 16.0,
+          "damping_ratio": 0.25
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain without terminating the shared process; next request is valid and independently checked."
+    },
+    {
+      "name": "pi_pole_placement_valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "control.pi_pole_placement",
+        "inputs": {
+          "plant_gain": 4.0,
+          "plant_time_constant": 0.125,
+          "natural_frequency": 16.0,
+          "damping_ratio": 0.625
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "proportional_gain": 0.375,
+        "integral_gain": 8.0,
+        "integral_time": 0.046875,
+        "zero_frequency": 3.3953054526271007
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follows invalid request on the same process. Target denominator .125s^2+2.5s+32 requires Kp=.375 and Ki=8 for K=4; zero at -64/3 rad/s."
+    },
+    {
+      "name": "peak_current_slope_compensation_invalid_domain",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 20000.0,
+          "falling_slope": 60000.0,
+          "ramp_slope": -1.0,
+          "switching_period": 2e-05,
+          "initial_perturbation": -0.006
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain without terminating the shared process; next request is valid and independently checked."
+    },
+    {
+      "name": "peak_current_slope_compensation_valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 20000.0,
+          "falling_slope": 60000.0,
+          "ramp_slope": 40000.0,
+          "switching_period": 2e-05,
+          "initial_perturbation": -0.006
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": -0.3333333333333333,
+        "next_perturbation": 0.002,
+        "minimum_ramp_slope": 20000.0,
+        "ramp_amplitude": 0.8,
+        "stability_reserve": 0.6666666666666666,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follows invalid request on the same process. Comparator event moves +100 ns for -6 mV, changing next perturbation by +8 mV to +2 mV. Volt-second balance gives duty .75."
+    },
+    {
+      "name": "integral_two_lag_stability_invalid_domain",
+      "request": {
+        "command": "calculate",
+        "id": "control.integral_two_lag_stability",
+        "inputs": {
+          "plant_gain": 5.0,
+          "plant_time_constant": 0.02,
+          "sensor_time_constant": 0.0,
+          "integral_gain": 5.0
+        }
+      },
+      "expected_ok": false,
+      "relative_tolerance": 1e-10,
+      "rationale": "Reject invalid domain without terminating the shared process; next request is valid and independently checked."
+    },
+    {
+      "name": "integral_two_lag_stability_valid_recovery",
+      "request": {
+        "command": "calculate",
+        "id": "control.integral_two_lag_stability",
+        "inputs": {
+          "plant_gain": 5.0,
+          "plant_time_constant": 0.02,
+          "sensor_time_constant": 0.08,
+          "integral_gain": 5.0
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "critical_integral_gain": 12.5,
+        "gain_factor_to_boundary": 2.5,
+        "routh_reserve": 0.6,
+        "critical_frequency": 3.9788735772973833
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Immediately follows invalid request on the same process. Cubic .0016s^3+.1s^2+s+25 has Routh column third entry .6. At Ki=12.5 it factors as (.0016s^2+1)(s+62.5)."
+    },
+    {
+      "name": "delay_negative_margin",
+      "request": {
+        "command": "calculate",
+        "id": "control.delay_phase_budget",
+        "inputs": {
+          "crossover_frequency": 1000,
+          "initial_phase_margin": 60,
+          "target_phase_margin": 45,
+          "added_delay": 0.0002
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "added_phase_lag": 72,
+        "remaining_phase_margin": -12,
+        "maximum_delay": 4.1666666666666665e-05,
+        "delay_headroom": -0.00015833333333333332
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "72 degrees exceed 60 degrees; signed failed-design diagnostics must remain visible."
+    },
+    {
+      "name": "sensitivity_near_singular",
+      "request": {
+        "command": "calculate",
+        "id": "control.loop_sensitivity",
+        "inputs": {
+          "loop_real": -1,
+          "loop_imaginary": 0.001,
+          "disturbance_amplitude": 1e-120,
+          "noise_amplitude": 2e-120
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "return_difference": 0.001,
+        "sensitivity_magnitude": 1000,
+        "complementary_magnitude": 1000.000499999875,
+        "disturbance_output": 1e-117,
+        "noise_output": 2.00000099999975e-117
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "S=-j1000. Tiny excitation remains nonzero; amplification is not an input error."
+    },
+    {
+      "name": "pi_one_ulp_positive_gain",
+      "request": {
+        "command": "calculate",
+        "id": "control.pi_pole_placement",
+        "inputs": {
+          "plant_gain": 1,
+          "plant_time_constant": 1,
+          "natural_frequency": 1,
+          "damping_ratio": 0.5000000000000001
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "proportional_gain": 2.220446049250313e-16,
+        "integral_gain": 1,
+        "integral_time": 2.220446049250313e-16,
+        "zero_frequency": 716770142402832.4
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "2*zeta-1 is exactly 2^-52. Strict positive-PI boundary admits this design."
+    },
+    {
+      "name": "peak_marginal",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 20000.0,
+          "falling_slope": 60000.0,
+          "ramp_slope": 20000,
+          "switching_period": 2e-05,
+          "initial_perturbation": -0.006
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": -1,
+        "next_perturbation": 0.006,
+        "minimum_ramp_slope": 20000,
+        "ramp_amplitude": 0.4,
+        "stability_reserve": 0,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Threshold ramp gives alternating nondecaying perturbations, not positive stability reserve."
+    },
+    {
+      "name": "peak_unstable",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 20000.0,
+          "falling_slope": 60000.0,
+          "ramp_slope": 0,
+          "switching_period": 2e-05,
+          "initial_perturbation": -0.006
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": -3,
+        "next_perturbation": 0.018,
+        "minimum_ramp_slope": 20000,
+        "ramp_amplitude": 0,
+        "stability_reserve": -2,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Without ramp, m2/m1=3 amplifies alternating perturbations; do not reject the design."
+    },
+    {
+      "name": "peak_deadbeat",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 20000.0,
+          "falling_slope": 60000.0,
+          "ramp_slope": 60000,
+          "switching_period": 2e-05,
+          "initial_perturbation": -0.006
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": 0,
+        "next_perturbation": 0,
+        "minimum_ramp_slope": 20000,
+        "ramp_amplitude": 1.2,
+        "stability_reserve": 1,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Ramp equals falling sensed slope, cancelling the next-cycle perturbation exactly."
+    },
+    {
+      "name": "routh_marginal",
+      "request": {
+        "command": "calculate",
+        "id": "control.integral_two_lag_stability",
+        "inputs": {
+          "plant_gain": 5.0,
+          "plant_time_constant": 0.02,
+          "sensor_time_constant": 0.08,
+          "integral_gain": 12.5
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "critical_integral_gain": 12.5,
+        "gain_factor_to_boundary": 1,
+        "routh_reserve": 0,
+        "critical_frequency": 3.9788735772973833
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Cubic factors into (.0016s^2+1)(s+62.5): imaginary pair at +/-j25."
+    },
+    {
+      "name": "routh_unstable",
+      "request": {
+        "command": "calculate",
+        "id": "control.integral_two_lag_stability",
+        "inputs": {
+          "plant_gain": 5.0,
+          "plant_time_constant": 0.02,
+          "sensor_time_constant": 0.08,
+          "integral_gain": 25
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "critical_integral_gain": 12.5,
+        "gain_factor_to_boundary": 0.5,
+        "routh_reserve": -1,
+        "critical_frequency": 3.9788735772973833
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Routh first column has two sign changes. Negative reserve is a valid diagnostic."
+    },
+    {
+      "name": "lead_near_ninety",
+      "request": {
+        "command": "calculate",
+        "id": "control.lead_crossover_synthesis",
+        "inputs": {
+          "phase_boost": 89.999999,
+          "crossover_frequency": 800,
+          "plant_magnitude": 0.25
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "pole_zero_ratio": 7.615435456213461e-17,
+        "zero_frequency": 6.981316990351187e-06,
+        "pole_frequency": 91673247452.38441,
+        "dc_gain": 3.4906584951755934e-08,
+        "high_frequency_gain": 458366237.2619221,
+        "zero_time_constant": 22797.266377083564
+      },
+      "relative_tolerance": 1e-07,
+      "rationale": "Independent half-angle identity sqrt(alpha)=tan((90-phi)/2) avoids 1-sin(phi) cancellation. 1e-7 relative allowance covers angle-reduction conditioning."
+    },
+    {
+      "name": "ctrl-n1_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "control.delay_phase_budget",
+        "inputs": {
+          "crossover_frequency": 1e+307,
+          "initial_phase_margin": 180,
+          "target_phase_margin": 0,
+          "added_delay": 1e-307
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "added_phase_lag": 360,
+        "remaining_phase_margin": -180,
+        "maximum_delay": 5e-308,
+        "delay_headroom": -5e-308
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "360*frequency overflows before multiplication by a reciprocal-scale delay. One full period must still give 360 degrees. This deliberately exposes a suspected defect, not a passing implementation snapshot."
+    },
+    {
+      "name": "ctrl-n2_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "control.pi_pole_placement",
+        "inputs": {
+          "plant_gain": 1e+308,
+          "plant_time_constant": 1e-308,
+          "natural_frequency": 1e+308,
+          "damping_ratio": 1
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "proportional_gain": 1e-308,
+        "integral_gain": 1,
+        "integral_time": 1e-308,
+        "zero_frequency": 1.5915494309189535e+307
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "2*zeta*wn overflows in both constraint line 405 and proportional-gain expression, although wn*tau=1 and all outputs are finite. This deliberately exposes a suspected defect, not a passing implementation snapshot."
+    },
+    {
+      "name": "ctrl-n3_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 1e+308,
+          "falling_slope": 5e+307,
+          "ramp_slope": 1e+308,
+          "switching_period": 1e-308,
+          "initial_perturbation": 0.001
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": 0.25,
+        "next_perturbation": 0.00025,
+        "minimum_ramp_slope": 0,
+        "ramp_amplitude": 1,
+        "stability_reserve": 0.75,
+        "steady_duty": 0.3333333333333333
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "rising_slope+ramp_slope overflows; common scaling cannot change a .25 contraction into zero or an error. This deliberately exposes a suspected defect, not a passing implementation snapshot."
+    },
+    {
+      "name": "ctrl-n4_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "control.peak_current_slope_compensation",
+        "inputs": {
+          "rising_slope": 1e+200,
+          "falling_slope": 1e-109,
+          "ramp_slope": 0,
+          "switching_period": 1e-05,
+          "initial_perturbation": 1
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "sample_multiplier": -1e-309,
+        "next_perturbation": -1e-309,
+        "minimum_ramp_slope": 0,
+        "ramp_amplitude": 0,
+        "stability_reserve": 1,
+        "steady_duty": 1e-309
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "rising_slope/falling_slope overflows although duty and signed multiplier remain representable subnormal numbers. This deliberately exposes a suspected defect, not a passing implementation snapshot."
+    },
+    {
+      "name": "ctrl-n5_finite_output_regression",
+      "request": {
+        "command": "calculate",
+        "id": "control.integral_two_lag_stability",
+        "inputs": {
+          "plant_gain": 4,
+          "plant_time_constant": 1e-308,
+          "sensor_time_constant": 1e-308,
+          "integral_gain": 1e+307
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "critical_integral_gain": 5e+307,
+        "gain_factor_to_boundary": 5,
+        "routh_reserve": 0.8,
+        "critical_frequency": 1.5915494309189535e+307
+      },
+      "relative_tolerance": 1e-10,
+      "rationale": "Sum of two 1e308 reciprocals overflows before division by gain 4, although equal-pole critical gain is 2/(K*tau)=5e307. This deliberately exposes a suspected defect, not a passing implementation snapshot."
+    }
+  ]
+}
