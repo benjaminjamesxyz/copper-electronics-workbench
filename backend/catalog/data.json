@@ -252,5 +252,43 @@
       "expected": {"nearest_sample_multiple": 4, "alias_frequency": 19000},
       "relative_tolerance": 0.000001
     }
+  },
+  {
+    "id": "data.unipolar_dac_output",
+    "title": "Ideal unipolar DAC output voltage",
+    "category": "ADC DAC and sampled systems",
+    "level": "basic",
+    "description": "Find the ideal static analog voltage commanded by an unsigned DAC code, including a configured reference-to-output gain.",
+    "formula": "V_span = gain * V_ref; V_out = code * V_span/2^N; V_max_code = (2^N - 1)*V_span/2^N",
+    "assumptions": [
+      "Straight-binary unipolar DAC; configured gain includes any reference division and output-buffer gain.",
+      "The denominator is 2^N, not 2^N-1; the highest code is one ideal LSB below the configured span.",
+      "The output amplifier has sufficient supply headroom and load capability; reference error, offset, INL, DNL, settling, glitches and output loading are excluded.",
+      "This generic transfer law is not a claim that every gain or reference value is supported by the cited DAC device."
+    ],
+    "references": [
+      {"title": "Texas Instruments DAC80501/DAC70501/DAC60501 datasheet SBAS794E, section 8.3.1.1, equation 1", "url": "https://www.ti.com/lit/ds/symlink/dac80501.pdf"}
+    ],
+    "inputs": [
+      {"key": "bits", "label": "DAC resolution", "unit": "bit", "default": 12, "min": 1, "max": 32},
+      {"key": "code", "label": "Unsigned DAC code", "unit": "count", "default": 1234, "min": 0, "max": 4294967295},
+      {"key": "reference_v", "label": "Reference voltage", "unit": "V", "default": 2.5, "min": 1e-9, "max": 1e6},
+      {"key": "gain", "label": "Configured reference-to-span gain", "unit": "V/V", "default": 2, "min": 1e-6, "max": 1000}
+    ],
+    "outputs": [
+      {"key": "configured_span", "label": "Configured full-scale span", "unit": "V", "expression": "reference_v*gain"},
+      {"key": "output_v", "label": "Ideal DAC output", "unit": "V", "expression": "code*configured_span/2^bits"},
+      {"key": "maximum_code_v", "label": "Highest-code ideal voltage", "unit": "V", "expression": "(2^bits-1)*configured_span/2^bits"}
+    ],
+    "constraints": [
+      {"left": "bits", "op": "==", "right": "floor(bits)", "message": "Resolution must be an integer number of bits."},
+      {"left": "code", "op": "==", "right": "floor(code)", "message": "DAC code must be an integer."},
+      {"left": "code", "op": "<=", "right": "2^bits-1", "message": "Code exceeds the selected DAC resolution."}
+    ],
+    "example": {
+      "inputs": {"bits": 12, "code": 1234, "reference_v": 2.5, "gain": 2},
+      "expected": {"configured_span": 5, "output_v": 1.50634765625, "maximum_code_v": 4.998779296875},
+      "relative_tolerance": 0.000001
+    }
   }
 ]

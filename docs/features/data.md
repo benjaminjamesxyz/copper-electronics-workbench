@@ -168,3 +168,29 @@ At this time the remaining full-scale error fraction is exp(−ln(8192))=1/8192,
 The alias lies below 24000 Hz Nyquist. An exact integer-rate tone aliases to DC; `(k+1/2)f_s` aliases to Nyquist, including the half-rate case.
 
 **Parent verification scenarios (not exercised here):** example; zero input; integer-rate DC aliases; half-integer Nyquist aliases and either side of a fold; added integer sample-rate multiples preserve alias magnitude; ratio=1e9 boundary and larger-ratio rejection; nonpositive sample-rate rejection. Near-zero assertions should use frequency-scale-aware absolute tolerance, not a blanket 1e-6 Hz or relative-only criterion.
+
+## `data.unipolar_dac_output` — Ideal unipolar DAC output voltage
+
+**Level/purpose:** Basic. Translate an unsigned DAC code into ideal static voltage using reference-to-output configured gain. Digital-to-analog reconstruction is not an inverse ADC bin-width feature.
+
+**Model/formulas and units:** Integer N [bit] gives codes D from zero through 2^N−1 [count]. For reference V_ref [V] and gain G [V/V], sequential outputs are `configured_span=G V_ref` [V], `output_v=D*configured_span/2^N` [V], and `maximum_code_v=(2^N−1)*configured_span/2^N` [V]. S6 §8.3.1.1 equation 1 is `DAC_DATA/2^N × VREFIO/DIV × GAIN`; the generic G is GAIN/DIV. The denominator is **2^N, not 2^N−1**: highest-code voltage is one LSB below span.
+
+**Assumptions:** Straight-binary unipolar DAC, adequate output supply headroom/load capability, configured gain incorporating buffer gain and reference division. Generic references/gains are not claimed available settings of the cited part. Reference error, offset, INL, DNL, settling, glitches and loading are excluded. Real hardware must satisfy its output/load specifications; no rail-clipping fallback is added.
+
+**Domain/error rationale:** Integer `bits` ∈ [1,32]; integer `code` ∈ [0,4294967295] and additionally `code <=2^bits−1`. `reference_v` ∈ [1e-9,1e6] V and `gain` ∈ [1e-6,1000] V/V. Cross-input code limit prevents overflow for the selected resolution; integer constraints reject fractional codes/bits. Positive reference/gain define a positive unipolar span, and bounds keep arithmetic finite. Zero and highest valid code are admitted.
+
+**Independent example/default:** `bits=12`, `code=1234`, `reference_v=2.5 V`, `gain=2 V/V`.
+
+| Output | Worked substitution | Expected |
+|---|---|---|
+| `configured_span` | 2.5×2 | 5 V |
+| `output_v` | 1234×5/4096 | 1.50634765625 V |
+| `maximum_code_v` | 4095×5/4096 | 4.998779296875 V |
+
+**Parent verification scenarios (not exercised here):** example; zero code gives zero voltage; highest code equals maximum_code_v and stays one LSB below span; one-bit/32-bit boundaries; reference/gain scaling; fractional/overflow code, fractional bits and invalid reference/gain rejection.
+
+## Complete lane handoff and unexercised verification
+
+All eight preserved IDs are executable catalog programs using the shared engine: ADC bin width, midrise deterministic error, bandlimited quantization SNR, SAR half-LSB acquisition, measured-SINAD ENOB, baseband Nyquist margin, sampled-tone folding and unipolar DAC voltage. The basic first commit is followed by discrete/expert risk models and then remaining features. Sources, model limits, finite defaults, input-only constraints, sequential supporting outputs and every independently researched expected value are retained.
+
+The only substantive formula correction is the lower-endpoint-relative quantization error described above; it preserves the physical formula and input domain while avoiding loss of a small error when the absolute reconstruction rounds. No research files or shared engine/UI files are changed. Main should exercise all examples/defaults, the per-feature boundary/identity scenarios and exact-key/nonfinite input rejection after integrating the complete wave. Independent testers/reviewers must consume Main's full integrated snapshot. No build, lint, test, formatter, smoke or hardware verification has been executed for this lane.
