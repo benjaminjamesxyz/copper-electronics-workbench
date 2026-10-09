@@ -1,0 +1,119 @@
+[
+  {
+    "id": "timing.timer_clock_divider",
+    "title": "16-bit toggle timer clock divider",
+    "category": "Digital timing",
+    "level": "basic",
+    "description": "Select a 16-bit timer compare value by nearest output-period rounding for a supplied hardware prescaler, and calculate actual frequency error.",
+    "formula": "count = floor(f_clock/(2 P f_target)+0.5); compare = count-1; f_actual = f_clock/(2 P count)",
+    "assumptions": [
+      "Timer counts inclusively from zero through compare and toggles its output once per compare event; two toggles make one output cycle.",
+      "16-bit compare register and common AVR-style prescalers 1, 8, 64, 256 or 1024; verify the selected device supports the chosen prescaler and toggle mode.",
+      "Nearest period count with half-integer ties rounded upward; not guaranteed to minimize absolute frequency error.",
+      "No automatic prescaler selection, fractional divider, oscillator tolerance or transient register-update behavior."
+    ],
+    "references": [
+      {
+        "title": "Microchip AVR timer: Clear Timer on Compare Match mode, toggle-output frequency",
+        "url": "https://onlinedocs.microchip.com/oxy/GUID-80B1922D-872B-40C8-A8A5-0CBE009FD908-en-US-3/GUID-6CCB4482-FFD4-4AD9-9D5C-DFC302038433.html"
+      },
+      {
+        "title": "Microchip ATmega640/1280/1281/2560/2561 datasheet, timer CTC mode",
+        "url": "https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega640-1280-1281-2560-2561-Datasheet-DS40002211A.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "clock_hz",
+        "label": "Timer source clock",
+        "unit": "Hz",
+        "default": 16000000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "prescaler",
+        "label": "Hardware prescaler",
+        "unit": "1",
+        "default": 8,
+        "min": 1,
+        "max": 1024
+      },
+      {
+        "key": "target_hz",
+        "label": "Target square-wave frequency",
+        "unit": "Hz",
+        "default": 3000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "count",
+        "label": "Timer clocks per toggle",
+        "unit": "1",
+        "expression": "floor(clock_hz/(2*prescaler*target_hz)+0.5)"
+      },
+      {
+        "key": "compare_value",
+        "label": "Compare register value",
+        "unit": "1",
+        "expression": "count-1"
+      },
+      {
+        "key": "actual_hz",
+        "label": "Actual output frequency",
+        "unit": "Hz",
+        "expression": "clock_hz/(2*prescaler*count)"
+      },
+      {
+        "key": "error_percent",
+        "label": "Signed frequency error",
+        "unit": "%",
+        "expression": "100*(actual_hz/target_hz-1)"
+      },
+      {
+        "key": "output_period",
+        "label": "Actual output period",
+        "unit": "s",
+        "expression": "1/actual_hz"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "(prescaler-1)*(prescaler-8)*(prescaler-64)*(prescaler-256)*(prescaler-1024)",
+        "op": "==",
+        "right": "0",
+        "message": "Prescaler must be one of 1, 8, 64, 256 or 1024."
+      },
+      {
+        "left": "target_hz",
+        "op": "<=",
+        "right": "clock_hz/(2*prescaler)",
+        "message": "Target exceeds the maximum toggle-output frequency."
+      },
+      {
+        "left": "floor(clock_hz/(2*prescaler*target_hz)+0.5)",
+        "op": "<=",
+        "right": "65536",
+        "message": "Rounded count exceeds the 16-bit compare-register range."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "clock_hz": 16000000,
+        "prescaler": 8,
+        "target_hz": 3000
+      },
+      "expected": {
+        "count": 333,
+        "compare_value": 332,
+        "actual_hz": 3003.003003003003,
+        "error_percent": 0.1001001001001001,
+        "output_period": 0.000333
+      },
+      "relative_tolerance": 1e-06
+    }
+  }
+]
