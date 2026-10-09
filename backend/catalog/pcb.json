@@ -306,5 +306,91 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "pcb.annular_ring_registration",
+    "title": "Annular ring with hole-registration allowance",
+    "category": "PCB interconnect and manufacturing",
+    "level": "expert",
+    "description": "Compute the nominal and narrowest residual inner annular ring for a circular copper pad, production drill diameter and radial hole-center displacement.",
+    "formula": "r_nominal = (D_pad - D_tool)/2; r_min = r_nominal - offset",
+    "assumptions": [
+      "Circular pad and production hole; tool_diameter is the production drill size, not an uncorrected finished plated-hole diameter.",
+      "The fabricator determines drill allowance; Eurocircuits' example adds 0.10 mm to finished PTH diameter, but this calculator does not assume that allowance universally.",
+      "registration_offset is a worst-case radial center displacement; copper-pad size and drill tolerances must already be included in the supplied worst-case diameters.",
+      "The supported geometry retains the complete hole within the copper pad; breakout is rejected rather than reported as a valid intact ring.",
+      "Geometric result only; required minimum ring depends on process, layer, product class and supplier rules, so no IPC compliance claim is made."
+    ],
+    "references": [
+      {
+        "title": "Eurocircuits, What is the Inner Annular Ring (IAR)? Tool-size definition and off-centre finished-hole discussion",
+        "url": "https://www.eurocircuits.com/iar-inner-annular-ring/"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "pad_diameter",
+        "label": "Worst-case copper pad diameter",
+        "unit": "m",
+        "default": 0.0006,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "tool_diameter",
+        "label": "Worst-case production drill diameter",
+        "unit": "m",
+        "default": 0.00035,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "registration_offset",
+        "label": "Maximum radial center displacement",
+        "unit": "m",
+        "default": 5e-05,
+        "min": 0.0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "nominal_ring",
+        "label": "Concentric annular ring",
+        "unit": "m",
+        "expression": "(pad_diameter-tool_diameter)/2"
+      },
+      {
+        "key": "minimum_ring",
+        "label": "Narrowest residual annular ring",
+        "unit": "m",
+        "expression": "nominal_ring-registration_offset"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "pad_diameter",
+        "op": ">",
+        "right": "tool_diameter",
+        "message": "Copper pad diameter must exceed production drill diameter."
+      },
+      {
+        "left": "2*registration_offset",
+        "op": "<=",
+        "right": "pad_diameter-tool_diameter",
+        "message": "The specified offset causes hole breakout; intact-ring geometry requires offset no larger than the nominal ring."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "pad_diameter": 0.0008,
+        "tool_diameter": 0.0004,
+        "registration_offset": 5e-05
+      },
+      "expected": {
+        "nominal_ring": 0.0002,
+        "minimum_ring": 0.00015
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

@@ -210,3 +210,57 @@ Defaults satisfy these scalar and model conditions by construction. See the deri
 | `single_resistance` | 0.003760953732140788 | ohm |
 | `bank_resistance` | 0.0009402384330351971 | ohm |
 
+
+## pcb.annular_ring_registration — Annular ring with hole-registration allowance
+
+**Level:** expert
+
+**Purpose:** Compute the nominal and narrowest residual inner annular ring for a circular copper pad, production drill diameter and radial hole-center displacement.
+
+**Reference:** [EC-A](https://www.eurocircuits.com/iar-inner-annular-ring/), production tool-size formula and off-centre hole discussion.
+
+For concentric circles the copper ring width is the radial difference between pad and production hole. With worst-case center displacement e, the narrowest side loses exactly e while the opposite side gains e:
+
+- `nominal_ring = (pad_diameter-tool_diameter)/2`, m;
+- `minimum_ring = nominal_ring-registration_offset`, m.
+
+The subtraction is ordinary Euclidean circle geometry, not an empirical rule. The source's example uses tool size = finished PTH diameter + 0.10 mm. That particular allowance is **not** hard-coded: the user's fabricator must supply the appropriate production size. Finished-hole diameter alone would overestimate the inner annular ring.
+
+**Domain and limitations.** Both diameters are positive, pad diameter exceeds tool diameter, and radial registration offset is nonnegative. The intact-ring geometry is enforced by `2*registration_offset <= pad_diameter-tool_diameter`. Equality gives tangency/zero ring and is a geometric result, not an acceptable manufacturing pass. Breakout is rejected with an explicit message. Registration offset is radial distance, not a diameter tolerance or independent X/Y bound; combine X/Y bounds into a radial worst case before supplying it. Use the smallest relevant pad and largest relevant production hole, including their tolerances. Noncircular pads, etch variations around the circumference and layer-specific acceptance classes are not modeled. The calculator never assigns an IPC class or supplier compliance status.
+
+**Independent worked example.** Worst-case pad = 0.800 mm, production tool = 0.400 mm and radial offset = 0.050 mm:
+
+1. Pad radius = 0.400 mm; hole radius = 0.200 mm.
+2. Concentric ring = 0.400 - 0.200 = 0.200 mm = 0.000200 m.
+3. Narrowest residual ring = 0.200 - 0.050 = 0.150 mm = 0.000150 m.
+
+The complete-hole condition holds because offset 0.050 mm is smaller than the concentric ring 0.200 mm. Expert use requires interpreting manufacturing tolerances and drill allowance rather than merely inserting a finished drill number.
+
+### Inputs, defaults and numerical domain
+
+| Key | Quantity | Unit | Default | Allowed scalar range |
+|---|---|---|---|---|
+| `pad_diameter` | Worst-case copper pad diameter | m | 0.0006 | > 0.0 |
+| `tool_diameter` | Worst-case production drill diameter | m | 0.00035 | > 0.0 |
+| `registration_offset` | Maximum radial center displacement | m | 5e-05 | >= 0.0 |
+
+**Input-only guards and error rationale:**
+
+- `pad_diameter > tool_diameter`: Copper pad diameter must exceed production drill diameter.
+- `2*registration_offset <= pad_diameter-tool_diameter`: The specified offset causes hole breakout; intact-ring geometry requires offset no larger than the nominal ring.
+
+Defaults satisfy these scalar and model conditions by construction. See the derivation’s domain discussion for the physical reason behind each restriction; qualitative assumptions are not inferred from numeric inputs.
+
+### Complete worked vector
+
+| Input key | Example value | Unit |
+|---|---|---|
+| `pad_diameter` | 0.0008 | m |
+| `tool_diameter` | 0.0004 | m |
+| `registration_offset` | 5e-05 | m |
+
+| Output key (evaluation order) | Independently worked expected value | Unit |
+|---|---|---|
+| `nominal_ring` | 0.0002 | m |
+| `minimum_ring` | 0.00015 | m |
+
