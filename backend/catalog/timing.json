@@ -210,6 +210,18 @@
     ],
     "constraints": [
       {
+        "left": "r_victim*(c_mutual+c_victim)",
+        "op": ">",
+        "right": "0",
+        "message": "Victim time constant must remain positive and finite in floating-point arithmetic."
+      },
+      {
+        "left": "edge_time/(r_victim*(c_mutual+c_victim))",
+        "op": ">",
+        "right": "0",
+        "message": "Edge-time/time-constant ratio must remain positive and finite in floating-point arithmetic."
+      },
+      {
         "left": "segment_delay",
         "op": "<=",
         "right": "edge_time/10",
