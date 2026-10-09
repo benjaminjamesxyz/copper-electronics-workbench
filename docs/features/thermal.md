@@ -288,7 +288,7 @@ At common isothermal endpoints both paths share the same temperature drop and en
 - `T_hot=T_sink+P R_eq`;
 - `Q_i=P R_eq/R_i`.
 
-The executable equivalent resistance is `min(R1,R2)/(1+min(R1,R2)/max(R1,R2))`, avoiding reciprocal overflow for representable very small resistances. Let `M=max(R1,R2)`. Heat sharing is evaluated as `Q1=P[(R2/M)/(R1/M+R2/M)]` and `Q2=P[(R1/M)/(R1/M+R2/M)]`; each fraction is formed before multiplication by power. These algebraically equivalent bounded ratios avoid both reciprocal overflow and loss of a small heat flow through an underflowed total temperature rise. They never subtract nearly equal absolute temperatures and leave the physical domain unchanged.
+The executable equivalent resistance is `min(R1,R2)/(1+min(R1,R2)/max(R1,R2))`, avoiding reciprocal overflow for representable very small resistances. Heat sharing uses the parent-owned Rust scalar `parallel_heat(P,R_branch,R_other)`, representing `P R_other/(R_branch+R_other)` without explicitly summing large resistances or taking reciprocals. If `R_other>=R_branch`, it evaluates `P/(1+R_branch/R_other)`. Otherwise set `r=R_other/R_branch`: for normal `r`, evaluate `P*(r/(1+r))`; for subnormal or underflowed `r`, use `s=sqrt(R_other)/sqrt(R_branch)` and evaluate `((P*s)*s)/(1+r)`. Multiplying power between the square-root factors retains a representable branch heat even when the resistance ratio itself underflows. This exponent-range conditioning never subtracts nearly equal absolute temperatures and leaves the physical domain unchanged.
 
 ### Units, domain and limitations
 
@@ -324,8 +324,8 @@ Outputs are evaluated in the following order and may use earlier outputs.
 | `path_two_resistance` | K/W | `path_two_length/(path_two_conductivity*path_two_area)` | 5 |
 | `equivalent_resistance` | K/W | `min(path_one_resistance,path_two_resistance)/(1+min(path_one_resistance,path_two_resistance)/max(path_one_resistance,path_two_resistance))` | 0.2380952380952381 |
 | `hot_temperature` | K | `sink_temperature+source_power*equivalent_resistance` | 303.15 |
-| `path_one_heat` | W | `source_power*((path_two_resistance/max(path_one_resistance,path_two_resistance))/(path_one_resistance/max(path_one_resistance,path_two_resistance)+path_two_resistance/max(path_one_resistance,path_two_resistance)))` | 20 |
-| `path_two_heat` | W | `source_power*((path_one_resistance/max(path_one_resistance,path_two_resistance))/(path_one_resistance/max(path_one_resistance,path_two_resistance)+path_two_resistance/max(path_one_resistance,path_two_resistance)))` | 1 |
+| `path_one_heat` | W | `parallel_heat(source_power,path_one_resistance,path_two_resistance)` | 20 |
+| `path_two_heat` | W | `parallel_heat(source_power,path_two_resistance,path_one_resistance)` | 1 |
 
 Complete independent example input vector (relative tolerance `1e-6`):
 
@@ -343,6 +343,8 @@ Complete independent example input vector (relative tolerance `1e-6`):
 ```
 
 Independent numerical-conditioning vector: `L1=1e-309 m`, `L2=1 m`, `A1=A2=1 m²`, `k1=k2=1 W/(m K)`, `P=1 W`, and `T_sink=298.15 K` give `R1=1e-309 K/W`, `R2=1 K/W`, `R_eq≈1e-309 K/W`, `Q1≈1 W` and `Q2≈1e-309 W`. The source-temperature rise is below the representable spacing of the absolute sink temperature, so the displayed hot temperature rounds to 298.15 K without losing the separately evaluated heat flows. This vector illustrates arithmetic conditioning, not practical solid dimensions.
+
+Independent exponent-range vector: `L1=1e-200 m`, `L2=1e200 m`, both cross sections `1 m²`, both conductivities `1 W/(m K)`, `P=1e200 W`, and `T_sink=300 K` give `R1=1e-200 K/W`, `R2=1e200 K/W`, `R_eq≈1e-200 K/W`, `T_hot≈301 K`, `Q1≈1e200 W`, and `Q2≈1e-200 W`. The small branch fraction `R1/R2≈1e-400` is unrepresentable, but the corresponding heat is representable; split square-root factors retain it. Swapping the paths swaps the two heat outputs while leaving equivalent resistance and temperature unchanged. These extreme inputs probe numerical conditioning rather than practical hardware.
 
 ## `thermal.lumped_thermal_step` — Lumped body temperature after a power step
 

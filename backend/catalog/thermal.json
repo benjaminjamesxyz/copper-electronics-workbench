@@ -607,13 +607,13 @@
         "key": "path_one_heat",
         "label": "Heat flow in path 1",
         "unit": "W",
-        "expression": "source_power*((path_two_resistance/max(path_one_resistance,path_two_resistance))/(path_one_resistance/max(path_one_resistance,path_two_resistance)+path_two_resistance/max(path_one_resistance,path_two_resistance)))"
+        "expression": "parallel_heat(source_power,path_one_resistance,path_two_resistance)"
       },
       {
         "key": "path_two_heat",
         "label": "Heat flow in path 2",
         "unit": "W",
-        "expression": "source_power*((path_one_resistance/max(path_one_resistance,path_two_resistance))/(path_one_resistance/max(path_one_resistance,path_two_resistance)+path_two_resistance/max(path_one_resistance,path_two_resistance)))"
+        "expression": "parallel_heat(source_power,path_two_resistance,path_one_resistance)"
       }
     ],
     "constraints": [],
