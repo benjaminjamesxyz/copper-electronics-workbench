@@ -557,5 +557,161 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "converters.llc_half_bridge_fha",
+    "title": "Half-bridge LLC loaded fundamental-harmonic gain",
+    "category": "Additional power converters",
+    "level": "expert",
+    "description": "Estimate DC conversion gain and input-reactance sign of a half-bridge LLC using the rectifier-equivalent AC load and a separate series resonant inductor.",
+    "formula": "fr = 1/(2 pi sqrt(Lr Cr)); x = fs/fr; k = Lm/Lr; Rac = 8 n\u00b2 Rload/pi\u00b2; Q = sqrt(Lr/Cr)/Rac; M = 1/hypot(1+(1-1/x\u00b2)/k, Q(x-1/x)); Vo = Vi M/(2n)",
+    "assumptions": [
+      "Fundamental-harmonic approximation (FHA), symmetric 50% half-bridge excitation, ideal transformer with n = Np/Ns, full-wave diode rectifier, capacitive output filter and finite positive resistive DC load.",
+      "Separate series Lr and shunt magnetizing Lm; secondary leakage is neglected. Do not substitute open/short-circuit integrated-transformer inductances into this model without deriving their equivalent circuit.",
+      "FHA is most credible near the series resonance and sinusoidal tank-current operation. There is no universal numerical frequency-ratio bound guaranteeing accuracy; far-from-resonance, light-load and discontinuous rectifier behavior need time-domain analysis.",
+      "Input reactance is the imaginary part of j omega Lr + 1/(j omega Cr) + (j omega Lm parallel Rac). Positive means inductive; zero/negative is not a ZVS operating certificate.",
+      "No diode drop, winding/core loss, dead time, MOSFET capacitance or control-loop model. Even an inductive result does not guarantee enough current/charge to achieve ZVS."
+    ],
+    "references": [
+      {
+        "title": "onsemi AND90061/D, pages 2-5, equations 3-7 and separate-versus-integrated magnetic distinction",
+        "url": "https://www.onsemi.com/download/application-notes/pdf/and90061-d.pdf"
+      },
+      {
+        "title": "Texas Instruments SLUA733, abstract and section 1: limitations of FHA and diode-equivalent rectification",
+        "url": "https://www.ti.com/lit/an/slua733/slua733.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "vin",
+        "label": "DC half-bridge bus voltage",
+        "unit": "V",
+        "default": 400.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "primary_secondary_ratio",
+        "label": "Primary-to-secondary turns ratio Np/Ns",
+        "unit": "1",
+        "default": 4.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resonant_inductance",
+        "label": "Separate series resonant inductance Lr",
+        "unit": "H",
+        "default": 2e-05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "magnetizing_inductance",
+        "label": "Shunt magnetizing inductance Lm",
+        "unit": "H",
+        "default": 0.0001,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "resonant_capacitance",
+        "label": "Series resonant capacitance Cr",
+        "unit": "F",
+        "default": 1e-07,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "switching_frequency",
+        "label": "Half-bridge switching frequency",
+        "unit": "Hz",
+        "default": 120000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "load_resistance",
+        "label": "DC output load resistance",
+        "unit": "ohm",
+        "default": 10.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "resonant_frequency",
+        "label": "Series Lr-Cr resonant frequency",
+        "unit": "Hz",
+        "expression": "1/(2*pi)/sqrt(resonant_inductance)/sqrt(resonant_capacitance)"
+      },
+      {
+        "key": "normalized_frequency",
+        "label": "Switching-to-series-resonance frequency ratio",
+        "unit": "1",
+        "expression": "switching_frequency/resonant_frequency"
+      },
+      {
+        "key": "ac_load_resistance",
+        "label": "Primary-referred rectifier-equivalent AC resistance",
+        "unit": "ohm",
+        "expression": "(8/pi^2)*primary_secondary_ratio^2*load_resistance"
+      },
+      {
+        "key": "quality_factor",
+        "label": "Loaded tank quality factor",
+        "unit": "1",
+        "expression": "sqrt(resonant_inductance)/sqrt(resonant_capacitance)/ac_load_resistance"
+      },
+      {
+        "key": "inductance_ratio",
+        "label": "Magnetizing-to-resonant inductance ratio",
+        "unit": "1",
+        "expression": "magnetizing_inductance/resonant_inductance"
+      },
+      {
+        "key": "tank_gain",
+        "label": "FHA tank gain 2 n Vo/Vi",
+        "unit": "1",
+        "expression": "1/hypot(1+(1-1/normalized_frequency^2)/inductance_ratio,quality_factor*(normalized_frequency-1/normalized_frequency))"
+      },
+      {
+        "key": "output_voltage",
+        "label": "FHA estimated DC output voltage",
+        "unit": "V",
+        "expression": "vin*tank_gain/2/primary_secondary_ratio"
+      },
+      {
+        "key": "input_reactance",
+        "label": "FHA tank input reactance; positive is inductive",
+        "unit": "ohm",
+        "expression": "2*pi*switching_frequency*resonant_inductance-1/(2*pi*switching_frequency)/resonant_capacitance+(ac_load_resistance/hypot(ac_load_resistance,2*pi*switching_frequency*magnetizing_inductance))*(2*pi*switching_frequency*magnetizing_inductance*(ac_load_resistance/hypot(ac_load_resistance,2*pi*switching_frequency*magnetizing_inductance)))"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "vin": 400.0,
+        "primary_secondary_ratio": 4.0,
+        "resonant_inductance": 2e-05,
+        "magnetizing_inductance": 0.0001,
+        "resonant_capacitance": 1e-07,
+        "switching_frequency": 120000.0,
+        "load_resistance": 10.0
+      },
+      "expected": {
+        "resonant_frequency": 112539.53951963827,
+        "normalized_frequency": 1.0662919051580078,
+        "ac_load_resistance": 129.69111506219235,
+        "quality_factor": 0.10904475311935749,
+        "inductance_ratio": 5.0,
+        "tank_gain": 0.9763804121956473,
+        "output_voltage": 48.81902060978236,
+        "input_reactance": 58.16865958726068
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

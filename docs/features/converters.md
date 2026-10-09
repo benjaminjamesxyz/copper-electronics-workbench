@@ -209,3 +209,58 @@ Show an isolated flyback power circuit in the upper/middle band and a compact th
 - Bind `Vi` → `vin`, `Vo` → `vout`, `Lm` → `magnetizing_inductance`, `Np/Ns` → `primary_secondary_ratio`, `Ipk` → `primary_peak_current`, `D` → `duty`, `Ddemag` → `demagnetization_fraction`, `idle` → `idle_fraction`. The secondary peak label must read `n × Ipk`, not bind `primary_peak_current` under an unqualified secondary `Ipk` label.
 - Caption: “Primary storage, secondary delivery, then zero-current idle. Opposite winding-dot orientation blocks the secondary diode during storage. Ideal DCM; ringing and leakage spikes are omitted.”
 
+
+## 5. `converters.llc_half_bridge_fha`
+
+### Purpose, equations and physical domain
+
+S5 derives the rectifier load transformation and half-bridge normalization. Define `n=Np/Ns`, actual DC load `Ro`, separate series inductance `Lr`, shunt magnetizing inductance `Lm`, and series capacitor `Cr`.
+
+The sinusoidal rectifier current has peak `pi Io/2`; the square rectifier input voltage has fundamental peak `4Vo/pi`. Their ratio gives secondary AC load `8Ro/pi²`, so primary `Rac=8n²Ro/pi²` ohm. This load transformation is an essential nonlinear-rectifier part of the model, not a plain transformer resistance reflection.
+
+Let `fr=1/(2pi sqrt(LrCr))`, `x=fs/fr`, `k=Lm/Lr`, `Q=sqrt(Lr/Cr)/Rac`. Dividing the complex tank impedance ratio by its real numerator gives:
+
+`M = 1 / hypot(1 + (1-1/x²)/k, Q(x-1/x))`.
+
+S5 uses `m=(Lm+Lr)/Lr`; here `k=m-1`. The two forms are algebraically identical for the **separate Lr** model. The half-bridge relation is `M=2nVo/Vin`, hence `Vo=Vin M/(2n)`. A full bridge would not have that factor two and is not this calculator.
+
+For `omega=2pi fs`, the input impedance is `jomegaLr + 1/(jomegaCr) + (jomegaLm || Rac)`. Its reactance is:
+
+`Xin = omegaLr - 1/(omegaCr) + omegaLm / [1+(omegaLm/Rac)²]`.
+
+The JSON evaluates the last term using normalized `hypot` factors. Positive Xin is inductive; negative Xin is capacitive. This is a descriptive output, not a boolean promise of ZVS. Real switches need sufficient current to discharge their capacitance within dead time.
+
+FHA is approximate near sinusoidal tank operation and is most reliable near series resonance. S6 explicitly warns against relying on it away from resonance. No universal frequency-ratio cutoff provides a physics guarantee, so no artificial bound is inserted. Finite positive Ro is required; open circuit and short circuit are not represented. Integrated magnetics with appreciable secondary leakage require S5's different equivalent model. Diode-equivalent synchronous rectification is acceptable only if it preserves these conduction assumptions.
+
+### Complete independent example
+
+Inputs: `vin=400 V`, `primary_secondary_ratio=4`, `resonant_inductance=20e-6 H`, `magnetizing_inductance=100e-6 H`, `resonant_capacitance=100e-9 F`, `switching_frequency=120000 Hz`, `load_resistance=10 ohm`.
+
+1. `resonant_frequency = 1/(2pi sqrt(20e-6×100e-9)) = 112539.53951963827 Hz`.
+2. `normalized_frequency = 120000/112539.53951963827 = 1.0662919051580078`.
+3. `ac_load_resistance = 8×4²×10/pi² = 129.69111506219235 ohm`.
+4. `quality_factor = sqrt(20e-6/100e-9)/129.69111506219235 = 0.10904475311935749`.
+5. `inductance_ratio = 100e-6/20e-6 = 5`.
+6. `tank_gain = 1/hypot[1+(1-1/1.0662919051580078²)/5, 0.10904475311935749×(1.0662919051580078-1/1.0662919051580078)] = 0.9763804121956473`.
+7. `output_voltage = 400×0.9763804121956473/(2×4) = 48.81902060978236 V`.
+8. `omega=753982.2368615504 rad/s`; `input_reactance = omega×20e-6 - 1/(omega×100e-9) + omega×100e-6/[1+(omega×100e-6/129.69111506219235)²] = 58.16865958726068 ohm`.
+
+### Nominal, limiting and invalid cases
+
+- Nominal: above map; positive input reactance does not waive a switching-charge check.
+- Series resonance: set fs to `1/(2pi sqrt(LrCr))`. Then x=1, M=1 and Vo=50 V regardless of finite positive Ro. Verify multiple loads; do not confuse the low-frequency Lr+Lm resonance with this point.
+- Signed-region example: keep defaults except fs=40000 Hz; the FHA reactance is `-10.53912559450507 ohm`. The arithmetic result is admitted and explicitly capacitive; far-from-resonance accuracy is not claimed.
+- Light-load limit Ro→infinity makes Q→0 and exposes the lower resonance. Exact infinity is invalid. Near lower resonance the approximation can predict very large gain; do not clamp it into a supposed regulated voltage or claim device feasibility.
+- Reject zero/negative Vin, n, Lr, Lm, Cr, fs or Ro. No imposed requirement `Lm>Lr`: positive values define the stated equivalent circuit, even though practical designs commonly use larger Lm.
+
+### Mandatory diagram specification
+
+Use the actual half-bridge plus the explicitly labeled FHA equivalent, with clear separation rather than an unlabeled generic RLC.
+
+- Main circuit: QH from +Vin to switching node H and QL from H to primary ground. H feeds series Cr then separate Lr then node P. Shunt Lm connects P to primary ground; ideal transformer primary also connects P to primary ground. Draw the transformer secondary feeding a **full-wave diode bridge**, then Cout and Ro. Secondary ground stays isolated.
+- Mark transformer ratio `Np/Ns`. The series Cr blocks DC; do not add a wire bypassing it. Do not put Lm in series with Lr.
+- If space makes eight rectifier/switch symbols illegible, use a labeled standard full-wave bridge rectangle with two AC terminals and separate +/− DC pins; keep the electrical port connections explicit.
+- A small lower-band equivalent can replace the rectifier/transformer with Rac in parallel with Lm, labeled `Rac = 8 n² Ro/pi²`. This is an explanatory equivalent, not another physical load connected to the main circuit.
+- Bind `Vin` → `vin`, `Lr` → `resonant_inductance`, `Lm` → `magnetizing_inductance`, `Cr` → `resonant_capacitance`, `Np/Ns` → `primary_secondary_ratio`, `Ro` → `load_resistance`, `Rac` → `ac_load_resistance`, `Vo, FHA` → `output_voltage`. Put `M = 2 n Vo/Vin` next to `tank_gain` only if bound as `M`, not as a voltage.
+- Caption: “Half-bridge, separate Lr, ideal full-wave rectifier. Rac represents the rectifier's fundamental load. FHA estimates steady conversion; it is not a time-domain waveform or a ZVS guarantee.”
+
