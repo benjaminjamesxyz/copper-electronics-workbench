@@ -70,3 +70,26 @@ Independent cases:
 ### Mandatory diagram
 
 Draw one infinitesimal RLGC cell and continuation marks: upper conductor enters x=55,y=105; series resistor at x≈165 then series inductor at x≈295; output node at x≈405. Return conductor y=200. Two distinct shunt branches from the same upper node to return: G′*Delta z resistor at x=460 and C′*Delta z capacitor at x=565, each with explicit endpoint junctions. A bracket identifies `Delta z` as an illustrative differential section, not `length`. Bind resistor label to `series_resistance_per_length` with text “R′; element R′ Δz”; similarly `inductance_per_length`, `shunt_conductance_per_length`, `capacitance_per_length`. Above the line show forward +z arrow and total extent `length`. Small bottom legend binds `attenuation_constant`, `phase_constant`, `forward_amplitude_ratio`; label the latter `|V+(l)/V+(0)|`. Caption: “Infinitesimal distributed cell, repeated over length l. Forward wave decays as exp(-alpha z); no source/load mismatch is included.”
+
+## 3. `cables.radial_insulation_stress` — intermediate
+
+### Physical model and units
+
+S3 derives `V(r)=Vpk*ln(b/r)/ln(b/a)` and outward radial `E(r)=Vpk/[r ln(b/a)]`. Maximum occurs at r=a, not at the midpoint of the dielectric. Here a=`conductor_radius`, b=`shield_inner_radius`, m; Vpk=`peak_voltage`, V. Field is V/m. `voltage_limit=allowable_field*a*ln(b/a)` and `field_margin=allowable_field-E(a)`.
+
+Domain a>0, b>a, Vpk>=0, allowable_field>0. Use a homogeneous long concentric cable without end effects, voids, eccentricity, space charge or contamination. The field limit must come from applicable material/application data; no universal breakdown field is inferred. This electrostatic screening can return a negative margin. It does not model the post-breakdown conducting state. `log1p((b-a)/a)` avoids thin-gap logarithm cancellation.
+
+### Complete worked example
+
+Inputs: a=0.001 m, b=0.004 m, Vpk=2000 V, allowable_field=8e6 V/m. `ln(b/a)=ln(4)=1.3862943611198906`.
+
+- `inner_surface_field = 2000/(0.001*ln(4)) = 1442695.0408889633 V/m`.
+- `outer_surface_field = 2000/(0.004*ln(4)) = 360673.7602222408 V/m`.
+- `voltage_limit = 8e6*0.001*ln(4) = 11090.354888959124 V`.
+- `field_margin = 8e6-1442695.0408889633 = 6557304.959111037 V/m`.
+
+Independent cases: Vpk=0 gives both fields=0, unchanged voltage_limit, margin=8e6. Vpk=12000 gives Einner=`8656170.24533378 V/m` and negative margin about `-656170.24533378 V/m`, which must remain an accepted screening result. At fixed b/a, doubling a and b halves fields and doubles voltage limit. For b-a much smaller than a, Einner approaches Vpk/(b-a), recovering the planar local limit. Invalid b<=a, a<=0 or nonpositive field limit. AC RMS voltage must be converted to peak externally; silently treating RMS as peak understates stress.
+
+### Mandatory diagram
+
+Concentric cross-section centered near (190,140): filled inner disk radius 35, outer conductor ring inner radius 90. Clearly distinguish b as the shield **inner** surface. Two radius arrows in different angular directions bind `conductor_radius` as a and `shield_inner_radius` as b. Inner conductor marked +Vpk and shield 0; bind `peak_voltage`. Draw three radial outward E arrows in insulation. Right side x≈370 shows a qualitative decreasing 1/r curve from a to b, with endpoint labels bound to `inner_surface_field` and `outer_surface_field`; axis ticks a/b are explanatory. Separate legend binds `allowable_field` and `voltage_limit`. Caption: “Ideal concentric insulation: peak stress occurs at the inner conductor. The 1/r curve is illustrative; voltage is peak, not RMS. Voids and ends are excluded.”

@@ -252,5 +252,107 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "cables.radial_insulation_stress",
+    "title": "Cylindrical cable insulation electric stress",
+    "category": "Cables and connectors",
+    "level": "intermediate",
+    "description": "Estimate radial dielectric field concentration and voltage capability in a concentric insulated cable, independently of line impedance.",
+    "formula": "E(r) = Vpk/[r ln(b/a)]; Emax = E(a); Vlimit = Eallow a ln(b/a)",
+    "assumptions": [
+      "Long concentric cylindrical conductors, homogeneous isotropic insulation, no space charge, voids, edges or eccentricity.",
+      "Voltage is nonnegative peak conductor-to-shield voltage, not RMS. For positive inner voltage, electric field points radially outward.",
+      "User supplies an allowable field appropriate to material, thickness, temperature, waveform and safety margin; this is not a certification or partial-discharge model.",
+      "Negative field margin indicates an over-stressed design; the electrostatic field calculation remains valid before actual breakdown."
+    ],
+    "references": [
+      {
+        "title": "Virginia Tech, Ellingson Electromagnetics II §7.4: radial electric field and maximum safe field",
+        "url": "https://phys.libretexts.org/Bookshelves/Electricity_and_Magnetism/Electromagnetics_II_(Ellingson)/07:_Transmission_Lines_Redux/7.04:_Power_Handling_Capability_of_Coaxial_Cable"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "conductor_radius",
+        "label": "Inner conductor radius",
+        "unit": "m",
+        "default": 0.001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "shield_inner_radius",
+        "label": "Shield inner radius",
+        "unit": "m",
+        "default": 0.004,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "peak_voltage",
+        "label": "Conductor-to-shield peak voltage",
+        "unit": "V",
+        "default": 2000,
+        "min": 0
+      },
+      {
+        "key": "allowable_field",
+        "label": "Application-specific allowable field",
+        "unit": "V/m",
+        "default": 8000000.0,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "inner_surface_field",
+        "label": "Maximum field at inner surface",
+        "unit": "V/m",
+        "expression": "peak_voltage/conductor_radius/log1p((shield_inner_radius-conductor_radius)/conductor_radius)"
+      },
+      {
+        "key": "outer_surface_field",
+        "label": "Field at insulation outer surface",
+        "unit": "V/m",
+        "expression": "peak_voltage/shield_inner_radius/log1p((shield_inner_radius-conductor_radius)/conductor_radius)"
+      },
+      {
+        "key": "voltage_limit",
+        "label": "Field-limited peak voltage",
+        "unit": "V",
+        "expression": "allowable_field*conductor_radius*log1p((shield_inner_radius-conductor_radius)/conductor_radius)"
+      },
+      {
+        "key": "field_margin",
+        "label": "Allowable minus maximum field",
+        "unit": "V/m",
+        "expression": "allowable_field-inner_surface_field"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "shield_inner_radius",
+        "op": ">",
+        "right": "conductor_radius",
+        "message": "Shield inner radius must exceed conductor radius."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "conductor_radius": 0.001,
+        "shield_inner_radius": 0.004,
+        "peak_voltage": 2000,
+        "allowable_field": 8000000.0
+      },
+      "expected": {
+        "inner_surface_field": 1442695.0408889633,
+        "outer_surface_field": 360673.7602222408,
+        "voltage_limit": 11090.354888959124,
+        "field_margin": 6557304.959111037
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
