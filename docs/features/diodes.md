@@ -252,3 +252,45 @@ The average/RMS/peak relations follow from nonnegative waveform statistics, incl
 - `path_current_peak >= path_current_rms` — Peak current cannot be less than RMS current.
 - `path_current_rms^2 <= path_current_peak*path_current_avg` — For a nonnegative waveform, RMS squared cannot exceed peak times average current.
 
+## 4. `diodes.full_wave_capacitor_ripple` — intermediate
+
+**Purpose:** A sinusoidal source feeds a full-wave bridge and reservoir capacitor, loaded by a near-constant DC current.
+
+Two source peaks per cycle produce fr = 2fline. Capacitor peak is Vpk = √2·Vac,rms − 2Vf. Between narrow recharge events, capacitor charge loss is ΔQ ≈ IL/fr; since ΔQ = C·ΔV, Vr,pp ≈ IL/(frC). Sawtooth approximations give Vtrough ≈ Vpk − Vr,pp, Vdc ≈ Vpk − Vr,pp/2 and Vr,rms ≈ Vr,pp/√12 (RMS of AC ripple about its mean).
+
+**Units:** source RMS and output voltages V, frequency Hz, capacitance F, current A. **Domain:** positive frequency and capacitance, nonnegative load and diode drop, available Vpk > 0, and Vr,pp ≤ 0.1Vpk. The 10% guard is a conservative application-model rule, not a standards limit. It also guarantees a positive output trough. Zero load produces zero ripple.
+
+**Limits:** Narrow recharge and small ripple only. Source resistance, capacitor ESR, source distortion, finite conduction angle and capacitor charging-current ratings are excluded. Unlike Auburn's resistor-load exponential approximation, our load current is specified constant; the equations are not interchangeable at large ripple. A generic capacitor ramp in transients lacks this bridge/source/recharge-frequency design context. Power lane owns switching-converter capacitor synthesis, not this line-frequency rectifier. Sources S2 and S6.
+
+**Independent example (also defaults):** Vac,rms = 12 V, fline = 50 Hz, Vf = 0.8 V, IL = 0.1 A, C = 0.0022 F. **fr = 100 Hz**; Vpk = 12√2 − 1.6 = **15.370562748477143 V**. Charge loss per half-cycle is 0.001 C; dividing by 0.0022 F gives **Vr,pp = 0.4545454545454546 V**, about 2.96% of Vpk. **Vtrough = 14.916017293931688 V**, **Vdc = 15.143290021204416 V**, **Vr,rms = 0.13121597027036952 V**.
+
+### Executable inputs and admissible ranges
+
+| Key | Meaning | Unit | Default / worked input | Allowed range |
+|---|---|---|---:|---|
+| `source_rms` | Sinusoidal input RMS voltage | V | 12 | [1e-06, 10000] |
+| `line_frequency` | Input line frequency | Hz | 50 | [0.001, 100000] |
+| `forward_drop` | Forward drop per bridge diode | V | 0.8 | [0, 10] |
+| `load_current` | Constant load current | A | 0.1 | [0, 10000] |
+| `capacitance` | Reservoir capacitance | F | 0.0022 | [1e-12, 100] |
+
+### Sequential outputs and complete independent oracle
+
+Expressions below are evaluated in row order; later rows can use earlier output keys. All expected values are the independent worked results above, not runtime-generated values.
+
+| Key | Meaning | Unit | Executable expression | Expected |
+|---|---|---|---|---:|
+| `ripple_frequency` | Recharge and ripple frequency | Hz | `2*line_frequency` | 100 |
+| `capacitor_peak` | Available capacitor peak voltage | V | `sqrt(2)*source_rms-2*forward_drop` | 15.370562748477143 |
+| `ripple_pp` | Peak-to-peak ripple | V | `load_current/(ripple_frequency*capacitance)` | 0.4545454545454546 |
+| `capacitor_trough` | Approximate minimum output voltage | V | `capacitor_peak-ripple_pp` | 14.916017293931688 |
+| `output_dc` | Approximate mean output voltage | V | `capacitor_peak-ripple_pp/2` | 15.143290021204416 |
+| `ripple_rms` | Approximate AC ripple RMS voltage | V | `ripple_pp/sqrt(12)` | 0.13121597027036952 |
+
+### Constraint/error rationale and implementation limits
+
+The source-peak guard precedes the small-ripple constraint. Positive line frequency and capacitance guard the ripple divisor; the inclusive 10% bound guarantees a positive modeled trough. At zero load, ripple_pp and ripple_rms are zero and capacitor_peak = capacitor_trough = output_dc. The 10% restriction is an application approximation, not a universal capacitor-input-rectifier safety criterion.
+
+- `sqrt(2)*source_rms > 2*forward_drop` — Source peak must exceed the two-diode bridge drop.
+- `load_current/(2*line_frequency*capacitance) <= 0.1*(sqrt(2)*source_rms-2*forward_drop)` — Ripple exceeds the 10-percent small-ripple model limit.
+

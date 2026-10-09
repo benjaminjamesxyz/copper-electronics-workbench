@@ -715,5 +715,141 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "diodes.full_wave_capacitor_ripple",
+    "title": "Full-wave capacitor-input rectifier ripple",
+    "category": "Diodes, LEDs and rectification",
+    "level": "intermediate",
+    "description": "Estimate bridge output peak, trough, average and ripple for a sinusoidal source and a near-constant-current load.",
+    "formula": "fr = 2 fline; Vpk = sqrt(2) Vac,rms - 2 VF; Vr,pp = IL/(fr C); Vdc \u2248 Vpk - Vr,pp/2; Vr,rms \u2248 Vr,pp/sqrt(12)",
+    "assumptions": [
+      "Sinusoidal source; bridge recharges capacitor near every half-cycle peak; constant load current between peaks.",
+      "Small-ripple model restricted to ripple at most 10 percent of available capacitor peak voltage.",
+      "Ignores source impedance, charging-time reduction, ESR, leakage and diode-drop variation; ripple RMS uses a sawtooth approximation.",
+      "Not the passive RC transient calculator and not switch-mode output-capacitor sizing; no capacitor RMS charging-current or surge-rating claim."
+    ],
+    "references": [
+      {
+        "title": "Purdue ECE255 September 5 lecture, peak rectifier and small-ripple approximation",
+        "url": "https://engineering.purdue.edu/wcchew/ece255f17/ECE%20255%20f17%20latex%20pdf%20files/ece255LectureSep5.pdf"
+      },
+      {
+        "title": "Auburn ELEC2210 designing filters for rectifiers, full-wave recharge interval and two-diode drop",
+        "url": "https://www.eng.auburn.edu/~niuguof/2210labdev/html/diode.html"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "source_rms",
+        "label": "Sinusoidal input RMS voltage",
+        "unit": "V",
+        "default": 12,
+        "min": 1e-06,
+        "max": 10000
+      },
+      {
+        "key": "line_frequency",
+        "label": "Input line frequency",
+        "unit": "Hz",
+        "default": 50,
+        "min": 0.001,
+        "max": 100000
+      },
+      {
+        "key": "forward_drop",
+        "label": "Forward drop per bridge diode",
+        "unit": "V",
+        "default": 0.8,
+        "min": 0,
+        "max": 10
+      },
+      {
+        "key": "load_current",
+        "label": "Constant load current",
+        "unit": "A",
+        "default": 0.1,
+        "min": 0,
+        "max": 10000
+      },
+      {
+        "key": "capacitance",
+        "label": "Reservoir capacitance",
+        "unit": "F",
+        "default": 0.0022,
+        "min": 1e-12,
+        "max": 100
+      }
+    ],
+    "outputs": [
+      {
+        "key": "ripple_frequency",
+        "label": "Recharge and ripple frequency",
+        "unit": "Hz",
+        "expression": "2*line_frequency"
+      },
+      {
+        "key": "capacitor_peak",
+        "label": "Available capacitor peak voltage",
+        "unit": "V",
+        "expression": "sqrt(2)*source_rms-2*forward_drop"
+      },
+      {
+        "key": "ripple_pp",
+        "label": "Peak-to-peak ripple",
+        "unit": "V",
+        "expression": "load_current/(ripple_frequency*capacitance)"
+      },
+      {
+        "key": "capacitor_trough",
+        "label": "Approximate minimum output voltage",
+        "unit": "V",
+        "expression": "capacitor_peak-ripple_pp"
+      },
+      {
+        "key": "output_dc",
+        "label": "Approximate mean output voltage",
+        "unit": "V",
+        "expression": "capacitor_peak-ripple_pp/2"
+      },
+      {
+        "key": "ripple_rms",
+        "label": "Approximate AC ripple RMS voltage",
+        "unit": "V",
+        "expression": "ripple_pp/sqrt(12)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "sqrt(2)*source_rms",
+        "op": ">",
+        "right": "2*forward_drop",
+        "message": "Source peak must exceed the two-diode bridge drop."
+      },
+      {
+        "left": "load_current/(2*line_frequency*capacitance)",
+        "op": "<=",
+        "right": "0.1*(sqrt(2)*source_rms-2*forward_drop)",
+        "message": "Ripple exceeds the 10-percent small-ripple model limit."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "source_rms": 12,
+        "line_frequency": 50,
+        "forward_drop": 0.8,
+        "load_current": 0.1,
+        "capacitance": 0.0022
+      },
+      "expected": {
+        "ripple_frequency": 100,
+        "capacitor_peak": 15.370562748477143,
+        "ripple_pp": 0.4545454545454546,
+        "capacitor_trough": 14.916017293931688,
+        "output_dc": 15.143290021204416,
+        "ripple_rms": 0.13121597027036952
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
