@@ -123,6 +123,31 @@ fn rc_uncoupled_branch_swap_balance_dc_and_zero_drive() {
 }
 
 #[test]
+fn rc_self_resonance_peak_is_driven_by_b_only() {
+    // Cd=2.5e-10 nulls a=1-w^2 R1 R2[C1C2+Cd(C1+C2)] at w=5e5, the worst-case
+    // common-to-differential conversion of the mismatched filter legs.
+    let p = [
+        ("resistance_one", 1000.0), ("resistance_two", 1000.0),
+        ("capacitance_one", 1e-9), ("capacitance_two", 3e-9),
+        ("differential_capacitance", 2.5e-10), ("frequency", 5e5 / (2.0 * PI)),
+        ("common_mode_rms", 0.4),
+    ];
+    let r = calculate("emc.rc_common_mode_conversion", &p).unwrap();
+    assert_close(r["mismatch_time"], 2e-6, 1e-12, 0.0);
+    assert_close(r["conversion_gain"], 4.0 / 9.0, 1e-12, 0.0);
+    assert_close(r["differential_rms"], 1.6 / 9.0, 1e-12, 0.0);
+    let mut q = p;
+    q[4].1 = -1e-10;
+    assert!(calculate("emc.rc_common_mode_conversion", &q).is_err());
+    q = p;
+    q[4].1 = 2.5e-10 * (1.0 + 1e-3);
+    let r = calculate("emc.rc_common_mode_conversion", &q).unwrap();
+    // a=-2.5e-4: any detune of the bridging capacitor only lowers the peak below 4/9.
+    assert!(r["conversion_gain"] < 4.0 / 9.0);
+    rc_complete_coupled_nodal_oracle();
+}
+
+#[test]
 fn rc_invalid_passives_and_overflow_recover() {
     for (index, bad) in [(0, 0.0), (0, -1.0), (1, 0.0), (1, -1.0),
         (2, 0.0), (2, -1e-9), (3, 0.0), (3, -1e-9),
@@ -293,6 +318,13 @@ fn snubber_endpoint_targets_scaling_zero_and_frequency_reconstruction() {
     for key in ["parasitic_capacitance", "parasitic_inductance", "snubber_resistance", "snubber_capacitance"] {
         assert_close(r[key], base[key], 1e-12, 0.0);
     }
+    p = SNUBBER;
+    p[5].1 = 48.0;
+    p[6].1 = 500_000.0;
+    let r = calculate("emc.ringing_rc_snubber", &p).unwrap();
+    // P=Cs V^2 fs: quadratic in swing, linear in cycle rate.
+    assert_close(r["snubber_power"], 0.9216 * 8.0, 1e-12, 0.0);
+    assert_close(r["snubber_capacitance"], 6.4e-9, 1e-12, 0.0);
 }
 
 #[test]

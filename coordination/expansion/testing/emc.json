@@ -2,7 +2,7 @@
   "lane": "emc",
   "base": "4c46fa1",
   "file": "backend/tests/emc.rs",
-  "authored_tests": 23,
+  "authored_tests": 24,
   "behaviors_covered": {
     "emc.thin_slot_shielding": [
       "All-output independent binary-ratio oracle",
@@ -13,7 +13,8 @@
     "emc.rc_common_mode_conversion": [
       "All-output complex two-node oracle, bridging and uncoupled branches",
       "Signed branch swap, unequal-component RC balance, DC and zero source",
-      "Passive bounds, nonfinite intermediates and recovery"
+      "Passive bounds, nonfinite intermediates and recovery",
+      "Self-resonance peak a=0 collapses gain to w|D|/b=4/9; detune only lowers it"
     ],
     "emc.trapezoid_conducted_harmonic": [
       "All-output independent quarter-duty Fourier integral",
@@ -31,7 +32,8 @@
       "Damping/capacitance endpoints, zero swing, doubled Ctest and reconstructed frequencies",
       "Near-equal ringing frequencies retain small difference",
       "Measurement/design domain rejection and recovery",
-      "Positive-inductance underflow rejection regression"
+      "Positive-inductance underflow rejection regression",
+      "Loss law exponents: quadratic in swing, linear in cycle rate"
     ],
     "emc.short_cable_radiation": [
       "All-output Hertzian current-moment oracle",
@@ -1075,7 +1077,7 @@
       },
       "expected_ok": false,
       "relative_tolerance": 1e-11,
-      "rationale": "Cp=1e10 but Lp\u22482.533e-332 is below binary64 range. Reject arithmetic failure; never return zero inductance/resistance."
+      "rationale": "Cp=1e10 but Lp≈2.533e-332 is below binary64 range. Reject arithmetic failure; never return zero inductance/resistance."
     },
     {
       "name": "recover-after-snubber-underflow",
@@ -1102,6 +1104,74 @@
         "snubber_capacitance": 6.4e-09,
         "snubber_power": 0.9216
       }
+    },
+    {
+      "name": "rc-resonance-peak",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000.0,
+          "resistance_two": 1000.0,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 3e-09,
+          "differential_capacitance": 2.5e-10,
+          "frequency": 79577.47154594767,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "mismatch_time": 2e-06,
+        "conversion_gain": 0.4444444444444444,
+        "differential_rms": 0.17777777777777778
+      },
+      "relative_tolerance": 1e-11,
+      "rationale": "Cd=2.5e-10 nulls the a denominator term at w=5e5; worst-case conversion is w|D|/hypot(0,b)=1/2.25, an independently derived non-default interior maximum."
+    },
+    {
+      "name": "rc-resonance-invalid-then-peak-recovers",
+      "request": {
+        "command": "calculate",
+        "id": "emc.rc_common_mode_conversion",
+        "inputs": {
+          "resistance_one": 1000.0,
+          "resistance_two": 1000.0,
+          "capacitance_one": 1e-09,
+          "capacitance_two": 3e-09,
+          "differential_capacitance": -1e-10,
+          "frequency": 79577.47154594767,
+          "common_mode_rms": 0.4
+        }
+      },
+      "expected_ok": false,
+      "rationale": "Adjacent negative bridging capacitance must be rejected before the valid peak vector reruns."
+    },
+    {
+      "name": "snubber-power-quadratic-swing-linear-rate",
+      "request": {
+        "command": "calculate",
+        "id": "emc.ringing_rc_snubber",
+        "inputs": {
+          "original_frequency": 20000000.0,
+          "loaded_frequency": 16000000.0,
+          "test_capacitance": 9e-10,
+          "damping_target": 0.5,
+          "capacitance_multiplier": 4.0,
+          "voltage_swing": 48.0,
+          "switching_frequency": 500000.0
+        }
+      },
+      "expected_ok": true,
+      "expected_outputs": {
+        "parasitic_capacitance": 1.6e-09,
+        "parasitic_inductance": 3.9578587360288194e-08,
+        "snubber_resistance": 4.973591971621729,
+        "snubber_capacitance": 6.4e-09,
+        "snubber_power": 7.3728
+      },
+      "relative_tolerance": 1e-11,
+      "rationale": "P=Cs*V^2*fs with doubled swing and doubled rate gives exactly eight times the base loss 0.9216 W; parasitic identification is unchanged."
     }
   ]
 }
