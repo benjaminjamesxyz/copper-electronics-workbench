@@ -251,3 +251,45 @@ All input values above equal the catalog defaults; relative tolerance is `1e-6` 
 | `g_m` | `0.07736345414366722` | S |
 | `r_pi` | `1292.5999893217765` | ohm |
 
+
+## 4. `bjt.emitter_degeneration_gain` — loaded inverting stage
+
+**Level:** intermediate. **Purpose:** calculate gain reduction and raised base input resistance caused by an unbypassed emitter resistor in a common-emitter stage.
+
+### Derivation and units
+
+At midband, the supply is AC ground and the collector sees `RLc=Rc||RL`. Ignoring intrinsic ro,
+
+`vin_base=ib*rpi+ie*Re=ib*(rpi+(beta_ac+1)*Re)`.
+
+Thus `Rin=rpi+(beta_ac+1)*Re` in ohm. Collector current increment is `ic=beta_ac*ib`; collector voltage increment is `vout=-ic*RLc`, giving
+
+`Av_base=-beta_ac*RLc/Rin` in V/V.
+
+Adding source series resistance makes `vin_source=ib*(Rin+Rs)`, so `Av_source=-beta_ac*RLc/(Rin+Rs)`. S1 slide 43 gives finite-beta degeneration gain; S2 gives the corresponding input model. Unlike the large-loop-gain approximation `-RLc/Re`, this retains rpi and emitter/base-current distinction.
+
+### Domain and limitations
+
+Ic, beta_ac, Rc, RL and Re are strictly positive, Rs nonnegative, T bounded as above. Intrinsic output resistance is an input validity estimate; require it to be at least 10*RLc. It is deliberately neglected in the output formula, not quietly placed in parallel with the collector load of a floating-emitter transistor. The ratio screen indicates the approximate high-ro regime; it does not promise an exact error percentage. Capacitors are treated as midband shorts/opens as appropriate. Bias divider loading is absent from this topology; if present it changes source attenuation. Saturation/clipping and finite-frequency response are outside this local model.
+
+### Independent worked example
+
+Inputs: Ic=2 mA, beta_ac=100, T=300 K, Rc=RL=4000 ohm, Re=100 ohm, Rs=600 ohm, intrinsic ro=100000 ohm.
+
+- `RLc=2000 ohm`; from calculation 3, `rpi=1292.59998932178 ohm`.
+- `Rin=1292.59998932178+101*100=11392.5999893218 ohm`.
+- `Av_base=-200000/11392.5999893218=-17.5552551820883 V/V`.
+- `Av_source=-200000/11992.5999893218=-16.6769508011674 V/V`.
+- High-ro screening: 100000 ohm >= 20000 ohm.
+
+### Complete executable example oracle
+
+All input values above equal the catalog defaults; relative tolerance is `1e-6` (numerical agreement, not physical accuracy). Every sequential output is listed below.
+
+| Output key | Independently derived expected value | Unit |
+|---|---:|---|
+| `r_collector_load` | `2000` | ohm |
+| `r_input` | `11392.599989321776` | ohm |
+| `gain_base` | `-17.55525518208828` | V/V |
+| `gain_source` | `-16.6769508011674` | V/V |
+

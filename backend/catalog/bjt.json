@@ -597,5 +597,147 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "bjt.emitter_degeneration_gain",
+    "title": "Loaded emitter-degenerated common-emitter gain",
+    "category": "Bipolar transistor design",
+    "level": "intermediate",
+    "description": "Calculate the inverting gain and input loading of a resistively degenerated common-emitter stage, retaining finite incremental beta and source resistance.",
+    "formula": "RLc=Rc||RL; Rin=rpi+(beta+1)Re; Av_base=-beta RLc/Rin; Av_source=-beta RLc/(Rin+Rs)",
+    "assumptions": [
+      "Forward-active midband small-signal NPN; emitter degeneration is unbypassed.",
+      "No additional base-bias-network AC loading; otherwise its parallel input loading must be included externally.",
+      "Intrinsic output resistance is neglected and must be at least 10 times the collector load; this is an approximation, not a full finite-ro model.",
+      "200-450 K model envelope; transistor ratings, high-injection behavior and signal clipping are checked separately."
+    ],
+    "references": [
+      {
+        "title": "MIT 6.101 Lecture 3, slide 43: emitter degeneration with finite beta",
+        "url": "https://web.mit.edu/6.101/www/s2019/handouts/L03_4.pdf"
+      },
+      {
+        "title": "MIT Low Frequency Hybrid-pi Equation Chart: input and voltage-gain models",
+        "url": "https://ocw.mit.edu/courses/6-101-introductory-analog-electronics-laboratory-spring-2007/1bc47ee7271866912a6eb9d2d1596ff5_hybrid_pi.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "i_collector",
+        "label": "Quiescent collector current",
+        "unit": "A",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "beta_ac",
+        "label": "Incremental current gain",
+        "unit": "1",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "temperature",
+        "label": "Junction temperature",
+        "unit": "K",
+        "default": 300,
+        "min": 200,
+        "max": 450
+      },
+      {
+        "key": "r_collector",
+        "label": "Collector resistance",
+        "unit": "ohm",
+        "default": 4000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_load",
+        "label": "AC collector load resistance",
+        "unit": "ohm",
+        "default": 4000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_emitter",
+        "label": "Unbypassed emitter resistance",
+        "unit": "ohm",
+        "default": 100,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "r_source",
+        "label": "Signal source resistance",
+        "unit": "ohm",
+        "default": 600,
+        "min": 0
+      },
+      {
+        "key": "r_intrinsic_output",
+        "label": "Estimated intrinsic Early output resistance",
+        "unit": "ohm",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "r_collector_load",
+        "label": "Effective collector load",
+        "unit": "ohm",
+        "expression": "r_collector*r_load/(r_collector+r_load)"
+      },
+      {
+        "key": "r_input",
+        "label": "Resistance looking into base",
+        "unit": "ohm",
+        "expression": "beta_ac*1.380649e-23*temperature/(1.602176634e-19*i_collector)+(beta_ac+1)*r_emitter"
+      },
+      {
+        "key": "gain_base",
+        "label": "Collector voltage gain from base",
+        "unit": "V/V",
+        "expression": "-beta_ac*r_collector_load/r_input"
+      },
+      {
+        "key": "gain_source",
+        "label": "Collector voltage gain from source",
+        "unit": "V/V",
+        "expression": "-beta_ac*r_collector_load/(r_input+r_source)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "r_intrinsic_output",
+        "op": ">=",
+        "right": "10*r_collector*r_load/(r_collector+r_load)",
+        "message": "Neglected intrinsic output resistance must be at least ten times the collector load."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "i_collector": 0.002,
+        "beta_ac": 100,
+        "temperature": 300,
+        "r_collector": 4000,
+        "r_load": 4000,
+        "r_emitter": 100,
+        "r_source": 600,
+        "r_intrinsic_output": 100000
+      },
+      "expected": {
+        "r_collector_load": 2000,
+        "r_input": 11392.599989321776,
+        "gain_base": -17.55525518208828,
+        "gain_source": -16.6769508011674
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
