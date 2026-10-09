@@ -277,4 +277,59 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "noise.decibel_to_linear",
+  "title": "Decibel gain to linear ratios",
+  "category": "Noise measurement and analog budgets",
+  "level": "basic",
+  "description": "Translate a logarithmic power gain or loss to linear power and equal-impedance voltage ratios.",
+  "formula": "P_2/P_1=10^(g_dB/10); abs(V_2/V_1)=sqrt(P_2/P_1)",
+  "assumptions": [
+    "Input is a dimensionless gain in dB, not an absolute level in dBm or dBV.",
+    "The voltage ratio assumes identical real impedances at the two reference points; it carries no phase or polarity information.",
+    "Negative dB describes attenuation. The -300 to +300 dB bounds are numerical operating limits, not a physical gain claim."
+  ],
+  "references": [
+    {
+      "title": "Keysight: Useful Formulas, Conversions, and Reference Information, Understanding Decibels",
+      "url": "https://helpfiles.keysight.com/csg/89600B/Webhelp/Subsystems/gettingstarted/content/concepts_decibels.htm"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "gain_db",
+      "label": "Power gain or loss",
+      "unit": "dB",
+      "default": -6.0,
+      "min": -300.0,
+      "max": 300.0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "power_ratio",
+      "label": "Linear power ratio",
+      "unit": "1",
+      "expression": "10^(gain_db/10)"
+    },
+    {
+      "key": "voltage_ratio",
+      "label": "Equal-impedance voltage magnitude ratio",
+      "unit": "V/V",
+      "expression": "sqrt(power_ratio)"
+    }
+  ],
+  "constraints": [],
+  "example": {
+    "inputs": {
+      "gain_db": -6.0
+    },
+    "expected": {
+      "power_ratio": 0.251188643150958,
+      "voltage_ratio": 0.5011872336272722
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

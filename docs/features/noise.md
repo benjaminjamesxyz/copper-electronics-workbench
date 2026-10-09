@@ -181,3 +181,33 @@ This calculation aggregates already established contributions; it does not gener
 
 **Error rationale and sequential outputs:** Reject nonfinite, negative or above-1e6-V RMS contributions. Nonnegative inputs represent amplitudes; their squares keep the sole total-noise root nonnegative. Upper bounds bound squared sums. Individual zero inputs and the all-zero budget are admitted. Correlation, common-node and common-bandwidth requirements remain qualitative assumptions, not numeric validation.
 
+
+## Decibel gain to linear ratios
+
+**ID:** `noise.decibel_to_linear` — **basic**. Source [S3].
+
+The definition g = 10 log10(P2/P1) implies
+
+\[
+r_P=10^{g/10}.
+\]
+
+If the real impedances are equal, P is proportional to V², so the voltage *magnitude* ratio is
+
+\[
+r_V=\sqrt{r_P}=10^{g/20}.
+\]
+
+This is one conversion calculator with two related outputs, not separately counted forward and inverse rearrangements. It supplies gains for noise budgets and does not predict any noise source.
+
+**Inputs/domain:** -300 <= g <= 300 dB ensures finite positive ratios. Negative values describe attenuation. dB is relative; do not enter an absolute dBm or dBV level. The equal-impedance condition is essential if deriving voltage magnitude from a power gain. Phase and polarity are not recovered.
+
+**Independent example:** g = -6 dB.
+
+- `power_ratio` = 10^(-0.6) = **0.251188643150958**.
+- `voltage_ratio` = sqrt(0.251188643150958) = **0.5011872336272722 V/V**.
+- Exactly half voltage is -6.020599913 dB; -6 dB is only approximately half voltage.
+
+
+**Error rationale and sequential outputs:** Reject nonfinite gain and values outside [-300,300] dB. These numerical limits give finite positive power ratios [1e-30,1e30]; their square root is valid. Zero dB returns unity and negative dB is admitted attenuation. Power ratio precedes equal-impedance voltage magnitude ratio; no absolute-level dBm reinterpretation or polarity inference is made.
+
