@@ -332,4 +332,103 @@
     "relative_tolerance": 1e-06
   }
 }
+,
+{
+  "id": "noise.analog_dynamic_range",
+  "title": "Analog dynamic range and detection margin",
+  "category": "Noise measurement and analog budgets",
+  "level": "intermediate",
+  "description": "Budget the usable analog signal range between an independently established sinusoidal swing limit and a noise-limited detection threshold.",
+  "formula": "V_max,rms=V_peak/sqrt(2); V_min,rms=V_noise,rms 10^(SNR_req/20); DR_noise=20log10(V_max,rms/V_noise,rms); DR_usable=20log10(V_max,rms/V_min,rms)",
+  "assumptions": [
+    "The maximum allowed signal is a sinusoid; the supplied peak swing must already respect clipping, slew-rate, load and distortion limits.",
+    "Noise is the integrated RMS noise at the same node, bandwidth and weighting as the maximum signal.",
+    "Required SNR is a nonnegative power-ratio margin in dB; the threshold is an engineering criterion, not a detection-probability guarantee.",
+    "Voltage ratios compare signal and noise in the same impedance. This is not ADC quantization SNR, ENOB or spurious-free dynamic range."
+  ],
+  "references": [
+    {
+      "title": "Texas Instruments SNOA390B, section 12 Dynamic Range Calculation",
+      "url": "https://www.ti.com/lit/an/snoa390b/snoa390b.pdf"
+    },
+    {
+      "title": "Keysight: decibel power and equal-impedance voltage relationships",
+      "url": "https://helpfiles.keysight.com/csg/89600B/Webhelp/Subsystems/gettingstarted/content/concepts_decibels.htm"
+    }
+  ],
+  "inputs": [
+    {
+      "key": "maximum_sine_peak",
+      "label": "Maximum allowed sine peak amplitude",
+      "unit": "V",
+      "default": 2.0,
+      "min": 1e-12,
+      "max": 1000000.0
+    },
+    {
+      "key": "noise_rms",
+      "label": "Integrated RMS noise floor",
+      "unit": "V",
+      "default": 1e-05,
+      "min": 1e-18,
+      "max": 1000000.0
+    },
+    {
+      "key": "required_snr_db",
+      "label": "Required signal-to-noise margin",
+      "unit": "dB",
+      "default": 20.0,
+      "min": 0.0,
+      "max": 120.0
+    }
+  ],
+  "outputs": [
+    {
+      "key": "maximum_signal_rms",
+      "label": "Maximum sinusoidal RMS signal",
+      "unit": "V",
+      "expression": "maximum_sine_peak/sqrt(2)"
+    },
+    {
+      "key": "minimum_signal_rms",
+      "label": "Minimum signal meeting SNR margin",
+      "unit": "V",
+      "expression": "noise_rms*10^(required_snr_db/20)"
+    },
+    {
+      "key": "noise_limited_dynamic_range_db",
+      "label": "Maximum signal to noise-floor range",
+      "unit": "dB",
+      "expression": "20*log10(maximum_signal_rms/noise_rms)"
+    },
+    {
+      "key": "usable_dynamic_range_db",
+      "label": "Usable range above detection threshold",
+      "unit": "dB",
+      "expression": "20*log10(maximum_signal_rms/minimum_signal_rms)"
+    }
+  ],
+  "constraints": [
+    {
+      "left": "maximum_sine_peak/sqrt(2)",
+      "op": ">=",
+      "right": "noise_rms*10^(required_snr_db/20)",
+      "message": "The maximum signal must meet the requested signal-to-noise margin"
+    }
+  ],
+  "example": {
+    "inputs": {
+      "maximum_sine_peak": 2.0,
+      "noise_rms": 1e-05,
+      "required_snr_db": 20.0
+    },
+    "expected": {
+      "maximum_signal_rms": 1.414213562373095,
+      "minimum_signal_rms": 0.0001,
+      "noise_limited_dynamic_range_db": 103.01029995663981,
+      "usable_dynamic_range_db": 83.01029995663981
+    },
+    "relative_tolerance": 1e-06
+  }
+}
 ]

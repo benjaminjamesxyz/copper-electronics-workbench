@@ -211,3 +211,42 @@ This is one conversion calculator with two related outputs, not separately count
 
 **Error rationale and sequential outputs:** Reject nonfinite gain and values outside [-300,300] dB. These numerical limits give finite positive power ratios [1e-30,1e30]; their square root is valid. Zero dB returns unity and negative dB is admitted attenuation. Power ratio precedes equal-impedance voltage magnitude ratio; no absolute-level dBm reinterpretation or polarity inference is made.
 
+
+## Analog dynamic range and detection margin
+
+**ID:** `noise.analog_dynamic_range` — **intermediate**. Sources [S7, section 12], [S3].
+
+This calculation relates a known analog swing limit and noise floor to a specified minimum signal-to-noise margin. It is more than gain-unit conversion: it establishes an absolute minimum usable signal and remaining design range.
+
+Let Vp be the maximum allowed **sinusoidal peak amplitude**, Vn the integrated RMS noise, and M the required power SNR margin in dB. Then
+
+\[
+V_\mathrm{max,rms}=V_p/\sqrt2,\qquad
+V_\mathrm{min,rms}=V_n10^{M/20}.
+\]
+
+The corresponding range to the noise floor and the usable range above the detection threshold are
+
+\[
+DR_n=20\log_{10}(V_\mathrm{max,rms}/V_n),
+\qquad DR_u=20\log_{10}(V_\mathrm{max,rms}/V_\mathrm{min,rms})=DR_n-M.
+\]
+
+The threshold follows because required power ratio is 10^(M/10) and signal/noise amplitude ratio is its square root. TI's section 12 uses the same noise-plus-detectability-margin construction in power units; the voltage implementation here follows from the same-node, equal-impedance relation in [S3].
+
+**Inputs/domain:** 1e-12 <= Vp <= 1e6 V, 1e-18 <= Vn <= 1e6 V, 0 <= M <= 120 dB. The input-only constraint
+
+`maximum_sine_peak/sqrt(2) >= noise_rms*10^(required_snr_db/20)`
+
+requires the maximum available signal to meet the requested margin; equality gives zero usable dynamic range. Positive amplitude bounds guard both logarithms. The supplied swing must already satisfy clipping, slew-rate, output-current and distortion criteria at the relevant frequency. Noise must be measured or budgeted at the same reference node, bandwidth and weighting. The margin is an engineering detection criterion, not a statistical confidence or false-alarm model. This is neither spurious-free dynamic range nor ADC quantization SNR.
+
+**Independent example:** Vp = 2 V, Vn = 10 microvolt RMS, required M = 20 dB.
+
+- `maximum_signal_rms` = 2/sqrt(2) = **1.414213562373095 V**.
+- `minimum_signal_rms` = 10e-6 × 10^(20/20) = **0.0001 V**.
+- The maximum-to-noise amplitude ratio is 141421.3562373095; `noise_limited_dynamic_range_db` = **103.01029995663981 dB**.
+- The maximum-to-threshold amplitude ratio is 14142.13562373095; `usable_dynamic_range_db` = **83.01029995663981 dB**.
+
+
+**Error rationale and sequential outputs:** Reject nonfinite/out-of-range peak, RMS floor or required margin. Positive peak and floor minima prevent division/log singularities; bounded magnitudes keep all ratios finite. Before any outputs, the input-only maximum-RMS >= floor*10^(margin/20) constraint rejects an impossible detection threshold; equality gives exactly zero usable range when the computed scalars are equal. Output order is maximum RMS, minimum RMS, noise-limited range, usable range. A nonnegative required margin is a stated detection policy, not an ADC SNR or hardware-certification rule.
+
