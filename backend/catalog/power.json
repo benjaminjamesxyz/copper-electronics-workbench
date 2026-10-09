@@ -22,5 +22,38 @@
     ],
     "constraints": [{"left": "vin-vout", "op": ">=", "right": "v_dropout", "message": "Input-output headroom must meet the operating-point dropout requirement."}],
     "example": {"inputs": {"vin": 5, "vout": 3.3, "iout": 0.2, "i_gnd": 0.00005, "v_dropout": 0.2}, "expected": {"p_pass": 0.34, "p_ground": 0.00025, "p_diss": 0.34025}, "relative_tolerance": 0.000001}
+  },
+  {
+    "id": "power.boost_output_capacitor",
+    "title": "Boost output capacitor with ESR budget",
+    "category": "Power conversion and regulation",
+    "level": "expert",
+    "description": "Size effective boost output capacitance for the switch-on load-supply gap and full output-path ESR current step.",
+    "formula": "D = (Vout-Vin)/Vout; ILpeak = Iout Vout/Vin+delta_I/2; Vesr_pp = ESR ILpeak; Cmin = Iout D/[fs (Vbudget_pp-Vesr_pp)]",
+    "assumptions": ["Ideal single-phase fixed-frequency boost with triangular CCM current, constant load, small output ripple, constant ESR and negligible ESL.", "Valley inductor current must be at least load current for monotonic off-interval capacitor charging; this is stronger than CCM.", "ESR ripple uses the full peak rectifier-path current step, not just inductor ripple. Summed ESR/capacitive excursions are a conservative bound.", "Use effective capacitance; compensation, load steps, derating and current ratings require separate checks. The 10% output-ripple ceiling is a catalog small-ripple guard."],
+    "references": [{"title": "TI SLVA372D, Basic Calculation of a Boost Converter's Power Stage, section 7 equations 12 and 13", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"}, {"title": "TI SLVAFJ5, boost current topology and ideal duty", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}],
+    "inputs": [
+      {"key": "vin", "label": "Input voltage", "unit": "V", "default": 5, "min": 0, "exclusive_min": true},
+      {"key": "vout", "label": "Output voltage", "unit": "V", "default": 12, "min": 0, "exclusive_min": true},
+      {"key": "iout", "label": "Output load current", "unit": "A", "default": 0.5, "min": 0, "exclusive_min": true},
+      {"key": "delta_i", "label": "Peak-to-peak inductor ripple", "unit": "A", "default": 0.36, "min": 0, "exclusive_min": true},
+      {"key": "fs", "label": "Switching frequency", "unit": "Hz", "default": 500000, "min": 0, "exclusive_min": true},
+      {"key": "ripple_budget", "label": "Allowed peak-to-peak output ripple", "unit": "V", "default": 0.05, "min": 0, "exclusive_min": true},
+      {"key": "esr", "label": "Output capacitor equivalent series resistance", "unit": "ohm", "default": 0.01, "min": 0}
+    ],
+    "outputs": [
+      {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "(vout-vin)/vout"},
+      {"key": "i_peak", "label": "Peak output-path current during off interval", "unit": "A", "expression": "iout*vout/vin+delta_i/2"},
+      {"key": "ripple_esr", "label": "ESR peak-to-peak ripple bound", "unit": "V", "expression": "esr*i_peak"},
+      {"key": "ripple_cap_budget", "label": "Remaining capacitive ripple budget", "unit": "V", "expression": "ripple_budget-ripple_esr"},
+      {"key": "c_min", "label": "Minimum effective output capacitance", "unit": "F", "expression": "iout*duty/(fs*ripple_cap_budget)"}
+    ],
+    "constraints": [
+      {"left": "vout", "op": ">", "right": "vin", "message": "Boost operation requires output voltage above input voltage."},
+      {"left": "iout*vout/vin-delta_i/2", "op": ">=", "right": "iout", "message": "Inductor valley must be at least load current for monotonic off-interval capacitor charging."},
+      {"left": "ripple_budget", "op": ">", "right": "esr*(iout*vout/vin+delta_i/2)", "message": "ESR ripple must leave a positive capacitive ripple budget."},
+      {"left": "ripple_budget", "op": "<=", "right": "0.1*vout", "message": "This small-ripple model accepts ripple budgets at most 10% of output voltage."}
+    ],
+    "example": {"inputs": {"vin": 5, "vout": 12, "iout": 0.5, "delta_i": 0.36, "fs": 500000, "ripple_budget": 0.05, "esr": 0.01}, "expected": {"duty": 0.5833333333333334, "i_peak": 1.38, "ripple_esr": 0.0138, "ripple_cap_budget": 0.0362, "c_min": 0.000016114180478821363}, "relative_tolerance": 0.000001}
   }
 ]

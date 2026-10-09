@@ -41,3 +41,27 @@ KCL gives `Iin = Iout + Ignd`, so `Pdiss = Vin(Iout+Ignd)-Vout Iout`. Sequential
 | `p_diss` | `0.34+0.00025` | `0.34025 W` |
 
 Headroom is 1.7 V ≥ 0.2 V. Independent conservation identity: `Pin=5*0.20005=1.00025 W`; `Pout=3.3*0.2=0.66 W`; their difference is 0.34025 W. These are independently derived expected values, not engine execution results.
+
+## `power.boost_output_capacitor` — expert
+
+**Purpose:** size boost output capacitance for the interval when the switch disconnects delivery to the load. Sources: S3 section 7, equations 12–13, and S5 topology/duty; the additional monotonic-charge restriction below is independently derived.
+
+During switch on-time capacitor current is `-Iout`, with charge deficit `Iout D/fs`. During off-time current is `IL-Iout`. Requiring valley `IL >= Iout` makes charging monotonic, so the deficit equals the full capacitor charge excursion. The ESR excursion is the full peak output-path current step, **not** merely inductor ripple.
+
+Sequential outputs: `duty=(vout-vin)/vout`; `i_peak=iout*vout/vin+delta_i/2`; `ripple_esr=esr*i_peak`; `ripple_cap_budget=ripple_budget-ripple_esr`; `c_min=iout*duty/(fs*ripple_cap_budget)`. Units are `1`, A, V, V, F; `A/(Hz V)=F`. Difference-before-division duty avoids rounding a nearly unity `vin/vout` to one. Peak current uses the direct voltage ratio, not division by cancellation-prone `1-duty` at high conversion ratio; these are algebraically the same ideal model.
+
+**Inputs/defaults:** `vin=5 V`, `vout=12 V`, `iout=0.5 A`, `delta_i=0.36 A`, `fs=500000 Hz`, `ripple_budget=0.05 V`, `esr=0.01 ohm`. All except ESR must be positive; ESR may be zero.
+
+**Model-domain errors:** reject `vout<=vin`; reject `iout*vout/vin-delta_i/2 < iout`, since off-time discharge invalidates the simple charge-deficit formula even in some CCM cases. Equality remains valid. Reject `ripple_budget <= esr*(iout*vout/vin+delta_i/2)`: no positive capacitive budget remains and a finite C cannot solve it. Reject budgets above `0.1*vout` to preserve the catalog small-ripple domain. Constant load, triangular CCM, effective C, constant ESR and negligible ESL are assumptions; actual ratings/compensation/load steps remain separate.
+
+**Independent worked outputs (default vector; relative tolerance 1e-6):**
+
+| Output | Derivation | Expected |
+|---|---|---|
+| `duty` | `7/12` | `0.5833333333333334` |
+| `i_peak` | `0.5*12/5+0.36/2` | `1.38 A` |
+| `ripple_esr` | `0.01*1.38` | `0.0138 V` |
+| `ripple_cap_budget` | `0.05-0.0138` | `0.0362 V` |
+| `c_min` | `(0.5*7/12)/(500000*0.0362)` | `0.000016114180478821363 F` |
+
+The charge deficit is 583.3333333333 nC. Valley is 1.02 A ≥ 0.5 A; 50 mV ≤ 1.2 V. The summed ripple bound at Cmin is exactly the requested 50 mV analytically; it is not a prediction of coincident extrema.
