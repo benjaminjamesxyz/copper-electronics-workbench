@@ -280,5 +280,132 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "converters.forward_reset_winding",
+    "title": "Single-switch forward transformer-reset feasibility",
+    "category": "Additional power converters",
+    "level": "intermediate",
+    "description": "Check whether a reset winding can demagnetize a single-switch forward transformer within the available off-time, and estimate ideal switch stress.",
+    "formula": "n = Np/Ns; r = Nr/Np; D = n Vo/Vi; Dreset = r D; Dlimit = 1/(1+r); idle = 1-D-Dreset; VDS = Vi (1+1/r)",
+    "assumptions": [
+      "Ideal single-switch forward with a dedicated reset winding and reset diode returning magnetizing energy to the input bus; no active clamp or two-switch reset.",
+      "Output inductor operates in CCM with negligible diode and winding drops. This calculation accepts that operating condition; it does not size the output inductor or prove CCM from a load.",
+      "Turns inputs are dimensionless positive ratios: primary/secondary and reset/primary. The reset winding imposes primary reverse voltage Vi/r.",
+      "Require strictly positive idle fraction after reset; equality is the zero-margin boundary, not a feasible design with reset margin.",
+      "Switch voltage is an ideal flat-top stress, not a component rating. Leakage spikes, magnetizing saturation, tolerances, controller duty limits, winding losses and safety isolation need independent checks."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SNVA603, Forward Converter, Single-Ended Topology; Figures 3-4",
+        "url": "https://www.ti.com/lit/an/snva603/snva603.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "vin",
+        "label": "Input voltage",
+        "unit": "V",
+        "default": 48.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "vout",
+        "label": "Required output voltage",
+        "unit": "V",
+        "default": 12.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "primary_secondary_ratio",
+        "label": "Primary-to-secondary turns ratio Np/Ns",
+        "unit": "1",
+        "default": 1.5,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "reset_primary_ratio",
+        "label": "Reset-to-primary turns ratio Nr/Np",
+        "unit": "1",
+        "default": 1.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "switching_frequency",
+        "label": "Switching frequency",
+        "unit": "Hz",
+        "default": 100000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "duty",
+        "label": "Required switch on-duty fraction",
+        "unit": "1",
+        "expression": "primary_secondary_ratio*(vout/vin)"
+      },
+      {
+        "key": "reset_fraction",
+        "label": "Required reset fraction of full period",
+        "unit": "1",
+        "expression": "reset_primary_ratio*duty"
+      },
+      {
+        "key": "duty_limit",
+        "label": "Zero-margin reset duty boundary",
+        "unit": "1",
+        "expression": "1/(1+reset_primary_ratio)"
+      },
+      {
+        "key": "idle_fraction",
+        "label": "Remaining fraction after reset",
+        "unit": "1",
+        "expression": "(duty_limit-duty)*(1+reset_primary_ratio)"
+      },
+      {
+        "key": "reset_time",
+        "label": "Transformer demagnetization time",
+        "unit": "s",
+        "expression": "reset_fraction/switching_frequency"
+      },
+      {
+        "key": "switch_blocking_voltage",
+        "label": "Ideal switch flat-top blocking voltage",
+        "unit": "V",
+        "expression": "vin*(1+1/reset_primary_ratio)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "primary_secondary_ratio*(vout/vin)",
+        "op": "<",
+        "right": "1/(1+reset_primary_ratio)",
+        "message": "Required duty must be below the reset-winding duty boundary, leaving a positive reset margin."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "vin": 48.0,
+        "vout": 12.0,
+        "primary_secondary_ratio": 1.5,
+        "reset_primary_ratio": 1.0,
+        "switching_frequency": 100000.0
+      },
+      "expected": {
+        "duty": 0.375,
+        "reset_fraction": 0.375,
+        "duty_limit": 0.5,
+        "idle_fraction": 0.25,
+        "reset_time": 3.75e-06,
+        "switch_blocking_voltage": 96.0
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

@@ -115,3 +115,49 @@ Draw the actual nonisolated SEPIC, approximately x=30–660 and y=55–210:
 - Bind `Vi` → `vin`, `Vo` → `vout`, `L1` → `input_inductance`, `L2` → `second_inductance`, `IQ,pk` → `switch_peak_current`, `ICp,rms` → `coupling_cap_rms_current`, `D` → `duty`. Keep the RMS label beside Cp, not across its wire.
 - Caption: “Separate, uncoupled inductors. The switch carries their sum; Cp alternates between their currents. Ideal CCM with nearly constant capacitor voltages; static explanatory circuit.”
 
+
+## 3. `converters.forward_reset_winding`
+
+### Purpose, equations and physical domain
+
+S3's dedicated reset winding returns magnetizing energy to the input after switch turn-off. Define `n=Np/Ns` and `r=Nr/Np`, both dimensionless positive ratios. The output choke is assumed CCM. Then `D=n Vout/Vin`.
+
+While Q is on, primary voltage is `+Vin`; while reset diode conducts, primary voltage is `-Vin/r`. Magnetizing volt-second balance gives `Vin D T = (Vin/r) Dreset T`, so `Dreset=r D`. Both intervals must fit:
+
+- `D < Dlimit=1/(1+r)`.
+- `idle=1-D-rD=(Dlimit-D)(1+r)`; the latter is the catalog expression to preserve small positive margin near the boundary.
+- `treset=rD/fs` seconds.
+- `VDS,flat=Vin+Vin/r` volts.
+
+This intentionally calculates reset feasibility, not output inductance, flux density, winding construction or saturation. The gain equation assumes an output choke already in CCM. A real controller needs extra margin for tolerances, minimum off-time and transients. Equal reset/primary turns give the familiar D<0.5 and flat-top stress 2Vin; changing reset turns trades duty margin against switch stress.
+
+### Complete independent example
+
+Inputs: `vin=48 V`, `vout=12 V`, `primary_secondary_ratio=1.5`, `reset_primary_ratio=1`, `switching_frequency=100000 Hz`.
+
+1. `duty = 1.5×12/48 = 0.375`.
+2. `reset_fraction = 1×0.375 = 0.375`.
+3. `duty_limit = 1/(1+1) = 0.5`.
+4. `idle_fraction = 1-0.375-0.375 = 0.25`.
+5. `reset_time = 0.375/100000 = 3.75e-6 s`.
+6. `switch_blocking_voltage = 48×(1+1/1) = 96 V`.
+
+### Nominal, limiting and invalid cases
+
+- Nominal: above map; reset completes 2.5 microseconds before the next on-time.
+- Shorter reset winding: keep defaults except `reset_primary_ratio=.5`. Expected D=.375, reset fraction=.1875, limit=2/3, idle=.4375, reset time=1.875e-6 s, stress=144 V.
+- Boundary: default ratios with `vout=16 V` give D=.5 and zero idle; reject equality. `vout=15.999 V` is admitted with a small positive margin; `vout=16.001 V` rejects.
+- Doubling frequency halves reset time but does not change duty fractions or ideal voltage stress.
+- Reject nonpositive bus/output voltage, ratio or frequency. Do not invent an integer-ratio restriction: ratios of integer turn counts are generally fractional.
+
+### Mandatory diagram specification
+
+Draw a three-winding, single-switch forward circuit, not a flyback. The reset connection is the teaching element.
+
+- Primary winding top dotted terminal connects to +Vin; bottom undotted terminal connects to Q drain; Q source connects primary ground.
+- Reset winding lower **dotted** terminal connects to primary ground. Upper **undotted** terminal connects to reset-diode anode; diode cathode connects to +Vin. This polarity reverse-biases the reset diode during Q on-time and returns energy to the input during reset.
+- Secondary top dotted terminal connects to rectifier D1 anode. D1 cathode connects node S, then output choke Lout, then output O. Secondary bottom is isolated secondary ground. Freewheel diode D2 has anode at secondary ground and cathode at S. Cout/load return O to secondary ground. Never join secondary ground to primary ground.
+- Allocate primary/reset circuit x=25–310 and secondary circuit x=345–670. Put turns-ratio annotations over the transformer rather than on wires. A short lower-band three-segment timing bar may mark `D`, `Dreset`, and `idle`; proportions are illustrative only.
+- Bind `Vin` → `vin`, `Vo` → `vout`, `Np/Ns` → `primary_secondary_ratio`, `Nr/Np` → `reset_primary_ratio`, `D` → `duty`, `Dreset` → `reset_fraction`, `idle` → `idle_fraction`, `VDS` → `switch_blocking_voltage`. If timing labels crowd, retain ratios and reset diode in the main circuit and put computed fractions in the legend.
+- Caption: “Reset winding returns magnetizing energy to the input while the freewheel diode feeds the CCM output choke. Reset must finish before the next on-time. Ideal stress excludes leakage spikes.”
+
