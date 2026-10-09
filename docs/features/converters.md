@@ -264,3 +264,49 @@ Use the actual half-bridge plus the explicitly labeled FHA equivalent, with clea
 - Bind `Vin` → `vin`, `Lr` → `resonant_inductance`, `Lm` → `magnetizing_inductance`, `Cr` → `resonant_capacitance`, `Np/Ns` → `primary_secondary_ratio`, `Ro` → `load_resistance`, `Rac` → `ac_load_resistance`, `Vo, FHA` → `output_voltage`. Put `M = 2 n Vo/Vin` next to `tank_gain` only if bound as `M`, not as a voltage.
 - Caption: “Half-bridge, separate Lr, ideal full-wave rectifier. Rac represents the rectifier's fundamental load. FHA estimates steady conversion; it is not a time-domain waveform or a ZVS guarantee.”
 
+
+## 6. `converters.dual_active_bridge_power`
+
+### Purpose, equations and physical domain
+
+S7 equation 6 describes two bipolar square-wave bridges, not the sinusoidal bus formula discussed earlier in the source. Define `n=Np/Ns`, transfer inductance `L` referred to primary, DC buses `V1,V2>0`, and secondary lag `phi` in radians. Primary-referred secondary bridge amplitude is `nV2`.
+
+Integrating the piecewise-linear inductor current against bridge voltage over a switching cycle gives:
+
+`P = n V1 V2 phi (pi-|phi|)/(2 pi² fs L)`.
+
+The JSON's `phi(1-|phi|/pi)/(2pi)` form is identical. Positive phi means primary bridge leads and positive power goes primary→secondary. The ideal maximum magnitude at `|phi|=pi/2` is `Pmax=nV1V2/(8fsL)`. Supporting outputs are voltage ratio `nV2/V1`, average primary current drawn `P/V1`, average secondary current delivered `P/V2`, and signed time lag `phi/(2pi fs)`.
+
+Admit the full single-phase-shift domain `-pi<=phi<=pi`, not merely the monotonic ±90-degree range. The outer half is a falling-power branch with potentially high circulating current. Endpoints and zero phase give zero net power, not a general zero-current or zero-loss condition. Real ZVS depends on commutating current, voltage ratio, capacitance and dead time; it is not inferred from power alone. This model excludes internal bridge phase shifts (EPS/DPS/TPS), DC bias, magnetizing current and losses.
+
+### Complete independent example
+
+Inputs: `primary_voltage=400 V`, `secondary_voltage=200 V`, `primary_secondary_ratio=2`, `switching_frequency=100000 Hz`, `transfer_inductance=50e-6 H`, `phase_shift=pi/6=0.5235987755982988 rad`.
+
+1. `voltage_ratio = 2×200/400 = 1`.
+2. With `phi/pi=1/6`, `transferred_power = (2×400×200/(2×100000×50e-6))×(1/6)×(5/6) = 2222.222222222222 W`.
+3. `maximum_power = 2×400×200/(8×100000×50e-6) = 4000 W`.
+4. `primary_bus_current = 2222.222222222222/400 = 5.555555555555555 A`.
+5. `secondary_bus_current = 2222.222222222222/200 = 11.11111111111111 A`.
+6. `phase_delay = (pi/6)/(2pi×100000) = 8.333333333333333e-7 s`.
+
+### Nominal, limiting and invalid cases
+
+- Nominal: above full map. Lossless average bus powers agree, despite the 2:1 current scaling.
+- Reverse phase `-pi/6`: ratio and maximum power unchanged; transferred power, both bus currents and phase delay negate exactly.
+- Zero phase: P=I1=I2=delay=0; ratio=1, maximum=4000 W. Repeat zero phase with mismatched voltages to ensure no assertion that zero net power means zero circulating current.
+- `phi=pi/2`: P=4000 W, primary current=10 A, secondary current=20 A, delay=2.5e-6 s. `phi=5pi/6` yields the same positive power as pi/6 but a larger delay, proving the falling-power branch is retained.
+- `phi=±pi`: P and bus currents zero, delay=±5e-6 s. These endpoints are mathematical SPS limits, not recommended operating points.
+- Reject phase outside ±pi and any nonpositive bus voltage, ratio, frequency or transfer inductance. Negative phase is valid and must not be mistaken for a negative-input error.
+
+### Mandatory diagram specification
+
+Draw two full bridges and a transformer, not a diode-rectified forward converter.
+
+- Primary bridge has four switches between +V1 and primary return. Its two leg midpoints are A and B. A connects through explicit Ltransfer to the transformer primary dotted terminal; primary undotted terminal returns to B.
+- Secondary bridge has four switches between +V2 and isolated secondary return. Its two AC leg midpoints C and D connect to secondary dotted and undotted terminals respectively. DC buses each have a capacitor/source shown with + and − polarity. Do not connect the two returns across the isolation barrier.
+- Label both bridge drive patterns “bipolar 50% duty”. An arrow over the transformer points primary→secondary and is labeled `P > 0`. Reversal is described in the caption rather than by a diode arrow.
+- Reserve x=20–225 for primary bridge, x=255–435 for L/transformer, x=470–680 for secondary bridge. Use the lower band for two compact square-wave sketches: primary positive transition first, secondary positive transition later by phi. Curves are illustrative, not calculated.
+- Bind `V1` → `primary_voltage`, `V2` → `secondary_voltage`, `Np/Ns` → `primary_secondary_ratio`, `L` → `transfer_inductance`, `phi` → `phase_shift`, `P` → `transferred_power`, `fs` → `switching_frequency`. Place the signed phase annotation between waveform transition markers, not on a DC source.
+- Caption: “Two active full bridges exchange power through primary-referred transfer inductance. Positive phi means the secondary lags and receives power. Static phase sketch; zero net power need not mean zero circulating current.”
+

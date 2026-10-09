@@ -713,5 +713,139 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "converters.dual_active_bridge_power",
+    "title": "Dual-active-bridge single-phase-shift power exchange",
+    "category": "Additional power converters",
+    "level": "expert",
+    "description": "Calculate signed transferred power and the theoretical transfer limit of two phase-shifted full bridges coupled through an ideal transformer and transfer inductance.",
+    "formula": "n = Np/Ns; P = n V1 V2 phi (1-|phi|/pi)/(2 pi fs L); Pmax = n V1 V2/(8 fs L); I1 = P/V1; I2 = P/V2; delay = phi/(2 pi fs)",
+    "assumptions": [
+      "Two ideal full bridges each produce a bipolar 50% duty square wave at fs, with no internal bridge phase shift. Total transfer/leakage inductance L is referred to primary and magnetizing current is neglected.",
+      "phi is secondary-bridge lag relative to primary, in radians. Positive power flows primary to secondary; negative phi reverses power. Bus current signs use the same primary-to-secondary power reference.",
+      "Admit the entire ideal SPS phase domain -pi <= phi <= pi, including the falling-power branch beyond |phi| = pi/2. The maximum-power output is theoretical, not an operating recommendation.",
+      "Stiff positive DC buses, ideal transformer, periodic antisymmetric current, no DC bias, losses, dead time, capacitance or saturation. Zero net power does not imply zero circulating current or loss in real hardware.",
+      "No claim of ZVS or component current rating. Verify circulating current, switching charge, thermal limits and isolation independently."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments TIDUES0F, section 2.3.4.1 equation 6 and section 2.3.4.2 soft-switching limits",
+        "url": "https://www.ti.com/lit/ug/tidues0f/tidues0f.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "primary_voltage",
+        "label": "Primary DC bus voltage",
+        "unit": "V",
+        "default": 400.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "secondary_voltage",
+        "label": "Secondary DC bus voltage",
+        "unit": "V",
+        "default": 200.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "primary_secondary_ratio",
+        "label": "Primary-to-secondary turns ratio Np/Ns",
+        "unit": "1",
+        "default": 2.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "switching_frequency",
+        "label": "Bridge switching frequency",
+        "unit": "Hz",
+        "default": 100000.0,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "transfer_inductance",
+        "label": "Total primary-referred transfer inductance",
+        "unit": "H",
+        "default": 5e-05,
+        "min": 0.0,
+        "exclusive_min": true
+      },
+      {
+        "key": "phase_shift",
+        "label": "Secondary lag relative to primary",
+        "unit": "rad",
+        "default": 0.5235987755982988
+      }
+    ],
+    "outputs": [
+      {
+        "key": "voltage_ratio",
+        "label": "Referred secondary-to-primary bus ratio",
+        "unit": "1",
+        "expression": "primary_secondary_ratio*(secondary_voltage/primary_voltage)"
+      },
+      {
+        "key": "transferred_power",
+        "label": "Signed primary-to-secondary transferred power",
+        "unit": "W",
+        "expression": "primary_voltage*(primary_secondary_ratio*secondary_voltage/transfer_inductance/switching_frequency)*(phase_shift/(2*pi))*(1-abs(phase_shift)/pi)"
+      },
+      {
+        "key": "maximum_power",
+        "label": "Theoretical magnitude at 90-degree phase shift",
+        "unit": "W",
+        "expression": "primary_voltage*(primary_secondary_ratio*secondary_voltage/transfer_inductance/switching_frequency)/8"
+      },
+      {
+        "key": "primary_bus_current",
+        "label": "Signed average current drawn from primary bus",
+        "unit": "A",
+        "expression": "transferred_power/primary_voltage"
+      },
+      {
+        "key": "secondary_bus_current",
+        "label": "Signed average current delivered to secondary bus",
+        "unit": "A",
+        "expression": "transferred_power/secondary_voltage"
+      },
+      {
+        "key": "phase_delay",
+        "label": "Signed secondary time lag",
+        "unit": "s",
+        "expression": "phase_shift/(2*pi)/switching_frequency"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "abs(phase_shift)",
+        "op": "<=",
+        "right": "pi",
+        "message": "Single-phase-shift angle must lie between -pi and pi radians."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "primary_voltage": 400.0,
+        "secondary_voltage": 200.0,
+        "primary_secondary_ratio": 2.0,
+        "switching_frequency": 100000.0,
+        "transfer_inductance": 5e-05,
+        "phase_shift": 0.5235987755982988
+      },
+      "expected": {
+        "voltage_ratio": 1.0,
+        "transferred_power": 2222.222222222222,
+        "maximum_power": 4000.0,
+        "primary_bus_current": 5.555555555555555,
+        "secondary_bus_current": 11.11111111111111,
+        "phase_delay": 8.333333333333333e-07
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
