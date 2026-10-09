@@ -594,5 +594,127 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "sensors.differential_gap_capacitor",
+    "title": "Differential variable-gap displacement sensor",
+    "category": "Sensor transduction",
+    "level": "intermediate",
+    "description": "Predict both opposed capacitances and nonlinear differential sensitivity of a moving central electrode.",
+    "formula": "Cnear=epsilon A/(g-x); Cfar=epsilon A/(g+x); DeltaC=2 epsilon A x/[(g-x)(g+x)]; DeltaC/(Cnear+Cfar)=x/g",
+    "assumptions": [
+      "Three parallel matched rectangular electrodes; central plate moves toward the near electrode for positive displacement.",
+      "Uniform dielectric, negligible tilt, fringe fields, parasitic capacitance and electrostatic mechanical loading.",
+      "The larger instantaneous gap must not exceed one tenth of either plate dimension: an explicit thin-gap screening rule, not a claimed 1-percent accuracy bound.",
+      "Predicted capacitances are separate central-to-outer measurements, not the series equivalent of floating plates."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SNOA927A, sections 1, 5.2 and 6.1",
+        "url": "https://www.ti.com/lit/pdf/snoa927"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "plate_width",
+        "label": "Overlapping plate width",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "plate_length",
+        "label": "Overlapping plate length",
+        "unit": "m",
+        "default": 0.01,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "rest_gap",
+        "label": "Each gap at zero displacement",
+        "unit": "m",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "displacement",
+        "label": "Signed central-plate displacement",
+        "unit": "m",
+        "default": 2e-05
+      },
+      {
+        "key": "relative_permittivity",
+        "label": "Gap dielectric relative permittivity",
+        "unit": "1",
+        "default": 1,
+        "min": 1
+      }
+    ],
+    "outputs": [
+      {
+        "key": "near_capacitance",
+        "label": "Capacitance toward positive displacement",
+        "unit": "F",
+        "expression": "8.8541878128e-12*relative_permittivity*plate_width*plate_length/(rest_gap-displacement)"
+      },
+      {
+        "key": "far_capacitance",
+        "label": "Opposite capacitance",
+        "unit": "F",
+        "expression": "8.8541878128e-12*relative_permittivity*plate_width*plate_length/(rest_gap+displacement)"
+      },
+      {
+        "key": "differential_capacitance",
+        "label": "Near-minus-far capacitance",
+        "unit": "F",
+        "expression": "2*8.8541878128e-12*relative_permittivity*plate_width*plate_length*(displacement/(rest_gap-displacement))/(rest_gap+displacement)"
+      },
+      {
+        "key": "normalized_difference",
+        "label": "Differential-to-total capacitance ratio",
+        "unit": "1",
+        "expression": "displacement/rest_gap"
+      },
+      {
+        "key": "differential_sensitivity",
+        "label": "Local differential displacement sensitivity",
+        "unit": "F/m",
+        "expression": "near_capacitance/(rest_gap-displacement)+far_capacitance/(rest_gap+displacement)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "abs(displacement)",
+        "op": "<",
+        "right": "rest_gap",
+        "message": "Central plate must not touch either fixed electrode"
+      },
+      {
+        "left": "rest_gap+abs(displacement)",
+        "op": "<=",
+        "right": "min(plate_width,plate_length)/10",
+        "message": "Plate geometry violates the declared thin-gap approximation"
+      }
+    ],
+    "example": {
+      "inputs": {
+        "plate_width": 0.01,
+        "plate_length": 0.01,
+        "rest_gap": 0.0001,
+        "displacement": 2e-05,
+        "relative_permittivity": 1
+      },
+      "expected": {
+        "near_capacitance": 1.1067734766e-11,
+        "far_capacitance": 7.378489844e-12,
+        "differential_capacitance": 3.689244922e-12,
+        "normalized_difference": 0.2,
+        "differential_sensitivity": 1.9983409994166667e-07
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

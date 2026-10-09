@@ -187,3 +187,31 @@ The catalog evaluates the logarithm as `log1p(max(a-b,0)/b)-log1p(max(b-a,0)/a)`
 
 **Mandatory diagram.** A solution vessel spans x=65–350,y=80–210. Show glass sensing bulb and reference junction as distinct structures immersed in the same sample, not two separate baths. Sample activity label binds `sample_activity` inside the vessel; temperature label binds `temperature`. Reference/calibration legend outside the vessel binds `standard_activity` explicitly as “calibration standard activity”, not necessarily the actual internal fill composition. Separate leads go to open voltmeter terminals x=540, with sensing lead “+”, reference lead “−”, and `electrode_voltage` between them. A lower legend binds `sample_ph` and `nernst_slope`. Caption: “Ideal glass-electrode response is logarithmic in hydrogen activity. Standard activity and offset describe calibration; both electrodes share the sample temperature. High-impedance measurement and calibration are required.”
 
+
+## 7. sensors.differential_gap_capacitor
+
+**Level:** intermediate.
+
+- [Texas Instruments SNOA927A, sections 1, 5.2 and 6.1](https://www.ti.com/lit/pdf/snoa927)
+
+
+**Purpose and novelty.** Evaluate a moving center electrode between two fixed plates, including the nonlinear difference and derivative. Closest baseline `timing.plate_displacement_current` assumes fixed geometry and differentiates voltage to obtain current. Here geometry moves, voltage is not an input, and opposing capacitances encode displacement. It is not a unit change, inverse current calculation or generic capacitor-energy calculation.
+
+**Derivation.** `A=width*length`, `epsilon=epsilon0*epsilon_r`, `g=rest_gap`, x positive toward the near plate. `Cnear=epsilon A/(g-x)`, `Cfar=epsilon A/(g+x)`. Algebra gives `DeltaC=2 epsilon A x/[(g-x)(g+x)]` and `(Cnear-Cfar)/(Cnear+Cfar)=x/g`. Differentiate to obtain `dDeltaC/dx=epsilon A[(g-x)^-2+(g+x)^-2]`. JSON evaluates the difference directly rather than subtracting nearly equal capacitances. `epsilon0=8.8541878128e-12 F/m` is the explicit adopted constant; source's 8.85e-12 is rounded.
+
+**Validity.** Identical overlapping rectangular areas, parallel plates, uniform positive dielectric with `epsilon_r>=1`, negligible parasitics/fringing/tilt. `abs(x)<g` prevents contact. Enforce `g+abs(x)<=min(width,length)/10` as an explicit thin-gap screening heuristic. TI states separation must be small compared with plate dimensions; the 10:1 criterion is this calculator's conservative screening convention, not a quoted source tolerance or guaranteed accuracy. No mechanical stiffness/electrostatic pull-in calculation; motion is externally prescribed. Each capacitance is measured center-to-one-fixed-plate, not a series pair with floating center.
+
+**Complete example inputs.** `plate_width=0.01 m`, `plate_length=0.01 m`, `rest_gap=0.0001 m`, `displacement=0.00002 m`, `relative_permittivity=1`. Area is `1e-4 m²`; instantaneous gaps are 80 and 120 micrometers.
+
+| Output key | Independent expected value |
+|---|---:|
+| `near_capacitance` | 1.1067734766e-11 F |
+| `far_capacitance` | 7.378489844e-12 F |
+| `differential_capacitance` | 3.689244922e-12 F |
+| `normalized_difference` | 0.2 |
+| `differential_sensitivity` | 1.9983409994166667e-7 F/m |
+
+**Tester cases.** At x=0, both capacitances equal `8.8541878128e-12 F`, difference and ratio are exactly zero, sensitivity is `1.77083756256e-7 F/m`. Reversing x swaps capacitances and reverses both differences, while sensitivity remains positive and unchanged. Tiny signed x must preserve a tiny signed differential capacitance even when the individual capacitances round identically. As abs(x) approaches g from below, one capacitance and the sensitivity diverge; actual stops/parasitics invalidate this ideal limit before contact. Reject abs(x)>=g, nonpositive dimensions/gap, epsilon_r<1 and violation of the declared thin-gap rule. The 10:1 equality is accepted. Doubling epsilon_r doubles the four dimensional outputs but leaves normalized difference unchanged.
+
+**Mandatory diagram.** Draw three vertical electrodes at x=150,330,550 from y=80 to y=200. Outer electrodes are fixed; central electrode has a right-pointing displacement arrow to show positive x toward the right-hand “near” plate. Label right gap “g − x” and left gap “g + x”; these relation labels must not bind `rest_gap` as if either equals g. Bind `rest_gap` in a separate zero-displacement legend and bind `displacement` to the arrow. Bind `near_capacitance` in the right gap and `far_capacitance` in the left gap. The central plate has its own lead exiting downward; the fixed plates have independent outward leads. A short lower legend binds `differential_capacitance` to “Cnear − Cfar” and `normalized_difference` to “(Cnear − Cfar)/(Cnear + Cfar)”. Caption: “A moving center plate decreases one gap while increasing the other. Three terminals remain separate; x is positive rightward. Ideal parallel-plate geometry neglects fringe fields, parasitics and electrostatic loading.”
+
