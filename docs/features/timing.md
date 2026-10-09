@@ -8,7 +8,7 @@ Sources are primary manufacturer/university material. Research directly read the
 
 Boundary distinctions: Schmitt thresholds and intrinsic gate delay distinguish digital RC timing from general analog charging. Timer quantization differs from asynchronous UART drift. Setup slack is not routed trace skew. Loaded-victim capacitive crosstalk differs from dielectric-overlap displacement current, and the specified-slope inductive spike does not predict an RL decay or gate-drive transition.
 
-Numerical limits: physical positive denominators do not guarantee representable floating-point products at arbitrary finite magnitudes; the engine must explicitly reject nonfinite or invalid intermediates. Near-zero differences such as timing slack or threshold windows must be interpreted against hardware uncertainty. At extremely small threshold/supply ratios the Schmitt logarithmic subtraction can lose precision; the illustrative examples are well conditioned. Crosstalk uses native `expm1` to preserve fast-edge physics rather than adding an artificial minimum edge/time-constant ratio. A ratio that actually underflows to zero remains an explicit arithmetic-domain failure, not a physical-domain restriction.
+Numerical limits: physical positive denominators do not guarantee representable floating-point products at arbitrary finite magnitudes; the engine must explicitly reject nonfinite or invalid intermediates. Near-zero differences such as timing slack or threshold windows must be interpreted against hardware uncertainty. Schmitt delays use native `log1p(-threshold/supply)` to preserve valid tiny positive threshold fractions without subtracting them from one first. Crosstalk uses native `expm1` to preserve fast-edge physics rather than adding an artificial minimum edge/time-constant ratio. A ratio that actually underflows to zero remains a range-exhaustion limit, not a physical-domain restriction.
 
 ## 3. 16-bit toggle timer clock divider — basic
 
@@ -294,6 +294,8 @@ Cross-input/model constraints (evaluated before outputs):
 
 **Dimensions/domain:** R in ohm, total input C in F, thresholds/supply in V, delays/results in s. Require R,C,supply positive; `0 < threshold_min <= threshold_max < supply`; `0 <= gate_delay_min <= gate_delay_max`. These constraints enforce the log domain and ordered timing corners. Initial input is zero; charging resistance is constant; supply step is ideal. Use a Schmitt input that permits the slow ramp, not an ordinary CMOS input. Driver resistance, leakage and R/C tolerances are not inferred. Repeat at component tolerance corners and use device threshold/propagation bounds for voltage, load and temperature. The independent defaults are illustrative threshold values, not a claim that they are SN74AHC14 specifications.
 
+**Numerical implementation:** The executable crossings use `-RC log1p(-V_T/V_supply)` because native `log1p(z)` accurately evaluates `ln(1+z)` near zero. For example, with the same RC = 2 us and supply = 5 V, threshold = 5e-17 V and intrinsic delay = 0, the threshold fraction is 1e-17 and the independently derived leading-order crossing is 2e-23 s. Computing `ln(1-1e-17)` first rounds its argument to one in binary64 and loses the legitimate crossing. No raised threshold minimum is imposed. The original nominal expected values are unchanged; extremely large/small ratios/products and near-equal timing-window differences still have finite-precision limits. This uses Main's shared native `log1p` extension, not a lane-local evaluator.
+
 **Independent example:** R = 2 kohm, C = 1 nF gives `RC = 2 us`; supply 5 V, threshold bounds 2.5 V and 3.75 V, intrinsic delays 10 ns and 20 ns:
 
 - Earliest `= 2 us × ln(2) + 0.010 us = 1.396294361120 us`.
@@ -324,8 +326,8 @@ Cross-input/model constraints (evaluated before outputs):
 | Sequential output key | Label | Unit | Exact independent expected value | Executable expression |
 |---|---|---|---|---|
 | `time_constant` | Input RC time constant | s | `2e-06` | `r*c` |
-| `earliest_transition` | Earliest output transition | s | `1.3962943611198904e-06` | `-time_constant*ln(1-threshold_min/v_supply)+gate_delay_min` |
-| `latest_transition` | Latest output transition | s | `2.7925887222397808e-06` | `-time_constant*ln(1-threshold_max/v_supply)+gate_delay_max` |
+| `earliest_transition` | Earliest output transition | s | `1.3962943611198904e-06` | `-time_constant*log1p(-threshold_min/v_supply)+gate_delay_min` |
+| `latest_transition` | Latest output transition | s | `2.7925887222397808e-06` | `-time_constant*log1p(-threshold_max/v_supply)+gate_delay_max` |
 | `timing_window` | Output transition uncertainty window | s | `1.3962943611198904e-06` | `latest_transition-earliest_transition` |
 
 ## 5. Synchronous register setup slack — intermediate

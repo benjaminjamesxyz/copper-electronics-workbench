@@ -619,13 +619,14 @@
     "category": "Digital timing",
     "level": "intermediate",
     "description": "Bound the output transition time of a rising RC input using guaranteed Schmitt threshold and intrinsic gate-delay limits.",
-    "formula": "t_early = -RC ln(1-V_Tmin/V_supply)+t_gate_min; t_late = -RC ln(1-V_Tmax/V_supply)+t_gate_max",
+    "formula": "t_early = -RC log1p(-V_Tmin/V_supply)+t_gate_min; t_late = -RC log1p(-V_Tmax/V_supply)+t_gate_max; log1p(z) = ln(1+z)",
     "assumptions": [
       "Capacitor starts at zero and charges through a constant resistance toward a stiff supply after an ideal step.",
       "Input has Schmitt hysteresis and permits slow input edges; ordinary CMOS inputs may oscillate or draw excess current.",
       "Threshold bounds and gate-delay bounds must come from the selected device at the applicable supply, load and temperature.",
       "R and C are fixed supplied values; repeat with tolerance corners for component variation. Input leakage, driver resistance variation and supply ramps are excluded.",
-      "This is a digital threshold-to-output timing window, not a general analog charging calculator."
+      "This is a digital threshold-to-output timing window, not a general analog charging calculator.",
+      "Native log1p preserves small positive threshold/supply ratios without subtracting the ratio from one first. Ratios or time products that exhaust floating-point range remain subject to shared-engine arithmetic errors; timing-window subtraction at nearly equal corners has ordinary finite-precision limits."
     ],
     "references": [
       {
@@ -704,13 +705,13 @@
         "key": "earliest_transition",
         "label": "Earliest output transition",
         "unit": "s",
-        "expression": "-time_constant*ln(1-threshold_min/v_supply)+gate_delay_min"
+        "expression": "-time_constant*log1p(-threshold_min/v_supply)+gate_delay_min"
       },
       {
         "key": "latest_transition",
         "label": "Latest output transition",
         "unit": "s",
-        "expression": "-time_constant*ln(1-threshold_max/v_supply)+gate_delay_max"
+        "expression": "-time_constant*log1p(-threshold_max/v_supply)+gate_delay_max"
       },
       {
         "key": "timing_window",
