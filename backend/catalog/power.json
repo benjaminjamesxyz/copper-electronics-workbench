@@ -62,7 +62,7 @@
     "category": "Power conversion and regulation",
     "level": "expert",
     "description": "Calculate total RMS ripple current in a buck input capacitor bank, including triangular inductor ripple.",
-    "formula": "D = Vout/Vin; ICin_rms = sqrt(Iout^2 D (Vin-Vout)/Vin + D delta_I^2/12)",
+    "formula": "D = Vout/Vin; ICin_rms = hypot(Iout sqrt(D (Vin-Vout)/Vin), delta_I sqrt(D/12))",
     "assumptions": ["Ideal single-phase fixed-frequency buck in CCM with triangular ripple and approximately constant voltages.", "Source supplies only DC average current; the local input capacitor bank supplies all switching-frequency AC current.", "Result is for the total bank, not individual parallel capacitors. ESR/ESL, source impedance, interleaving and layout change sharing."],
     "references": [{"title": "TI SSZTBI6, Power Tips: How to Select Ceramic Capacitors to Meet Ripple-Current Requirements, equation 2", "url": "https://www.ti.com/lit/ta/ssztbi6/ssztbi6.pdf"}],
     "inputs": [
@@ -73,7 +73,7 @@
     ],
     "outputs": [
       {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "vout/vin"},
-      {"key": "i_cin_rms", "label": "Total input capacitor RMS ripple current", "unit": "A", "expression": "sqrt(iout^2*duty*((vin-vout)/vin)+duty*delta_i^2/12)"}
+      {"key": "i_cin_rms", "label": "Total input capacitor RMS ripple current", "unit": "A", "expression": "hypot(iout*sqrt(duty*((vin-vout)/vin)),delta_i*sqrt(duty/12))"}
     ],
     "constraints": [
       {"left": "vin", "op": ">", "right": "vout", "message": "Buck operation requires input voltage above output voltage."},
@@ -87,7 +87,7 @@
     "category": "Power conversion and regulation",
     "level": "expert",
     "description": "Estimate the boost CCM duty-to-output right-half-plane zero and conservative one-tenth-frequency crossover guideline.",
-    "formula": "D = (Vout-Vin)/Vout; Rload = Vout/Iout; fRHPZ = Rload (Vin/Vout)^2/(2 pi L); fc_guideline = fRHPZ/10",
+    "formula": "D = (Vout-Vin)/Vout; Rload = Vout/Iout; fRHPZ = (Vin/Iout) (Vin/Vout)/(2 pi L); fc_guideline = fRHPZ/10",
     "assumptions": ["Ideal single-phase boost averaged small-signal power stage in CCM with resistive incremental load Rload=Vout/Iout.", "Fixed-frequency PWM, small perturbations, negligible winding resistance and semiconductor drops. Constant-power loads, DCM, interleaving and strongly nonlinear operation invalidate the model.", "Positive valley current is enforced from ideal triangular switching ripple.", "One-tenth RHP-zero frequency is the conservative end of TI's one-fifth-to-one-tenth guideline, not a stability guarantee. Full loop analysis and switching-frequency separation remain necessary."],
     "references": [{"title": "TI SLVAFJ5, How to Approach a Power-Supply Design Part 3, boost equation 7 and bandwidth limitation", "url": "https://www.ti.com/lit/ab/slvafj5/slvafj5.pdf"}, {"title": "TI SLVA372D, boost inductor ripple equation 2", "url": "https://www.ti.com/lit/an/slva372d/slva372d.pdf"}],
     "inputs": [
@@ -100,7 +100,7 @@
     "outputs": [
       {"key": "duty", "label": "Ideal duty cycle", "unit": "1", "expression": "(vout-vin)/vout"},
       {"key": "r_load", "label": "Resistive incremental load", "unit": "ohm", "expression": "vout/iout"},
-      {"key": "f_rhp_zero", "label": "Right-half-plane zero frequency", "unit": "Hz", "expression": "r_load*(vin/vout)^2/(2*pi*inductance)"},
+      {"key": "f_rhp_zero", "label": "Right-half-plane zero frequency", "unit": "Hz", "expression": "(vin/iout)*(vin/vout)/(2*pi*inductance)"},
       {"key": "f_crossover_guideline", "label": "Conservative crossover guideline, not stability certification", "unit": "Hz", "expression": "f_rhp_zero/10"}
     ],
     "constraints": [

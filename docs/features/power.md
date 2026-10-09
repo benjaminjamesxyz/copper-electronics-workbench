@@ -72,7 +72,7 @@ The charge deficit is 583.3333333333 nC. Valley is 1.02 A ≥ 0.5 A; 50 mV ≤ 1
 
 The input switch current is the triangular inductor current during duty D and zero otherwise. Its mean is `D Iout`, mean square is `D(Iout^2+delta_i^2/12)`, and the AC variance is the mean square minus squared mean. Thus `ICin_rms^2=Iout^2 D(1-D)+D delta_i^2/12`. The `1/12` coefficient follows the variance of zero-mean triangular ripple.
 
-Sequential outputs are `duty=vout/vin` (unit `1`) and `i_cin_rms=sqrt(iout^2*duty*((vin-vout)/vin)+duty*delta_i^2/12)` (A). The direct off-fraction `(vin-vout)/vin` is algebraically `1-D` but avoids loss of a small valid off-time through ratio/subtraction cancellation. Terms inside sqrt have units A².
+Sequential outputs are `duty=vout/vin` (unit `1`) and `i_cin_rms=hypot(iout*sqrt(duty*((vin-vout)/vin)),delta_i*sqrt(duty/12))` (A). The direct off-fraction `(vin-vout)/vin` is algebraically `1-D` but avoids loss of a small valid off-time through ratio/subtraction cancellation. Both `hypot` arguments have units A; the shared Rust primitive computes their norm without explicitly squaring large or tiny currents. This is algebraically the same RMS variance, not a change to the waveform model.
 
 **Inputs/defaults:** `vin=12 V`, `vout=5 V`, `iout=2 A`, `delta_i=0.6 A`. Voltages/load must be positive; zero ripple is admissible. Frequency is unnecessary once ripple is supplied.
 
@@ -87,11 +87,13 @@ Sequential outputs are `duty=vout/vin` (unit `1`) and `i_cin_rms=sqrt(iout^2*dut
 
 Mean-square AC current is `35/36+1/80=0.9847222222222222 A²`; the independent DC mean is 5/6 A. At zero ripple, the formula reduces to `Iout*sqrt(D(1-D))` and peaks at D=1/2; no single-capacitor rating or temperature claim follows.
 
+**Independent extreme-scale expectations:** with `vin=12 V`, `vout=6 V`, `delta_i=0 A`, D=1/2 gives RMS exactly `Iout/2`. For `iout=1e-200 A`, expect `5e-201 A`; for `iout=1e200 A`, expect `5e199 A`. Direct current squaring would respectively underflow or overflow, although these final results and new intermediate component amplitudes are representable. With the same rails and `delta_i=Iout`, the two component amplitudes are `Iout/2` and `Iout/sqrt(24)`, and RMS is `Iout*sqrt(7/24)`; zero ripple is not required for scale safety. These are static mathematical expectations, not executed tests.
+
 ## `power.boost_rhp_zero` — expert
 
 **Purpose:** estimate the nonminimum-phase dynamic limitation of an averaged boost CCM duty-to-output plant, not passive resonance or a stable compensation design. Source: S5 equation 7/bandwidth discussion; S3 ripple equation 2 supplies the CCM check.
 
-Increasing duty initially removes output-delivery time: voltage initially falls even though its final steady-state value rises. The model zero is `fRHPZ=Vout(1-D)^2/(2*pi*L*Iout)`. For a resistive incremental load, sequential outputs are `duty=(vout-vin)/vout`, `r_load=vout/iout`, `f_rhp_zero=r_load*(vin/vout)^2/(2*pi*inductance)` and `f_crossover_guideline=f_rhp_zero/10`. Units: `1`, ohm, Hz, Hz; ohm/H is s⁻¹ and `2*pi` converts angular frequency to Hz.
+Increasing duty initially removes output-delivery time: voltage initially falls even though its final steady-state value rises. The model zero is `fRHPZ=Vout(1-D)^2/(2*pi*L*Iout)`. For a resistive incremental load, sequential outputs are `duty=(vout-vin)/vout`, `r_load=vout/iout`, `f_rhp_zero=(vin/iout)*(vin/vout)/(2*pi*inductance)` and `f_crossover_guideline=f_rhp_zero/10`. Units: `1`, ohm, Hz, Hz; ohm/H is s⁻¹ and `2*pi` converts angular frequency to Hz. The numerator `(Vin/Iout)*(Vin/Vout)` equals `Rload*(Vin/Vout)^2` without prematurely squaring a tiny ratio.
 
 The direct off-fraction `vin/vout` avoids reconstructing a very small `1-D` by subtracting an almost-one duty; difference-before-division duty preserves near-unity-conversion on-time. No physical model or expected value changes.
 
@@ -111,6 +113,8 @@ The one-tenth guideline is the conservative end of TI's one-fifth-to-one-tenth r
 | `f_crossover_guideline` | `30142.9816461923/10` | `3014.29816461923 Hz` |
 
 Independent CCM check: ripple `5*(7/12)/(500000*22e-6)=0.2651515151515152 A`; average 1.2 A; valley 1.0674242424242424 A > 0. Holding voltages/load fixed, doubling L halves fRHPZ; no steady-state sizing feature is duplicated.
+
+**Independent extreme-scale expectation:** `vin=1e-100 V`, `vout=1e100 V`, `iout=1e-100 A`, `inductance=1e-100 H`, `fs=500000 Hz` is admitted by the unchanged input/model guards. Mean current is `1e100 A`, while half-ripple is approximately `1e-6 A`; `r_load=1e200 ohm` remains representable. The old off-fraction square is `1e-400`, below binary64 range, and loses the nonzero zero frequency. The new intermediate factors are `vin/iout=1`, `vin/vout=1e-200`, numerator `1e-200` and denominator `2*pi*1e-100`; therefore `f_rhp_zero=1e-100/(2*pi)`, approximately `1.5915494309189534e-101 Hz`, and the guideline is approximately `1.5915494309189534e-102 Hz`. The displayed duty rounds to one but does not supply the off-fraction for this formula. This is static scale/algebra reasoning, not engine-run evidence or realistic hardware sign-off.
 
 ## `power.converter_input_budget` — basic
 
@@ -208,6 +212,6 @@ Charge excursion is `0.6/(8*500000)=150 nC`; `150 nC/14 mV=10.714285714285714 μ
 
 All eight original IDs, input/output keys, nominal default vectors and complete independent expected maps are preserved. Examples use relative tolerance `1e-6`; tables and identities are mathematical expectations, not observations from the Rust engine. Constraints reference inputs/constants only, while output expressions use inputs and earlier outputs. No second evaluator or frontend math is introduced.
 
-Algebraic conditioning changes preserve the physical domains: direct boost voltage ratios rather than recovering off-fraction from rounded duty; voltage-difference-before-division duty/off-time; factored inductor endpoints near the CCM limit; efficiency loss as `Pout*(1-eta)/eta` rather than near-equal power subtraction. Under extreme magnitudes floating-point overflow/underflow remains possible; the shared engine reports arithmetic errors, and no undocumented physical range restriction or output clamp is added. A duty rounded to one at enormous boost ratio does not authorize reconstructing off-fraction from that displayed value.
+Algebraic conditioning changes preserve the physical domains: direct boost voltage ratios rather than recovering off-fraction from rounded duty; voltage-difference-before-division duty/off-time; factored inductor endpoints near the CCM limit; efficiency loss as `Pout*(1-eta)/eta` rather than near-equal power subtraction; buck input RMS through the shared scale-safe `hypot`; boost RHP numerator as `(Vin/Iout)*(Vin/Vout)` rather than prematurely squaring a tiny voltage ratio. Under extreme magnitudes other floating-point overflow/underflow remains possible; the shared engine reports arithmetic errors, and no undocumented physical range restriction or output clamp is added. A duty rounded to one at enormous boost ratio does not authorize reconstructing off-fraction from that displayed value.
 
 No builds, lint, tests, formatters or engine/smoke runs were performed by this lane. Main should exercise every full example, defaults, topology/range/CCM guards, boost-capacitor monotonic-charge equality/rejection, exhausted ESR budgets, 10% boundaries, zero ESR/ripple where admissible, zero LDO load, dropout equality/rejection and unity efficiency. Independent conditioning scenarios should include a high boost ratio, nearly equal voltage rails, ripple ratio just below two, and efficiency just below one; real desktop/protocol acceptance belongs to integration.
