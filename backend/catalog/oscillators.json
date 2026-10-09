@@ -339,5 +339,115 @@
       },
       "relative_tolerance": 1e-09
     }
+  },
+  {
+    "id": "oscillators.wien_bridge_balance",
+    "title": "Wien-bridge oscillator loop balance",
+    "category": "Oscillator design",
+    "level": "basic",
+    "description": "Choose the frequency-selective bridge and test the amplifier gain needed for Wien-bridge oscillation.",
+    "formula": "f0=1/(2 pi RC); beta=1/3; A=1+RF/RG; RF,critical=2 RG; loop_gain=A/3",
+    "assumptions": [
+      "Equal R and equal C in the series RC and parallel RC positive-feedback branches; ideal noninverting amplifier, dual supply and ground reference.",
+      "Loop gain above one indicates small-signal growth; unity is marginal and does not guarantee startup. Below unity oscillations decay.",
+      "A real steady sine requires amplitude stabilization or limiting; this calculation predicts neither amplitude nor distortion. RF is the small-signal feedback resistance.",
+      "Op-amp closed-loop bandwidth must greatly exceed f0, slew rate must support the desired sine amplitude, and output loading and parasitics must be negligible."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLOA060, Sine-Wave Oscillator, sections 3, 6 and 8.1, equations 10–13",
+        "url": "https://www.ti.com/lit/an/sloa060/sloa060.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "bridge_resistance",
+        "label": "Each bridge resistance R",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "bridge_capacitance",
+        "label": "Each bridge capacitance C",
+        "unit": "F",
+        "default": 1e-08,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "gain_resistance",
+        "label": "Inverting input to ground RG",
+        "unit": "ohm",
+        "default": 10000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "feedback_resistance",
+        "label": "Output to inverting input RF",
+        "unit": "ohm",
+        "default": 20200,
+        "min": 0,
+        "exclusive_min": true
+      }
+    ],
+    "outputs": [
+      {
+        "key": "frequency",
+        "label": "Zero-phase bridge frequency",
+        "unit": "Hz",
+        "expression": "1/(2*pi)/bridge_resistance/bridge_capacitance"
+      },
+      {
+        "key": "feedback_fraction",
+        "label": "Bridge feedback fraction at zero phase",
+        "unit": "1",
+        "expression": "1/3"
+      },
+      {
+        "key": "critical_feedback_resistance",
+        "label": "Marginal RF for unity loop gain",
+        "unit": "ohm",
+        "expression": "2*gain_resistance"
+      },
+      {
+        "key": "amplifier_gain",
+        "label": "Noninverting amplifier gain",
+        "unit": "1",
+        "expression": "1+feedback_resistance/gain_resistance"
+      },
+      {
+        "key": "loop_gain",
+        "label": "Small-signal loop gain",
+        "unit": "1",
+        "expression": "amplifier_gain/3"
+      },
+      {
+        "key": "loop_excess",
+        "label": "Signed excess above unity loop gain",
+        "unit": "1",
+        "expression": "(feedback_resistance-2*gain_resistance)/gain_resistance/3"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "bridge_resistance": 10000,
+        "bridge_capacitance": 1e-08,
+        "gain_resistance": 10000,
+        "feedback_resistance": 20200
+      },
+      "expected": {
+        "frequency": 1591.5494309189535,
+        "feedback_fraction": 0.3333333333333333,
+        "critical_feedback_resistance": 20000,
+        "amplifier_gain": 3.02,
+        "loop_gain": 1.0066666666666666,
+        "loop_excess": 0.006666666666666667
+      },
+      "relative_tolerance": 1e-09
+    }
   }
 ]

@@ -152,3 +152,46 @@ Exact bindings: ±Vsq peak `square_peak`; RT `triangle_resistance`; RF `feedback
 
 Caption: “The inverting integrator reverses ramp direction when the comparator changes state. Voltages are relative to a stiff reference; symmetric output levels and adequate linear swing are assumed.”
 
+
+## 4. `oscillators.wien_bridge_balance` — basic
+
+### Purpose, novelty and source
+
+Select a Wien oscillator frequency and check the amplifier's small-signal loop balance. WIEN §8.1 derives the equal-R/equal-C feedback factor of 1/3; §§3 and 5 explain startup and amplitude stabilization. This is neither the existing noninverting amplifier by itself nor an ordinary filter-response calculation: the bridge's zero-phase frequency and loop gain jointly determine oscillator feasibility. No output amplitude or THD is invented.
+
+### Model, domains and limitations
+
+Noninverting amplifier: RF from output to inverting input; RG from that input to ground. Positive feedback: output → series R,C → noninverting input; R and C in parallel from noninverting input to ground. The bridge transfer is `beta(s)=sRC/[(sRC)^2+3sRC+1]`. At `omega RC=1`, phase is zero and beta=1/3. Therefore:
+
+- `frequency=1/(2 pi RC)`.
+- `feedback_fraction=1/3`.
+- `critical_feedback_resistance=2 RG`.
+- `amplifier_gain=1+RF/RG`.
+- `loop_gain=amplifier_gain/3`.
+- `loop_excess=(RF−2RG)/(3RG)`.
+
+All resistances and C are positive. Below-unity and exactly-unity loop gain are admitted as diagnostic results: below unity decays; unity alone does not start from zero; modest excess supports small-signal growth. A steady sine requires nonlinear stabilization (lamp, AGC or soft limiting), which is not modeled. A fixed-gain circuit may clip or behave poorly. Finite amplifier phase shift changes frequency and gain; TI §6 discusses bandwidth and slew limitations. No calculated output is a promise of oscillation, amplitude or purity on an arbitrary op amp.
+
+### Complete independent example
+
+Inputs: `bridge_resistance=10000 ohm`, `bridge_capacitance=1e-8 F`, `gain_resistance=10000 ohm`, `feedback_resistance=20200 ohm`.
+
+| Output key | Derivation | Expected |
+|---|---|---|
+| `frequency` | 1/(2 pi×1e-4) | 1591.5494309189534 Hz |
+| `feedback_fraction` | 1/3 | 0.3333333333333333 |
+| `critical_feedback_resistance` | 2×10000 | 20000 ohm |
+| `amplifier_gain` | 1+20200/10000 | 3.02 |
+| `loop_gain` | 3.02/3 | 1.0066666666666666 |
+| `loop_excess` | 200/(3×10000) | 0.006666666666666667 |
+
+Tester cases: RF=20000 gives amplifier_gain=3, loop_gain=1 and loop_excess=0 exactly, with other outputs unchanged. RF=19000 gives 2.9, 29/30 and −1/30 respectively; this must not be rejected. Double either bridge component and frequency halves. Changing gain-setting resistors together preserves gain but scales critical RF. Reject nonpositive components. Probe a representable RF just above 2RG: loop_excess must retain the positive resistor difference even if displayed loop_gain rounds to one.
+
+### Mandatory diagram specification
+
+Draw one op amp with a complete noninverting gain network (RF upper feedback, RG to ground). Route output through a series R and C to the noninverting node; draw separate R and C shunt branches from that node to ground. Keep series and parallel R/C labels distinct but bind both resistors to the same R input and both capacitors to the same C input. Add an explicit positive-feedback loop arrow. A right-side note states “beta=1/3 at f0; startup needs A beta>1.” If a sine inset is present, mark it illustrative and amplitude unspecified; do not imply fixed-gain limiting is a clean sine generator.
+
+Exact bindings: both R labels `bridge_resistance`; both C labels `bridge_capacitance`; RG `gain_resistance`; RF `feedback_resistance`; f0 `frequency`; beta `feedback_fraction`; A `amplifier_gain`; loop gain/excess `loop_gain`/`loop_excess`; critical-RF legend `critical_feedback_resistance`.
+
+Caption: “The equal-component Wien bridge supplies zero phase and one-third feedback at f0. This checks small-signal balance only; real sine amplitude needs stabilization.”
+
