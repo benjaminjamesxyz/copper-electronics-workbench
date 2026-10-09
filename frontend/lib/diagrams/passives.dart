@@ -135,4 +135,37 @@ const passivesDiagrams = <String, CalculatorDiagram>{
       Label(405, 244, 'Band on logarithmic f axis'),
     ],
   ),
+  'passives.negative_vcr_divider': CalculatorDiagram(
+    title: 'Resistance and voltage division must agree',
+    caption: 'The high-side resistance depends on its own voltage. Solve '
+        'self-consistently; R0 is the zero-voltage fit, not a finite-voltage '
+        'measurement. Unloaded output, fixed temperature, calibrated negative '
+        'VCR. Passing the fit guard does not certify voltage or power ratings.',
+    marks: [
+      Wire([185, 45, 265, 45, 265, 65]),
+      Dot(185, 45),
+      Label(100, 20, 'Vs', quantity: 'supply_voltage', ink: DiagramInk.input),
+      Part(CircuitPart.resistor, 265, 95, width: 60, turns: 1),
+      Wire([265, 125, 265, 165]),
+      Dot(265, 150),
+      Wire([265, 150, 370, 150]),
+      Dot(370, 150, ink: DiagramInk.output),
+      Label(310, 121, '+ Vo', quantity: 'output_voltage', ink: DiagramInk.output),
+      Part(CircuitPart.resistor, 265, 195, width: 60, turns: 1),
+      Wire([265, 225, 265, 232]),
+      Part(CircuitPart.ground, 265, 244, width: 32, height: 24),
+      Label(300, 181, 'Rb', quantity: 'bottom_resistance'),
+      Label(300, 72, 'Rh(Vh)'),
+      Wire([200, 65, 180, 65, 180, 125, 200, 125], ink: DiagramInk.muted),
+      Label(154, 53, '+'),
+      Label(154, 117, '−'),
+      Label(107, 86, 'Vh', quantity: 'high_voltage', ink: DiagramInk.output),
+      Label(420, 35, 'Rh = R0 (1 + k Vh)'),
+      Label(420, 68, 'R0: zero-voltage fit', quantity: 'high_resistance_zero'),
+      Label(420, 101, 'VCR (ppm/V)', quantity: 'vcr_ppm_volt'),
+      Label(420, 130, 'k = VCR × 10⁻⁶ / V'),
+      Label(420, 182, 'Vh → Rh(Vh)'),
+      Label(420, 210, '→ voltage division → Vh'),
+    ],
+  ),
 };

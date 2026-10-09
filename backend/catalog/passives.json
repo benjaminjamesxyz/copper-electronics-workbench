@@ -455,5 +455,113 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "passives.negative_vcr_divider",
+    "title": "Self-consistent high-voltage divider VCR error",
+    "category": "Nonideal passive components",
+    "level": "expert",
+    "description": "Solve a divider whose high-side resistance decreases with its own unknown terminal voltage; quantify nonlinear ratio error.",
+    "formula": "k=VCR*1e-6; r=R_b/R_0; b=1+r-kV_s; V_h=2V_s/[b+sqrt((1+r+kV_s)^2-4r kV_s)]; R_h=R_0(1+kV_h); V_o=V_h r/(1+kV_h); error=-kV_h/(1+r+kV_h)",
+    "assumptions": [
+      "High-side resistance follows the calibrated static fit R_h(V_h)=R_0(1+k V_h) for 0<=V_h<=V_s; R_0 is the extrapolated zero-voltage resistance.",
+      "Only zero or negative voltage coefficients are covered. The fit must remain positive throughout the complete supply-voltage interval.",
+      "Bottom resistance is voltage-independent and output is unloaded. Temperature is fixed; self-heating, TCR, leakage and parasitic capacitance are omitted.",
+      "A datasheet two-point VCR is not automatically a valid zero-voltage fit: characterize the actual interval. Check working-voltage, power, insulation and creepage separately."
+    ],
+    "references": [
+      {
+        "title": "Vishay RIFAQ, Basic Principles Q6: voltage coefficient of a high-voltage resistor",
+        "url": "https://www.vishay.com/en/landingpage/rifaq/index.html#bp6"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "supply_voltage",
+        "label": "Positive divider supply",
+        "unit": "V",
+        "default": 1000,
+        "min": 0
+      },
+      {
+        "key": "high_resistance_zero",
+        "label": "High-side zero-voltage fitted resistance",
+        "unit": "ohm",
+        "default": 9900000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "bottom_resistance",
+        "label": "Voltage-independent bottom resistance",
+        "unit": "ohm",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "vcr_ppm_volt",
+        "label": "Negative high-side voltage coefficient",
+        "unit": "ppm/V",
+        "default": -10,
+        "max": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "high_voltage",
+        "label": "Self-consistent high-side voltage",
+        "unit": "V",
+        "expression": "2*supply_voltage/(1+bottom_resistance/high_resistance_zero-vcr_ppm_volt*1e-6*supply_voltage+hypot(1+bottom_resistance/high_resistance_zero+vcr_ppm_volt*1e-6*supply_voltage,2*sqrt(-(bottom_resistance/high_resistance_zero)*(vcr_ppm_volt*1e-6*supply_voltage))))"
+      },
+      {
+        "key": "high_resistance",
+        "label": "High-side resistance under bias",
+        "unit": "ohm",
+        "expression": "high_resistance_zero*(1+vcr_ppm_volt*1e-6*high_voltage)"
+      },
+      {
+        "key": "output_voltage",
+        "label": "Actual unloaded divider output",
+        "unit": "V",
+        "expression": "high_voltage*(bottom_resistance/high_resistance_zero)/(1+vcr_ppm_volt*1e-6*high_voltage)"
+      },
+      {
+        "key": "ideal_output_voltage",
+        "label": "Output with zero voltage coefficient",
+        "unit": "V",
+        "expression": "supply_voltage/(1+high_resistance_zero/bottom_resistance)"
+      },
+      {
+        "key": "fractional_ratio_error",
+        "label": "Nonlinear fractional divider-ratio error",
+        "unit": "1",
+        "expression": "-(vcr_ppm_volt*1e-6*high_voltage)/(1+bottom_resistance/high_resistance_zero+vcr_ppm_volt*1e-6*high_voltage)"
+      }
+    ],
+    "constraints": [
+      {
+        "left": "1+vcr_ppm_volt*1e-6*supply_voltage",
+        "op": ">",
+        "right": "0",
+        "message": "The fitted high-side resistance must remain positive over the complete supply interval."
+      }
+    ],
+    "example": {
+      "inputs": {
+        "supply_voltage": 1000,
+        "high_resistance_zero": 9900000,
+        "bottom_resistance": 100000,
+        "vcr_ppm_volt": -10
+      },
+      "expected": {
+        "high_voltage": 989.901029888954,
+        "high_resistance": 9801999.798040994,
+        "output_voltage": 10.098970111046048,
+        "ideal_output_voltage": 10,
+        "fractional_ratio_error": 0.009897011104604824
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]

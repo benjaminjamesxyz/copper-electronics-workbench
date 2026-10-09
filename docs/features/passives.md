@@ -195,3 +195,57 @@ Inputs: `noise_index_db=−20 dB`, `dc_voltage=10 V`, `lower_frequency=1 Hz`, `u
 
 Left side x=40…300: resistor connected across a DC source, plus sign at its upper terminal and a separate equivalent small noise voltage-source glyph in series in an explanatory inset. Label V_DC → `dc_voltage`, NI → `noise_index_db`, and v_ex,rms → `excess_noise_rms`. Right side x=380…650: conceptual log-frequency plot with descending noise-amplitude-density line labeled “e_ex ∝ 1/√f”, a highlighted integration band and probe. Bind band edges to `lower_frequency` and `upper_frequency`; density annotation to `excess_noise_density`. Caption: “Bias-driven excess noise only; a 1/f power spectrum gives equal variance per decade. Johnson noise is separate; plotted line is conceptual.”
 
+
+## 5. `passives.negative_vcr_divider` — expert
+
+### Purpose and novelty
+
+A high-voltage resistor's value depends on its own terminal voltage, so its divider voltage cannot first be computed using a fixed resistance. Closest baselines are `dc.loaded_divider` and `thermal.resistor_tcr_drift`. Neither solves a constitutive parameter that depends on the unknown voltage itself. This is a nonlinear implicit circuit equilibrium and transfer-ratio error, not a renamed linear drift formula or an inverse divider calculation.
+
+### Model, source boundary and stable solution
+
+Vishay RIFAQ Q6 describes the physical voltage coefficient and constant-temperature measurement. The chosen first-order static fit is an explicit engineering approximation:
+
+`R_h(V_h)=R_0(1+k V_h)`, with `k=vcr_ppm_volt×1e−6 V⁻¹≤0`.
+
+R_0 is a zero-voltage extrapolated fit parameter, NOT resistance measured at a finite test voltage. The bottom resistor R_b is constant. Let r=R_b/R_0. Kirchhoff gives `V_s=V_h+V_h r/(1+kV_h)`, hence:
+
+`k V_h² +(1+r−kV_s)V_h−V_s=0`.
+
+The physical root is rationalized:
+
+`V_h=2V_s/[1+r−kV_s+sqrt((1+r+kV_s)²−4r kV_s)]`.
+
+Because k≤0 and r>0, the square-root argument is a sum of nonnegative squares; JSON uses `hypot(1+r+kV_s,2 sqrt(−r kV_s))`. This avoids subtracting nearly equal quadratic roots and works at k=0 without branching.
+
+`R_h=R_0(1+kV_h)`; `V_o=V_h r/(1+kV_h)`; `V_ideal=V_s/(1+R_0/R_b)`. The fractional ratio error is algebraically `−kV_h/(1+r+kV_h)`, avoiding subtraction of near-equal outputs. At V_s=0 this gives the continuous small-signal limit zero, even though the literal quotient V_o/V_ideal is undefined.
+
+Require V_s≥0, R_0>0, R_b>0, k≤0, and `1+kV_s>0`, which keeps the fit positive over the entire possible high-side voltage interval. These conditions give one physical root between zero and V_s. A datasheet two-point VCR may not support a linear fit down to zero. The user must characterize this interval; the calculator does not silently reinterpret a finite-voltage resistance as R_0. Positive VCR is outside this explicitly named model. Thermal feedback, meter loading, leakage and all working-voltage/power/creepage limits remain separate.
+
+### Complete independent example
+
+Inputs: `supply_voltage=1000 V`, `high_resistance_zero=9,900,000 Ω`, `bottom_resistance=100,000 Ω`, `vcr_ppm_volt=−10 ppm/V`. Thus r=1/99 and k=−1e−5 V⁻¹. A 60-digit Decimal quadratic solution gives:
+
+| Output key | Derivation | Expected |
+|---|---|---:|
+| `high_voltage` | physical root of −1e−5 V_h² +(1+1/99+0.01)V_h−1000=0 | 989.901029888954 V |
+| `high_resistance` | 9.9e6(1−1e−5 V_h) | 9801999.798040994 Ω |
+| `output_voltage` | V_h×100000/R_h | 10.098970111046048 V |
+| `ideal_output_voltage` | 1000×100000/10000000 | 10 V |
+| `fractional_ratio_error` | (10.098970111046048/10)−1 | 0.009897011104604824 |
+
+The supply is exactly the sum of the two voltage drops. Increasing supply changes the divider ratio; this is not a fixed gain correction.
+
+### Independent tester cases
+
+- Nominal table and current equality V_h/R_h=V_o/R_b.
+- k=0 recovers V_h=990 V, R_h=9.9 MΩ, V_o=10 V and zero ratio error.
+- V_s=0 gives zero voltages/error and R_h=R_0.
+- For a small negative k, error approaches `−k V_s/(1+r)²`, positive. Use this to test a tiny nonzero coefficient without subtractive cancellation.
+- R_b=R_0 with V_s=100 V and k=0 gives equal 50 V drops; negative k increases the bottom voltage.
+- Reject positive VCR, negative supply, nonpositive resistances, and kV_s≤−1. Example default −10 ppm/V with 100,000 V is invalid at equality. Passing the guard never certifies physical voltage rating.
+
+### Mandatory diagram
+
+Draw an unloaded vertical divider at x=265: source rail at y=45; high resistor around y=95; output junction at y=155; bottom resistor around y=195; ground at y=245. The upper resistor is explicitly labeled `R_h(V_h)`, not an ideal fixed resistor. Place a positive voltage bracket across its upper-to-lower pins labeled V_h → `high_voltage`. Bind V_s → `supply_voltage`, R_0 → `high_resistance_zero`, k → `vcr_ppm_volt`, R_b → `bottom_resistance`, and V_o → `output_voltage`. To the right, show the symbolic dependency “V_h → R_h(V_h) → voltage division”; this is an explanatory relation, not an extra wire. Caption: “High-side resistance depends on its own voltage; solve the divider self-consistently. Unloaded output, fixed temperature, calibrated negative-VCR fit.”
+
