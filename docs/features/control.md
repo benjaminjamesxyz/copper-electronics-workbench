@@ -236,3 +236,63 @@ Place target-polynomial labels `ωn` and `ζ` with bindings `natural_frequency` 
 
 Caption: “Parallel PI branches place the closed-loop characteristic polynomial of a first-order plant. The controller zero changes the step response; saturation and sample delay are omitted.”
 
+## 5. `control.peak_current_slope_compensation` — expert
+
+### Purpose, novelty and source
+
+Assess subharmonic instability of a clocked peak-current inner loop and choose an artificial ramp boundary. Nearest old calculations are `power.buck_inductor_design`, `power.boost_inductor_design` and `power.boost_rhp_zero`. Those describe steady inductor ripple or a continuous averaged right-half-plane zero. This item describes a sampled-data cycle-to-cycle perturbation eigenvalue, a different instability mechanism. It uses sensed slopes directly and does not size converter components.
+
+Source C §§2.1–2.2 describes duty-dependent subharmonic behavior, equation 8's slope ratio and the deadbeat choice `ma=m2`.
+
+### Equations, units, signs and validity
+
+Let m1 be the positive sensed-current rising slope, m2 the positive magnitude of its falling slope, and ma the nonnegative artificial ramp added to sensed current. All three use V/s at the same sense node. A fixed comparator threshold and infinitesimal cycle-start perturbation δ give switching-time displacement `Δt=-δ/(m1+ma)`. The next cycle-start difference is then:
+
+`δnext = δ+(m1+m2)Δt = [(ma-m2)/(m1+ma)]δ`.
+
+Thus the signed sampled multiplier is `λ=(ma-m2)/(m1+ma)`. Negative λ means alternating perturbations. Local decay requires `|λ|<1`. With m1,m2 positive and ma nonnegative, the upper inequality is automatic, and the lower inequality gives `ma>(m2-m1)/2`.
+
+Return the nonnegative lower boundary `max(0,(m2-m1)/2)`. When m2<m1, zero ramp itself is stable. When m2≥m1, equality at that boundary is marginal and strict positive margin is required. This distinction must not be lost by labeling the output a universally inclusive minimum.
+
+Other outputs:
+
+- `ramp_amplitude = ma Ts`: full-period ramp swing, not merely its value at turn-off.
+- `stability_reserve = 1-|λ|`: positive means local contraction; zero means marginal; negative means growth.
+- Periodic current geometry gives `m1 D=m2(1-D)`, so `D=m2/(m1+m2)`.
+
+The model assumes fixed-frequency trailing-edge peak-current control in CCM, a held current command and locally constant slopes. It omits comparator delay, blanking, saturation/clamps, current-sense filters and the outer loop. Perturbations must remain small enough to preserve the operating segment and switching event; the returned map is linearized, not a finite-signal simulator. Deadbeat inner-current contraction does not prove outer-loop stability.
+
+### Complete independent example
+
+Inputs: `rising_slope=100000 V/s`, `falling_slope=300000 V/s`, `ramp_slope=200000 V/s`, `switching_period=0.00001 s`, `initial_perturbation=0.01 V`.
+
+| Output key | Independent derivation | Expected |
+|---|---|---:|
+| `sample_multiplier` | `(200000-300000)/(100000+200000)` | `-0.3333333333333333` |
+| `next_perturbation` | `-0.01/3` | `-0.0033333333333333335 V` |
+| `minimum_ramp_slope` | `(300000-100000)/2` | `100000 V/s` |
+| `ramp_amplitude` | `200000×0.00001` | `2 V` |
+| `stability_reserve` | `1-1/3` | `0.6666666666666666` |
+| `steady_duty` | `300000/400000` | `0.75` |
+
+Independent event geometry: `Δt=-0.01/300000=-33.3333333333333 ns`; `δnext=0.01+400000Δt=-0.00333333333333333 V`.
+
+### Independent test cases
+
+- Nominal: all six outputs above.
+- No ramp with default slopes: λ `-3`, next perturbation `-0.03 V`, ramp swing zero, reserve `-2`; calculation must report instability rather than reject.
+- `ramp_slope=100000`: λ `-1`, reserve zero, alternating nondecaying map; this boundary is not stable.
+- `ramp_slope=300000`: λ zero, next perturbation zero, reserve one, ramp swing `3 V`; source's deadbeat case.
+- `rising_slope=300000`, `falling_slope=100000`, `ramp_slope=0`: boundary zero, λ `-1/3`, reserve `2/3`, duty `0.25`; zero ramp is already stable.
+- Equal rising/falling slopes with zero ramp gives λ `-1` and duty `0.5`, marginal.
+- Negating initial perturbation negates only next perturbation. Zero initial perturbation is valid. Changing Ts changes only ramp swing, not the map eigenvalue or inferred duty.
+- Reject nonpositive m1/m2/Ts, negative ramp, and nonfinite values. Signed initial perturbations are valid.
+
+### Mandatory diagram
+
+Use a sense-voltage versus time waveform, not a buck-component drawing. Axes run from `(50,210)` to `(470,210)` and upward to `(50,35)`. Mark two switching periods with vertical clock ticks. Draw a nominal triangular sensed-current trajectory and a nearby dashed perturbed trajectory with alternate-sign cycle-start separation. Label the rising slope m1 using `rising_slope`, falling magnitude m2 using `falling_slope`, the first cycle-start separation δ using `initial_perturbation`, and the next δ using `next_perturbation`. Place the next-period separation label on the cycle boundary, not at the current peak.
+
+Alongside, between x=510 and x=670, draw an artificial sawtooth ramp resetting each Ts, with slope ma bound to `ramp_slope` and full-period swing bound to `ramp_amplitude`. A small arrow note says `add to current sense`. The period marker binds `switching_period`. Include static relation `δnext = λ δ` and bind λ to `sample_multiplier`. Keep zero/sign labels illustrative rather than claiming the drawing changes with inputs.
+
+Caption: “The added sense ramp changes the cycle-to-cycle perturbation multiplier. Curves illustrate local CCM peak-current operation; full-period ramp swing is not the comparator ramp at turn-off.”
+

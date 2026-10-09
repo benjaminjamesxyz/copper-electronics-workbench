@@ -423,5 +423,124 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "control.peak_current_slope_compensation",
+    "title": "Peak-current sampled perturbation and slope compensation",
+    "category": "Feedback and control design",
+    "level": "expert",
+    "description": "Assess cycle-to-cycle subharmonic stability from sensed current slopes and an artificial compensation ramp.",
+    "formula": "lambda=(ma-m2)/(m1+ma); delta_next=lambda delta_initial; ma_boundary=max(0,(m2-m1)/2); stable iff |lambda|<1",
+    "assumptions": [
+      "Fixed-frequency trailing-edge peak-current PWM in continuous conduction, with locally constant rising and falling inductor-current slopes.",
+      "All slopes are referred to the same current-sense voltage node in V/s. Falling slope is entered as a positive magnitude.",
+      "A positive artificial ramp is added to sensed current, equivalently subtracted from the comparator threshold, and resets each switching period.",
+      "The current command is fixed during the local perturbation analysis. Comparator delay, blanking, duty clamps, current-sense filtering and outer-loop dynamics are neglected.",
+      "Perturbation is infinitesimal: next_perturbation is a linearized prediction, not a finite-amplitude simulation.",
+      "Minimum ramp is the nonnegative stability boundary. Equality is marginal when falling slope is at least rising slope; zero ramp is already strictly stable when falling slope is smaller.",
+      "Negative stability reserve is intentionally returned for a subharmonically unstable design. Converter steady-state component sizing is outside this calculation."
+    ],
+    "references": [
+      {
+        "title": "Texas Instruments SLUA837: Slope Compensation Design for UCC2897A, sections 2.1-2.2, equation 8 and deadbeat discussion",
+        "url": "https://www.ti.com/lit/an/slua837/slua837.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "rising_slope",
+        "label": "Current-sense rising slope",
+        "unit": "V/s",
+        "default": 100000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "falling_slope",
+        "label": "Current-sense falling-slope magnitude",
+        "unit": "V/s",
+        "default": 300000,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "ramp_slope",
+        "label": "Added compensation-ramp slope",
+        "unit": "V/s",
+        "default": 200000,
+        "min": 0
+      },
+      {
+        "key": "switching_period",
+        "label": "Fixed PWM switching period",
+        "unit": "s",
+        "default": 1e-05,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "initial_perturbation",
+        "label": "Signed cycle-start sense-voltage perturbation",
+        "unit": "V",
+        "default": 0.01
+      }
+    ],
+    "outputs": [
+      {
+        "key": "sample_multiplier",
+        "label": "Cycle-to-cycle signed perturbation multiplier",
+        "unit": "1",
+        "expression": "(ramp_slope-falling_slope)/(rising_slope+ramp_slope)"
+      },
+      {
+        "key": "next_perturbation",
+        "label": "Next-cycle sense-voltage perturbation",
+        "unit": "V",
+        "expression": "sample_multiplier*initial_perturbation"
+      },
+      {
+        "key": "minimum_ramp_slope",
+        "label": "Nonnegative ramp stability boundary",
+        "unit": "V/s",
+        "expression": "max(0,(falling_slope-rising_slope)/2)"
+      },
+      {
+        "key": "ramp_amplitude",
+        "label": "Full-period artificial ramp swing",
+        "unit": "V",
+        "expression": "ramp_slope*switching_period"
+      },
+      {
+        "key": "stability_reserve",
+        "label": "Contraction reserve 1 - absolute multiplier",
+        "unit": "1",
+        "expression": "1-abs(sample_multiplier)"
+      },
+      {
+        "key": "steady_duty",
+        "label": "Duty implied by periodic current slopes",
+        "unit": "1",
+        "expression": "1/(1+rising_slope/falling_slope)"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "rising_slope": 100000,
+        "falling_slope": 300000,
+        "ramp_slope": 200000,
+        "switching_period": 1e-05,
+        "initial_perturbation": 0.01
+      },
+      "expected": {
+        "sample_multiplier": -0.3333333333333333,
+        "next_perturbation": -0.0033333333333333335,
+        "minimum_ramp_slope": 100000,
+        "ramp_amplitude": 2,
+        "stability_reserve": 0.6666666666666666,
+        "steady_duty": 0.75
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
