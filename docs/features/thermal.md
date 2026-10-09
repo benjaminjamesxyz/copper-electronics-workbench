@@ -272,3 +272,73 @@ Complete independent example input vector (relative tolerance `1e-6`):
 }
 ```
 
+## `thermal.parallel_conduction_paths` — Two parallel solid-conduction heat paths
+
+**ID:** `thermal.parallel_conduction_paths`; **level:** intermediate. **References:** 2 and 4.
+
+### Model and derivation
+
+Integrating steady one-dimensional Fourier conduction through uniform length `L_i`, conductivity `k_i` and cross section `A_i` gives
+
+`Q_i=k_i A_i (T_hot−T_sink)/L_i` and `R_i=L_i/(k_i A_i)`.
+
+At common isothermal endpoints both paths share the same temperature drop and energy conservation requires `P=Q_1+Q_2`. Thus conductances add:
+
+- `R_eq=1/(1/R_1+1/R_2)`;
+- `T_hot=T_sink+P R_eq`;
+- `Q_i=P R_eq/R_i`.
+
+The power-based expression for `Q_i` avoids subtracting nearly equal absolute temperatures.
+
+### Units, domain and limitations
+
+Lengths m; cross sections m²; directional conductivities W/(m K); heat W; temperatures K; resistances K/W. Each length, area and conductivity is strictly positive, sink temperature positive and source heat nonnegative. These input domains guard every division, so no additional cross-input constraint is needed.
+
+Paths must physically join the same two isothermal nodes. Neglect contact/interface resistance, lateral interaction, internal generation, spreading resistance and heat losses along the paths. For anisotropic material choose conductivity along heat flow. This is a solid-path estimate, not a PCB thermal spreading or thermal-via qualification model.
+
+### Independent worked example
+
+Path 1: `L1=0.005 m`, `A1=0.0001 m²`, `k1=200 W/(m K)`; path 2: `L2=0.002 m`, `A2=0.0004 m²`, `k2=1 W/(m K)`. Common sink `298.15 K`; total heat `21 W`.
+
+**R1=0.25 K/W**, **R2=5 K/W**. Conductance is `4+0.2=4.2 W/K`, hence **R_eq=5/21=0.2380952380952381 K/W**. Total rise is `21×5/21=5 K`, so **T_hot=303.15 K**. **Q1=5/0.25=20 W**, **Q2=5/5=1 W**; heat flows sum to 21 W.
+
+
+### Executable input and output contract
+
+| Input key | Label | Unit | Default | Admissible scalar range |
+|---|---|---|---|---|
+| `path_one_length` | Path 1 heat-flow length | m | 0.005 | > 0 |
+| `path_one_area` | Path 1 cross-sectional area | m^2 | 0.0001 | > 0 |
+| `path_one_conductivity` | Path 1 thermal conductivity | W/(m*K) | 200 | > 0 |
+| `path_two_length` | Path 2 heat-flow length | m | 0.002 | > 0 |
+| `path_two_area` | Path 2 cross-sectional area | m^2 | 0.0004 | > 0 |
+| `path_two_conductivity` | Path 2 thermal conductivity | W/(m*K) | 1 | > 0 |
+| `sink_temperature` | Common sink temperature | K | 298.15 | > 0 |
+| `source_power` | Total source heat flow | W | 21 | >= 0 |
+
+Outputs are evaluated in the following order and may use earlier outputs.
+
+| Output key | Unit | Executable expression | Independently expected example value |
+|---|---|---|---|
+| `path_one_resistance` | K/W | `path_one_length/(path_one_conductivity*path_one_area)` | 0.25 |
+| `path_two_resistance` | K/W | `path_two_length/(path_two_conductivity*path_two_area)` | 5 |
+| `equivalent_resistance` | K/W | `1/(1/path_one_resistance+1/path_two_resistance)` | 0.2380952380952381 |
+| `hot_temperature` | K | `sink_temperature+source_power*equivalent_resistance` | 303.15 |
+| `path_one_heat` | W | `source_power*equivalent_resistance/path_one_resistance` | 20 |
+| `path_two_heat` | W | `source_power*equivalent_resistance/path_two_resistance` | 1 |
+
+Complete independent example input vector (relative tolerance `1e-6`):
+
+```json
+{
+  "path_one_length": 0.005,
+  "path_one_area": 0.0001,
+  "path_one_conductivity": 200,
+  "path_two_length": 0.002,
+  "path_two_area": 0.0004,
+  "path_two_conductivity": 1,
+  "sink_temperature": 298.15,
+  "source_power": 21
+}
+```
+

@@ -489,5 +489,154 @@
       },
       "relative_tolerance": 1e-06
     }
+  },
+  {
+    "id": "thermal.parallel_conduction_paths",
+    "title": "Two parallel solid-conduction heat paths",
+    "category": "Thermal and reliability design",
+    "level": "intermediate",
+    "description": "Estimate heat sharing and source temperature for two separate uniform solid paths between common isothermal endpoints.",
+    "formula": "R_i=L_i/(k_i A_i); R_eq=1/(1/R_1+1/R_2); T_hot=T_sink+P R_eq; Q_i=(T_hot-T_sink)/R_i",
+    "assumptions": [
+      "One-dimensional steady Fourier conduction through two physically separate constant-area paths with the same hot and cold endpoint temperatures.",
+      "Lengths are heat-flow lengths, areas are perpendicular to heat flow, and conductivity is the appropriate directional value for anisotropic material.",
+      "No internal heat generation, contact resistance, lateral heat exchange, spreading resistance, radiation or convection within either path.",
+      "Endpoints are isothermal and conductivity is constant across the temperature interval; this is not a thermal-via or PCB spreading simulation."
+    ],
+    "references": [
+      {
+        "title": "University of South Carolina ECHE 460: Fourier conduction and resistance ratio, equations 1-2 and 13-14",
+        "url": "https://cse.sc.edu/~gatzke/460/F-Heat%20Conduction.pdf"
+      },
+      {
+        "title": "TI SLUA844B: diverse series/parallel thermal conduction paths, page 7",
+        "url": "https://www.ti.com/lit/an/slua844b/slua844b.pdf"
+      }
+    ],
+    "inputs": [
+      {
+        "key": "path_one_length",
+        "label": "Path 1 heat-flow length",
+        "unit": "m",
+        "default": 0.005,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "path_one_area",
+        "label": "Path 1 cross-sectional area",
+        "unit": "m^2",
+        "default": 0.0001,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "path_one_conductivity",
+        "label": "Path 1 thermal conductivity",
+        "unit": "W/(m*K)",
+        "default": 200,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "path_two_length",
+        "label": "Path 2 heat-flow length",
+        "unit": "m",
+        "default": 0.002,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "path_two_area",
+        "label": "Path 2 cross-sectional area",
+        "unit": "m^2",
+        "default": 0.0004,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "path_two_conductivity",
+        "label": "Path 2 thermal conductivity",
+        "unit": "W/(m*K)",
+        "default": 1,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "sink_temperature",
+        "label": "Common sink temperature",
+        "unit": "K",
+        "default": 298.15,
+        "min": 0,
+        "exclusive_min": true
+      },
+      {
+        "key": "source_power",
+        "label": "Total source heat flow",
+        "unit": "W",
+        "default": 21,
+        "min": 0
+      }
+    ],
+    "outputs": [
+      {
+        "key": "path_one_resistance",
+        "label": "Path 1 thermal resistance",
+        "unit": "K/W",
+        "expression": "path_one_length/(path_one_conductivity*path_one_area)"
+      },
+      {
+        "key": "path_two_resistance",
+        "label": "Path 2 thermal resistance",
+        "unit": "K/W",
+        "expression": "path_two_length/(path_two_conductivity*path_two_area)"
+      },
+      {
+        "key": "equivalent_resistance",
+        "label": "Parallel thermal resistance",
+        "unit": "K/W",
+        "expression": "1/(1/path_one_resistance+1/path_two_resistance)"
+      },
+      {
+        "key": "hot_temperature",
+        "label": "Common source temperature",
+        "unit": "K",
+        "expression": "sink_temperature+source_power*equivalent_resistance"
+      },
+      {
+        "key": "path_one_heat",
+        "label": "Heat flow in path 1",
+        "unit": "W",
+        "expression": "source_power*equivalent_resistance/path_one_resistance"
+      },
+      {
+        "key": "path_two_heat",
+        "label": "Heat flow in path 2",
+        "unit": "W",
+        "expression": "source_power*equivalent_resistance/path_two_resistance"
+      }
+    ],
+    "constraints": [],
+    "example": {
+      "inputs": {
+        "path_one_length": 0.005,
+        "path_one_area": 0.0001,
+        "path_one_conductivity": 200,
+        "path_two_length": 0.002,
+        "path_two_area": 0.0004,
+        "path_two_conductivity": 1,
+        "sink_temperature": 298.15,
+        "source_power": 21
+      },
+      "expected": {
+        "path_one_resistance": 0.25,
+        "path_two_resistance": 5,
+        "equivalent_resistance": 0.2380952380952381,
+        "hot_temperature": 303.15,
+        "path_one_heat": 20,
+        "path_two_heat": 1
+      },
+      "relative_tolerance": 1e-06
+    }
   }
 ]
