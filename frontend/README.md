@@ -14,6 +14,7 @@ Every calculator also has a labeled vector illustration: a circuit, physical cro
 - `../coordination/reviews/*.md`: frozen baseline reviews; `../coordination/reviews/closure.json`: post-fix independent dispositions and attribution of executed checks.
 - `../coordination/numerical*.json`: actual before/after Rust-process counterexamples, with independent expected values after correction.
 - `../coordination/expansion/developer_handoffs.json`: sixteen expansion developers' original and integrated feature commits; `../coordination/expansion/process_examples.json`: complete observed outputs for all 228 examples.
+- [`docs/INDEX.md`](../docs/INDEX.md): human-readable per-domain model documentation index.
 
 Each sprint uses 16 researchers, one scrum master, 16 developers and then 16 testers plus 16 reviewers concurrently. Original developers owned eight features each; expansion developers own six or seven each. Expansion branches use isolated `feat/expand-<lane>` and `test/expand-<lane>` worktrees, with one implementation commit per calculator including its mandatory diagram and documentation. Only the integration owner cherry-picks explicit handoff SHAs, changes shared Rust/Flutter infrastructure and executes global checks. Maximum concurrent worker wave: 32. No remote repository was supplied.
 
